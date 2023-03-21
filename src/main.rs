@@ -1,7 +1,7 @@
-use rocket::http::Status;
-use rocket::response::{content, status};
+mod data_types;
+
+use data_types::{AppConfig, AppConfigInstance};
 use rocket::serde::json::Json;
-use serde::Serialize;
 
 #[macro_use]
 extern crate rocket;
@@ -19,31 +19,6 @@ fn index() -> Json<AppConfig> {
     });
 }
 
-#[derive(Serialize)]
-struct AppConfig {
-    id: i32,
-    name: String,
-}
-
-#[derive(Serialize)]
-struct AppLabelType {
-    id: i32,
-    name: String,
-}
-
-#[derive(Serialize)]
-struct AppLabel {
-    label_type: AppLabelType,
-    value: String, // TODO: more powerful generics?
-}
-
-#[derive(Serialize)]
-struct AppConfigInstance {
-    config: AppConfig,
-    content: String,
-    labels: Vec<AppLabel>,
-}
-
 fn load_config() -> AppConfigInstance {
     return AppConfigInstance {
         config: AppConfig {
@@ -53,4 +28,11 @@ fn load_config() -> AppConfigInstance {
         content: "this is my config data".to_string(),
         labels: vec![],
     };
+}
+
+// The base storage adapter to be able to load config from external storage
+trait ConfigStorageAdapter {
+    fn load_configs() -> Vec<AppConfig>;
+
+    fn load_config(id: i32) -> AppConfigInstance;
 }
