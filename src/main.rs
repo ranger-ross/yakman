@@ -1,10 +1,9 @@
 mod adapters;
+mod config_man;
 mod data_types;
 
-use std::path::Path;
-
 use adapters::{ConfigStorageAdapter, LocalFileStorageAdapter};
-use data_types::{AppConfig, AppConfigInstance};
+use data_types::AppConfig;
 use rocket::serde::json::Json;
 
 #[macro_use]
@@ -12,11 +11,14 @@ extern crate rocket;
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    let settings = config_man::load_config_man_settings();
+    println!("Settings: {:?}", settings);
+
+    rocket::build().mount("/", routes![configs])
 }
 
-#[get("/config")]
-fn index() -> Json<Vec<AppConfig>> {
+#[get("/configs")]
+fn configs() -> Json<Vec<AppConfig>> {
     let ad = LocalFileStorageAdapter {
         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
     };
