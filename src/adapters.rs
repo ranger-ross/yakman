@@ -8,5 +8,5 @@ pub trait ConfigStorageAdapter {
 
     fn get_config_instance_metadata(self, id: &str) -> Option<Vec<AppConfigInstance>>;
 
-    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> String;
+    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> Option<String>;
 }

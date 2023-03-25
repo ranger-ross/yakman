@@ -51,15 +51,15 @@ fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
     };
 }
 
-#[get("/data")] // TODO: add {id} / {tags}
-fn data() -> String {
+#[get("/data/<id>")] // TODO: add {id} / {tags}
+fn data(id: &str) -> Option<String> {
     let ad = LocalFileStorageAdapter {
         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
     };
 
     return ad.get_config_data(
-        "100",
-        vec![AppLabel {
+        id,
+        vec![AppLabel { // TODO: Make labels dynamic
             label_type_id: 300,
             value: "option 1".to_string(),
         }],

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     adapters::ConfigStorageAdapter,
     data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType},
+    instances,
 };
 
 pub struct LocalFileStorageAdapter {
@@ -55,26 +56,28 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
-    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> String {
+    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> Option<String> {
         let base_path = self.path.to_string();
-        let instances = self.get_config_instance_metadata(id).unwrap();
+        if let Some(instances) = self.get_config_instance_metadata(id) {
+            let mut selected_instance: Option<AppConfigInstance> = None;
 
-        let mut selected_instance: Option<AppConfigInstance> = None;
+            for instance in instances {
+                if instance.labels == labels {
+                    // TODO: Create better comparison logic
+                    selected_instance = Some(instance);
+                    break;
+                }
+            }
 
-        for instance in instances {
-            if instance.labels == labels {
-                // TODO: Create better comparison logic
-                selected_instance = Some(instance);
-                break;
+            if let Some(instance) = selected_instance {
+                let path = base_path + "/" + data_dir + "/" + instance.instance_id.as_str();
+                println!("Found path {}", path);
+                return fs::read_to_string(path).ok();
+            } else {
+                println!("No selected instance found");
+                return None;
             }
         }
-
-        if let Some(instance) = selected_instance {
-            let path = base_path + "/" + data_dir + "/" + instance.instance_id.as_str();
-            println!("Found path {}", path);
-            return fs::read_to_string(path).expect("Data file not found");
-        } else {
-            panic!("No selected instance found");
-        }
+        return None;
     }
 }
