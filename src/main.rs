@@ -2,12 +2,13 @@ mod adapters;
 mod config_man;
 mod config_man_state;
 mod data_types;
+mod local_file_adapter;
 
-use std::vec;
-
-use adapters::{ConfigStorageAdapter, LocalFileStorageAdapter};
+use adapters::ConfigStorageAdapter;
 use data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType};
+use local_file_adapter::LocalFileStorageAdapter;
 use rocket::serde::json::Json;
+use std::vec;
 
 #[macro_use]
 extern crate rocket;
