@@ -6,7 +6,7 @@ pub trait ConfigStorageAdapter {
 
     fn get_labels(self) -> Vec<AppLabelType>;
 
-    fn get_config_instance_metadata(self, id: i32) -> Vec<AppConfigInstance>; // TODO: Should we use a String instead of Int for the ID?
+    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<AppConfigInstance>>;
 
-    fn get_config_data(self, id: i32, labels: Vec<AppLabel>) -> String;
+    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> String;
 }

@@ -39,13 +39,16 @@ fn labels() -> Json<Vec<AppLabelType>> {
     return Json(ad.get_labels());
 }
 
-#[get("/instances")] // TODO: add {id}
-fn instances() -> Json<Vec<AppConfigInstance>> {
+#[get("/instances/<id>")] // TODO: add {id}
+fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
     let ad = LocalFileStorageAdapter {
         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
     };
 
-    return Json(ad.get_config_instance_metadata(100));
+    return match ad.get_config_instance_metadata(id) {
+        Some(data) => Some(Json(data)),
+        None => None,
+    };
 }
 
 #[get("/data")] // TODO: add {id} / {tags}
@@ -55,7 +58,7 @@ fn data() -> String {
     };
 
     return ad.get_config_data(
-        100,
+        "100",
         vec![AppLabel {
             label_type_id: 300,
             value: "option 1".to_string(),

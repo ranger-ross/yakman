@@ -45,17 +45,19 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         return v.labels;
     }
 
-    fn get_config_instance_metadata(self, id: i32) -> Vec<AppConfigInstance> {
+    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<AppConfigInstance>> {
         let label_file =
             self.path + "/" + config_man_dir + "/instance-metadata/" + &id.to_string() + ".json";
-        let content = fs::read_to_string(label_file).expect("Instance data file not found");
-        let v: InstanceJson = serde_json::from_str(&content).unwrap();
-        return v.instances;
+        if let Some(content) = fs::read_to_string(label_file).ok() {
+            let v: InstanceJson = serde_json::from_str(&content).unwrap();
+            return Some(v.instances);
+        }
+        return None;
     }
 
-    fn get_config_data(self, id: i32, labels: Vec<AppLabel>) -> String {
+    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> String {
         let base_path = self.path.to_string();
-        let instances = self.get_config_instance_metadata(id);
+        let instances = self.get_config_instance_metadata(id).unwrap();
 
         let mut selected_instance: Option<AppConfigInstance> = None;
 
