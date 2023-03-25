@@ -1,6 +1,7 @@
 use std::fs;
 
 use rocket::serde::json::serde_json;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     config_man_state::ConfigManState,
@@ -13,7 +14,7 @@ pub trait ConfigStorageAdapter {
 
     fn get_labels(self) -> Vec<AppLabelType>;
 
-    fn load_config(self, id: i32) -> AppConfigInstance;
+    fn get_config_instance_metadata(self, id: i32) -> Vec<AppConfigInstance>; // TODO: Should we use a String instead of Int for the ID?
 }
 
 pub struct LocalFileStorageAdapter {
@@ -23,28 +24,41 @@ pub struct LocalFileStorageAdapter {
 const config_man_dir: &str = ".configman"; // TODO: clean up
 const data_dir: &str = "data"; // TODO: clean up
 
+#[derive(Debug, Serialize, Deserialize)]
+struct LabelJson {
+    labels: Vec<AppLabelType>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ConfigJson {
+    configs: Vec<AppConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct InstanceJson {
+    instances: Vec<AppConfigInstance>,
+}
+
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
     fn get_configs(self) -> Vec<AppConfig> {
-        let content = fs::read_to_string(self.path + "/" + config_man_dir + "/state.json").unwrap();
-        let v: ConfigManState = serde_json::from_str(&content).unwrap();
+        let content =
+            fs::read_to_string(self.path + "/" + config_man_dir + "/configs.json").unwrap();
+        let v: ConfigJson = serde_json::from_str(&content).unwrap();
         return v.configs;
     }
 
     fn get_labels(self) -> Vec<AppLabelType> {
-        let content = fs::read_to_string(self.path + "/" + config_man_dir + "/state.json").unwrap();
-        let v: ConfigManState = serde_json::from_str(&content).unwrap();
+        let label_file = self.path + "/" + config_man_dir + "/labels.json";
+        let content = fs::read_to_string(label_file).unwrap();
+        let v: LabelJson = serde_json::from_str(&content).unwrap();
         return v.labels;
     }
 
-    fn load_config(self, id: i32) -> AppConfigInstance {
-        // TODO: Fix
-        return AppConfigInstance {
-            config: AppConfig {
-                id: 100,
-                name: "FirstConfig".to_string(),
-            },
-            content: "this is my config data".to_string(),
-            labels: vec![],
-        };
+    fn get_config_instance_metadata(self, id: i32) -> Vec<AppConfigInstance> {
+        let label_file = self.path + "/" + config_man_dir + "/instance-metadata/" + &id.to_string() + ".json";
+        println!("{}", &label_file);
+        let content = fs::read_to_string(label_file).expect("Instance data file not found");
+        let v: InstanceJson = serde_json::from_str(&content).unwrap();
+        return v.instances;
     }
 }

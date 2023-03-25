@@ -1,10 +1,10 @@
 mod adapters;
 mod config_man;
-mod data_types;
 mod config_man_state;
+mod data_types;
 
 use adapters::{ConfigStorageAdapter, LocalFileStorageAdapter};
-use data_types::{AppConfig, AppLabelType};
+use data_types::{AppConfig, AppConfigInstance, AppLabelType};
 use rocket::serde::json::Json;
 
 #[macro_use]
@@ -15,10 +15,7 @@ fn rocket() -> _ {
     let settings = config_man::load_config_man_settings();
     println!("Settings: {:?}", settings);
 
-    rocket::build().mount("/", routes![
-        configs,
-        labels
-    ])
+    rocket::build().mount("/", routes![configs, labels, instances])
 }
 
 #[get("/configs")]
@@ -39,3 +36,11 @@ fn labels() -> Json<Vec<AppLabelType>> {
     return Json(ad.get_labels());
 }
 
+#[get("/instances")] // TODO: add {id}
+fn instances() -> Json<Vec<AppConfigInstance>> {
+    let ad = LocalFileStorageAdapter {
+        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
+    };
+
+    return Json(ad.get_config_instance_metadata(100));
+}

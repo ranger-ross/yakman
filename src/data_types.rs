@@ -22,8 +22,8 @@ pub struct AppLabel {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppConfigInstance {
-    pub config: AppConfig,
-    pub content: String,
+    pub config_id: i32,
+    pub instance_id: String,
     pub labels: Vec<AppLabel>,
 }
 
