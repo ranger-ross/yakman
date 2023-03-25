@@ -14,7 +14,7 @@ pub struct AppLabelType {
     pub options: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct AppLabel {
     pub label_type_id: i32,
     pub value: String, // TODO: more powerful generics?
