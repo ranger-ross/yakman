@@ -6,15 +6,14 @@ use serde::{Deserialize, Serialize};
 use crate::{
     adapters::ConfigStorageAdapter,
     data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType},
-    instances,
 };
 
 pub struct LocalFileStorageAdapter {
     pub path: String,
 }
 
-const config_man_dir: &str = ".configman"; // TODO: clean up
-const data_dir: &str = "config-instances"; // TODO: clean up
+const CONFIG_MAN_DIR: &str = ".configman"; // TODO: clean up
+const DATA_DIR: &str = "config-instances"; // TODO: clean up
 
 #[derive(Debug, Serialize, Deserialize)]
 struct LabelJson {
@@ -34,13 +33,13 @@ struct InstanceJson {
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
     fn get_configs(self) -> Vec<AppConfig> {
         let content =
-            fs::read_to_string(self.path + "/" + config_man_dir + "/configs.json").unwrap();
+            fs::read_to_string(self.path + "/" + CONFIG_MAN_DIR + "/configs.json").unwrap();
         let v: ConfigJson = serde_json::from_str(&content).unwrap();
         return v.configs;
     }
 
     fn get_labels(self) -> Vec<AppLabelType> {
-        let label_file = self.path + "/" + config_man_dir + "/labels.json";
+        let label_file = self.path + "/" + CONFIG_MAN_DIR + "/labels.json";
         let content = fs::read_to_string(label_file).unwrap();
         let v: LabelJson = serde_json::from_str(&content).unwrap();
         return v.labels;
@@ -48,7 +47,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
     fn get_config_instance_metadata(self, id: &str) -> Option<Vec<AppConfigInstance>> {
         let label_file =
-            self.path + "/" + config_man_dir + "/instance-metadata/" + &id.to_string() + ".json";
+            self.path + "/" + CONFIG_MAN_DIR + "/instance-metadata/" + &id.to_string() + ".json";
         if let Some(content) = fs::read_to_string(label_file).ok() {
             let v: InstanceJson = serde_json::from_str(&content).unwrap();
             return Some(v.instances);
@@ -70,7 +69,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             }
 
             if let Some(instance) = selected_instance {
-                let path = base_path + "/" + data_dir + "/" + instance.instance_id.as_str();
+                let path = base_path + "/" + DATA_DIR + "/" + instance.instance_id.as_str();
                 println!("Found path {}", path);
                 return fs::read_to_string(path).ok();
             } else {
