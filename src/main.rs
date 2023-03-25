@@ -56,12 +56,12 @@ fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
 }
 
 #[derive(Debug)]
-struct QueryParams(HashMap<String, String>);
-
-struct RawQueryParams(HashMap<String, String>);
+struct RawQuery {
+    params: HashMap<String, String>,
+}
 
 #[rocket::async_trait]
-impl<'r> FromRequest<'r> for RawQueryParams {
+impl<'r> FromRequest<'r> for RawQuery {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
@@ -80,13 +80,13 @@ impl<'r> FromRequest<'r> for RawQueryParams {
             }
         }
 
-        return Outcome::Success(RawQueryParams(m));
+        return Outcome::Success(RawQuery { params: m });
     }
 }
 
-#[get("/data/<id>")] // TODO: add {id} / {tags}
-fn data(id: &str, query: RawQueryParams) -> Option<String> {
-    println!("params = {:?}", query.0);
+#[get("/data/<id>")]
+fn data(id: &str, query: RawQuery) -> Option<String> {
+    println!("{:?}", query.params);
 
     let ad = LocalFileStorageAdapter {
         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
