@@ -3,16 +3,15 @@ mod config_man;
 mod config_man_state;
 mod data_types;
 mod local_file_adapter;
+mod raw_query;
 
 use adapters::ConfigStorageAdapter;
 use data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType};
 use local_file_adapter::LocalFileStorageAdapter;
-use rocket::{
-    request::{FromRequest, Outcome},
-    serde::json::Json,
-    Request,
-};
-use std::{collections::HashMap, vec};
+use rocket::serde::json::Json;
+use std::vec;
+
+use raw_query::RawQuery;
 
 #[macro_use]
 extern crate rocket;
@@ -44,35 +43,6 @@ fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
         Some(data) => Some(Json(data)),
         None => None,
     };
-}
-
-#[derive(Debug)]
-struct RawQuery {
-    params: HashMap<String, String>,
-}
-
-#[rocket::async_trait]
-impl<'r> FromRequest<'r> for RawQuery {
-    type Error = ();
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let uri = request.uri().to_string();
-        let mut m: HashMap<String, String> = HashMap::new();
-
-        if uri.contains("?") {
-            let index = uri.find("?").unwrap();
-            let query: String = uri.chars().skip(index + 1).collect();
-
-            for param in query.split("&") {
-                let mut parts = param.split("=");
-                let key = parts.next().unwrap();
-                let value = parts.next().unwrap();
-                m.insert(key.to_string(), value.to_string());
-            }
-        }
-
-        return Outcome::Success(RawQuery { params: m });
-    }
 }
 
 #[get("/data/<id>")]
