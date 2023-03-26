@@ -4,10 +4,12 @@ mod config_man_state;
 mod data_types;
 mod local_file_adapter;
 mod raw_query;
+mod redis_adapter;
 
 use adapters::ConfigStorageAdapter;
 use data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType};
 use local_file_adapter::LocalFileStorageAdapter;
+use redis_adapter::RedisStorageAdapter;
 use rocket::serde::json::Json;
 use std::vec;
 
@@ -63,8 +65,17 @@ fn data(id: &str, query: RawQuery) -> Option<String> {
     return adapter.get_config_data(id, labels);
 }
 
+// fn get_adapter() -> impl ConfigStorageAdapter {
+//     return LocalFileStorageAdapter {
+//         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
+//     };
+// }
+
 fn get_adapter() -> impl ConfigStorageAdapter {
-    return LocalFileStorageAdapter {
-        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
+    return RedisStorageAdapter {
+        host: "127.0.0.1".to_string(),
+        port: 6379,
+        username: "".to_string(),
+        password: "".to_string(),
     };
 }
