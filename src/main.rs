@@ -27,29 +27,20 @@ fn rocket() -> _ {
 
 #[get("/configs")]
 fn configs() -> Json<Vec<AppConfig>> {
-    let ad = LocalFileStorageAdapter {
-        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
-    };
-
-    return Json(ad.get_configs());
+    let adapter = get_adapter();
+    return Json(adapter.get_configs());
 }
 
 #[get("/labels")]
 fn labels() -> Json<Vec<AppLabelType>> {
-    let ad = LocalFileStorageAdapter {
-        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
-    };
-
-    return Json(ad.get_labels());
+    let adapter = get_adapter();
+    return Json(adapter.get_labels());
 }
 
 #[get("/instances/<id>")] // TODO: add {id}
 fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
-    let ad = LocalFileStorageAdapter {
-        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
-    };
-
-    return match ad.get_config_instance_metadata(id) {
+    let adapter = get_adapter();
+    return match adapter.get_config_instance_metadata(id) {
         Some(data) => Some(Json(data)),
         None => None,
     };
@@ -86,11 +77,7 @@ impl<'r> FromRequest<'r> for RawQuery {
 
 #[get("/data/<id>")]
 fn data(id: &str, query: RawQuery) -> Option<String> {
-    println!("{:?}", query.params);
-
-    let ad = LocalFileStorageAdapter {
-        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
-    };
+    let adapter = get_adapter();
 
     let labels: Vec<AppLabel> = query
         .params
@@ -103,8 +90,11 @@ fn data(id: &str, query: RawQuery) -> Option<String> {
 
     println!("Search for config {} with labels: {:?}", id, labels);
 
-    return ad.get_config_data(
-        id,
-        labels,
-    );
+    return adapter.get_config_data(id, labels);
+}
+
+fn get_adapter() -> impl ConfigStorageAdapter {
+    return LocalFileStorageAdapter {
+        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
+    };
 }
