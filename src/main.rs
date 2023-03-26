@@ -92,12 +92,19 @@ fn data(id: &str, query: RawQuery) -> Option<String> {
         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
     };
 
+    let labels: Vec<AppLabel> = query
+        .params
+        .iter()
+        .map(|param| AppLabel {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
+
+    println!("Search for config {} with labels: {:?}", id, labels);
+
     return ad.get_config_data(
         id,
-        vec![AppLabel {
-            // TODO: Make labels dynamic
-            label_type_id: 300,
-            value: "option 1".to_string(),
-        }],
+        labels,
     );
 }
