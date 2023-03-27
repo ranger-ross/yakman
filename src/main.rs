@@ -10,7 +10,7 @@ use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
 use local_file_adapter::LocalFileStorageAdapter;
 use redis_adapter::RedisStorageAdapter;
-use rocket::serde::json::Json;
+use rocket::{serde::json::Json, State};
 use std::vec;
 
 use raw_query::RawQuery;
@@ -18,29 +18,40 @@ use raw_query::RawQuery;
 #[macro_use]
 extern crate rocket;
 
+struct StateManager;
+
+impl StateManager {
+    fn get_adapter(&self) -> impl ConfigStorageAdapter {
+        return get_local_file_adapter(); // TODO: impl logic
+        // return get_redis_adapter();
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
     let settings = config_man::load_config_man_settings();
     println!("Settings: {:?}", settings);
 
-    rocket::build().mount("/", routes![configs, labels, instances, data])
+    rocket::build()
+        .manage(StateManager {})
+        .mount("/", routes![configs, labels, instances, data])
 }
 
 #[get("/configs")]
-fn configs() -> Json<Vec<Config>> {
-    let adapter = get_adapter();
+fn configs(state: &State<StateManager>) -> Json<Vec<Config>> {
+    let adapter = state.get_adapter();
     return Json(adapter.get_configs());
 }
 
 #[get("/labels")]
-fn labels() -> Json<Vec<LabelType>> {
-    let adapter = get_adapter();
+fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
+    let adapter = state.get_adapter();
     return Json(adapter.get_labels());
 }
 
 #[get("/instances/<id>")] // TODO: add {id}
-fn instances(id: &str) -> Option<Json<Vec<ConfigInstance>>> {
-    let adapter = get_adapter();
+fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<ConfigInstance>>> {
+    let adapter = state.get_adapter();
     return match adapter.get_config_instance_metadata(id) {
         Some(data) => Some(Json(data)),
         None => None,
@@ -48,8 +59,8 @@ fn instances(id: &str) -> Option<Json<Vec<ConfigInstance>>> {
 }
 
 #[get("/data/<id>")]
-fn data(id: &str, query: RawQuery) -> Option<String> {
-    let adapter = get_adapter();
+fn data(id: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
+    let adapter = state.get_adapter();
 
     let labels: Vec<Label> = query
         .params
@@ -65,13 +76,13 @@ fn data(id: &str, query: RawQuery) -> Option<String> {
     return adapter.get_config_data(id, labels);
 }
 
-// fn get_adapter() -> impl ConfigStorageAdapter {
-//     return LocalFileStorageAdapter {
-//         path: "/home/ross/projects/config-manager/testing-directory".to_string(),
-//     };
-// }
+fn get_local_file_adapter() -> impl ConfigStorageAdapter {
+    return LocalFileStorageAdapter {
+        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
+    };
+}
 
-fn get_adapter() -> impl ConfigStorageAdapter {
+fn get_redis_adapter() -> impl ConfigStorageAdapter {
     return RedisStorageAdapter {
         host: "127.0.0.1".to_string(),
         port: 6379,

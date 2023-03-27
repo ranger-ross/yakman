@@ -1,7 +1,8 @@
 use crate::data_types::{Config, ConfigInstance, Label, LabelType};
 
 // The base storage adapter to be able to load config from external storage
-pub trait ConfigStorageAdapter {
+
+pub trait ConfigStorageAdapter: Sync + Send {
     fn get_configs(self) -> Vec<Config>;
 
     fn get_labels(self) -> Vec<LabelType>;
