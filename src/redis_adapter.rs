@@ -1,6 +1,6 @@
 use crate::{
     adapters::ConfigStorageAdapter,
-    data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType},
+    data_types::{Config, ConfigInstance, Label, LabelType},
 };
 
 extern crate redis;
@@ -10,12 +10,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigJson {
-    configs: Vec<AppConfig>,
+    configs: Vec<Config>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct LabelJson {
-    labels: Vec<AppLabelType>,
+    labels: Vec<LabelType>,
 }
 
 pub struct RedisStorageAdapter {
@@ -28,7 +28,7 @@ pub struct RedisStorageAdapter {
 const REDIS_PREFIX: &str = "CONFIG_MAN_";
 
 impl ConfigStorageAdapter for RedisStorageAdapter {
-    fn get_configs(self) -> Vec<AppConfig> {
+    fn get_configs(self) -> Vec<Config> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
@@ -39,7 +39,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.configs;
     }
 
-    fn get_labels(self) -> Vec<AppLabelType> {
+    fn get_labels(self) -> Vec<LabelType> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
@@ -50,11 +50,11 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.labels;
     }
 
-    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<AppConfigInstance>> {
+    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<ConfigInstance>> {
         todo!()
     }
 
-    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> Option<String> {
+    fn get_config_data(self, id: &str, labels: Vec<Label>) -> Option<String> {
         todo!()
     }
 }

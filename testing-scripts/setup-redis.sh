@@ -1,2 +1,2 @@
-redis-cli SET CONFIG_MAN_CONFIGS '{"configs":[{"id":100,"name":"Testing 1"},{"id":200,"name":"Testing 2"},{"id":300,"name":"Testing 3"}]}'
-redis-cli SET CONFIG_MAN_LABELS '{"labels":[{"id":300,"name":"My label","options":["option 1","option 2","option 3"]}]}'
+redis-cli SET CONFIG_MAN_CONFIGS '{"configs":[{"name":"Testing 1","description":"This is a test desc for config 1"},{"name":"Testing 2","description":"This is a test desc for config 2"},{"name":"Testing 3","description":"This is a test desc for config 3"}]}'
+redis-cli SET CONFIG_MAN_LABELS '{"labels":[{"name":"My label","description":"Here is my label","options":["option 1","option 2","option 3"]}]}'

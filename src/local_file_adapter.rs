@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     adapters::ConfigStorageAdapter,
-    data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType},
+    data_types::{Config, ConfigInstance, Label, LabelType},
 };
 
 pub struct LocalFileStorageAdapter {
@@ -17,35 +17,35 @@ const DATA_DIR: &str = "config-instances"; // TODO: clean up
 
 #[derive(Debug, Serialize, Deserialize)]
 struct LabelJson {
-    labels: Vec<AppLabelType>,
+    labels: Vec<LabelType>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigJson {
-    configs: Vec<AppConfig>,
+    configs: Vec<Config>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct InstanceJson {
-    instances: Vec<AppConfigInstance>,
+    instances: Vec<ConfigInstance>,
 }
 
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
-    fn get_configs(self) -> Vec<AppConfig> {
+    fn get_configs(self) -> Vec<Config> {
         let content =
             fs::read_to_string(self.path + "/" + CONFIG_MAN_DIR + "/configs.json").unwrap();
         let v: ConfigJson = serde_json::from_str(&content).unwrap();
         return v.configs;
     }
 
-    fn get_labels(self) -> Vec<AppLabelType> {
+    fn get_labels(self) -> Vec<LabelType> {
         let label_file = self.path + "/" + CONFIG_MAN_DIR + "/labels.json";
         let content = fs::read_to_string(label_file).unwrap();
         let v: LabelJson = serde_json::from_str(&content).unwrap();
         return v.labels;
     }
 
-    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<AppConfigInstance>> {
+    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<ConfigInstance>> {
         let label_file =
             self.path + "/" + CONFIG_MAN_DIR + "/instance-metadata/" + &id.to_string() + ".json";
         if let Some(content) = fs::read_to_string(label_file).ok() {
@@ -55,10 +55,10 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
-    fn get_config_data(self, id: &str, labels: Vec<AppLabel>) -> Option<String> {
+    fn get_config_data(self, id: &str, labels: Vec<Label>) -> Option<String> {
         let base_path = self.path.to_string();
         if let Some(instances) = self.get_config_instance_metadata(id) {
-            let mut selected_instance: Option<AppConfigInstance> = None;
+            let mut selected_instance: Option<ConfigInstance> = None;
 
             for instance in instances {
                 if instance.labels == labels {

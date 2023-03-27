@@ -2,29 +2,29 @@ pub use serde::Deserialize;
 pub use serde::Serialize;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AppConfig {
-    pub id: i32,
-    pub name: String,
+pub struct Config {
+    pub name: String, // Unique key
+    pub description: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AppLabelType {
-    pub id: i32,
-    pub name: String,
+pub struct LabelType {
+    pub name: String, // Unique key
+    pub description: String,
     pub options: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct AppLabel {
+pub struct Label {
     pub label_type: String,
     pub value: String, // TODO: more powerful generics?
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AppConfigInstance {
+pub struct ConfigInstance {
     pub config_id: i32,
     pub instance_id: String,
-    pub labels: Vec<AppLabel>,
+    pub labels: Vec<Label>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

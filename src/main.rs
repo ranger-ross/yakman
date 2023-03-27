@@ -7,7 +7,7 @@ mod raw_query;
 mod redis_adapter;
 
 use adapters::ConfigStorageAdapter;
-use data_types::{AppConfig, AppConfigInstance, AppLabel, AppLabelType};
+use data_types::{Config, ConfigInstance, Label, LabelType};
 use local_file_adapter::LocalFileStorageAdapter;
 use redis_adapter::RedisStorageAdapter;
 use rocket::serde::json::Json;
@@ -27,19 +27,19 @@ fn rocket() -> _ {
 }
 
 #[get("/configs")]
-fn configs() -> Json<Vec<AppConfig>> {
+fn configs() -> Json<Vec<Config>> {
     let adapter = get_adapter();
     return Json(adapter.get_configs());
 }
 
 #[get("/labels")]
-fn labels() -> Json<Vec<AppLabelType>> {
+fn labels() -> Json<Vec<LabelType>> {
     let adapter = get_adapter();
     return Json(adapter.get_labels());
 }
 
 #[get("/instances/<id>")] // TODO: add {id}
-fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
+fn instances(id: &str) -> Option<Json<Vec<ConfigInstance>>> {
     let adapter = get_adapter();
     return match adapter.get_config_instance_metadata(id) {
         Some(data) => Some(Json(data)),
@@ -51,10 +51,10 @@ fn instances(id: &str) -> Option<Json<Vec<AppConfigInstance>>> {
 fn data(id: &str, query: RawQuery) -> Option<String> {
     let adapter = get_adapter();
 
-    let labels: Vec<AppLabel> = query
+    let labels: Vec<Label> = query
         .params
         .iter()
-        .map(|param| AppLabel {
+        .map(|param| Label {
             label_type: param.0.to_string(),
             value: param.1.to_string(),
         })
