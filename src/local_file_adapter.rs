@@ -32,23 +32,22 @@ struct InstanceJson {
 
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
     fn get_configs(&self) -> Vec<Config> {
-        let path = format!("{}/{}/configs.json", self.path.as_str(), CONFIG_MAN_DIR);
+        let path = format!("{}/{CONFIG_MAN_DIR}/configs.json", self.path.as_str());
         let content = fs::read_to_string(path).unwrap();
         let v: ConfigJson = serde_json::from_str(&content).unwrap();
         return v.configs;
     }
 
     fn get_labels(&self) -> Vec<LabelType> {
-        let path = format!("{}/{}/labels.json", self.path.as_str(), CONFIG_MAN_DIR);
+        let path = format!("{}/{CONFIG_MAN_DIR}/labels.json", self.path.as_str());
         let content = fs::read_to_string(path).unwrap();
         let v: LabelJson = serde_json::from_str(&content).unwrap();
         return v.labels;
     }
 
     fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
-        let label_file = format!("{}/{}/instance-metadata/{}.json", self.path.as_str(), CONFIG_MAN_DIR, &id.to_string());
-        // let label_file =
-        //     self.path + "/" + CONFIG_MAN_DIR + "/instance-metadata/" + &id.to_string() + ".json";
+        let base_path = self.path.as_str();
+        let label_file = format!("{base_path}/{CONFIG_MAN_DIR}/instance-metadata/{id}.json");
         if let Some(content) = fs::read_to_string(label_file).ok() {
             let v: InstanceJson = serde_json::from_str(&content).unwrap();
             return Some(v.instances);
@@ -70,7 +69,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             }
 
             if let Some(instance) = selected_instance {
-                let path = base_path + "/" + DATA_DIR + "/" + instance.instance_id.as_str();
+                let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance_id.as_str());
                 println!("Found path {}", path);
                 return fs::read_to_string(path).ok();
             } else {
