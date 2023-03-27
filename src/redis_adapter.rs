@@ -28,7 +28,7 @@ pub struct RedisStorageAdapter {
 const REDIS_PREFIX: &str = "CONFIG_MAN_";
 
 impl ConfigStorageAdapter for RedisStorageAdapter {
-    fn get_configs(self) -> Vec<Config> {
+    fn get_configs(&self) -> Vec<Config> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
@@ -39,7 +39,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.configs;
     }
 
-    fn get_labels(self) -> Vec<LabelType> {
+    fn get_labels(&self) -> Vec<LabelType> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
@@ -50,11 +50,11 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.labels;
     }
 
-    fn get_config_instance_metadata(self, id: &str) -> Option<Vec<ConfigInstance>> {
+    fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
         todo!()
     }
 
-    fn get_config_data(self, id: &str, labels: Vec<Label>) -> Option<String> {
+    fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
         todo!()
     }
 }

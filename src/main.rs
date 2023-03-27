@@ -18,12 +18,13 @@ use raw_query::RawQuery;
 #[macro_use]
 extern crate rocket;
 
-struct StateManager;
+struct StateManager {
+    adapter: Box<dyn ConfigStorageAdapter>,
+}
 
 impl StateManager {
-    fn get_adapter(&self) -> impl ConfigStorageAdapter {
-        return get_local_file_adapter(); // TODO: impl logic
-        // return get_redis_adapter();
+    fn get_adapter(&self) -> &dyn ConfigStorageAdapter {
+        return self.adapter.as_ref();
     }
 }
 
@@ -32,8 +33,14 @@ fn rocket() -> _ {
     let settings = config_man::load_config_man_settings();
     println!("Settings: {:?}", settings);
 
+    // Handle multi adapters
+    let adapter = get_local_file_adapter();
+    // let adapter = get_redis_adapter();
+
     rocket::build()
-        .manage(StateManager {})
+        .manage(StateManager {
+            adapter: Box::new(adapter),
+        })
         .mount("/", routes![configs, labels, instances, data])
 }
 
