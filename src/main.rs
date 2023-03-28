@@ -34,8 +34,8 @@ fn rocket() -> _ {
     println!("Settings: {:?}", settings);
 
     // Handle multi adapters
-    let adapter = get_local_file_adapter();
-    // let adapter = get_redis_adapter();
+    // let adapter = get_local_file_adapter();
+    let adapter = get_redis_adapter();
 
     rocket::build()
         .manage(StateManager {

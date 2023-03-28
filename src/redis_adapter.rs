@@ -37,7 +37,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
-            .get(REDIS_PREFIX.to_string() + "CONFIGS")
+            .get(format!("{REDIS_PREFIX}CONFIGS"))
             .expect("Failed to load configs from redis");
 
         let v: ConfigJson = serde_json::from_str(&configs).unwrap();
@@ -48,7 +48,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
-            .get(REDIS_PREFIX.to_string() + "LABELS")
+            .get(format!("{REDIS_PREFIX}LABELS"))
             .expect("Failed to load configs from redis");
 
         let v: LabelJson = serde_json::from_str(&configs).unwrap();
@@ -58,7 +58,9 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
-        let instance: Option<String> = connection.get(format!("{REDIS_PREFIX}INSTANCE_META_{id}")).ok();
+        let instance: Option<String> = connection
+            .get(format!("{REDIS_PREFIX}INSTANCE_META_{id}"))
+            .ok();
 
         if let Some(instance) = instance {
             let v: InstanceJson = serde_json::from_str(&instance).unwrap();
@@ -68,7 +70,29 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
-        todo!()
+        if let Some(instances) = self.get_config_instance_metadata(id) {
+            let mut selected_instance: Option<ConfigInstance> = None;
+
+            for instance in instances {
+                if instance.labels == labels {
+                    // TODO: Create better comparison logic
+                    selected_instance = Some(instance);
+                    break;
+                }
+            }
+
+            if let Some(instance) = selected_instance {
+                let mut connection = open_connection(&self).expect("Failed to connect to redis");
+
+                let path = format!("{REDIS_PREFIX}INSTANCE_{}", instance.instance_id.as_str());
+                println!("Found path {}", path);
+                return connection.get(path).ok();
+            } else {
+                println!("No selected instance found");
+                return None;
+            }
+        }
+        return None;
     }
 }
 
