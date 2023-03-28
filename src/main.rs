@@ -5,6 +5,7 @@ mod data_types;
 mod local_file_adapter;
 mod raw_query;
 mod redis_adapter;
+mod postgres_adapter;
 
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};

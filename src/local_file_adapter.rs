@@ -70,6 +70,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
             if let Some(instance) = selected_instance {
                 let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance_id.as_str());
+                let path = base_path + "/" + DATA_DIR + "/" + instance.instance_id.as_str();
                 println!("Found path {}", path);
                 return fs::read_to_string(path).ok();
             } else {
