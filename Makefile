@@ -3,3 +3,9 @@ help: ## Shows help
 
 redis: ## Starts Redis with Docker
 	docker run -it --rm -p 6379:6379 redis
+
+postgres: ## Starts Postgres with Docker
+	docker run -it --rm -e POSTGRES_PASSWORD=password -p 5432:5432 postgres
+
+postgres-connect: ## Connect to Postgres Docker container with psql
+	PGPASSWORD=password psql --host localhost --username postgres
