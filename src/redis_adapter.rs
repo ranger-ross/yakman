@@ -18,6 +18,11 @@ struct LabelJson {
     labels: Vec<LabelType>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct InstanceJson {
+    instances: Vec<ConfigInstance>,
+}
+
 pub struct RedisStorageAdapter {
     pub host: String,
     pub port: i32,
@@ -51,7 +56,15 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
-        todo!()
+        let mut connection = open_connection(&self).expect("Failed to connect to redis");
+
+        let instance: Option<String> = connection.get(format!("{REDIS_PREFIX}INSTANCE_META_{id}")).ok();
+
+        if let Some(instance) = instance {
+            let v: InstanceJson = serde_json::from_str(&instance).unwrap();
+            return Some(v.instances);
+        }
+        return None;
     }
 
     fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
