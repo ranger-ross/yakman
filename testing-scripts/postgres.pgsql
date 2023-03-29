@@ -41,5 +41,14 @@ insert into config_man_config (name, description) values ('config2', 'config des
 insert into config_man_config (name, description) values ('config3', 'config description 3');
 
 insert into config_man_label (name, description) values ('label1', 'label1 desc');
-insert into config_man_label (name, description) values ('label2', 'label2 desc');
+insert into config_man_label_option (name, option) values ('label1', 'op100');
+insert into config_man_label_option (name, option) values ('label1', 'op200');
+insert into config_man_label_option (name, option) values ('label1', 'op300');
 
+insert into config_man_label (name, description) values ('label2', 'label2 desc');
+insert into config_man_label_option (name, option) values ('label2', 'op1');
+insert into config_man_label_option (name, option) values ('label2', 'op2');
+insert into config_man_label_option (name, option) values ('label2', 'op3');
+
+
+SELECT name, option FROM CONFIG_MAN_LABEL_OPTION where name = 'label2';

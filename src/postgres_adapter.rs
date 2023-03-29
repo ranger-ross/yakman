@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use sqlx::{postgres::PgPoolOptions, FromRow, Pool, Postgres};
+use sqlx::{postgres::PgPoolOptions, query_as, FromRow, Pool, Postgres};
 
 use crate::{
     adapters::ConfigStorageAdapter,
@@ -14,20 +14,34 @@ pub struct PostgresAdapter {
     pub password: String,
 }
 
-#[derive(FromRow)]
+#[derive(Debug, FromRow)]
 struct PostgresConfig {
-    pub name: String,
+    name: String,
     description: String,
 }
+
+#[derive(Debug, FromRow)]
+struct PostgresLabelType {
+    name: String,
+    description: String,
+}
+
+#[derive(Debug, FromRow)]
+struct PostgresLabelOption {
+    option: String,
+}
+
+const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_CONFIG";
+const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_LABEL";
+const SELECT_LABEL_OPTIONS_QUERY: &str =
+    "SELECT option FROM CONFIG_MAN_LABEL_OPTION where name = ?";
 
 #[async_trait]
 impl ConfigStorageAdapter for PostgresAdapter {
     async fn get_configs(&self) -> Vec<Config> {
         let pool = self.get_connection().await;
 
-        let select_query = sqlx::query_as::<Postgres, PostgresConfig>(
-            "SELECT name, description FROM CONFIG_MAN_CONFIG",
-        );
+        let select_query = query_as::<Postgres, PostgresConfig>(SELECT_CONFIGS_QUERY);
         let configs = select_query.fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
 
         return configs
@@ -40,7 +54,26 @@ impl ConfigStorageAdapter for PostgresAdapter {
     }
 
     async fn get_labels(&self) -> Vec<LabelType> {
-        todo!()
+        let pool = self.get_connection().await;
+
+        let select_labels_query = query_as::<Postgres, PostgresLabelType>(SELECT_LABELS_QUERY);
+        let labels = select_labels_query.fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+
+        if labels.len() == 0 {
+            return vec![];
+        }
+
+        let mut label_types: Vec<LabelType> = vec![];
+
+        for label in labels {
+            label_types.push(LabelType {
+                name: label.name.to_owned(),
+                description: label.description,
+                options: vec![], // TODO: Fetch the rest of the options
+            });
+        }
+
+        return label_types;
     }
 
     async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
