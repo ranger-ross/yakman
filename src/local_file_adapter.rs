@@ -30,22 +30,23 @@ struct InstanceJson {
     instances: Vec<ConfigInstance>,
 }
 
+#[async_trait]
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
-    fn get_configs(&self) -> Vec<Config> {
+    async fn get_configs(&self) -> Vec<Config> {
         let path = format!("{}/{CONFIG_MAN_DIR}/configs.json", self.path.as_str());
         let content = fs::read_to_string(path).unwrap();
         let v: ConfigJson = serde_json::from_str(&content).unwrap();
         return v.configs;
     }
 
-    fn get_labels(&self) -> Vec<LabelType> {
+    async fn get_labels(&self) -> Vec<LabelType> {
         let path = format!("{}/{CONFIG_MAN_DIR}/labels.json", self.path.as_str());
         let content = fs::read_to_string(path).unwrap();
         let v: LabelJson = serde_json::from_str(&content).unwrap();
         return v.labels;
     }
 
-    fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
+    async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
         let base_path = self.path.as_str();
         let label_file = format!("{base_path}/{CONFIG_MAN_DIR}/instance-metadata/{id}.json");
         if let Some(content) = fs::read_to_string(label_file).ok() {
@@ -55,9 +56,9 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
-    fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
+    async fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
         let base_path = self.path.to_string();
-        if let Some(instances) = self.get_config_instance_metadata(id) {
+        if let Some(instances) = self.get_config_instance_metadata(id).await {
             let mut selected_instance: Option<ConfigInstance> = None;
 
             for instance in instances {

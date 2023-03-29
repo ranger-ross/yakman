@@ -10,3 +10,4 @@ rocket = {version = "0.5.0-rc.3", features = ["json"]}
 serde = {version = "1.0", features = ["derive"]}
 redis = "0.22.3"
 sqlx = { version = "0.6.3", features = [ "runtime-tokio-rustls", "postgres" ] }
+async-trait = {version = "0.1.68"}

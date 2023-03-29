@@ -3,15 +3,15 @@ mod config_man;
 mod config_man_state;
 mod data_types;
 mod local_file_adapter;
+mod postgres_adapter;
 mod raw_query;
 mod redis_adapter;
-mod postgres_adapter;
 
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
 use local_file_adapter::LocalFileStorageAdapter;
 use redis_adapter::RedisStorageAdapter;
-use rocket::{serde::json::Json, State};
+use rocket::{serde::json::Json, tokio, State};
 use std::vec;
 
 use raw_query::RawQuery;
@@ -30,7 +30,7 @@ impl StateManager {
 }
 
 #[launch]
-fn rocket() -> _ {
+async fn rocket() -> _ {
     let settings = config_man::load_config_man_settings();
     println!("Settings: {:?}", settings);
 
@@ -46,28 +46,28 @@ fn rocket() -> _ {
 }
 
 #[get("/configs")]
-fn configs(state: &State<StateManager>) -> Json<Vec<Config>> {
+async fn configs(state: &State<StateManager>) -> Json<Vec<Config>> {
     let adapter = state.get_adapter();
-    return Json(adapter.get_configs());
+    return Json(adapter.get_configs().await);
 }
 
 #[get("/labels")]
-fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
+async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
     let adapter = state.get_adapter();
-    return Json(adapter.get_labels());
+    return Json(adapter.get_labels().await);
 }
 
 #[get("/instances/<id>")] // TODO: add {id}
-fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<ConfigInstance>>> {
+async fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<ConfigInstance>>> {
     let adapter = state.get_adapter();
-    return match adapter.get_config_instance_metadata(id) {
+    return match adapter.get_config_instance_metadata(id).await {
         Some(data) => Some(Json(data)),
         None => None,
     };
 }
 
 #[get("/data/<id>")]
-fn data(id: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
+async fn data(id: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
     let adapter = state.get_adapter();
 
     let labels: Vec<Label> = query
@@ -81,7 +81,7 @@ fn data(id: &str, query: RawQuery, state: &State<StateManager>) -> Option<String
 
     println!("Search for config {} with labels: {:?}", id, labels);
 
-    return adapter.get_config_data(id, labels);
+    return adapter.get_config_data(id, labels).await;
 }
 
 fn get_local_file_adapter() -> impl ConfigStorageAdapter {

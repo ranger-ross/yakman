@@ -32,8 +32,9 @@ pub struct RedisStorageAdapter {
 
 const REDIS_PREFIX: &str = "CONFIG_MAN_";
 
+#[async_trait]
 impl ConfigStorageAdapter for RedisStorageAdapter {
-    fn get_configs(&self) -> Vec<Config> {
+    async fn get_configs(&self) -> Vec<Config> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
@@ -44,7 +45,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.configs;
     }
 
-    fn get_labels(&self) -> Vec<LabelType> {
+    async fn get_labels(&self) -> Vec<LabelType> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let configs: String = connection
@@ -55,7 +56,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.labels;
     }
 
-    fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
+    async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let instance: Option<String> = connection
@@ -69,8 +70,8 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return None;
     }
 
-    fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
-        if let Some(instances) = self.get_config_instance_metadata(id) {
+    async fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
+        if let Some(instances) = self.get_config_instance_metadata(id).await {
             let mut selected_instance: Option<ConfigInstance> = None;
 
             for instance in instances {
