@@ -33,3 +33,13 @@ create table CONFIG_MAN_INSTANCE(
 	  REFERENCES CONFIG_MAN_CONFIG(NAME)
 );
 
+
+-- insert some dummy testing data
+
+insert into config_man_config (name, description) values ('config1', 'config description 1');
+insert into config_man_config (name, description) values ('config2', 'config description 2');
+insert into config_man_config (name, description) values ('config3', 'config description 3');
+
+insert into config_man_label (name, description) values ('label1', 'label1 desc');
+insert into config_man_label (name, description) values ('label2', 'label2 desc');
+
