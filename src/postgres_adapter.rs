@@ -33,8 +33,8 @@ impl ConfigStorageAdapter for PostgresAdapter {
         return configs
             .iter()
             .map(|config| Config {
-                name: config.name.clone(), // TODO: find better way to do this?
-                description: config.description.clone(),
+                name: config.name.to_owned(),
+                description: config.description.to_owned(),
             })
             .collect();
     }
