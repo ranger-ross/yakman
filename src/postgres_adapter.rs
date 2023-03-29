@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{postgres::PgPoolOptions, FromRow, Pool, Postgres};
 
 use crate::{
     adapters::ConfigStorageAdapter,
@@ -14,13 +14,29 @@ pub struct PostgresAdapter {
     pub password: String,
 }
 
+#[derive(FromRow)]
+struct PostgresConfig {
+    pub name: String,
+    description: String,
+}
+
 #[async_trait]
 impl ConfigStorageAdapter for PostgresAdapter {
     async fn get_configs(&self) -> Vec<Config> {
+        let pool = self.get_connection().await;
 
-        // let x = ross_test().await?;
+        let select_query = sqlx::query_as::<Postgres, PostgresConfig>(
+            "SELECT name, description FROM CONFIG_MAN_CONFIG",
+        );
+        let configs = select_query.fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
 
-        todo!()
+        return configs
+            .iter()
+            .map(|config| Config {
+                name: config.name.clone(), // TODO: find better way to do this?
+                description: config.description.clone(),
+            })
+            .collect();
     }
 
     async fn get_labels(&self) -> Vec<LabelType> {
@@ -36,12 +52,17 @@ impl ConfigStorageAdapter for PostgresAdapter {
     }
 }
 
-async fn ross_test() -> Result<i32, Box<dyn Error>> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect("postgres://postgres:password@localhost/test")
-        .await?;
+impl PostgresAdapter {
+    async fn get_connection(&self) -> Pool<Postgres> {
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect("postgres://postgres:password@localhost")
+            .await;
 
-    return Ok(1);
+        return pool.unwrap(); // TODO: handle this better
+    }
+
+    async fn create_connnection_pool(self) {
+        todo!()
+    }
 }
-

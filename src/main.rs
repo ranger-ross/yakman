@@ -10,8 +10,10 @@ mod redis_adapter;
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
 use local_file_adapter::LocalFileStorageAdapter;
+use postgres_adapter::PostgresAdapter;
 use redis_adapter::RedisStorageAdapter;
 use rocket::{serde::json::Json, tokio, State};
+use sqlx::Postgres;
 use std::vec;
 
 use raw_query::RawQuery;
@@ -35,8 +37,9 @@ async fn rocket() -> _ {
     println!("Settings: {:?}", settings);
 
     // Handle multi adapters
+    let adapter = get_postgres_adapter();
     // let adapter = get_local_file_adapter();
-    let adapter = get_redis_adapter();
+    // let adapter = get_redis_adapter();
 
     rocket::build()
         .manage(StateManager {
@@ -98,3 +101,12 @@ fn get_redis_adapter() -> impl ConfigStorageAdapter {
         password: "".to_string(),
     };
 }
+ fn get_postgres_adapter() -> impl ConfigStorageAdapter {
+    return PostgresAdapter {
+        host: "localhost".to_string(),
+        port: 5432,
+        username: "postgres".to_string(),
+        password: "password".to_string()
+
+    };
+ }
