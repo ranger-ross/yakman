@@ -34,7 +34,7 @@ struct PostgresLabelOption {
 const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_CONFIG";
 const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_LABEL";
 const SELECT_LABEL_OPTIONS_QUERY: &str =
-    "SELECT option FROM CONFIG_MAN_LABEL_OPTION where name = ?";
+    "SELECT option FROM CONFIG_MAN_LABEL_OPTION where name = $1";
 
 #[async_trait]
 impl ConfigStorageAdapter for PostgresAdapter {
@@ -66,10 +66,13 @@ impl ConfigStorageAdapter for PostgresAdapter {
         let mut label_types: Vec<LabelType> = vec![];
 
         for label in labels {
+            let query = query_as::<Postgres, PostgresLabelOption>(SELECT_LABEL_OPTIONS_QUERY);
+            let option = query.bind(&label.name).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+
             label_types.push(LabelType {
                 name: label.name.to_owned(),
                 description: label.description,
-                options: vec![], // TODO: Fetch the rest of the options
+                options: option.iter().map(|option| option.option.clone()).collect(),
             });
         }
 

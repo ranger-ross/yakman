@@ -51,4 +51,4 @@ insert into config_man_label_option (name, option) values ('label2', 'op2');
 insert into config_man_label_option (name, option) values ('label2', 'op3');
 
 
-SELECT name, option FROM CONFIG_MAN_LABEL_OPTION where name = 'label2';
+SELECT name, option FROM CONFIG_MAN_LABEL_OPTION where name = 'label1';
