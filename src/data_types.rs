@@ -22,8 +22,8 @@ pub struct Label {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConfigInstance {
-    pub config_id: i32,
-    pub instance_id: String,
+    pub config_name: String, // Unique key from Config
+    pub instance: String,
     pub labels: Vec<Label>,
 }
 

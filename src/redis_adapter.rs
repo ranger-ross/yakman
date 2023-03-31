@@ -85,7 +85,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
             if let Some(instance) = selected_instance {
                 let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
-                let path = format!("{REDIS_PREFIX}INSTANCE_{}", instance.instance_id.as_str());
+                let path = format!("{REDIS_PREFIX}INSTANCE_{}", instance.instance.as_str());
                 println!("Found path {}", path);
                 return connection.get(path).ok();
             } else {
