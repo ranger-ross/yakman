@@ -4,7 +4,6 @@ mod config_man_state;
 mod data_types;
 mod utils;
 
-use adapters::redis_adapter::RedisStorageAdapter;
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
 use rocket::{serde::json::Json, State};
