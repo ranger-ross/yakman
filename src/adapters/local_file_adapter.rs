@@ -12,6 +12,13 @@ pub struct LocalFileStorageAdapter {
     pub path: String,
 }
 
+
+pub fn create_local_file_adapter() -> impl ConfigStorageAdapter {
+    return LocalFileStorageAdapter {
+        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
+    };
+}
+
 const CONFIG_MAN_DIR: &str = ".configman"; // TODO: clean up
 const DATA_DIR: &str = "config-instances"; // TODO: clean up
 
@@ -32,6 +39,11 @@ struct InstanceJson {
 
 #[async_trait]
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
+
+    async fn initialize_adapter(&mut self) {
+        println!("init");
+    }
+
     async fn get_configs(&self) -> Vec<Config> {
         let path = format!("{}/{CONFIG_MAN_DIR}/configs.json", self.path.as_str());
         let content = fs::read_to_string(path).unwrap();

@@ -30,10 +30,25 @@ pub struct RedisStorageAdapter {
     pub password: String,
 }
 
+pub fn create_redis_adapter() -> impl ConfigStorageAdapter {
+    // TODO: use env vars
+    return RedisStorageAdapter {
+        host: "127.0.0.1".to_string(),
+        port: 6379,
+        username: "".to_string(),
+        password: "".to_string(),
+    };
+}
+
 const REDIS_PREFIX: &str = "CONFIG_MAN_";
 
 #[async_trait]
 impl ConfigStorageAdapter for RedisStorageAdapter {
+
+    async fn initialize_adapter(&mut self) {
+        println!("init");
+    }
+
     async fn get_configs(&self) -> Vec<Config> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 

@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use sqlx::{postgres::PgPoolOptions, query_as, FromRow, Pool, Postgres};
 
 use crate::{
@@ -12,6 +10,18 @@ pub struct PostgresAdapter {
     pub port: i32,
     pub username: String,
     pub password: String,
+    pub pool: Option<Pool<Postgres>>, // TODO: make internal only?
+}
+
+pub fn create_postgres_adapter() -> impl ConfigStorageAdapter {
+    // TODO: get data from env vars
+    return PostgresAdapter {
+        host: "localhost".to_string(),
+        port: 5432,
+        username: "postgres".to_string(),
+        password: "password".to_string(),
+        pool: None,
+    };
 }
 
 #[derive(Debug, FromRow)]
@@ -56,11 +66,20 @@ const SELECT_LABEL_OPTIONS_QUERY: &str =
 
 #[async_trait]
 impl ConfigStorageAdapter for PostgresAdapter {
+    async fn initialize_adapter(&mut self) {
+        println!("Initializing Postgres connection pool...");
+
+        let pool = self.create_connnection_pool().await;
+        self.pool = Some(pool);
+
+        println!("Created Postgres connection pool successfully");
+    }
+
     async fn get_configs(&self) -> Vec<Config> {
         let pool = self.get_connection().await;
 
         let select_query = query_as::<Postgres, PostgresConfig>(SELECT_CONFIGS_QUERY);
-        let configs = select_query.fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+        let configs = select_query.fetch_all(pool).await.unwrap(); // TODO: safe unwrap
 
         return configs
             .iter()
@@ -75,7 +94,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
         let pool = self.get_connection().await;
 
         let select_labels_query = query_as::<Postgres, PostgresLabelType>(SELECT_LABELS_QUERY);
-        let labels = select_labels_query.fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+        let labels = select_labels_query.fetch_all(pool).await.unwrap(); // TODO: safe unwrap
 
         if labels.len() == 0 {
             return vec![];
@@ -85,7 +104,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
 
         for label in labels {
             let query = query_as::<Postgres, PostgresLabelOption>(SELECT_LABEL_OPTIONS_QUERY);
-            let option = query.bind(&label.name).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+            let option = query.bind(&label.name).fetch_all(pool).await.unwrap(); // TODO: safe unwrap
 
             label_types.push(LabelType {
                 name: label.name.to_owned(),
@@ -102,7 +121,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
 
         let q = "SELECT config_name, instance_id FROM config_man_instance WHERE config_name = $1";
         let query = query_as::<Postgres, PostgresConfigInstance>(q);
-        let data = query.bind(config_name).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+        let data = query.bind(config_name).fetch_all(pool).await.unwrap(); // TODO: safe unwrap
 
         println!("{:?}", data);
 
@@ -113,7 +132,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
             let query = query_as::<Postgres, PostgresConfigInstanceLabel>(q);
             let labels = query
                 .bind(instance.instance_id)
-                .fetch_all(&pool)
+                .fetch_all(pool)
                 .await
                 .unwrap(); // TODO: safe unwrap
 
@@ -154,7 +173,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
                 let query = query_as::<Postgres, PostgresConfigInstanceData>(q);
                 let data = query
                     .bind(instance.instance.parse::<i32>().unwrap())
-                    .fetch_one(&pool)
+                    .fetch_one(pool)
                     .await
                     .unwrap(); // TODO: safe unwrap
 
@@ -170,16 +189,16 @@ impl ConfigStorageAdapter for PostgresAdapter {
 }
 
 impl PostgresAdapter {
-    async fn get_connection(&self) -> Pool<Postgres> {
+    async fn get_connection(&self) -> &Pool<Postgres> {
+        return &self.pool.as_ref().unwrap();
+    }
+
+    async fn create_connnection_pool(&self) -> Pool<Postgres> {
         let pool = PgPoolOptions::new()
             .max_connections(5)
-            .connect("postgres://postgres:password@localhost")
+            .connect("postgres://postgres:password@localhost") // TODO: use env vars
             .await;
 
         return pool.unwrap(); // TODO: handle this better
-    }
-
-    async fn create_connnection_pool(self) {
-        todo!()
     }
 }

@@ -8,6 +8,9 @@ pub mod local_file_adapter;
 
 #[async_trait]
 pub trait ConfigStorageAdapter: Sync + Send {
+
+    async fn initialize_adapter(&mut self);
+
     async fn get_configs(&self) -> Vec<Config>;
 
     async fn get_labels(&self) -> Vec<LabelType>;

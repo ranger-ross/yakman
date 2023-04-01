@@ -4,14 +4,18 @@ mod config_man_state;
 mod data_types;
 mod utils;
 
-use adapters::local_file_adapter::LocalFileStorageAdapter;
-use adapters::postgres_adapter::PostgresAdapter;
 use adapters::redis_adapter::RedisStorageAdapter;
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
 use rocket::{serde::json::Json, State};
 use std::vec;
 use utils::raw_query::RawQuery;
+
+use crate::adapters::{
+    local_file_adapter::create_local_file_adapter, 
+    postgres_adapter::create_postgres_adapter, 
+    redis_adapter::create_redis_adapter,
+};
 
 #[macro_use]
 extern crate rocket;
@@ -32,9 +36,11 @@ async fn rocket() -> _ {
     println!("Settings: {:?}", settings);
 
     // Handle multi adapters
-    // let adapter = get_postgres_adapter();
-    let adapter = get_local_file_adapter();
-    // let adapter = get_redis_adapter();
+    // let mut adapter = create_postgres_adapter();
+    // let mut adapter = create_local_file_adapter();
+    let mut adapter = create_redis_adapter();
+
+    adapter.initialize_adapter().await;
 
     rocket::build()
         .manage(StateManager {
@@ -85,25 +91,3 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
     return adapter.get_config_data(config_name, labels).await;
 }
 
-fn get_local_file_adapter() -> impl ConfigStorageAdapter {
-    return LocalFileStorageAdapter {
-        path: "/home/ross/projects/config-manager/testing-directory".to_string(),
-    };
-}
-
-fn get_redis_adapter() -> impl ConfigStorageAdapter {
-    return RedisStorageAdapter {
-        host: "127.0.0.1".to_string(),
-        port: 6379,
-        username: "".to_string(),
-        password: "".to_string(),
-    };
-}
-fn get_postgres_adapter() -> impl ConfigStorageAdapter {
-    return PostgresAdapter {
-        host: "localhost".to_string(),
-        port: 5432,
-        username: "postgres".to_string(),
-        password: "password".to_string(),
-    };
-}
