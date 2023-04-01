@@ -33,9 +33,15 @@ struct PostgresLabelOption {
 
 #[derive(Debug, FromRow)]
 struct PostgresConfigInstance {
-    instance_id: String,
+    instance_id: i32,
     config_name: String,
-    labels: String, // Comma delimited
+}
+
+#[derive(Debug, FromRow)]
+struct PostgresConfigInstanceLabel {
+    instance_id: i32,
+    label_name: String,
+    option: String,
 }
 
 const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_CONFIG";
@@ -89,27 +95,41 @@ impl ConfigStorageAdapter for PostgresAdapter {
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
         let pool = self.get_connection().await;
 
-        let q = "
-                SELECT 
-                    i.config_name, 
-                    i.instance_id, 
-                    STRING_AGG(l.option, ', ') AS options
-                FROM 
-                    config_man_instance i 
-                    LEFT JOIN config_man_instance_label l 
-                        ON i.instance_id = l.instance_id
-                WHERE
-                    config_name = $1
-                GROUP BY 
-                    i.config_name, 
-                    i.instance_id;
-        ";
+        let q = "SELECT config_name, instance_id FROM config_man_instance WHERE config_name = $1";
         let query = query_as::<Postgres, PostgresConfigInstance>(q);
         let data = query.bind(config_name).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
 
         println!("{:?}", data);
 
-        todo!()
+        let mut instances: Vec<ConfigInstance> = vec![];
+
+        for instance in data {
+            let q = "SELECT instance_id, label_name, option FROM CONFIG_MAN_INSTANCE_LABEL WHERE instance_id = $1";
+            let query = query_as::<Postgres, PostgresConfigInstanceLabel>(q);
+            let labels = query
+                .bind(instance.instance_id)
+                .fetch_all(&pool)
+                .await
+                .unwrap(); // TODO: safe unwrap
+
+            println!("{:?}", labels);
+
+            let labels = labels
+                .iter()
+                .map(|lbl| Label {
+                    label_type: lbl.label_name.to_owned(),
+                    value: lbl.option.to_owned(),
+                })
+                .collect();
+
+            instances.push(ConfigInstance {
+                config_name: instance.config_name,
+                instance: instance.instance_id.to_string(),
+                labels: labels,
+            });
+        }
+
+        return Some(instances);
     }
 
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
