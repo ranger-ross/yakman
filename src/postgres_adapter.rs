@@ -86,7 +86,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
         return label_types;
     }
 
-    async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
+    async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
         let pool = self.get_connection().await;
 
         let q = "
@@ -105,14 +105,14 @@ impl ConfigStorageAdapter for PostgresAdapter {
                     i.instance_id;
         ";
         let query = query_as::<Postgres, PostgresConfigInstance>(q);
-        let data = query.bind(id).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+        let data = query.bind(config_name).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
 
         println!("{:?}", data);
 
         todo!()
     }
 
-    async fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
+    async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         todo!()
     }
 }

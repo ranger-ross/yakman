@@ -8,7 +8,7 @@ pub trait ConfigStorageAdapter: Sync + Send {
 
     async fn get_labels(&self) -> Vec<LabelType>;
 
-    async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>>;
+    async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>>;
 
-    async fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String>;
+    async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String>;
 }

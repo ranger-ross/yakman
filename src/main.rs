@@ -38,8 +38,8 @@ async fn rocket() -> _ {
 
     // Handle multi adapters
     // let adapter = get_postgres_adapter();
-    // let adapter = get_local_file_adapter();
-    let adapter = get_redis_adapter();
+    let adapter = get_local_file_adapter();
+    // let adapter = get_redis_adapter();
 
     rocket::build()
         .manage(StateManager {
@@ -69,8 +69,8 @@ async fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<Con
     };
 }
 
-#[get("/data/<id>")]
-async fn data(id: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
+#[get("/data/<config_name>")]
+async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
     let adapter = state.get_adapter();
 
     let labels: Vec<Label> = query
@@ -82,9 +82,9 @@ async fn data(id: &str, query: RawQuery, state: &State<StateManager>) -> Option<
         })
         .collect();
 
-    println!("Search for config {} with labels: {:?}", id, labels);
+    println!("Search for config {} with labels: {:?}", config_name, labels);
 
-    return adapter.get_config_data(id, labels).await;
+    return adapter.get_config_data(config_name, labels).await;
 }
 
 fn get_local_file_adapter() -> impl ConfigStorageAdapter {

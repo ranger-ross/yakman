@@ -56,11 +56,11 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return v.labels;
     }
 
-    async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
+    async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
         let mut connection = open_connection(&self).expect("Failed to connect to redis");
 
         let instance: Option<String> = connection
-            .get(format!("{REDIS_PREFIX}INSTANCE_META_{id}"))
+            .get(format!("{REDIS_PREFIX}INSTANCE_META_{config_name}"))
             .ok();
 
         if let Some(instance) = instance {
@@ -70,8 +70,8 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return None;
     }
 
-    async fn get_config_data(&self, id: &str, labels: Vec<Label>) -> Option<String> {
-        if let Some(instances) = self.get_config_instance_metadata(id).await {
+    async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
+        if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             let mut selected_instance: Option<ConfigInstance> = None;
 
             for instance in instances {
