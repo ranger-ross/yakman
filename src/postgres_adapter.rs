@@ -31,6 +31,13 @@ struct PostgresLabelOption {
     option: String,
 }
 
+#[derive(Debug, FromRow)]
+struct PostgresConfigInstance {
+    instance_id: String,
+    config_name: String,
+    labels: String, // Comma delimited
+}
+
 const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_CONFIG";
 const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_LABEL";
 const SELECT_LABEL_OPTIONS_QUERY: &str =
@@ -80,6 +87,28 @@ impl ConfigStorageAdapter for PostgresAdapter {
     }
 
     async fn get_config_instance_metadata(&self, id: &str) -> Option<Vec<ConfigInstance>> {
+        let pool = self.get_connection().await;
+
+        let q = "
+                SELECT 
+                    i.config_name, 
+                    i.instance_id, 
+                    STRING_AGG(l.option, ', ') AS options
+                FROM 
+                    config_man_instance i 
+                    LEFT JOIN config_man_instance_label l 
+                        ON i.instance_id = l.instance_id
+                WHERE
+                    config_name = $1
+                GROUP BY 
+                    i.config_name, 
+                    i.instance_id;
+        ";
+        let query = query_as::<Postgres, PostgresConfigInstance>(q);
+        let data = query.bind(id).fetch_all(&pool).await.unwrap(); // TODO: safe unwrap
+
+        println!("{:?}", data);
+
         todo!()
     }
 

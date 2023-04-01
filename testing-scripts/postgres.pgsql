@@ -50,5 +50,30 @@ insert into config_man_label_option (name, option) values ('label2', 'op1');
 insert into config_man_label_option (name, option) values ('label2', 'op2');
 insert into config_man_label_option (name, option) values ('label2', 'op3');
 
+insert into CONFIG_MAN_INSTANCE (instance_id, config_name, data) values (1, 'config1', 'this is my data');
+insert into CONFIG_MAN_INSTANCE (instance_id, config_name, data) values (2, 'config1', 'this is my data with labels');
+
+insert into CONFIG_MAN_INSTANCE_LABEL (instance_id, label_name, option) values (2, 'label1', 'op100');
+insert into CONFIG_MAN_INSTANCE_LABEL (instance_id, label_name, option) values (2, 'label2', 'op2');
+
+
+-- Testing queries
 
 SELECT name, option FROM CONFIG_MAN_LABEL_OPTION where name = 'label1';
+
+select * from CONFIG_MAN_INSTANCE;
+
+SELECT 
+  i.config_name, 
+  i.instance_id, 
+  STRING_AGG(l.option, ', ') AS options
+FROM 
+  config_man_instance i 
+  LEFT JOIN config_man_instance_label l 
+    ON i.instance_id = l.instance_id
+WHERE
+  config_name = 'config1'
+GROUP BY 
+  i.config_name, 
+  i.instance_id;
+

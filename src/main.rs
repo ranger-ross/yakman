@@ -60,7 +60,7 @@ async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
     return Json(adapter.get_labels().await);
 }
 
-#[get("/instances/<id>")] // TODO: add {id}
+#[get("/instances/<id>")]
 async fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<ConfigInstance>>> {
     let adapter = state.get_adapter();
     return match adapter.get_config_instance_metadata(id).await {
