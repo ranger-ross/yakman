@@ -8,12 +8,11 @@ use adapters::redis_adapter::RedisStorageAdapter;
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
 use rocket::{serde::json::Json, State};
-use std::vec;
+use std::{env, vec};
 use utils::raw_query::RawQuery;
 
 use crate::adapters::{
-    local_file_adapter::create_local_file_adapter, 
-    postgres_adapter::create_postgres_adapter, 
+    local_file_adapter::create_local_file_adapter, postgres_adapter::create_postgres_adapter,
     redis_adapter::create_redis_adapter,
 };
 
@@ -35,17 +34,12 @@ async fn rocket() -> _ {
     let settings = config_man::load_config_man_settings();
     println!("Settings: {:?}", settings);
 
-    // Handle multi adapters
-    // let mut adapter = create_postgres_adapter();
-    // let mut adapter = create_local_file_adapter();
-    let mut adapter = create_redis_adapter();
+    let mut adapter = create_adapter();
 
     adapter.initialize_adapter().await;
 
     rocket::build()
-        .manage(StateManager {
-            adapter: Box::new(adapter),
-        })
+        .manage(StateManager { adapter: adapter })
         .mount("/", routes![configs, labels, instances, data])
 }
 
@@ -91,3 +85,13 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
     return adapter.get_config_data(config_name, labels).await;
 }
 
+fn create_adapter() -> Box<dyn ConfigStorageAdapter> {
+    let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
+
+    return match adapter_name.as_str() {
+        "REDIS" => Box::new(create_redis_adapter()),
+        "POSTGRES" => Box::new(create_postgres_adapter()),
+        "LOCAL_FILE_SYSTEM" => Box::new(create_local_file_adapter()),
+        _ => panic!("Unsupported adapter {adapter_name}"),
+    };
+}
