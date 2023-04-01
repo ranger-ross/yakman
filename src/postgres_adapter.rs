@@ -44,6 +44,11 @@ struct PostgresConfigInstanceLabel {
     option: String,
 }
 
+#[derive(Debug, FromRow)]
+struct PostgresConfigInstanceData {
+    data: String,
+}
+
 const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_CONFIG";
 const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_LABEL";
 const SELECT_LABEL_OPTIONS_QUERY: &str =
@@ -112,8 +117,6 @@ impl ConfigStorageAdapter for PostgresAdapter {
                 .await
                 .unwrap(); // TODO: safe unwrap
 
-            println!("{:?}", labels);
-
             let labels = labels
                 .iter()
                 .map(|lbl| Label {
@@ -133,7 +136,36 @@ impl ConfigStorageAdapter for PostgresAdapter {
     }
 
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
-        todo!()
+        if let Some(instances) = self.get_config_instance_metadata(config_name).await {
+            let mut selected_instance: Option<ConfigInstance> = None;
+
+            for instance in instances {
+                if instance.labels == labels {
+                    // TODO: Create better comparison logic
+                    selected_instance = Some(instance);
+                    break;
+                }
+            }
+
+            if let Some(instance) = selected_instance {
+                let pool = self.get_connection().await;
+
+                let q = "SELECT data FROM CONFIG_MAN_INSTANCE WHERE instance_id = $1";
+                let query = query_as::<Postgres, PostgresConfigInstanceData>(q);
+                let data = query
+                    .bind(instance.instance.parse::<i32>().unwrap())
+                    .fetch_one(&pool)
+                    .await
+                    .unwrap(); // TODO: safe unwrap
+
+                return Some(data.data);
+            } else {
+                println!("No selected instance found");
+                return None;
+            }
+        }
+
+        return None;
     }
 }
 
