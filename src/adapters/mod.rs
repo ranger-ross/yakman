@@ -1,5 +1,9 @@
 use crate::data_types::{Config, ConfigInstance, Label, LabelType};
 
+pub mod redis_adapter;
+pub mod postgres_adapter;
+pub mod local_file_adapter;
+
 // The base storage adapter to be able to load config from external storage
 
 #[async_trait]

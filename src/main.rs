@@ -2,18 +2,14 @@ mod adapters;
 mod config_man;
 mod config_man_state;
 mod data_types;
-mod local_file_adapter;
-mod postgres_adapter;
 mod raw_query;
-mod redis_adapter;
 
 use adapters::ConfigStorageAdapter;
 use data_types::{Config, ConfigInstance, Label, LabelType};
-use local_file_adapter::LocalFileStorageAdapter;
-use postgres_adapter::PostgresAdapter;
-use redis_adapter::RedisStorageAdapter;
-use rocket::{serde::json::Json, tokio, State};
-use sqlx::Postgres;
+use adapters::local_file_adapter::LocalFileStorageAdapter;
+use adapters::postgres_adapter::PostgresAdapter;
+use adapters::redis_adapter::RedisStorageAdapter;
+use rocket::{serde::json::Json, State};
 use std::vec;
 
 use raw_query::RawQuery;
@@ -33,12 +29,13 @@ impl StateManager {
 
 #[launch]
 async fn rocket() -> _ {
+
     let settings = config_man::load_config_man_settings();
     println!("Settings: {:?}", settings);
 
     // Handle multi adapters
-    let adapter = get_postgres_adapter();
-    // let adapter = get_local_file_adapter();
+    // let adapter = get_postgres_adapter();
+    let adapter = get_local_file_adapter();
     // let adapter = get_redis_adapter();
 
     rocket::build()
