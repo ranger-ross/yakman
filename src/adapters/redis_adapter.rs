@@ -50,7 +50,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     async fn get_configs(&self) -> Vec<Config> {
-        let mut connection = open_connection(&self).expect("Failed to connect to redis");
+        let mut connection = self.open_connection().expect("Failed to connect to redis");
 
         let configs: String = connection
             .get(format!("{REDIS_PREFIX}CONFIGS"))
@@ -61,7 +61,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     async fn get_labels(&self) -> Vec<LabelType> {
-        let mut connection = open_connection(&self).expect("Failed to connect to redis");
+        let mut connection = self.open_connection().expect("Failed to connect to redis");
 
         let configs: String = connection
             .get(format!("{REDIS_PREFIX}LABELS"))
@@ -72,7 +72,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
-        let mut connection = open_connection(&self).expect("Failed to connect to redis");
+        let mut connection = self.open_connection().expect("Failed to connect to redis");
 
         let instance: Option<String> = connection
             .get(format!("{REDIS_PREFIX}INSTANCE_META_{config_name}"))
@@ -98,7 +98,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
             }
 
             if let Some(instance) = selected_instance {
-                let mut connection = open_connection(&self).expect("Failed to connect to redis");
+                let mut connection = self.open_connection().expect("Failed to connect to redis");
 
                 let path = format!("{REDIS_PREFIX}INSTANCE_{}", instance.instance.as_str());
                 println!("Found path {}", path);
@@ -112,10 +112,12 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 }
 
-fn open_connection(adapter: &RedisStorageAdapter) -> RedisResult<Connection> {
-    // TODO: Handle Auth
-    let connection_url: String =
-        "redis://".to_string() + adapter.host.as_str() + ":" + adapter.port.to_string().as_str();
-    let client = redis::Client::open(connection_url)?;
-    return client.get_connection();
+impl RedisStorageAdapter {
+    fn open_connection(&self) -> RedisResult<Connection> {
+        // TODO: Handle Auth
+        let connection_url: String =
+            "redis://".to_string() + self.host.as_str() + ":" + self.port.to_string().as_str();
+        let client = redis::Client::open(connection_url)?;
+        return client.get_connection();
+    }
 }
