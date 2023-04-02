@@ -245,4 +245,68 @@ mod tests {
         assert_eq!("service", result.labels[1].label_type);
         assert_eq!("api", result.labels[1].value);
     }
+
+    #[test]
+    fn test_no_instance_match() {
+        let instances = vec![
+            ConfigInstance {
+                config_name: "instance1_config".to_owned(),
+                instance: "instance1".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "env".to_owned(),
+                        value: "dev".to_owned(),
+                    },
+                    Label {
+                        label_type: "app".to_owned(),
+                        value: "frontend".to_owned(),
+                    },
+                ],
+            },
+            ConfigInstance {
+                config_name: "instance2_config".to_owned(),
+                instance: "instance2".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "env".to_owned(),
+                        value: "prod".to_owned(),
+                    },
+                    Label {
+                        label_type: "app".to_owned(),
+                        value: "backend".to_owned(),
+                    },
+                ],
+            },
+        ];
+    
+        let labels = vec![
+            Label {
+                label_type: "env".to_owned(),
+                value: "staging".to_owned(),
+            },
+            Label {
+                label_type: "app".to_owned(),
+                value: "frontend".to_owned(),
+            },
+        ];
+    
+        let label_types = vec![
+            LabelType {
+                name: "env".to_owned(),
+                priority: 1,
+                description: "".to_owned(),
+                options: vec![],
+            },
+            LabelType {
+                name: "app".to_owned(),
+                priority: 2,
+                description: "".to_owned(),
+                options: vec![],
+            },
+        ];
+    
+        let selected_instance = select_instance(instances, labels, label_types);
+        assert!(selected_instance.is_none());
+    }
+
 }
