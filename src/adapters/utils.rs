@@ -58,7 +58,7 @@ pub fn select_instance(
             matched_labels.sort_by(|a, b| order_by_priority(&a, &b, &label_type_map));
             matched_instance_labels.sort_by(|a, b| order_by_priority(&a, &b, &label_type_map));
 
-            for i in 1..matched_labels.len() {
+            for i in 0..matched_labels.len() {
                 let lbl = label_type_map
                     .get(&matched_labels.get(i).unwrap().label_type)
                     .unwrap(); // todo: handle
