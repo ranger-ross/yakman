@@ -1,4 +1,4 @@
-use std::{fs, collections::HashMap};
+use std::{collections::HashMap, fs};
 
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,6 @@ use crate::{
 pub struct LocalFileStorageAdapter {
     pub path: String,
 }
-
 
 pub fn create_local_file_adapter() -> impl ConfigStorageAdapter {
     return LocalFileStorageAdapter {
@@ -39,7 +38,6 @@ struct InstanceJson {
 
 #[async_trait]
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
-
     async fn initialize_adapter(&mut self) {
         println!("init");
     }
@@ -60,7 +58,8 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
         let base_path = self.path.as_str();
-        let label_file = format!("{base_path}/{CONFIG_MAN_DIR}/instance-metadata/{config_name}.json");
+        let label_file =
+            format!("{base_path}/{CONFIG_MAN_DIR}/instance-metadata/{config_name}.json");
         if let Some(content) = fs::read_to_string(label_file).ok() {
             let v: InstanceJson = serde_json::from_str(&content).unwrap();
             return Some(v.instances);
@@ -95,9 +94,19 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 }
 
 /// labels = selected labels, label_types = all label types avaiable, instances = all instances to select from
-fn select_instance(instances: Vec<ConfigInstance>, labels: Vec<Label>, label_types: Vec<LabelType>) -> Option<ConfigInstance> {
-    let label_type_map: HashMap<String, &LabelType> = label_types.iter().map(|label| (label.name.clone(), label.clone())).collect();
-    let selected_label_type_map: HashMap<String, &Label> = labels.iter().map(|label| (label.label_type.clone(), label.clone())).collect();
+fn select_instance(
+    instances: Vec<ConfigInstance>,
+    labels: Vec<Label>,
+    label_types: Vec<LabelType>,
+) -> Option<ConfigInstance> {
+    let label_type_map: HashMap<String, &LabelType> = label_types
+        .iter()
+        .map(|label| (label.name.clone(), label.clone()))
+        .collect();
+    let selected_label_type_map: HashMap<String, &Label> = labels
+        .iter()
+        .map(|label| (label.label_type.clone(), label.clone()))
+        .collect();
     let label_count = labels.len();
 
     let mut matched_instance: Option<ConfigInstance> = None;
@@ -118,8 +127,10 @@ fn select_instance(instances: Vec<ConfigInstance>, labels: Vec<Label>, label_typ
                     if selected_label.value == label.value {
                         matched_labels.push(selected_label.to_owned());
                     }
-                },
-                _ => {continue;}
+                }
+                _ => {
+                    continue;
+                }
             }
         }
 
@@ -128,27 +139,35 @@ fn select_instance(instances: Vec<ConfigInstance>, labels: Vec<Label>, label_typ
             continue;
         }
 
-
         if matched_labels.len() > matched_instance_labels.len() {
             matched_instance = Some(instance);
             matched_instance_labels = matched_labels;
         } else {
             // IF THE MATCHING LABELS ARE THE SAME, CHECK IF THE LABELS ARE HIGHER PRIORITY
-            // TODO: implment
-            // let sorted = matched_labels.sort(); // by priority
-            // let sorted_inst = matched_instance_labels.sort(); // by priority
+            matched_labels.sort_by(|a, b| {
+                let a_type = label_type_map.get(&a.label_type).unwrap(); // todo: handle
+                let b_type = label_type_map.get(&b.label_type).unwrap(); // todo: handle
+                return a_type.priority.cmp(&b_type.priority);
+            });
+            matched_instance_labels.sort_by(|a, b| {
+                let a_type = label_type_map.get(&a.label_type).unwrap(); // todo: handle
+                let b_type = label_type_map.get(&b.label_type).unwrap(); // todo: handle
+                return a_type.priority.cmp(&b_type.priority);
+            });
 
-            // for index in sorted {
-            //     if sorted[index].priority > sorted_inst[index].priority {
-            //         matched_instance = instance;
-            //         matched_instance_labels = matched_labels;
-            //         break;
-            //     }
-            // }
+            for i in 1..matched_labels.len() {
 
-            matched_instance = Some(instance);    
+                let lbl = label_type_map.get(&matched_labels.get(i).unwrap().label_type).unwrap(); // todo: handle
+                let matched_lbl = label_type_map.get(&matched_instance_labels.get(i).unwrap().label_type).unwrap(); // todo: handle
+
+                if lbl.priority > matched_lbl.priority {
+                    matched_instance = Some(instance);
+                    matched_instance_labels = matched_labels;
+                    break;
+                }
+                
+            }
         }
-
     }
 
     return matched_instance;
