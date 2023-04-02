@@ -2,11 +2,7 @@ use std::{cmp::Ordering, collections::HashMap};
 
 use crate::data_types::{ConfigInstance, Label, LabelType};
 
-struct LabelHolder {
-    label_type: LabelType,
-    label: Label,
-}
-
+/// Common logic to select a config instance from a selected labels
 /// labels = selected labels, label_types = all label types avaiable, instances = all instances to select from
 pub fn select_instance(
     instances: Vec<ConfigInstance>,
@@ -28,11 +24,12 @@ pub fn select_instance(
 
     for instance in instances {
         if instance.labels == labels {
+            // All labels are a perfect match, just return early
             return Some(instance);
         }
 
+        // Find all matching labels for this instance
         let mut matched_labels: Vec<&Label> = vec![];
-
         for label in &instance.labels {
             let label_type = label_type_map.get(&label.label_type).unwrap(); // todo: handle
             let selected_label = selected_label_type_map.get(&label_type.name);
@@ -48,8 +45,8 @@ pub fn select_instance(
             }
         }
 
+        // If the current instance is missing a label, it is not eligible, so continue to the next instance
         if label_count > matched_labels.len() {
-            // missing label, cannot select
             continue;
         }
 
@@ -94,5 +91,3 @@ fn order_by_priority(
     }
     return Ordering::Less;
 }
-
-fn select_instance_new(label_types: Vec<LabelType>) {}
