@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, collections::HashMap};
 
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
@@ -92,4 +92,43 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         }
         return None;
     }
+}
+
+/// labels = selected labels, label_types = all label types avaiable, instances = all instances to select from
+fn select_instance(instances: Vec<ConfigInstance>, labels: Vec<Label>, label_types: Vec<LabelType>) -> Option<ConfigInstance> {
+    let label_type_map: HashMap<String, &LabelType> = label_types.iter().map(|label| (label.name.clone(), label.clone())).collect();
+    let selected_label_type_map: HashMap<String, &Label> = labels.iter().map(|label| (label.label_type.clone(), label.clone())).collect();
+    let label_count = labels.len();
+
+    let mut selected_instance: Option<ConfigInstance> = None;
+
+    for instance in instances {
+        if instance.labels == labels {
+            return Some(instance);
+        }
+
+        let mut matched_labels: Vec<&Label> = vec![];
+
+        for label in &instance.labels {
+            let label_type = label_type_map.get(&label.label_type).unwrap(); // todo: handle
+            let selected_label = selected_label_type_map.get(&label_type.name);
+            match selected_label {
+                Some(selected_label) => {
+                    if selected_label.value == label.value {
+                        matched_labels.push(selected_label.to_owned());
+                    }
+                },
+                _ => {continue;}
+            }
+        }
+
+        if label_count > matched_labels.len() {
+            // missing label, cannot select
+            continue;
+        }
+
+        selected_instance = Some(instance);
+    }
+
+    return selected_instance;
 }

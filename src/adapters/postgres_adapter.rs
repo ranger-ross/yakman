@@ -109,6 +109,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
             label_types.push(LabelType {
                 name: label.name.to_owned(),
                 description: label.description,
+                priority: 1, // TODO: handle
                 options: option.iter().map(|option| option.option.clone()).collect(),
             });
         }
