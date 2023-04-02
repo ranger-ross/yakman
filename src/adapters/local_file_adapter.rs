@@ -100,7 +100,8 @@ fn select_instance(instances: Vec<ConfigInstance>, labels: Vec<Label>, label_typ
     let selected_label_type_map: HashMap<String, &Label> = labels.iter().map(|label| (label.label_type.clone(), label.clone())).collect();
     let label_count = labels.len();
 
-    let mut selected_instance: Option<ConfigInstance> = None;
+    let mut matched_instance: Option<ConfigInstance> = None;
+    let mut matched_instance_labels: Vec<&Label> = vec![];
 
     for instance in instances {
         if instance.labels == labels {
@@ -127,8 +128,28 @@ fn select_instance(instances: Vec<ConfigInstance>, labels: Vec<Label>, label_typ
             continue;
         }
 
-        selected_instance = Some(instance);
+
+        if matched_labels.len() > matched_instance_labels.len() {
+            matched_instance = Some(instance);
+            matched_instance_labels = matched_labels;
+        } else {
+            // IF THE MATCHING LABELS ARE THE SAME, CHECK IF THE LABELS ARE HIGHER PRIORITY
+            // TODO: implment
+            // let sorted = matched_labels.sort(); // by priority
+            // let sorted_inst = matched_instance_labels.sort(); // by priority
+
+            // for index in sorted {
+            //     if sorted[index].priority > sorted_inst[index].priority {
+            //         matched_instance = instance;
+            //         matched_instance_labels = matched_labels;
+            //         break;
+            //     }
+            // }
+
+            matched_instance = Some(instance);    
+        }
+
     }
 
-    return selected_instance;
+    return matched_instance;
 }
