@@ -55,8 +55,8 @@ pub fn select_instance(
             matched_instance_labels = matched_labels;
         } else {
             // IF THE MATCHING LABELS ARE THE SAME, CHECK IF THE LABELS ARE HIGHER PRIORITY
-            matched_labels.sort_by(|a, b| order_by_priority(&a, &b, &label_type_map));
-            matched_instance_labels.sort_by(|a, b| order_by_priority(&a, &b, &label_type_map));
+            matched_labels.sort_by(|a, b| order_by_priority(a, b, &label_type_map));
+            matched_instance_labels.sort_by(|a, b| order_by_priority(a, b, &label_type_map));
 
             for i in 0..matched_labels.len() {
                 let lbl = label_type_map
@@ -67,6 +67,7 @@ pub fn select_instance(
                     .unwrap(); // todo: handle
 
                 if lbl.priority > matched_lbl.priority {
+                    println!("Found better match");
                     matched_instance = Some(instance);
                     matched_instance_labels = matched_labels;
                     break;
@@ -90,4 +91,158 @@ fn order_by_priority(
         return Ordering::Greater;
     }
     return Ordering::Less;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_select_instance_exact_match() {
+        let instances = vec![
+            ConfigInstance {
+                config_name: "config1".to_owned(),
+                instance: "instance1".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "environment".to_owned(),
+                        value: "dev".to_owned(),
+                    },
+                    Label {
+                        label_type: "service".to_owned(),
+                        value: "api".to_owned(),
+                    },
+                ],
+            },
+            ConfigInstance {
+                config_name: "config1".to_owned(),
+                instance: "instance2".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "environment".to_owned(),
+                        value: "prod".to_owned(),
+                    },
+                    Label {
+                        label_type: "service".to_owned(),
+                        value: "api".to_owned(),
+                    },
+                ],
+            },
+        ];
+        let labels = vec![
+            Label {
+                label_type: "environment".to_owned(),
+                value: "dev".to_owned(),
+            },
+            Label {
+                label_type: "service".to_owned(),
+                value: "api".to_owned(),
+            },
+        ];
+        let label_types = vec![
+            LabelType {
+                name: "environment".to_owned(),
+                description: "".to_owned(),
+                priority: 1,
+                options: vec!["dev".to_owned(), "prod".to_owned()],
+            },
+            LabelType {
+                name: "service".to_owned(),
+                description: "".to_owned(),
+                priority: 2,
+                options: vec!["api".to_owned(), "web".to_owned()],
+            },
+        ];
+
+        let result = select_instance(instances, labels, label_types);
+
+        assert!(result.is_some());
+        let result = result.unwrap();
+
+        assert_eq!("config1", result.config_name);
+        assert_eq!("instance1", result.instance);
+        assert_eq!(2, result.labels.len());
+        assert_eq!("environment", result.labels[0].label_type);
+        assert_eq!("dev", result.labels[0].value);
+        assert_eq!("service", result.labels[1].label_type);
+        assert_eq!("api", result.labels[1].value);
+    }
+
+    #[test]
+    fn test_select_instance_partial_match() {
+        let instances = vec![
+            ConfigInstance {
+                config_name: "config1".to_owned(),
+                instance: "instance1".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "environment".to_owned(),
+                        value: "dev".to_owned(),
+                    },
+                    Label {
+                        label_type: "service".to_owned(),
+                        value: "api".to_owned(),
+                    },
+                ],
+            },
+            ConfigInstance {
+                config_name: "config1".to_owned(),
+                instance: "instance2".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "environment".to_owned(),
+                        value: "prod".to_owned(),
+                    },
+                    Label {
+                        label_type: "service".to_owned(),
+                        value: "api".to_owned(),
+                    },
+                ],
+            },
+            ConfigInstance {
+                config_name: "config1".to_owned(),
+                instance: "instance3".to_owned(),
+                labels: vec![
+                    Label {
+                        label_type: "environment".to_owned(),
+                        value: "prod".to_owned(),
+                    },
+                    Label {
+                        label_type: "service".to_owned(),
+                        value: "web".to_owned(),
+                    },
+                ],
+            },
+        ];
+        let labels = vec![Label {
+            label_type: "service".to_owned(),
+            value: "api".to_owned(),
+        }];
+        let label_types = vec![
+            LabelType {
+                name: "environment".to_owned(),
+                priority: 1,
+                description: "".to_owned(),
+                options: vec!["dev".to_owned(), "prod".to_owned()],
+            },
+            LabelType {
+                name: "service".to_owned(),
+                priority: 2,
+                description: "".to_owned(),
+                options: vec!["api".to_owned(), "web".to_owned()],
+            },
+        ];
+
+        let result = select_instance(instances, labels, label_types);
+
+        assert!(result.is_some());
+        let result = result.unwrap();
+        assert_eq!("config1", result.config_name);
+        assert_eq!("instance1", result.instance);
+        assert_eq!(2, result.labels.len());
+        assert_eq!("environment", result.labels[0].label_type);
+        assert_eq!("dev", result.labels[0].value);
+        assert_eq!("service", result.labels[1].label_type);
+        assert_eq!("api", result.labels[1].value);
+    }
 }
