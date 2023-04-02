@@ -61,10 +61,10 @@ struct PostgresConfigInstanceData {
     data: String,
 }
 
-const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_CONFIG";
-const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM CONFIG_MAN_LABEL";
+const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM YAK_MAN_CONFIG";
+const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM YAK_MAN_LABEL";
 const SELECT_LABEL_OPTIONS_QUERY: &str =
-    "SELECT option FROM CONFIG_MAN_LABEL_OPTION where name = $1";
+    "SELECT option FROM YAK_MAN_LABEL_OPTION where name = $1";
 
 #[async_trait]
 impl ConfigStorageAdapter for PostgresAdapter {
@@ -122,7 +122,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
         let pool = self.get_connection().await;
 
-        let q = "SELECT config_name, instance_id FROM config_man_instance WHERE config_name = $1";
+        let q = "SELECT config_name, instance_id FROM yak_man_instance WHERE config_name = $1";
         let query = query_as::<Postgres, PostgresConfigInstance>(q);
         let data = query.bind(config_name).fetch_all(pool).await.unwrap(); // TODO: safe unwrap
 
@@ -131,7 +131,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
         let mut instances: Vec<ConfigInstance> = vec![];
 
         for instance in data {
-            let q = "SELECT instance_id, label_name, option FROM CONFIG_MAN_INSTANCE_LABEL WHERE instance_id = $1";
+            let q = "SELECT instance_id, label_name, option FROM YAK_MAN_INSTANCE_LABEL WHERE instance_id = $1";
             let query = query_as::<Postgres, PostgresConfigInstanceLabel>(q);
             let labels = query
                 .bind(instance.instance_id)
@@ -165,7 +165,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
             if let Some(instance) = selected_instance {
                 let pool = self.get_connection().await;
 
-                let q = "SELECT data FROM CONFIG_MAN_INSTANCE WHERE instance_id = $1";
+                let q = "SELECT data FROM YAK_MAN_INSTANCE WHERE instance_id = $1";
                 let query = query_as::<Postgres, PostgresConfigInstanceData>(q);
                 let data = query
                     .bind(instance.instance.parse::<i32>().unwrap())

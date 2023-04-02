@@ -29,6 +29,6 @@ pub struct ConfigInstance {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ConfigManSettings {
+pub struct YakManSettings {
     pub version: String,
 }

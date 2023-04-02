@@ -18,7 +18,7 @@ pub fn create_local_file_adapter() -> impl ConfigStorageAdapter {
     };
 }
 
-const CONFIG_MAN_DIR: &str = ".configman"; // TODO: clean up
+const CONFIG_MAN_DIR: &str = ".yakman"; // TODO: clean up
 const DATA_DIR: &str = "config-instances"; // TODO: clean up
 
 #[derive(Debug, Serialize, Deserialize)]

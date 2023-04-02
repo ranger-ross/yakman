@@ -1,6 +1,5 @@
 mod adapters;
-mod config_man;
-mod config_man_state;
+mod yak_man;
 mod data_types;
 mod utils;
 
@@ -30,7 +29,7 @@ impl StateManager {
 
 #[launch]
 async fn rocket() -> _ {
-    let settings = config_man::load_config_man_settings();
+    let settings = yak_man::load_yak_man_settings();
     println!("Settings: {:?}", settings);
 
     let mut adapter = create_adapter();
