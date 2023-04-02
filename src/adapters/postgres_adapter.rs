@@ -5,6 +5,8 @@ use crate::{
     data_types::{Config, ConfigInstance, Label, LabelType},
 };
 
+use super::utils::select_instance;
+
 pub struct PostgresAdapter {
     pub host: String,
     pub port: i32,
@@ -109,6 +111,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
             label_types.push(LabelType {
                 name: label.name.to_owned(),
                 description: label.description,
+                priority: 1, // TODO: handle
                 options: option.iter().map(|option| option.option.clone()).collect(),
             });
         }
@@ -156,15 +159,8 @@ impl ConfigStorageAdapter for PostgresAdapter {
 
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
-            let mut selected_instance: Option<ConfigInstance> = None;
-
-            for instance in instances {
-                if instance.labels == labels {
-                    // TODO: Create better comparison logic
-                    selected_instance = Some(instance);
-                    break;
-                }
-            }
+            let label_types = self.get_labels().await;
+            let selected_instance: Option<ConfigInstance> = select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
                 let pool = self.get_connection().await;

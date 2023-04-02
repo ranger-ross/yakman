@@ -8,6 +8,8 @@ use redis::{Commands, Connection, RedisResult};
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
+use super::utils::select_instance;
+
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigJson {
     configs: Vec<Config>,
@@ -44,7 +46,6 @@ const REDIS_PREFIX: &str = "CONFIG_MAN_";
 
 #[async_trait]
 impl ConfigStorageAdapter for RedisStorageAdapter {
-
     async fn initialize_adapter(&mut self) {
         println!("init");
     }
@@ -87,16 +88,8 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
 
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
-            let mut selected_instance: Option<ConfigInstance> = None;
-
-            for instance in instances {
-                if instance.labels == labels {
-                    // TODO: Create better comparison logic
-                    selected_instance = Some(instance);
-                    break;
-                }
-            }
-
+            let label_types = self.get_labels().await;
+            let selected_instance: Option<ConfigInstance> = select_instance(instances, labels, label_types);
             if let Some(instance) = selected_instance {
                 let mut connection = self.open_connection().expect("Failed to connect to redis");
 
@@ -121,3 +114,4 @@ impl RedisStorageAdapter {
         return client.get_connection();
     }
 }
+
