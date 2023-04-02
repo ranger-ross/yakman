@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{cmp::Ordering, collections::HashMap, fs};
 
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
@@ -70,15 +70,10 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         let base_path = self.path.to_string();
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
-            let mut selected_instance: Option<ConfigInstance> = None;
-
-            for instance in instances {
-                if instance.labels == labels {
-                    // TODO: Create better comparison logic
-                    selected_instance = Some(instance);
-                    break;
-                }
-            }
+            println!("Found {} instances", instances.len());
+            let label_types = self.get_labels().await;
+            let selected_instance: Option<ConfigInstance> =
+                select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
                 let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance.as_str());
@@ -93,19 +88,23 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     }
 }
 
+struct LabelHolder {
+    label_type: LabelType,
+    label: Label,
+}
+
 /// labels = selected labels, label_types = all label types avaiable, instances = all instances to select from
 fn select_instance(
     instances: Vec<ConfigInstance>,
     labels: Vec<Label>,
     label_types: Vec<LabelType>,
 ) -> Option<ConfigInstance> {
-    let label_type_map: HashMap<String, &LabelType> = label_types
-        .iter()
-        .map(|label| (label.name.clone(), label.clone()))
+    let label_type_map: HashMap<String, LabelType> = label_types.into_iter()
+        .map(|label| (label.name.to_owned(), label))
         .collect();
     let selected_label_type_map: HashMap<String, &Label> = labels
         .iter()
-        .map(|label| (label.label_type.clone(), label.clone()))
+        .map(|label| (label.label_type.to_owned(), label.clone()))
         .collect();
     let label_count = labels.len();
 
@@ -144,31 +143,39 @@ fn select_instance(
             matched_instance_labels = matched_labels;
         } else {
             // IF THE MATCHING LABELS ARE THE SAME, CHECK IF THE LABELS ARE HIGHER PRIORITY
-            matched_labels.sort_by(|a, b| {
-                let a_type = label_type_map.get(&a.label_type).unwrap(); // todo: handle
-                let b_type = label_type_map.get(&b.label_type).unwrap(); // todo: handle
-                return a_type.priority.cmp(&b_type.priority);
-            });
-            matched_instance_labels.sort_by(|a, b| {
-                let a_type = label_type_map.get(&a.label_type).unwrap(); // todo: handle
-                let b_type = label_type_map.get(&b.label_type).unwrap(); // todo: handle
-                return a_type.priority.cmp(&b_type.priority);
-            });
+            matched_labels.sort_by(|a, b| order_by_priority(&a, &b, &label_type_map));
+            matched_instance_labels.sort_by(|a, b| order_by_priority(&a, &b, &label_type_map));
 
             for i in 1..matched_labels.len() {
-
-                let lbl = label_type_map.get(&matched_labels.get(i).unwrap().label_type).unwrap(); // todo: handle
-                let matched_lbl = label_type_map.get(&matched_instance_labels.get(i).unwrap().label_type).unwrap(); // todo: handle
+                let lbl = label_type_map
+                    .get(&matched_labels.get(i).unwrap().label_type)
+                    .unwrap(); // todo: handle
+                let matched_lbl = label_type_map
+                    .get(&matched_instance_labels.get(i).unwrap().label_type)
+                    .unwrap(); // todo: handle
 
                 if lbl.priority > matched_lbl.priority {
                     matched_instance = Some(instance);
                     matched_instance_labels = matched_labels;
                     break;
                 }
-                
             }
         }
     }
 
     return matched_instance;
+}
+
+fn order_by_priority(
+    a: &Label,
+    b: &Label,
+    label_type_map: &HashMap<String, LabelType>,
+) -> Ordering {
+    let a_type = label_type_map.get(&a.label_type).unwrap(); // todo: handle
+    let b_type = label_type_map.get(&b.label_type).unwrap(); // todo: handle
+    return a_type.priority.cmp(&b_type.priority);
+}
+
+fn select_instance_new(label_types: Vec<LabelType>) {
+
 }
