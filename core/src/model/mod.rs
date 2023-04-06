@@ -1,7 +1,7 @@
 pub use serde::Deserialize;
 pub use serde::Serialize;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Config {
     pub name: String, // Unique key
     pub description: String,
