@@ -1,7 +1,5 @@
-use crate::{
-    adapters::ConfigStorageAdapter,
-    data_types::{Config, ConfigInstance, Label, LabelType},
-};
+use crate::adapters::ConfigStorageAdapter;
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
 
 extern crate redis;
 use redis::{Commands, Connection, RedisResult};
@@ -89,7 +87,8 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             let label_types = self.get_labels().await;
-            let selected_instance: Option<ConfigInstance> = select_instance(instances, labels, label_types);
+            let selected_instance: Option<ConfigInstance> =
+                select_instance(instances, labels, label_types);
             if let Some(instance) = selected_instance {
                 let mut connection = self.open_connection().expect("Failed to connect to redis");
 
@@ -114,4 +113,3 @@ impl RedisStorageAdapter {
         return client.get_connection();
     }
 }
-

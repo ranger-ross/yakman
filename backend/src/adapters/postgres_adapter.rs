@@ -1,9 +1,8 @@
 use sqlx::{postgres::PgPoolOptions, query_as, FromRow, Pool, Postgres};
 
-use crate::{
-    adapters::ConfigStorageAdapter,
-    data_types::{Config, ConfigInstance, Label, LabelType},
-};
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+
+use crate::adapters::ConfigStorageAdapter;
 
 use super::utils::select_instance;
 
@@ -63,8 +62,7 @@ struct PostgresConfigInstanceData {
 
 const SELECT_CONFIGS_QUERY: &str = "SELECT name, description FROM YAK_MAN_CONFIG";
 const SELECT_LABELS_QUERY: &str = "SELECT name, description FROM YAK_MAN_LABEL";
-const SELECT_LABEL_OPTIONS_QUERY: &str =
-    "SELECT option FROM YAK_MAN_LABEL_OPTION where name = $1";
+const SELECT_LABEL_OPTIONS_QUERY: &str = "SELECT option FROM YAK_MAN_LABEL_OPTION where name = $1";
 
 #[async_trait]
 impl ConfigStorageAdapter for PostgresAdapter {
@@ -160,7 +158,8 @@ impl ConfigStorageAdapter for PostgresAdapter {
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             let label_types = self.get_labels().await;
-            let selected_instance: Option<ConfigInstance> = select_instance(instances, labels, label_types);
+            let selected_instance: Option<ConfigInstance> =
+                select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
                 let pool = self.get_connection().await;

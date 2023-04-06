@@ -1,12 +1,11 @@
-use std::{cmp::Ordering, collections::HashMap, fs};
+use std::fs;
 
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    adapters::{ConfigStorageAdapter, utils::select_instance},
-    data_types::{Config, ConfigInstance, Label, LabelType},
-};
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+
+use crate::adapters::{utils::select_instance, ConfigStorageAdapter};
 
 pub struct LocalFileStorageAdapter {
     pub path: String,
