@@ -1,17 +1,9 @@
+use model::YakManSettings;
+
 pub mod model;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+pub fn load_yak_man_settings() -> YakManSettings {
+    return YakManSettings {
+        version: "0.0.1".to_string(),
+    };
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
-

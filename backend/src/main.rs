@@ -1,10 +1,9 @@
 mod adapters;
-mod yak_man;
 mod utils;
 
 use adapters::ConfigStorageAdapter;
 use rocket::{serde::json::Json, State};
-use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::{model::{Config, ConfigInstance, Label, LabelType}, load_yak_man_settings};
 use std::{env, vec};
 use utils::raw_query::RawQuery;
 
@@ -28,7 +27,7 @@ impl StateManager {
 
 #[launch]
 async fn rocket() -> _ {
-    let settings = yak_man::load_yak_man_settings();
+    let settings = load_yak_man_settings();
     println!("Settings: {:?}", settings);
 
     let mut adapter = create_adapter();
