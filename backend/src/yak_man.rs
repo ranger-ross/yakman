@@ -1,4 +1,4 @@
-use crate::data_types::YakManSettings;
+use yak_man_core::model::YakManSettings;
 
 pub fn load_yak_man_settings() -> YakManSettings {
     return YakManSettings {

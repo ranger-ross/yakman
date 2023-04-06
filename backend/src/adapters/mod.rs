@@ -1,4 +1,4 @@
-use crate::data_types::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
 
 pub mod redis_adapter;
 pub mod postgres_adapter;

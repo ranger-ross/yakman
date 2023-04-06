@@ -2143,6 +2143,9 @@ dependencies = [
 [[package]]
 name = "yak-man-core"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "yansi"

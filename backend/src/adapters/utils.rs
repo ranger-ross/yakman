@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-use crate::data_types::{ConfigInstance, Label, LabelType};
+use yak_man_core::model::{ConfigInstance, Label, LabelType};
 
 /// Common logic to select a config instance from a selected labels
 /// labels = selected labels, label_types = all label types avaiable, instances = all instances to select from

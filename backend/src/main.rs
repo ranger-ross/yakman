@@ -1,11 +1,10 @@
 mod adapters;
 mod yak_man;
-mod data_types;
 mod utils;
 
 use adapters::ConfigStorageAdapter;
-use data_types::{Config, ConfigInstance, Label, LabelType};
 use rocket::{serde::json::Json, State};
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
 use std::{env, vec};
 use utils::raw_query::RawQuery;
 
