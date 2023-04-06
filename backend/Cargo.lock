@@ -2129,22 +2129,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "yak-man-backend"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "redis",
- "rocket",
- "serde",
- "sqlx",
- "yak-man-core",
-]
-
-[[package]]
-name = "yak-man-core"
-version = "0.1.0"
-
-[[package]]
 name = "yansi"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
