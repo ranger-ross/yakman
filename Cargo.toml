@@ -14,5 +14,5 @@ async-trait = {version = "0.1.68"}
 
 
 [workspace]
-members = ["backend", "core"]
+members = ["backend", "core", "frontend"]
 default-members = ["backend"]
