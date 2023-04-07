@@ -3,9 +3,12 @@ mod utils;
 
 use adapters::ConfigStorageAdapter;
 use rocket::{serde::json::Json, State};
-use yak_man_core::{model::{Config, ConfigInstance, Label, LabelType}, load_yak_man_settings};
 use std::{env, vec};
 use utils::raw_query::RawQuery;
+use yak_man_core::{
+    load_yak_man_settings,
+    model::{Config, ConfigInstance, Label, LabelType},
+};
 
 use crate::adapters::{
     local_file_adapter::create_local_file_adapter, postgres_adapter::create_postgres_adapter,

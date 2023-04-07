@@ -278,7 +278,7 @@ mod tests {
                 ],
             },
         ];
-    
+
         let labels = vec![
             Label {
                 label_type: "env".to_owned(),
@@ -289,7 +289,7 @@ mod tests {
                 value: "frontend".to_owned(),
             },
         ];
-    
+
         let label_types = vec![
             LabelType {
                 name: "env".to_owned(),
@@ -304,9 +304,8 @@ mod tests {
                 options: vec![],
             },
         ];
-    
+
         let selected_instance = select_instance(instances, labels, label_types);
         assert!(selected_instance.is_none());
     }
-
 }

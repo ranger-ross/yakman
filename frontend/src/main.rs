@@ -32,41 +32,29 @@ fn app() -> Html {
         );
     }
 
-    let first_instance_as_html: Html = first_instances.iter()
-    .map(|instance| {
-        let i = instance.clone();
-        html! {
-            <ConfigInstanceRow key={instance.instance.clone()} instance={i} />
-        }
-    })
-    .collect();
-
-    let configs_as_html: Html = configs
-        .iter()
-        .map(|video| {
-            html! {
-                <p key={video.name.clone()}>{format!("{}: {}", video.name, video.description)}</p>
-            }
-        })
-        .collect();
-
     html! {
       <>
         <h1>{ "Hello World" }</h1>
 
-        {configs_as_html}
+        {configs.iter().map(|video| {
+            html! { <p key={video.name.clone()}>{format!("{}: {}", video.name, video.description)}</p> }
+        }).collect::<Html>()}
 
         <h1>{ "First Instance" }</h1>
 
-        {first_instance_as_html}
+
+        {first_instances.iter().map(|instance| {
+            html! { <ConfigInstanceRow key={instance.instance.clone()} instance={instance.clone()} /> }
+        }).collect::<Html>()}
+
+
       </>
     }
 }
 
-
 #[derive(Properties, PartialEq)]
 struct ConfigInstanceRowProps {
-    instance: ConfigInstance
+    instance: ConfigInstance,
 }
 
 #[function_component(ConfigInstanceRow)]
