@@ -34,19 +34,19 @@ fn app() -> Html {
 
     html! {
       <>
-        <h1>{ "Hello World" }</h1>
+        <h1>{ "Configs" }</h1>
 
         {configs.iter().map(|video| {
-            html! { <p key={video.name.clone()}>{format!("{}: {}", video.name, video.description)}</p> }
+            html! {
+                <>
+                    <h3 key={video.name.clone()}>{format!("{}: {}", video.name, video.description)}</h3>
+                    {first_instances.iter().map(|instance| {
+                        html! { <ConfigInstanceRow key={instance.instance.clone()} instance={instance.clone()} /> } // TODO: fetch data dynamically
+                    }).collect::<Html>()}
+            
+                </>
+            }
         }).collect::<Html>()}
-
-        <h1>{ "First Instance" }</h1>
-
-
-        {first_instances.iter().map(|instance| {
-            html! { <ConfigInstanceRow key={instance.instance.clone()} instance={instance.clone()} /> }
-        }).collect::<Html>()}
-
 
       </>
     }
