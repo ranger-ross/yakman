@@ -11,3 +11,4 @@ gloo-net = "0.2.6"
 serde = {version = "1.0", features = ["derive"]}
 wasm-bindgen-futures = "0.4.34"
 yak-man-core = {path = "../core"}
+gloo-console = "0.2.3"
