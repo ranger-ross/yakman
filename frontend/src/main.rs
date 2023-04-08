@@ -2,6 +2,16 @@ use gloo_console::log;
 use gloo_net::http::Request;
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+#[derive(Clone, Routable, PartialEq)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
 
 #[derive(Debug, PartialEq, Clone)]
 struct PageConfig {
@@ -15,8 +25,24 @@ struct PageData {
     labels: Vec<LabelType>,
 }
 
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <MainView /> },
+        Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
+    }
+}
+
 #[function_component(App)]
 fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={switch} /> // <- must be child of <BrowserRouter>
+        </BrowserRouter>
+    }
+}
+
+#[function_component(MainView)]
+fn main_view() -> Html {
     let page_data: UseStateHandle<Option<PageData>> = use_state(|| None);
 
     {
