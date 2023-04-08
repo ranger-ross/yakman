@@ -15,7 +15,7 @@ pub fn select_instance(
         .collect();
     let selected_label_type_map: HashMap<String, &Label> = labels
         .iter()
-        .map(|label| (label.label_type.to_owned(), label.clone()))
+        .map(|label| (label.label_type.to_owned(), label))
         .collect();
     let label_count = labels.len();
 
