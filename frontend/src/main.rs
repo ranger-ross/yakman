@@ -8,6 +8,8 @@ use yew_router::prelude::*;
 enum Route {
     #[at("/")]
     Home,
+    #[at("/create-instance/:config_name")]
+    CreateConfigInstancePage { config_name: String },
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -28,6 +30,11 @@ struct PageData {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home => html! { <MainView /> },
+        Route::CreateConfigInstancePage { config_name } => {
+            html! {
+                <CreateConfigInstancePage config_name={config_name} />
+            }
+        }
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
     }
 }
@@ -36,7 +43,7 @@ fn switch(routes: Route) -> Html {
 fn app() -> Html {
     html! {
         <BrowserRouter>
-            <Switch<Route> render={switch} /> // <- must be child of <BrowserRouter>
+            <Switch<Route> render={switch} />
         </BrowserRouter>
     }
 }
@@ -92,6 +99,20 @@ fn main_view() -> Html {
 }
 
 #[derive(Properties, PartialEq)]
+struct CreateConfigInstancePageProps {
+    config_name: String,
+}
+
+#[function_component(CreateConfigInstancePage)]
+fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
+    html! {
+        <div>
+            {&props.config_name}
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
 struct ConfigRowProps {
     config: PageConfig,
 }
@@ -100,7 +121,11 @@ struct ConfigRowProps {
 fn config_row(props: &ConfigRowProps) -> Html {
     html! {
         <div style="border: solid; border-radius: 6px; padding: 0px 20px; margin: 8px; min-width: 50vw">
-            <h2 style="border-bottom: solid 2px">{&props.config.config.name}</h2>
+            <div style="border-bottom: solid 2px; display: flex; justify-content: space-between; align-items: center">
+                <h2>{&props.config.config.name}</h2>
+                <a href="/create-instance/testing-1">{"+"}</a> // TODO: use button instead
+            </div>
+
 
             {props.config.instances.iter().map(|instance| {
                 html! {
