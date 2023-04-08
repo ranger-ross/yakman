@@ -1,7 +1,20 @@
 use gloo_console::log;
 use gloo_net::http::Request;
+use web_sys::{EventTarget, HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+#[derive(Clone, Routable, PartialEq)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[at("/create-instance/:config_name")]
+    CreateConfigInstancePage { config_name: String },
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
 
 #[derive(Debug, PartialEq, Clone)]
 struct PageConfig {
@@ -15,8 +28,29 @@ struct PageData {
     labels: Vec<LabelType>,
 }
 
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <MainView /> },
+        Route::CreateConfigInstancePage { config_name } => {
+            html! {
+                <CreateConfigInstancePage config_name={config_name} />
+            }
+        }
+        Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
+    }
+}
+
 #[function_component(App)]
 fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={switch} />
+        </BrowserRouter>
+    }
+}
+
+#[function_component(MainView)]
+fn main_view() -> Html {
     let page_data: UseStateHandle<Option<PageData>> = use_state(|| None);
 
     {
@@ -66,6 +100,44 @@ fn app() -> Html {
 }
 
 #[derive(Properties, PartialEq)]
+struct CreateConfigInstancePageProps {
+    config_name: String,
+}
+
+#[function_component(CreateConfigInstancePage)]
+fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
+    let input_value_handle = use_state(String::default);
+    let input_value = (*input_value_handle).clone();
+
+    let on_change = Callback::from(move |e: Event| {
+        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
+        input_value_handle.set(value);
+    });
+
+    let config_name = props.config_name.clone();
+    let on_add_clicked = move |_| {
+        let config_name = config_name.clone(); // TODO: maybe handle this better?
+        let input_value = input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            create_config_instance(&config_name, &input_value).await;
+        });
+    };
+
+    html! {
+        <div>
+            <h1>{format!("Create Config Instance {}", props.config_name)}</h1>
+
+            <h3>{"Data"}</h3>
+            <textarea onchange={on_change} />
+
+            <br />
+
+            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
 struct ConfigRowProps {
     config: PageConfig,
 }
@@ -74,7 +146,11 @@ struct ConfigRowProps {
 fn config_row(props: &ConfigRowProps) -> Html {
     html! {
         <div style="border: solid; border-radius: 6px; padding: 0px 20px; margin: 8px; min-width: 50vw">
-            <h2 style="border-bottom: solid 2px">{&props.config.config.name}</h2>
+            <div style="border-bottom: solid 2px; display: flex; justify-content: space-between; align-items: center">
+                <h2>{&props.config.config.name}</h2>
+                <a href="/create-instance/testing-1">{"+"}</a> // TODO: use button instead
+            </div>
+
 
             {props.config.instances.iter().map(|instance| {
                 html! {
@@ -103,17 +179,7 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
 
-    let mut link = format!("/api/data/{}", instance.config_name);
-    if instance.labels.len() > 0 {
-        let labels_params = instance
-            .labels
-            .iter()
-            .map(|label| format!("{}={}", label.label_type, label.value))
-            .collect::<Vec<String>>()
-            .join("&");
-        link.push('?');
-        link.push_str(&labels_params);
-    }
+    let link = format!("/api/config/{}/instance/{}", instance.config_name, instance.instance);
     html! {
         <div
             key={instance.instance.clone()}
@@ -153,8 +219,19 @@ async fn fetch_labels() -> Vec<LabelType> {
         .unwrap();
 }
 
-async fn fetch_instance_metadata(name: &str) -> Vec<ConfigInstance> {
-    return Request::get(&format!("/api/instances/{name}"))
+async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
+    return Request::get(&format!("/api/instances/{config_name}"))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+}
+
+async fn create_config_instance(config_name: &str, data: &str) -> Vec<LabelType> {
+    return Request::put(&format!("/api/config/{config_name}/data"))
+        .body(data)
         .send()
         .await
         .unwrap()

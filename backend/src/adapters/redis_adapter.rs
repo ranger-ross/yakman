@@ -84,7 +84,11 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         return None;
     }
 
-    async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
+    async fn get_config_data_by_labels(
+        &self,
+        config_name: &str,
+        labels: Vec<Label>,
+    ) -> Option<String> {
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             let label_types = self.get_labels().await;
             let selected_instance: Option<ConfigInstance> =
@@ -101,6 +105,19 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
             }
         }
         return None;
+    }
+
+    async fn get_config_data(&self, config_name: &str, instance: &str) -> Option<String> {
+        todo!()
+    }
+
+    async fn create_config_instance(
+        &self,
+        config_name: &str,
+        labels: Vec<Label>,
+        data: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        todo!();
     }
 }
 

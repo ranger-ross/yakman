@@ -11,4 +11,4 @@ postgres-connect: ## Connect to Postgres Docker container with psql
 	PGPASSWORD=password psql --host localhost --username postgres
 
 yew: ## Starts the YakMan frontend with trunk
-	trunk serve --open frontend/index.html
+	cd frontend; trunk serve --open
