@@ -72,13 +72,35 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
-    async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
+    async fn get_config_data_by_labels(&self, config_name: &str, labels: Vec<Label>) -> Option<String> {
         let base_path = self.path.to_string();
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await;
             let selected_instance: Option<ConfigInstance> =
                 select_instance(instances, labels, label_types);
+
+            if let Some(instance) = selected_instance {
+                let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance.as_str());
+                println!("Found path {}", path);
+                return fs::read_to_string(path).ok();
+            } else {
+                println!("No selected instance found");
+                return None;
+            }
+        }
+        return None;
+    }
+
+    async fn get_config_data(&self, config_name: &str, instance: &str) -> Option<String> {
+        let base_path = self.path.to_string();
+        if let Some(instances) = self.get_config_instance_metadata(config_name).await {
+            println!("Found {} instances", instances.len());
+            
+            let search = format!("{config_name}/{instance}");
+            println!("Search for instance ID {}", search);
+
+            let selected_instance = instances.iter().find(|i| i.instance == search);
 
             if let Some(instance) = selected_instance {
                 let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance.as_str());

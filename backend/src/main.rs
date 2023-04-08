@@ -41,7 +41,7 @@ async fn rocket() -> _ {
         .manage(StateManager { adapter: adapter })
         .mount(
             "/",
-            routes![configs, labels, instances, data, create_new_instance],
+            routes![configs, labels, instances, data, create_new_instance, instance],
         )
 }
 
@@ -68,7 +68,7 @@ async fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<Con
 
 // TODO: Standardize REST endpoint naming
 
-#[get("/data/<config_name>")]
+#[get("/config/<config_name>/instance")]
 async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
     let adapter = state.get_adapter();
 
@@ -86,8 +86,15 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
         config_name, labels
     );
 
-    return adapter.get_config_data(config_name, labels).await;
+    return adapter.get_config_data_by_labels(config_name, labels).await;
 }
+
+#[get("/config/<config_name>/instance/<instance>")]
+async fn instance(config_name: &str, instance: &str, state: &State<StateManager>) -> Option<String> {
+    let adapter = state.get_adapter();
+    return adapter.get_config_data(config_name, instance).await;
+}
+
 
 #[put("/config/<config_name>/data", data = "<data>")]
 async fn create_new_instance(
