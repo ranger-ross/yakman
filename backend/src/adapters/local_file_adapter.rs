@@ -111,7 +111,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             // Add new instance to instances and update the instance datafile
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
-                instance: id,
+                instance: format!("{config_name}/{id}"),
                 labels: labels,
             });
             self.update_instance_metadata(config_name, instances)
