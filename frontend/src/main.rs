@@ -60,7 +60,7 @@ fn app() -> Html {
                     html! { <ConfigRow config={config.clone()} /> }
                 }).collect::<Html>()}
             </div>
-    
+
         </div>
     }
 }
@@ -78,9 +78,9 @@ fn config_row(props: &ConfigRowProps) -> Html {
 
             {props.config.instances.iter().map(|instance| {
                 html! {
-                    <ConfigInstanceRow 
-                        key={instance.instance.clone()} 
-                        instance={instance.clone()} 
+                    <ConfigInstanceRow
+                        key={instance.instance.clone()}
+                        instance={instance.clone()}
                     />
                 }
             }).collect::<Html>()}
@@ -102,12 +102,31 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .map(|label| format!("{}={}", label.label_type, label.value))
         .collect::<Vec<String>>()
         .join(", ");
+
+    let mut link = format!("/api/data/{}", instance.config_name);
+    if instance.labels.len() > 0 {
+        let labels_params = instance
+            .labels
+            .iter()
+            .map(|label| format!("{}={}", label.label_type, label.value))
+            .collect::<Vec<String>>()
+            .join("&");
+        link.push('?');
+        link.push_str(&labels_params);
+    }
     html! {
-        <div 
+        <div
             key={instance.instance.clone()}
             style="display: flex; gap: 10px; justify-content: space-between"
         >
-            <p>{ &instance.instance }</p>
+            <p>
+                <a
+                    target="_blank"
+                    href={link}
+                >
+                    { &instance.instance }
+                </a>
+            </p>
 
             <p>{format!("{}", labels_text)}</p>
         </div>
