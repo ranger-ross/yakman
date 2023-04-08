@@ -49,6 +49,7 @@ fn add_config_page() -> Html {
     let input_value = (*input_value_handle).clone();
 
     let on_change = Callback::from(move |e: Event| {
+        // TODO: make sure input matches config name requirements
         let value = e.target_unchecked_into::<HtmlInputElement>().value();
         input_value_handle.set(value); // TODO: validate for duplicates?
     });
@@ -56,7 +57,6 @@ fn add_config_page() -> Html {
     let on_add_clicked = move |_| {
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            // log!(input_value); // TODO: Send PUT
             create_config(&input_value).await;
         });
     };
