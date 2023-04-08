@@ -179,17 +179,7 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
 
-    let mut link = format!("/api/data/{}", instance.config_name);
-    if instance.labels.len() > 0 {
-        let labels_params = instance
-            .labels
-            .iter()
-            .map(|label| format!("{}={}", label.label_type, label.value))
-            .collect::<Vec<String>>()
-            .join("&");
-        link.push('?');
-        link.push_str(&labels_params);
-    }
+    let link = format!("/api/config/{}/instance/{}", instance.config_name, instance.instance);
     html! {
         <div
             key={instance.instance.clone()}

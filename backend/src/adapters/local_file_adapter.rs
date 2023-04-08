@@ -81,7 +81,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
-                let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance.as_str());
+                let path = format!("{base_path}/{DATA_DIR}/{config_name}/{}", instance.instance.as_str());
                 println!("Found path {}", path);
                 return fs::read_to_string(path).ok();
             } else {
@@ -97,13 +97,11 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             println!("Found {} instances", instances.len());
             
-            let search = format!("{config_name}/{instance}");
-            println!("Search for instance ID {}", search);
-
-            let selected_instance = instances.iter().find(|i| i.instance == search);
+            println!("Search for instance ID {}", instance);
+            let selected_instance = instances.iter().find(|i| i.instance == instance);
 
             if let Some(instance) = selected_instance {
-                let path = format!("{base_path}/{DATA_DIR}/{}", instance.instance.as_str());
+                let path = format!("{base_path}/{DATA_DIR}/{config_name}/{}", instance.instance.as_str());
                 println!("Found path {}", path);
                 return fs::read_to_string(path).ok();
             } else {
@@ -133,7 +131,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             // Add new instance to instances and update the instance datafile
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
-                instance: format!("{config_name}/{id}"),
+                instance: id,
                 labels: labels,
             });
             self.update_instance_metadata(config_name, instances)
