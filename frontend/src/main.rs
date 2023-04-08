@@ -53,14 +53,15 @@ fn app() -> Html {
     }
 
     html! {
-      <>
-        <h1>{ "Configs" }</h1>
-
-        {page_data.as_ref().unwrap().configs.iter().map(|config| {
-            html! { <ConfigRow config={config.clone()} /> }
-        }).collect::<Html>()}
-
-      </>
+        <div style="display: flex; flex-direction: column; align-items: center">
+            <div>
+                <h1>{ "Configs" }</h1>
+                {page_data.as_ref().unwrap().configs.iter().map(|config| {
+                    html! { <ConfigRow config={config.clone()} /> }
+                }).collect::<Html>()}
+            </div>
+    
+        </div>
     }
 }
 
@@ -72,8 +73,8 @@ struct ConfigRowProps {
 #[function_component(ConfigRow)]
 fn config_row(props: &ConfigRowProps) -> Html {
     html! {
-        <>
-            <h2>{&props.config.config.name}</h2>
+        <div style="border: solid; border-radius: 6px; padding: 0px 20px; margin: 8px; min-width: 50vw">
+            <h2 style="border-bottom: solid 2px">{&props.config.config.name}</h2>
 
             {props.config.instances.iter().map(|instance| {
                 html! {
@@ -83,7 +84,7 @@ fn config_row(props: &ConfigRowProps) -> Html {
                     />
                 }
             }).collect::<Html>()}
-        </>
+        </div>
     }
 }
 
@@ -102,9 +103,14 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
     html! {
-        <p key={instance.instance.clone()}>
-            {format!("{}, LABELS => {}", instance.instance, labels_text)}
-        </p>
+        <div 
+            key={instance.instance.clone()}
+            style="display: flex; gap: 10px; justify-content: space-between"
+        >
+            <p>{ &instance.instance }</p>
+
+            <p>{format!("{}", labels_text)}</p>
+        </div>
     }
 }
 
