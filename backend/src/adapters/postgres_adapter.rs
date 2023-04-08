@@ -190,6 +190,10 @@ impl ConfigStorageAdapter for PostgresAdapter {
         todo!()
     }
 
+    async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
+
     async fn create_config_instance(
         &self,
         config_name: &str,

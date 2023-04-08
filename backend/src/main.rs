@@ -41,7 +41,15 @@ async fn rocket() -> _ {
         .manage(StateManager { adapter: adapter })
         .mount(
             "/",
-            routes![configs, labels, instances, data, create_new_instance, instance],
+            routes![
+                configs,
+                labels,
+                instances,
+                data,
+                create_new_instance,
+                instance,
+                create_config,
+            ],
         )
 }
 
@@ -90,11 +98,14 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
 }
 
 #[get("/config/<config_name>/instance/<instance>")]
-async fn instance(config_name: &str, instance: &str, state: &State<StateManager>) -> Option<String> {
+async fn instance(
+    config_name: &str,
+    instance: &str,
+    state: &State<StateManager>,
+) -> Option<String> {
     let adapter = state.get_adapter();
     return adapter.get_config_data(config_name, instance).await;
 }
-
 
 #[put("/config/<config_name>/data", data = "<data>")]
 async fn create_new_instance(
@@ -123,6 +134,17 @@ async fn create_new_instance(
         .create_config_instance(config_name, labels, &data)
         .await
         .unwrap();
+}
+
+#[put("/config/<config_name>")]
+async fn create_config(config_name: &str, state: &State<StateManager>) {
+    let adapter = state.get_adapter();
+
+    // TODO: do validation
+    // - config exists
+    // - not a duplicate?
+
+    adapter.create_config(config_name).await.unwrap();
 }
 
 fn create_adapter() -> Box<dyn ConfigStorageAdapter> {

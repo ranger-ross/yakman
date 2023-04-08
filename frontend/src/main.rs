@@ -1,6 +1,6 @@
 use gloo_console::log;
 use gloo_net::http::Request;
-use web_sys::{HtmlTextAreaElement, HtmlInputElement};
+use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -37,7 +37,7 @@ fn switch(routes: Route) -> Html {
             html! {
                 <CreateConfigInstancePage config_name={config_name} />
             }
-        },
+        }
         Route::AddConfigPage => html! { <AddConfigPage /> },
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
     }
@@ -56,7 +56,8 @@ fn add_config_page() -> Html {
     let on_add_clicked = move |_| {
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            log!(input_value); // TODO: Send PUT    
+            // log!(input_value); // TODO: Send PUT
+            create_config(&input_value).await;
         });
     };
 
@@ -275,6 +276,16 @@ async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
 async fn create_config_instance(config_name: &str, data: &str) -> Vec<LabelType> {
     return Request::put(&format!("/api/config/{config_name}/data"))
         .body(data)
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+}
+
+async fn create_config(config_name: &str) -> Vec<LabelType> {
+    return Request::put(&format!("/api/config/{config_name}"))
         .send()
         .await
         .unwrap()
