@@ -18,4 +18,6 @@ pub trait ConfigStorageAdapter: Sync + Send {
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>>;
 
     async fn get_config_data(&self, config_name: &str, labels: Vec<Label>) -> Option<String>;
+
+    async fn create_config_instance(&self, config_name: &str, labels: Vec<Label>, data: &str) -> Result<(), Box<dyn std::error::Error>>;
 }

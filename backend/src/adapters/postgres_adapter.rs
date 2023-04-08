@@ -181,6 +181,15 @@ impl ConfigStorageAdapter for PostgresAdapter {
 
         return None;
     }
+
+    async fn create_config_instance(
+        &self,
+        config_name: &str,
+        labels: Vec<Label>,
+        data: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        todo!();
+    }
 }
 
 impl PostgresAdapter {

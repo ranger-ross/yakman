@@ -39,7 +39,10 @@ async fn rocket() -> _ {
 
     rocket::build()
         .manage(StateManager { adapter: adapter })
-        .mount("/", routes![configs, labels, instances, data])
+        .mount(
+            "/",
+            routes![configs, labels, instances, data, create_new_instance],
+        )
 }
 
 #[get("/configs")]
@@ -63,6 +66,8 @@ async fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<Con
     };
 }
 
+// TODO: Standardize REST endpoint naming
+
 #[get("/data/<config_name>")]
 async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
     let adapter = state.get_adapter();
@@ -82,6 +87,35 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
     );
 
     return adapter.get_config_data(config_name, labels).await;
+}
+
+#[put("/config/<config_name>/data", data = "<data>")]
+async fn create_new_instance(
+    config_name: &str,
+    query: RawQuery,
+    data: String,
+    state: &State<StateManager>,
+) {
+    let adapter = state.get_adapter();
+
+    let labels: Vec<Label> = query
+        .params
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
+
+    // TODO: do validation
+    // - config exists
+    // - labels are valid
+    // - not a duplicate?
+
+    adapter
+        .create_config_instance(config_name, labels, &data)
+        .await
+        .unwrap();
 }
 
 fn create_adapter() -> Box<dyn ConfigStorageAdapter> {
