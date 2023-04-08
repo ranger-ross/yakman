@@ -402,6 +402,7 @@ dependencies = [
  "gloo-net",
  "serde",
  "wasm-bindgen-futures",
+ "web-sys",
  "yak-man-core",
  "yew",
  "yew-router",

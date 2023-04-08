@@ -1,5 +1,6 @@
 use gloo_console::log;
 use gloo_net::http::Request;
+use web_sys::{EventTarget, HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -105,9 +106,33 @@ struct CreateConfigInstancePageProps {
 
 #[function_component(CreateConfigInstancePage)]
 fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
+    let input_value_handle = use_state(String::default);
+    let input_value = (*input_value_handle).clone();
+
+    let on_change = Callback::from(move |e: Event| {
+        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
+        input_value_handle.set(value);
+    });
+
+    let config_name = props.config_name.clone();
+    let on_add_clicked = move |_| {
+        let config_name = config_name.clone(); // TODO: maybe handle this better?
+        let input_value = input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            create_config_instance(&config_name, &input_value).await;
+        });
+    };
+
     html! {
         <div>
-            {&props.config_name}
+            <h1>{format!("Create Config Instance {}", props.config_name)}</h1>
+
+            <h3>{"Data"}</h3>
+            <textarea onchange={on_change} />
+
+            <br />
+
+            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
         </div>
     }
 }
@@ -204,8 +229,19 @@ async fn fetch_labels() -> Vec<LabelType> {
         .unwrap();
 }
 
-async fn fetch_instance_metadata(name: &str) -> Vec<ConfigInstance> {
-    return Request::get(&format!("/api/instances/{name}"))
+async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
+    return Request::get(&format!("/api/instances/{config_name}"))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+}
+
+async fn create_config_instance(config_name: &str, data: &str) -> Vec<LabelType> {
+    return Request::put(&format!("/api/config/{config_name}/data"))
+        .body(data)
         .send()
         .await
         .unwrap()
