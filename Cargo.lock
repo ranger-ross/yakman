@@ -398,6 +398,11 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "gloo-console",
+ "gloo-net",
+ "serde",
+ "wasm-bindgen-futures",
+ "yak-man-core",
  "yew",
 ]
 
