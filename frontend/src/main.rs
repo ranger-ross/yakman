@@ -45,10 +45,31 @@ fn switch(routes: Route) -> Html {
 
 #[function_component(AddConfigPage)]
 fn add_config_page() -> Html {
-    html! {
-        <h1>{"Add Config"}</h1>
+    let input_value_handle = use_state(String::default);
+    let input_value = (*input_value_handle).clone();
 
-        
+    let on_change = Callback::from(move |e: Event| {
+        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
+        input_value_handle.set(value); // TODO: validate for duplicates?
+    });
+
+    let on_add_clicked = move |_| {
+        let input_value = input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            log!(input_value); // TODO: Send PUT    
+        });
+    };
+
+    html! {
+        <div>
+            <h1>{"Add Config"}</h1>
+
+            {"Name: "} <input onchange={on_change} />
+
+            <br />
+
+            <button onclick={on_add_clicked}>{"Create"}</button>
+        </div>
     }
 }
 
