@@ -9,6 +9,8 @@ use yew_router::prelude::*;
 enum Route {
     #[at("/")]
     Home,
+    #[at("/add-config")]
+    AddConfigPage,
     #[at("/create-instance/:config_name")]
     CreateConfigInstancePage { config_name: String },
     #[not_found]
@@ -35,8 +37,18 @@ fn switch(routes: Route) -> Html {
             html! {
                 <CreateConfigInstancePage config_name={config_name} />
             }
-        }
+        },
+        Route::AddConfigPage => html! { <AddConfigPage /> },
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
+    }
+}
+
+#[function_component(AddConfigPage)]
+fn add_config_page() -> Html {
+    html! {
+        <h1>{"Add Config"}</h1>
+
+        
     }
 }
 
@@ -87,12 +99,19 @@ fn main_view() -> Html {
     }
 
     html! {
-        <div style="display: flex; flex-direction: column; align-items: center">
-            <div>
-                <h1>{ "Configs" }</h1>
-                {page_data.as_ref().unwrap().configs.iter().map(|config| {
-                    html! { <ConfigRow config={config.clone()} /> }
-                }).collect::<Html>()}
+        <div>
+            // Header
+            <div style="display: flex; justify-content: end">
+                <a href="/add-config">{"+"}</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center">
+                <div>
+                    <h1>{ "Configs" }</h1>
+                    {page_data.as_ref().unwrap().configs.iter().map(|config| {
+                        html! { <ConfigRow config={config.clone()} /> }
+                    }).collect::<Html>()}
+                </div>
             </div>
 
         </div>
@@ -179,7 +198,10 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
 
-    let link = format!("/api/config/{}/instance/{}", instance.config_name, instance.instance);
+    let link = format!(
+        "/api/config/{}/instance/{}",
+        instance.config_name, instance.instance
+    );
     html! {
         <div
             key={instance.instance.clone()}
