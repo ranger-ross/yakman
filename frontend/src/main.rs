@@ -273,23 +273,17 @@ async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
         .unwrap();
 }
 
-async fn create_config_instance(config_name: &str, data: &str) -> Vec<LabelType> {
-    return Request::put(&format!("/api/config/{config_name}/data"))
+async fn create_config_instance(config_name: &str, data: &str) {
+    Request::put(&format!("/api/config/{config_name}/data"))
         .body(data)
         .send()
-        .await
-        .unwrap()
-        .json()
         .await
         .unwrap();
 }
 
-async fn create_config(config_name: &str) -> Vec<LabelType> {
-    return Request::put(&format!("/api/config/{config_name}"))
+async fn create_config(config_name: &str) {
+    Request::put(&format!("/api/config/{config_name}"))
         .send()
-        .await
-        .unwrap()
-        .json()
         .await
         .unwrap();
 }
