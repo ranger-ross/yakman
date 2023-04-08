@@ -3,7 +3,7 @@ use gloo_net::http::Request;
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct PageConfig {
     config: Config,
     instances: Vec<ConfigInstance>,
@@ -57,21 +57,33 @@ fn app() -> Html {
         <h1>{ "Configs" }</h1>
 
         {page_data.as_ref().unwrap().configs.iter().map(|config| {
-            html! {
-                <>
-                    <h2>{&config.config.name}</h2>
-
-                    {config.instances.iter().map(|instance| {
-                        html! {
-                            <ConfigInstanceRow key={instance.instance.clone()} instance={instance.clone()} />
-                        }
-                    }).collect::<Html>()}
-
-                </>
-            }
+            html! { <ConfigRow config={config.clone()} /> }
         }).collect::<Html>()}
 
       </>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+struct ConfigRowProps {
+    config: PageConfig,
+}
+
+#[function_component(ConfigRow)]
+fn config_row(props: &ConfigRowProps) -> Html {
+    html! {
+        <>
+            <h2>{&props.config.config.name}</h2>
+
+            {props.config.instances.iter().map(|instance| {
+                html! {
+                    <ConfigInstanceRow 
+                        key={instance.instance.clone()} 
+                        instance={instance.clone()} 
+                    />
+                }
+            }).collect::<Html>()}
+        </>
     }
 }
 
@@ -90,7 +102,9 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
     html! {
-        <p key={instance.instance.clone()}>{format!("{}, LABELS => {}", instance.instance, labels_text)}</p>
+        <p key={instance.instance.clone()}>
+            {format!("{}, LABELS => {}", instance.instance, labels_text)}
+        </p>
     }
 }
 
