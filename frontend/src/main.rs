@@ -1,6 +1,6 @@
 use gloo_console::log;
 use gloo_net::http::Request;
-use web_sys::{EventTarget, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{HtmlTextAreaElement, HtmlInputElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -49,7 +49,7 @@ fn add_config_page() -> Html {
     let input_value = (*input_value_handle).clone();
 
     let on_change = Callback::from(move |e: Event| {
-        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
+        let value = e.target_unchecked_into::<HtmlInputElement>().value();
         input_value_handle.set(value); // TODO: validate for duplicates?
     });
 
