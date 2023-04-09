@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     fmt,
     fs::{self, File},
     io::Write,
@@ -118,9 +117,8 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     }
 
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
-        let base_path = self.path.as_str();
-        let instance_file =
-            format!("{base_path}/{YAK_MAN_DIR}/instance-metadata/{config_name}.json");
+        let metadata_dir = self.get_config_instance_metadata_dir();
+        let instance_file = format!("{metadata_dir}/{config_name}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
             let v: InstanceJson = serde_json::from_str(&content).unwrap();
             return Some(v.instances);
@@ -133,12 +131,10 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         config_name: &str,
         labels: Vec<Label>,
     ) -> Option<String> {
-        let base_path = self.path.to_string();
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await;
-            let selected_instance: Option<ConfigInstance> =
-                select_instance(instances, labels, label_types);
+            let selected_instance = select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
                 return self.get_data_by_revision(config_name, &instance.current_revision);
@@ -317,9 +313,8 @@ impl LocalFileStorageAdapter {
         config_name: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let base_path = self.path.as_str();
-        let instance_file =
-            format!("{base_path}/{YAK_MAN_DIR}/instance-metadata/{config_name}.json");
+        let metadata_path = self.get_config_instance_metadata_dir();
+        let instance_file = format!("{metadata_path}/{config_name}.json");
         let data = serde_json::to_string(&InstanceJson {
             instances: instances,
         })?;
