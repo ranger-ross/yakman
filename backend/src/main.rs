@@ -49,6 +49,7 @@ async fn rocket() -> _ {
                 create_new_instance,
                 instance,
                 create_config,
+                update_new_instance,
             ],
         )
 }
@@ -104,7 +105,7 @@ async fn instance(
     return adapter.get_config_data(config_name, instance).await;
 }
 
-#[put("/config/<config_name>/data", data = "<data>")]
+#[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
 async fn create_new_instance(
     config_name: &str,
     query: RawQuery,
@@ -129,6 +130,36 @@ async fn create_new_instance(
 
     adapter
         .create_config_instance(config_name, labels, &data)
+        .await
+        .unwrap();
+}
+
+#[post("/config/<config_name>/instance/<instance>", data = "<data>")]
+async fn update_new_instance(
+    config_name: &str,
+    instance: &str,
+    query: RawQuery,
+    data: String,
+    state: &State<StateManager>,
+) {
+    let adapter = state.get_adapter();
+
+    let labels: Vec<Label> = query
+        .params
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
+
+    // TODO: do validation
+    // - config exists
+    // - labels are valid
+    // - not a duplicate?
+
+    adapter
+        .update_config_instance(config_name, instance, labels, &data)
         .await
         .unwrap();
 }

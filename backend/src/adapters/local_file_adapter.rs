@@ -214,6 +214,55 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         }));
     }
 
+    async fn update_config_instance(
+        &self,
+        config_name: &str,
+        instance: &str,
+        labels: Vec<Label>,
+        data: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(mut instances) = self.get_config_instance_metadata(config_name).await {
+            let revision_key = Uuid::new_v4().to_string();
+            let data_key = Uuid::new_v4().to_string();
+
+            let base_path = self.path.to_string(); // TODO: replace with helper func
+
+            // Create new file with data
+            let data_file_path = format!("{base_path}/{DATA_DIR}/{config_name}/{data_key}");
+            let mut data_file = File::create(&data_file_path)?;
+            Write::write_all(&mut data_file, data.as_bytes())?;
+            println!("Created data file: {}", data_file_path);
+
+            // Create revision
+            let revisions_path = self.get_instance_revisions_path();
+            let revision = ConfigInstanceRevision {
+                revision: String::from(&revision_key),
+                data_key: String::from(&data_key),
+            };
+            let revision_data = serde_json::to_string(&RevisionJson {
+                revision: revision.clone(),
+            })?;
+            let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
+            let mut revision_file = File::create(&revision_file_path)?;
+            Write::write_all(&mut revision_file, revision_data.as_bytes())?;
+            println!("Created revision file: {}", revision_file_path);
+
+            // Update instance data
+            if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
+                instance.current_revision = String::from(&revision.revision);
+                instance.revisions.push(String::from(&revision.revision));
+                self.update_instance_metadata(config_name, instances)
+                    .await?;
+                println!("Updated instance metadata for config: {config_name}");
+                return Ok(());
+            } // TODO: Throw a new custom for failed to update config metadata
+        }
+
+        return Err(Box::new(ConfigNotFoundError {
+            description: format!("Config not found: {config_name}"),
+        }));
+    }
+
     async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut configs = self.get_configs().await;
 
