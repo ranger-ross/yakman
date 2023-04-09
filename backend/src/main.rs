@@ -89,10 +89,7 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
         })
         .collect();
 
-    println!(
-        "Search for config {} with labels: {:?}",
-        config_name, labels
-    );
+    println!("Search for config {config_name} with labels: {:?}", labels);
 
     return adapter.get_config_data_by_labels(config_name, labels).await;
 }
