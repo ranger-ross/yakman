@@ -3,6 +3,7 @@ use std::{
     fmt,
     fs::{self, File},
     io::Write,
+    path::Path,
 };
 
 use rocket::serde::json::serde_json;
@@ -23,7 +24,7 @@ pub fn create_local_file_adapter() -> impl ConfigStorageAdapter {
     };
 }
 
-const CONFIG_MAN_DIR: &str = ".yakman"; // TODO: clean up, and rename
+const YAK_MAN_DIR: &str = ".yakman"; // TODO: clean up
 const DATA_DIR: &str = "config-instances"; // TODO: clean up
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,7 +45,41 @@ struct InstanceJson {
 #[async_trait]
 impl ConfigStorageAdapter for LocalFileStorageAdapter {
     async fn initialize_adapter(&mut self) {
-        println!("init");
+        println!("initializing local storage adapter");
+
+        let yakman_dir = self.get_yakman_dir();
+        if !Path::new(&yakman_dir).is_dir() {
+            println!("Creating {}", yakman_dir);
+            fs::create_dir(&yakman_dir)
+                .expect(&format!("Failed to create base dir: {}", yakman_dir));
+        }
+
+        let config_file = self.get_configs_datafile_path();
+        if !Path::new(&config_file).is_file() {
+            println!("Creating {}", config_file);
+            let data = serde_json::to_string(&ConfigJson { configs: vec![] })
+                .expect("Failed to create configs json");
+            let mut file = File::create(&config_file).expect("Failed to create configs file");
+            Write::write_all(&mut file, data.as_bytes())
+                .expect("Failed to write data to the configs file");
+        }
+
+        let label_file = self.get_labels_datafile_path();
+        if !Path::new(&label_file).is_file() {
+            println!("Creating {}", label_file);
+            let data = serde_json::to_string(&LabelJson { labels: vec![] })
+                .expect("Failed to create labels json");
+            let mut file = File::create(&label_file).expect("Failed to create labels file");
+            Write::write_all(&mut file, data.as_bytes())
+                .expect("Failed to write data to the labels file");
+        }
+
+        let instance_dir = self.get_config_instance_dir();
+        if !Path::new(&instance_dir).is_dir() {
+            println!("Creating {}", instance_dir);
+            fs::create_dir(&instance_dir)
+                .expect(&format!("Failed to create instance dir: {}", instance_dir));
+        }
     }
 
     async fn get_configs(&self) -> Vec<Config> {
@@ -55,7 +90,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     }
 
     async fn get_labels(&self) -> Vec<LabelType> {
-        let path = format!("{}/{CONFIG_MAN_DIR}/labels.json", self.path.as_str());
+        let path = self.get_labels_datafile_path();
         let content = fs::read_to_string(path).unwrap();
         let v: LabelJson = serde_json::from_str(&content).unwrap();
         return v.labels;
@@ -64,7 +99,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
         let base_path = self.path.as_str();
         let instance_file =
-            format!("{base_path}/{CONFIG_MAN_DIR}/instance-metadata/{config_name}.json");
+            format!("{base_path}/{YAK_MAN_DIR}/instance-metadata/{config_name}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
             let v: InstanceJson = serde_json::from_str(&content).unwrap();
             return Some(v.instances);
@@ -171,7 +206,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             instances: instace_metadata,
         })?;
         let path = format!(
-            "{}/{CONFIG_MAN_DIR}/instance-metadata/{}.json",
+            "{}/{YAK_MAN_DIR}/instance-metadata/{}.json",
             self.path.as_str(),
             config_name
         );
@@ -194,8 +229,18 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 }
 
 impl LocalFileStorageAdapter {
+    fn get_yakman_dir(&self) -> String {
+        return format!("{}/{YAK_MAN_DIR}", self.path.as_str());
+    }
+
+    fn get_labels_datafile_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/labels.json");
+    }
+
     fn get_configs_datafile_path(&self) -> String {
-        return format!("{}/{CONFIG_MAN_DIR}/configs.json", self.path.as_str());
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/configs.json");
     }
 
     fn get_config_instance_dir(&self) -> String {
@@ -209,7 +254,7 @@ impl LocalFileStorageAdapter {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let base_path = self.path.as_str();
         let instance_file =
-            format!("{base_path}/{CONFIG_MAN_DIR}/instance-metadata/{config_name}.json");
+            format!("{base_path}/{YAK_MAN_DIR}/instance-metadata/{config_name}.json");
         let data = serde_json::to_string(&InstanceJson {
             instances: instances,
         })?;
