@@ -86,6 +86,13 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
 
+        let revision_dir = self.get_instance_revisions_path();
+        if !Path::new(&revision_dir).is_dir() {
+            println!("Creating {}", revision_dir);
+            fs::create_dir(&revision_dir)
+                .expect(&format!("Failed to create revision dir: {}", instance_dir));
+        }
+
         let instance_metadata_dir = self.get_config_instance_metadata_dir();
         if !Path::new(&instance_metadata_dir).is_dir() {
             println!("Creating {}", instance_metadata_dir);
@@ -156,13 +163,20 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let selected_instance = instances.iter().find(|i| i.instance == instance);
 
             if let Some(instance) = selected_instance {
-                let instance_dir = self.get_config_instance_dir();
-                let path = format!(
-                    "{instance_dir}/{config_name}/{}",
-                    instance.instance.as_str()
-                );
-                println!("Found path {}", path);
-                return fs::read_to_string(path).ok();
+                let revision_dir = self.get_instance_revisions_path();
+                let revision_path = format!("{revision_dir}/{config_name}/{}", instance.current_revision);
+                println!("Fetching revision {}", revision_path);
+
+                if let Some(content) = fs::read_to_string(revision_path).ok() {
+                    println!("{}", content);
+                    let revision_data: RevisionJson = serde_json::from_str(&content).unwrap();
+                    let instance_dir = self.get_config_instance_dir();
+                    let instance_path = format!("{instance_dir}/{config_name}/{}", revision_data.revision.data_key);
+                    println!("Fetching instance data {}", instance_path);
+                    return fs::read_to_string(instance_path).ok();
+                } else {
+                    println!("Fetching revision not found");
+                }
             } else {
                 println!("No selected instance found");
                 return None;
@@ -179,7 +193,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(mut instances) = self.get_config_instance_metadata(config_name).await {
             let instance = Uuid::new_v4().to_string();
-            let revision = Uuid::new_v4().to_string();
+            let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 
             let base_path = self.path.to_string();
@@ -193,11 +207,13 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             // Create revision
             let revisions_path = self.get_instance_revisions_path();
             let revision = ConfigInstanceRevision {
-                revision: String::from(revision),
+                revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
             };
-            let revision_data = serde_json::to_string(&revision)?;
-            let revision_file_path = format!("{revisions_path}/{data_key}");
+            let revision_data = serde_json::to_string(&RevisionJson {
+                revision: revision.clone()
+            })?;
+            let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
             let mut revision_file = File::create(&revision_file_path)?;
             Write::write_all(&mut revision_file, revision_data.as_bytes())?;
             println!("Created revision file: {}", revision_file_path);
@@ -248,6 +264,12 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         let config_instance_path = format!("{config_instance_dir}/{config_name}");
         fs::create_dir(&config_instance_path)?;
         println!("Created config instance directory: {}", config_instance_path);
+
+       // Create config revisions directory
+       let revision_instance_dir = self.get_instance_revisions_path();
+       let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
+       fs::create_dir(&revision_instance_path)?;
+       println!("Created config revision directory: {}", revision_instance_path);
 
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
