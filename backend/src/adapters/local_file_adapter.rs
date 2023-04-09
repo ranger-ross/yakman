@@ -100,7 +100,6 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
     }
 
     async fn get_config_data(&self, config_name: &str, instance: &str) -> Option<String> {
-        let base_path = self.path.to_string();
         if let Some(instances) = self.get_config_instance_metadata(config_name).await {
             println!("Found {} instances", instances.len());
 
@@ -108,8 +107,9 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let selected_instance = instances.iter().find(|i| i.instance == instance);
 
             if let Some(instance) = selected_instance {
+                let instance_dir = self.get_config_instance_dir();
                 let path = format!(
-                    "{base_path}/{DATA_DIR}/{config_name}/{}",
+                    "{instance_dir}/{config_name}/{}",
                     instance.instance.as_str()
                 );
                 println!("Found path {}", path);
@@ -167,10 +167,21 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         // Create instance metadata file
         let instace_metadata: Vec<ConfigInstance> = vec![];
-        let data = serde_json::to_string(&InstanceJson { instances: instace_metadata })?;
-        let path = format!("{}/{CONFIG_MAN_DIR}/instance-metadata/{}.json", self.path.as_str(), config_name);
+        let data = serde_json::to_string(&InstanceJson {
+            instances: instace_metadata,
+        })?;
+        let path = format!(
+            "{}/{CONFIG_MAN_DIR}/instance-metadata/{}.json",
+            self.path.as_str(),
+            config_name
+        );
         let mut file = File::create(&path)?;
         Write::write_all(&mut file, data.as_bytes())?;
+
+        // Create config instances directory
+        let config_instance_dir = self.get_config_instance_dir();
+        println!("Creating dir {config_instance_dir}");
+        fs::create_dir(format!("{config_instance_dir}/{config_name}"))?;
 
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
@@ -185,6 +196,10 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 impl LocalFileStorageAdapter {
     fn get_configs_datafile_path(&self) -> String {
         return format!("{}/{CONFIG_MAN_DIR}/configs.json", self.path.as_str());
+    }
+
+    fn get_config_instance_dir(&self) -> String {
+        return format!("{}/{DATA_DIR}", self.path.as_str());
     }
 
     async fn update_instance_metadata(

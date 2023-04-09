@@ -185,11 +185,12 @@ struct ConfigRowProps {
 
 #[function_component(ConfigRow)]
 fn config_row(props: &ConfigRowProps) -> Html {
+    let create_config_instance_link = format!("/create-instance/{}", props.config.config.name);
     html! {
         <div style="border: solid; border-radius: 6px; padding: 0px 20px; margin: 8px; min-width: 50vw">
             <div style="border-bottom: solid 2px; display: flex; justify-content: space-between; align-items: center">
                 <h2>{&props.config.config.name}</h2>
-                <a href="/create-instance/testing-1">{"+"}</a> // TODO: use button instead
+                <a href={create_config_instance_link}>{"+"}</a> // TODO: use button instead
             </div>
 
 
