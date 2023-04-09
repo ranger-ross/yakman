@@ -80,6 +80,15 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             fs::create_dir(&instance_dir)
                 .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
+
+
+        let instance_metadata_dir = self.get_config_instance_metadata_dir();
+        if !Path::new(&instance_metadata_dir).is_dir() {
+            println!("Creating {}", instance_metadata_dir);
+            fs::create_dir(&instance_metadata_dir)
+                .expect(&format!("Failed to create instance metadata dir: {}", instance_metadata_dir));
+        }
+
     }
 
     async fn get_configs(&self) -> Vec<Config> {
@@ -245,6 +254,11 @@ impl LocalFileStorageAdapter {
 
     fn get_config_instance_dir(&self) -> String {
         return format!("{}/{DATA_DIR}", self.path.as_str());
+    }
+
+    fn get_config_instance_metadata_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/instance-metadata");
     }
 
     async fn update_instance_metadata(
