@@ -149,6 +149,8 @@ impl ConfigStorageAdapter for PostgresAdapter {
                 config_name: instance.config_name,
                 instance: instance.instance_id.to_string(),
                 labels: labels,
+                current_revision: String::from(""), // TODO: handle revisions
+                revisions: vec![],
             });
         }
 

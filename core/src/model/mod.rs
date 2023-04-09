@@ -18,14 +18,23 @@ pub struct LabelType {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Label {
     pub label_type: String,
-    pub value: String, // TODO: more powerful generics?
+    pub value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ConfigInstance {
-    pub config_name: String, // Unique key from Config
-    pub instance: String,
+    pub config_name: String,
+    pub instance: String, // Unique key
     pub labels: Vec<Label>,
+    pub current_revision: String,
+    pub revisions: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct ConfigInstanceRevision {
+    pub revision: String, // Unique key
+    pub data_key: String, // Key to fetch data
+    // pub instance: String, // Reference to config instance
 }
 
 #[derive(Debug, Serialize, Deserialize)]

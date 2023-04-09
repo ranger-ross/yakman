@@ -10,7 +10,7 @@ use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
 use uuid::Uuid;
-use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 use crate::adapters::{utils::select_instance, ConfigStorageAdapter};
 
@@ -40,6 +40,11 @@ struct ConfigJson {
 #[derive(Debug, Serialize, Deserialize)]
 struct InstanceJson {
     instances: Vec<ConfigInstance>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct RevisionJson {
+    revision: ConfigInstanceRevision,
 }
 
 #[async_trait]
@@ -81,14 +86,14 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
 
-
         let instance_metadata_dir = self.get_config_instance_metadata_dir();
         if !Path::new(&instance_metadata_dir).is_dir() {
             println!("Creating {}", instance_metadata_dir);
-            fs::create_dir(&instance_metadata_dir)
-                .expect(&format!("Failed to create instance metadata dir: {}", instance_metadata_dir));
+            fs::create_dir(&instance_metadata_dir).expect(&format!(
+                "Failed to create instance metadata dir: {}",
+                instance_metadata_dir
+            ));
         }
-
     }
 
     async fn get_configs(&self) -> Vec<Config> {
@@ -173,23 +178,41 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(mut instances) = self.get_config_instance_metadata(config_name).await {
-            let id = Uuid::new_v4().to_string();
+            let instance = Uuid::new_v4().to_string();
+            let revision = Uuid::new_v4().to_string();
+            let data_key = Uuid::new_v4().to_string();
+
             let base_path = self.path.to_string();
 
             // Create new file with data
-            let file_name = format!("{base_path}/{DATA_DIR}/{config_name}/{id}");
-            println!("{file_name}");
-            let mut file = File::create(&file_name)?;
-            Write::write_all(&mut file, data.as_bytes())?;
+            let data_file_path = format!("{base_path}/{DATA_DIR}/{config_name}/{data_key}");
+            let mut data_file = File::create(&data_file_path)?;
+            Write::write_all(&mut data_file, data.as_bytes())?;
+            println!("Created data file: {}", data_file_path);
+
+            // Create revision
+            let revisions_path = self.get_instance_revisions_path();
+            let revision = ConfigInstanceRevision {
+                revision: String::from(revision),
+                data_key: String::from(&data_key),
+            };
+            let revision_data = serde_json::to_string(&revision)?;
+            let revision_file_path = format!("{revisions_path}/{data_key}");
+            let mut revision_file = File::create(&revision_file_path)?;
+            Write::write_all(&mut revision_file, revision_data.as_bytes())?;
+            println!("Created revision file: {}", revision_file_path);
 
             // Add new instance to instances and update the instance datafile
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
-                instance: id,
+                instance: instance,
                 labels: labels,
+                current_revision: String::from(&revision.revision),
+                revisions: vec![revision.revision],
             });
             self.update_instance_metadata(config_name, instances)
                 .await?;
+            println!("Update instance metadata for config: {}", config_name);
 
             return Ok(());
         }
@@ -214,18 +237,17 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         let data = serde_json::to_string(&InstanceJson {
             instances: instace_metadata,
         })?;
-        let path = format!(
-            "{}/{YAK_MAN_DIR}/instance-metadata/{}.json",
-            self.path.as_str(),
-            config_name
-        );
+        let yakman_path = self.get_yakman_dir();
+        let path = format!("{yakman_path}/instance-metadata/{config_name}.json");
         let mut file = File::create(&path)?;
         Write::write_all(&mut file, data.as_bytes())?;
+        println!("Created instance metadata file: {}", path);
 
         // Create config instances directory
         let config_instance_dir = self.get_config_instance_dir();
-        println!("Creating dir {config_instance_dir}");
-        fs::create_dir(format!("{config_instance_dir}/{config_name}"))?;
+        let config_instance_path = format!("{config_instance_dir}/{config_name}");
+        fs::create_dir(&config_instance_path)?;
+        println!("Created config instance directory: {}", config_instance_path);
 
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
@@ -250,6 +272,11 @@ impl LocalFileStorageAdapter {
     fn get_configs_datafile_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/configs.json");
+    }
+
+    fn get_instance_revisions_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/instance-revisions");
     }
 
     fn get_config_instance_dir(&self) -> String {
