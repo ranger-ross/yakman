@@ -278,7 +278,12 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
 
-    let link = format!(
+    let view_link = format!(
+        "/api/config/{}/instance/{}",
+        instance.config_name, instance.instance
+    );
+
+    let edit_link = format!(
         "/edit-instance/{}/{}",
         instance.config_name, instance.instance
     );
@@ -288,8 +293,14 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
             style="display: flex; gap: 10px; justify-content: space-between"
         >
             <p>
-                <a href={link}>
+                <a href={view_link} target="_blank">
                     { &instance.instance }
+                </a>
+
+            </p>
+            <p>
+                <a href={edit_link}>
+                    { "Edit" }
                 </a>
             </p>
 
