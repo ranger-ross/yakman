@@ -1,5 +1,6 @@
+mod api;
+
 use gloo_console::log;
-use gloo_net::http::Request;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
@@ -73,7 +74,7 @@ fn add_config_page() -> Html {
     let on_add_clicked = move |_| {
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            create_config(&input_value).await;
+            api::create_config(&input_value).await;
         });
     };
 
@@ -110,15 +111,15 @@ fn main_view() -> Html {
                 wasm_bindgen_futures::spawn_local(async move {
                     let mut configs_list = vec![];
 
-                    for config in fetch_configs().await {
-                        let instances = fetch_instance_metadata(&config.name).await;
+                    for config in api::fetch_configs().await {
+                        let instances = api::fetch_instance_metadata(&config.name).await;
                         configs_list.push(PageConfig {
                             config: config,
                             instances: instances,
                         });
                     }
 
-                    let labels: Vec<LabelType> = fetch_labels().await;
+                    let labels: Vec<LabelType> = api::fetch_labels().await;
 
                     page_data.set(Some(PageData {
                         configs: configs_list,
@@ -179,7 +180,7 @@ fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
         let instance = instance.clone();
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            update_config_instance(&config_name, &instance, &input_value).await;
+            api::update_config_instance(&config_name, &instance, &input_value).await;
         });
     };
 
@@ -217,7 +218,7 @@ fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
         let config_name = config_name.clone(); // TODO: maybe handle this better?
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            create_config_instance(&config_name, &input_value).await;
+            api::create_config_instance(&config_name, &input_value).await;
         });
     };
 
@@ -309,58 +310,6 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
     }
 }
 
-async fn fetch_configs() -> Vec<Config> {
-    return Request::get("/api/configs")
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
-}
-
-async fn fetch_labels() -> Vec<LabelType> {
-    return Request::get("/api/labels")
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
-}
-
-async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
-    return Request::get(&format!("/api/instances/{config_name}"))
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
-}
-
-async fn create_config_instance(config_name: &str, data: &str) {
-    Request::put(&format!("/api/config/{config_name}/data"))
-        .body(data)
-        .send()
-        .await
-        .unwrap();
-}
-
-async fn update_config_instance(config_name: &str, instance: &str, data: &str) {
-    Request::post(&format!("/api/config/{config_name}/instance/{instance}"))
-        .body(data)
-        .send()
-        .await
-        .unwrap();
-}
-
-async fn create_config(config_name: &str) {
-    Request::put(&format!("/api/config/{config_name}"))
-        .send()
-        .await
-        .unwrap();
-}
 
 fn main() {
     yew::Renderer::<App>::new().render();
