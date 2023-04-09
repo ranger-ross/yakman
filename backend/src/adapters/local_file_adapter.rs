@@ -239,10 +239,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         let config_instance_dir = self.get_config_instance_dir();
         let config_instance_path = format!("{config_instance_dir}/{config_name}");
         fs::create_dir(&config_instance_path)?;
-        println!(
-            "Created config instance directory: {}",
-            config_instance_path
-        );
+        println!("Created config instance directory: {config_instance_path}");
 
         // Create config revisions directory
         let revision_instance_dir = self.get_instance_revisions_path();
