@@ -13,6 +13,11 @@ enum Route {
     AddConfigPage,
     #[at("/create-instance/:config_name")]
     CreateConfigInstancePage { config_name: String },
+    #[at("/edit-instance/:config_name/:instance")]
+    EditConfigInstancePage {
+        config_name: String,
+        instance: String,
+    },
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -36,6 +41,17 @@ fn switch(routes: Route) -> Html {
         Route::CreateConfigInstancePage { config_name } => {
             html! {
                 <CreateConfigInstancePage config_name={config_name} />
+            }
+        }
+        Route::EditConfigInstancePage {
+            config_name,
+            instance,
+        } => {
+            html! {
+                <EditConfigInstancePage
+                    config_name={config_name}
+                    instance={instance}
+                />
             }
         }
         Route::AddConfigPage => html! { <AddConfigPage /> },
@@ -141,6 +157,47 @@ fn main_view() -> Html {
 }
 
 #[derive(Properties, PartialEq)]
+struct EditConfigInstancePageProps {
+    config_name: String,
+    instance: String,
+}
+
+#[function_component(EditConfigInstancePage)]
+fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
+    let input_value_handle = use_state(String::default);
+    let input_value = (*input_value_handle).clone();
+
+    let on_change = Callback::from(move |e: Event| {
+        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
+        input_value_handle.set(value);
+    });
+
+    let config_name = props.config_name.clone();
+    let instance = props.instance.clone();
+    let on_add_clicked = move |_| {
+        let config_name = config_name.clone(); // TODO: maybe handle this better?
+        let instance = instance.clone();
+        let input_value = input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            update_config_instance(&config_name, &instance, &input_value).await;
+        });
+    };
+
+    html! {
+        <div>
+            <h1>{format!("Edit Config Instance {} -> {}", props.config_name, props.instance)}</h1>
+
+            <h3>{"Data"}</h3>
+            <textarea onchange={on_change} />
+
+            <br />
+
+            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
 struct CreateConfigInstancePageProps {
     config_name: String,
 }
@@ -222,7 +279,7 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .join(", ");
 
     let link = format!(
-        "/api/config/{}/instance/{}",
+        "/edit-instance/{}/{}",
         instance.config_name, instance.instance
     );
     html! {
@@ -231,10 +288,7 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
             style="display: flex; gap: 10px; justify-content: space-between"
         >
             <p>
-                <a
-                    target="_blank"
-                    href={link}
-                >
+                <a href={link}>
                     { &instance.instance }
                 </a>
             </p>
@@ -276,6 +330,14 @@ async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
 
 async fn create_config_instance(config_name: &str, data: &str) {
     Request::put(&format!("/api/config/{config_name}/data"))
+        .body(data)
+        .send()
+        .await
+        .unwrap();
+}
+
+async fn update_config_instance(config_name: &str, instance: &str, data: &str) {
+    Request::post(&format!("/api/config/{config_name}/instance/{instance}"))
         .body(data)
         .send()
         .await
