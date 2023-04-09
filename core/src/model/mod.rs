@@ -1,3 +1,5 @@
+use chrono::DateTime;
+use chrono::Utc;
 pub use serde::Deserialize;
 pub use serde::Serialize;
 
@@ -34,7 +36,7 @@ pub struct ConfigInstance {
 pub struct ConfigInstanceRevision {
     pub revision: String, // Unique key
     pub data_key: String, // Key to fetch data
-    // pub instance: String, // Reference to config instance
+    pub timestamp_ms: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

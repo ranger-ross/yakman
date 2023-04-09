@@ -5,6 +5,7 @@ use std::{
     path::Path,
 };
 
+use chrono::Utc;
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
@@ -185,6 +186,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
+                timestamp_ms: Utc::now().timestamp_millis(),
             };
             let revision_data = serde_json::to_string(&RevisionJson {
                 revision: revision.clone(),
@@ -218,7 +220,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_name: &str,
         instance: &str,
-        labels: Vec<Label>,
+        labels: Vec<Label>, // TODO: Handle labels
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(mut instances) = self.get_config_instance_metadata(config_name).await {
@@ -238,6 +240,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
+                timestamp_ms: Utc::now().timestamp_millis(),
             };
             let revision_data = serde_json::to_string(&RevisionJson {
                 revision: revision.clone(),
