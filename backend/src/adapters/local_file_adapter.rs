@@ -141,16 +141,10 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
-                let path = format!(
-                    "{base_path}/{DATA_DIR}/{config_name}/{}",
-                    instance.instance.as_str()
-                );
-                println!("Found path {}", path);
-                return fs::read_to_string(path).ok();
-            } else {
-                println!("No selected instance found");
-                return None;
+                return self.get_data_by_revision(config_name, &instance.current_revision);
             }
+            println!("No selected instance found");
+            return None;
         }
         return None;
     }
@@ -163,24 +157,10 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let selected_instance = instances.iter().find(|i| i.instance == instance);
 
             if let Some(instance) = selected_instance {
-                let revision_dir = self.get_instance_revisions_path();
-                let revision_path = format!("{revision_dir}/{config_name}/{}", instance.current_revision);
-                println!("Fetching revision {}", revision_path);
-
-                if let Some(content) = fs::read_to_string(revision_path).ok() {
-                    println!("{}", content);
-                    let revision_data: RevisionJson = serde_json::from_str(&content).unwrap();
-                    let instance_dir = self.get_config_instance_dir();
-                    let instance_path = format!("{instance_dir}/{config_name}/{}", revision_data.revision.data_key);
-                    println!("Fetching instance data {}", instance_path);
-                    return fs::read_to_string(instance_path).ok();
-                } else {
-                    println!("Fetching revision not found");
-                }
-            } else {
-                println!("No selected instance found");
-                return None;
+                return self.get_data_by_revision(config_name, &instance.current_revision);
             }
+            println!("No selected instance found");
+            return None;
         }
         return None;
     }
@@ -211,7 +191,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 data_key: String::from(&data_key),
             };
             let revision_data = serde_json::to_string(&RevisionJson {
-                revision: revision.clone()
+                revision: revision.clone(),
             })?;
             let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
             let mut revision_file = File::create(&revision_file_path)?;
@@ -263,13 +243,19 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         let config_instance_dir = self.get_config_instance_dir();
         let config_instance_path = format!("{config_instance_dir}/{config_name}");
         fs::create_dir(&config_instance_path)?;
-        println!("Created config instance directory: {}", config_instance_path);
+        println!(
+            "Created config instance directory: {}",
+            config_instance_path
+        );
 
-       // Create config revisions directory
-       let revision_instance_dir = self.get_instance_revisions_path();
-       let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-       fs::create_dir(&revision_instance_path)?;
-       println!("Created config revision directory: {}", revision_instance_path);
+        // Create config revisions directory
+        let revision_instance_dir = self.get_instance_revisions_path();
+        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
+        fs::create_dir(&revision_instance_path)?;
+        println!(
+            "Created config revision directory: {}",
+            revision_instance_path
+        );
 
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
@@ -308,6 +294,22 @@ impl LocalFileStorageAdapter {
     fn get_config_instance_metadata_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instance-metadata");
+    }
+
+    fn get_data_by_revision(&self, config_name: &str, revision: &str) -> Option<String> {
+        let revision_dir = self.get_instance_revisions_path();
+        let revision_path = format!("{revision_dir}/{config_name}/{}", revision);
+        println!("Fetching revision {}", revision_path);
+        if let Some(content) = fs::read_to_string(revision_path).ok() {
+            let revision_data: RevisionJson = serde_json::from_str(&content).unwrap();
+            let key = &revision_data.revision.data_key;
+            let instance_dir = self.get_config_instance_dir();
+            let instance_path = format!("{instance_dir}/{config_name}/{key}");
+            println!("Fetching instance data {}", instance_path);
+            return fs::read_to_string(instance_path).ok();
+        }
+        println!("Fetching revision not found");
+        return None;
     }
 
     async fn update_instance_metadata(
