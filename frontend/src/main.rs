@@ -1,6 +1,6 @@
 use gloo_console::log;
 use gloo_net::http::Request;
-use web_sys::{EventTarget, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -9,6 +9,8 @@ use yew_router::prelude::*;
 enum Route {
     #[at("/")]
     Home,
+    #[at("/add-config")]
+    AddConfigPage,
     #[at("/create-instance/:config_name")]
     CreateConfigInstancePage { config_name: String },
     #[not_found]
@@ -36,7 +38,39 @@ fn switch(routes: Route) -> Html {
                 <CreateConfigInstancePage config_name={config_name} />
             }
         }
+        Route::AddConfigPage => html! { <AddConfigPage /> },
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
+    }
+}
+
+#[function_component(AddConfigPage)]
+fn add_config_page() -> Html {
+    let input_value_handle = use_state(String::default);
+    let input_value = (*input_value_handle).clone();
+
+    let on_change = Callback::from(move |e: Event| {
+        // TODO: make sure input matches config name requirements
+        let value = e.target_unchecked_into::<HtmlInputElement>().value();
+        input_value_handle.set(value); // TODO: validate for duplicates?
+    });
+
+    let on_add_clicked = move |_| {
+        let input_value = input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            create_config(&input_value).await;
+        });
+    };
+
+    html! {
+        <div>
+            <h1>{"Add Config"}</h1>
+
+            {"Name: "} <input onchange={on_change} />
+
+            <br />
+
+            <button onclick={on_add_clicked}>{"Create"}</button>
+        </div>
     }
 }
 
@@ -87,12 +121,19 @@ fn main_view() -> Html {
     }
 
     html! {
-        <div style="display: flex; flex-direction: column; align-items: center">
-            <div>
-                <h1>{ "Configs" }</h1>
-                {page_data.as_ref().unwrap().configs.iter().map(|config| {
-                    html! { <ConfigRow config={config.clone()} /> }
-                }).collect::<Html>()}
+        <div>
+            // Header
+            <div style="display: flex; justify-content: end">
+                <a href="/add-config">{"+"}</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center">
+                <div>
+                    <h1>{ "Configs" }</h1>
+                    {page_data.as_ref().unwrap().configs.iter().map(|config| {
+                        html! { <ConfigRow config={config.clone()} /> }
+                    }).collect::<Html>()}
+                </div>
             </div>
 
         </div>
@@ -144,11 +185,12 @@ struct ConfigRowProps {
 
 #[function_component(ConfigRow)]
 fn config_row(props: &ConfigRowProps) -> Html {
+    let create_config_instance_link = format!("/create-instance/{}", props.config.config.name);
     html! {
         <div style="border: solid; border-radius: 6px; padding: 0px 20px; margin: 8px; min-width: 50vw">
             <div style="border-bottom: solid 2px; display: flex; justify-content: space-between; align-items: center">
                 <h2>{&props.config.config.name}</h2>
-                <a href="/create-instance/testing-1">{"+"}</a> // TODO: use button instead
+                <a href={create_config_instance_link}>{"+"}</a> // TODO: use button instead
             </div>
 
 
@@ -179,7 +221,10 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
 
-    let link = format!("/api/config/{}/instance/{}", instance.config_name, instance.instance);
+    let link = format!(
+        "/api/config/{}/instance/{}",
+        instance.config_name, instance.instance
+    );
     html! {
         <div
             key={instance.instance.clone()}
@@ -229,13 +274,17 @@ async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
         .unwrap();
 }
 
-async fn create_config_instance(config_name: &str, data: &str) -> Vec<LabelType> {
-    return Request::put(&format!("/api/config/{config_name}/data"))
+async fn create_config_instance(config_name: &str, data: &str) {
+    Request::put(&format!("/api/config/{config_name}/data"))
         .body(data)
         .send()
         .await
-        .unwrap()
-        .json()
+        .unwrap();
+}
+
+async fn create_config(config_name: &str) {
+    Request::put(&format!("/api/config/{config_name}"))
+        .send()
         .await
         .unwrap();
 }
