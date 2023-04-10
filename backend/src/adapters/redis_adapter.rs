@@ -134,6 +134,10 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>> {
         todo!()
     }
+
+    async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
 }
 
 impl RedisStorageAdapter {
