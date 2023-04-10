@@ -12,6 +12,8 @@ enum Route {
     Home,
     #[at("/add-config")]
     AddConfigPage,
+    #[at("/add-label")]
+    AddLabelPage,
     #[at("/create-instance/:config_name")]
     CreateConfigInstancePage { config_name: String },
     #[at("/edit-instance/:config_name/:instance")]
@@ -56,10 +58,10 @@ fn switch(routes: Route) -> Html {
             }
         }
         Route::AddConfigPage => html! { <AddConfigPage /> },
+        Route::AddLabelPage => html! { <AddLabelPage /> },
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
     }
 }
-
 #[function_component(AddConfigPage)]
 fn add_config_page() -> Html {
     let input_value_handle = use_state(String::default);
@@ -83,6 +85,64 @@ fn add_config_page() -> Html {
             <h1>{"Add Config"}</h1>
 
             {"Name: "} <input onchange={on_change} />
+
+            <br />
+
+            <button onclick={on_add_clicked}>{"Create"}</button>
+        </div>
+    }
+}
+
+#[function_component(AddLabelPage)]
+fn add_label_page() -> Html {
+    let name = use_state(String::default);
+    let name_value = (*name).clone();
+    let prioity = use_state(String::default);
+    let prioity_value = (*prioity).clone();
+    let description = use_state(String::default);
+    let description_value = (*description).clone();
+
+    let on_name_change = Callback::from(move |e: Event| {
+        // TODO: make sure input matches config name requirements
+        let value = e.target_unchecked_into::<HtmlInputElement>().value();
+        name.set(value); // TODO: validate for duplicates?
+    });
+
+    let on_prioity_change = Callback::from(move |e: Event| {
+        // TODO: make sure input matches config name requirements
+        let value = e.target_unchecked_into::<HtmlInputElement>().value();
+        prioity.set(value); // TODO: validate for duplicates?
+    });
+
+    let on_description_change = Callback::from(move |e: Event| {
+        // TODO: make sure input matches config name requirements
+        let value = e.target_unchecked_into::<HtmlInputElement>().value();
+        description.set(value); // TODO: validate for duplicates?
+    });
+
+    let on_add_clicked = move |_| {
+        let name = name_value.clone();
+        let prioity = prioity_value.clone();
+        let description = description_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            api::create_label(LabelType {
+                name: name,
+                description: description,
+                priority: prioity.parse().unwrap(),
+                options: vec![],
+            })
+            .await;
+        });
+    };
+
+    html! {
+        <div>
+            <h1>{"Add Label"}</h1>
+            <div>{"Name: "} <input onchange={on_name_change} /></div>
+            <div>{"Prioity: "} <input onchange={on_prioity_change} /></div>
+            <div>{"Description: "} <input onchange={on_description_change} /></div>
+
+            // TODO: Support Options
 
             <br />
 
@@ -140,8 +200,10 @@ fn main_view() -> Html {
     html! {
         <div>
             // Header
-            <div style="display: flex; justify-content: end">
-                <a href="/add-config">{"+"}</a>
+            <div style="display: flex; justify-content: end; gap: 10px">
+                <a href="/add-config">{"Add Config"}</a>
+
+                <a href="/add-label">{"Add Label"}</a>
             </div>
 
             <div style="display: flex; flex-direction: column; align-items: center">
@@ -309,7 +371,6 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         </div>
     }
 }
-
 
 fn main() {
     yew::Renderer::<App>::new().render();

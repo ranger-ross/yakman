@@ -1,5 +1,5 @@
 use gloo_net::http::Request;
-use yak_man_core::model::{Config, ConfigInstance, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
 
 pub async fn fetch_configs() -> Vec<Config> {
     return Request::get("/api/configs")
@@ -49,6 +49,15 @@ pub async fn update_config_instance(config_name: &str, instance: &str, data: &st
 
 pub async fn create_config(config_name: &str) {
     Request::put(&format!("/api/config/{config_name}"))
+        .send()
+        .await
+        .unwrap();
+}
+
+pub async fn create_label(label: LabelType) {
+    let body = serde_json::to_string(&label).unwrap();
+    Request::put(&format!("/api/labels"))
+        .body(body)
         .send()
         .await
         .unwrap();

@@ -2,7 +2,10 @@ mod adapters;
 mod utils;
 
 use adapters::ConfigStorageAdapter;
-use rocket::{serde::json::Json, State};
+use rocket::{
+    serde::json::{serde_json, Json},
+    State,
+};
 use std::{env, vec};
 use utils::raw_query::RawQuery;
 use yak_man_core::{
@@ -44,7 +47,8 @@ async fn rocket() -> _ {
             routes![
                 configs,
                 labels,
-                instances,
+                create_label,
+                get_instance_by_id,
                 data,
                 create_new_instance,
                 instance,
@@ -66,8 +70,23 @@ async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
     return Json(adapter.get_labels().await);
 }
 
+#[put("/labels", data = "<data>")]
+async fn create_label(data: String, state: &State<StateManager>) {
+    let adapter = state.get_adapter();
+
+    let label_type: LabelType = serde_json::from_str(&data).unwrap();
+
+    println!("{:?}", label_type);
+
+    adapter.create_label(label_type).await.unwrap();
+
+}
+
 #[get("/instances/<id>")]
-async fn instances(id: &str, state: &State<StateManager>) -> Option<Json<Vec<ConfigInstance>>> {
+async fn get_instance_by_id(
+    id: &str,
+    state: &State<StateManager>,
+) -> Option<Json<Vec<ConfigInstance>>> {
     let adapter = state.get_adapter();
     return match adapter.get_config_instance_metadata(id).await {
         Some(data) => Some(Json(data)),

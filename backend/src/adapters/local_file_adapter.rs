@@ -310,6 +310,50 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         Ok(())
     }
+
+    async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+        let mut labels = self.get_labels().await;
+
+        let mut max_prioity: Option<i32> = None;
+
+        // Prevent duplicates
+        for lbl in &labels {
+            if &lbl.name == &label.name {
+                return Err(Box::new(LabelAlreadyExistsError {
+                    // TODO: make this return 400 in endpoint
+                    description: String::from("Label already exists"),
+                }));
+            }
+            if max_prioity.is_none() || lbl.priority > max_prioity.unwrap() {
+                max_prioity = Some(lbl.priority);
+            }
+        }
+
+        if let Some(max_prioity) = max_prioity {
+            if max_prioity < label.priority - 1 {
+                todo!(); // TODO: custom error
+            }
+        }
+
+        for lbl in labels.iter_mut() {
+            if lbl.priority >= label.priority {
+                lbl.priority += 1;
+            }
+        }
+
+        labels.push(label);
+
+        let label_file = self.get_labels_datafile_path();
+
+        println!("Updating {}", label_file);
+        let data = serde_json::to_string(&LabelJson { labels: labels })
+            .expect("Failed to update labels json");
+        let mut file = File::create(&label_file).expect("Failed to update labels file");
+        Write::write_all(&mut file, data.as_bytes())
+            .expect("Failed to write data to the labels file");
+
+        return Ok(());
+    }
 }
 
 impl LocalFileStorageAdapter {
@@ -388,6 +432,24 @@ impl fmt::Display for ConfigNotFoundError {
 }
 
 impl std::error::Error for ConfigNotFoundError {
+    fn description(&self) -> &str {
+        &self.description
+    }
+}
+
+// TODO: Refactor to base adapter ?
+#[derive(Debug)]
+struct LabelAlreadyExistsError {
+    description: String,
+}
+
+impl fmt::Display for LabelAlreadyExistsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description)
+    }
+}
+
+impl std::error::Error for LabelAlreadyExistsError {
     fn description(&self) -> &str {
         &self.description
     }

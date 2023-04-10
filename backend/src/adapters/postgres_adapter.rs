@@ -214,6 +214,10 @@ impl ConfigStorageAdapter for PostgresAdapter {
     ) -> Result<(), Box<dyn std::error::Error>> {
         todo!();
     }
+
+    async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
 }
 
 impl PostgresAdapter {
