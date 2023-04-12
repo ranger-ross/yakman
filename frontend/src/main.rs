@@ -1,6 +1,6 @@
 mod api;
 
-use std::{collections::HashMap, rc::Rc, cell::RefCell};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use gloo_console::log;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
@@ -67,9 +67,6 @@ fn switch(routes: Route) -> Html {
 #[function_component(AddConfigPage)]
 fn add_config_page() -> Html {
     let input_value_handle = use_state(String::default);
-
-    let selected_labels_state: UseStateHandle<HashMap<String, Option<String>>> = use_state(HashMap::new);
-
     let input_value = (*input_value_handle).clone();
 
     let on_change = Callback::from(move |e: Event| {
@@ -89,20 +86,10 @@ fn add_config_page() -> Html {
 
     {
         let label_data = labels.clone();
-        let selected_labels_state = selected_labels_state.clone();
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     let data = api::fetch_labels().await;
-
-                    let mut m = HashMap::new();
-
-                    for label in &data {
-                        m.insert(String::from(&label.name), None);
-                    }
-
-                    selected_labels_state.set(m);
-
                     label_data.set(data);
                 });
             },
@@ -110,32 +97,11 @@ fn add_config_page() -> Html {
         );
     }
 
-    let selected_labels_state_value = (*selected_labels_state).clone();
-
-    log!(
-        "selected_labels_state_value = ",
-        selected_labels_state_value.len()
-    );
-
-    let on_labels_changed: Callback<HashMap<String, Option<String>>> =
-        Callback::from(|data: HashMap<String, Option<String>>| {
-            log!("labels changed! len = ", data.len());
-
-            
-
-        });
-
     html! {
         <div>
             <h1>{"Add Config"}</h1>
 
             {"Name: "} <input onchange={on_change} />
-
-            <LabelSelection
-                labels={labels.to_vec()}
-                selected_labels_state={selected_labels_state_value}
-                on_change={on_labels_changed}
-            />
 
             <br />
             <br />
@@ -175,15 +141,10 @@ fn label_selection(props: &LabelSelectionProps) -> Html {
                     <br />
                     {&label.name}
                     <select onchange={&on_select_change} name={String::from(&label.name)}>
-                        <option value="none">{"None"}</option>
+                        <option value="none" selected={true}>{"None"}</option>
                         {label.options.iter().map(|option| html! {
                             <option
                                 value={option.clone()}
-                                selected={
-                                    let is_selected = props.selected_labels_state.get(&label.name).unwrap().clone().unwrap_or(String::from("")) == option.clone();
-                                    log!("test", is_selected);
-                                    is_selected
-                                }
                             >{option}</option>
                         }).collect::<Html>()}
                     </select>
@@ -376,13 +337,59 @@ fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
     });
 
     let config_name = props.config_name.clone();
+
+    let labels: UseStateHandle<Vec<LabelType>> = use_state(|| vec![]);
+    let selected_labels_state: UseStateHandle<HashMap<String, Option<String>>> =
+        use_state(HashMap::new);
+    let selected_labels_state_value = (*selected_labels_state).clone();
+    {
+        let label_data = labels.clone();
+        let selected_labels_state = selected_labels_state.clone();
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    let data = api::fetch_labels().await;
+                    let mut m = HashMap::new();
+                    for label in &data {
+                        m.insert(String::from(&label.name), None);
+                    }
+                    selected_labels_state.set(m);
+                    label_data.set(data);
+                });
+            },
+            (),
+        );
+    }
+
+    let selected_labels_state_value_clone = (*selected_labels_state).clone();
+
     let on_add_clicked = move |_| {
         let config_name = config_name.clone(); // TODO: maybe handle this better?
         let input_value = input_value.clone();
+        let selected_labels = selected_labels_state_value_clone.clone();
+
+        log!("Selected labels len = ", selected_labels.len());
+
         wasm_bindgen_futures::spawn_local(async move {
-            api::create_config_instance(&config_name, &input_value).await;
+            let selected_labels: HashMap<String, String> = selected_labels
+                .into_iter()
+                .filter_map(|(key, v)| v.map(|value| (key, value)))
+                .collect();
+
+            api::create_config_instance(&config_name, &input_value, selected_labels).await;
         });
     };
+
+    log!(
+        "selected_labels_state_value = ",
+        selected_labels_state_value.len()
+    );
+
+    let on_labels_changed: Callback<HashMap<String, Option<String>>> =
+        Callback::from(move |data: HashMap<String, Option<String>>| {
+            log!("labels changed! len = ", data.len());
+            selected_labels_state.set(data);
+        });
 
     html! {
         <div>
@@ -390,6 +397,13 @@ fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
 
             <h3>{"Data"}</h3>
             <textarea onchange={on_change} />
+
+            <LabelSelection
+                labels={labels.to_vec()}
+                selected_labels_state={selected_labels_state_value}
+                on_change={on_labels_changed}
+            />
+
 
             <br />
 
