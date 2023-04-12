@@ -1,5 +1,3 @@
-use chrono::DateTime;
-use chrono::Utc;
 pub use serde::Deserialize;
 pub use serde::Serialize;
 
@@ -9,7 +7,7 @@ pub struct Config {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct LabelType {
     pub name: String, // Unique key
     pub description: String,

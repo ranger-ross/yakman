@@ -1,5 +1,5 @@
 use gloo_net::http::Request;
-use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, LabelType};
 
 pub async fn fetch_configs() -> Vec<Config> {
     return Request::get("/api/configs")

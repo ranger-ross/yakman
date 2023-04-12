@@ -1,5 +1,7 @@
 mod api;
 
+use std::{collections::HashMap, rc::Rc, cell::RefCell};
+
 use gloo_console::log;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
@@ -65,6 +67,9 @@ fn switch(routes: Route) -> Html {
 #[function_component(AddConfigPage)]
 fn add_config_page() -> Html {
     let input_value_handle = use_state(String::default);
+
+    let selected_labels_state: UseStateHandle<HashMap<String, Option<String>>> = use_state(HashMap::new);
+
     let input_value = (*input_value_handle).clone();
 
     let on_change = Callback::from(move |e: Event| {
@@ -80,16 +85,111 @@ fn add_config_page() -> Html {
         });
     };
 
+    let labels: UseStateHandle<Vec<LabelType>> = use_state(|| vec![]);
+
+    {
+        let label_data = labels.clone();
+        let selected_labels_state = selected_labels_state.clone();
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    let data = api::fetch_labels().await;
+
+                    let mut m = HashMap::new();
+
+                    for label in &data {
+                        m.insert(String::from(&label.name), None);
+                    }
+
+                    selected_labels_state.set(m);
+
+                    label_data.set(data);
+                });
+            },
+            (),
+        );
+    }
+
+    let selected_labels_state_value = (*selected_labels_state).clone();
+
+    log!(
+        "selected_labels_state_value = ",
+        selected_labels_state_value.len()
+    );
+
+    let on_labels_changed: Callback<HashMap<String, Option<String>>> =
+        Callback::from(|data: HashMap<String, Option<String>>| {
+            log!("labels changed! len = ", data.len());
+
+            
+
+        });
+
     html! {
         <div>
             <h1>{"Add Config"}</h1>
 
             {"Name: "} <input onchange={on_change} />
 
+            <LabelSelection
+                labels={labels.to_vec()}
+                selected_labels_state={selected_labels_state_value}
+                on_change={on_labels_changed}
+            />
+
+            <br />
             <br />
 
             <button onclick={on_add_clicked}>{"Create"}</button>
         </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+struct LabelSelectionProps {
+    labels: Vec<LabelType>,
+    selected_labels_state: HashMap<String, Option<String>>,
+    on_change: Callback<HashMap<String, Option<String>>>,
+}
+
+#[function_component(LabelSelection)]
+fn label_selection(props: &LabelSelectionProps) -> Html {
+    let selected_labels = Rc::new(RefCell::new(props.selected_labels_state.clone()));
+
+    let on_change = Rc::new(props.on_change.clone());
+
+    let on_select_change = Callback::from(move |event: Event| {
+        let input = event.target_unchecked_into::<HtmlInputElement>(); // TODO: This sucks
+        let value = input.value();
+        let mut selected = selected_labels.borrow().clone();
+        let old_value = selected.get_mut(&input.name()).unwrap();
+        *old_value = Some(value);
+
+        on_change.emit(selected);
+    });
+
+    html! {
+        <>
+            {props.labels.iter().map(|label| html! {
+                <>
+                    <br />
+                    {&label.name}
+                    <select onchange={&on_select_change} name={String::from(&label.name)}>
+                        <option value="none">{"None"}</option>
+                        {label.options.iter().map(|option| html! {
+                            <option
+                                value={option.clone()}
+                                selected={
+                                    let is_selected = props.selected_labels_state.get(&label.name).unwrap().clone().unwrap_or(String::from("")) == option.clone();
+                                    log!("test", is_selected);
+                                    is_selected
+                                }
+                            >{option}</option>
+                        }).collect::<Html>()}
+                    </select>
+                </>
+            }).collect::<Html>()}
+        </>
     }
 }
 
