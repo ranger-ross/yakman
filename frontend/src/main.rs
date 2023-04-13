@@ -1,10 +1,16 @@
 mod api;
+mod components;
+
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use gloo_console::log;
-use web_sys::{HtmlInputElement, HtmlTextAreaElement};
+use web_sys::HtmlInputElement;
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
+
+use crate::components::{CreateConfigInstancePage, EditConfigInstancePage};
+// use components::modify_config_instance::create_config_instance_page;
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
@@ -80,6 +86,21 @@ fn add_config_page() -> Html {
         });
     };
 
+    let labels: UseStateHandle<Vec<LabelType>> = use_state(|| vec![]);
+
+    {
+        let label_data = labels.clone();
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    let data = api::fetch_labels().await;
+                    label_data.set(data);
+                });
+            },
+            (),
+        );
+    }
+
     html! {
         <div>
             <h1>{"Add Config"}</h1>
@@ -87,9 +108,53 @@ fn add_config_page() -> Html {
             {"Name: "} <input onchange={on_change} />
 
             <br />
+            <br />
 
             <button onclick={on_add_clicked}>{"Create"}</button>
         </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+struct LabelSelectionProps {
+    labels: Vec<LabelType>,
+    selected_labels_state: HashMap<String, Option<String>>,
+    on_change: Callback<HashMap<String, Option<String>>>,
+}
+
+#[function_component(LabelSelection)]
+fn label_selection(props: &LabelSelectionProps) -> Html {
+    let selected_labels = Rc::new(RefCell::new(props.selected_labels_state.clone()));
+
+    let on_change = Rc::new(props.on_change.clone());
+
+    let on_select_change = Callback::from(move |event: Event| {
+        let input = event.target_unchecked_into::<HtmlInputElement>(); // TODO: This sucks
+        let value = input.value();
+        let mut selected = selected_labels.borrow().clone();
+        let old_value = selected.get_mut(&input.name()).unwrap();
+        *old_value = Some(value);
+
+        on_change.emit(selected);
+    });
+
+    html! {
+        <>
+            {props.labels.iter().map(|label| html! {
+                <>
+                    <br />
+                    {&label.name}
+                    <select onchange={&on_select_change} name={String::from(&label.name)}>
+                        <option value="none" selected={true}>{"None"}</option>
+                        {label.options.iter().map(|option| html! {
+                            <option
+                                value={option.clone()}
+                            >{option}</option>
+                        }).collect::<Html>()}
+                    </select>
+                </>
+            }).collect::<Html>()}
+        </>
     }
 }
 
@@ -215,85 +280,6 @@ fn main_view() -> Html {
                 </div>
             </div>
 
-        </div>
-    }
-}
-
-#[derive(Properties, PartialEq)]
-struct EditConfigInstancePageProps {
-    config_name: String,
-    instance: String,
-}
-
-#[function_component(EditConfigInstancePage)]
-fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
-    let input_value_handle = use_state(String::default);
-    let input_value = (*input_value_handle).clone();
-
-    let on_change = Callback::from(move |e: Event| {
-        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
-        input_value_handle.set(value);
-    });
-
-    let config_name = props.config_name.clone();
-    let instance = props.instance.clone();
-    let on_add_clicked = move |_| {
-        let config_name = config_name.clone(); // TODO: maybe handle this better?
-        let instance = instance.clone();
-        let input_value = input_value.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            api::update_config_instance(&config_name, &instance, &input_value).await;
-        });
-    };
-
-    html! {
-        <div>
-            <h1>{format!("Edit Config Instance {} -> {}", props.config_name, props.instance)}</h1>
-
-            <h3>{"Data"}</h3>
-            <textarea onchange={on_change} />
-
-            <br />
-
-            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
-        </div>
-    }
-}
-
-#[derive(Properties, PartialEq)]
-struct CreateConfigInstancePageProps {
-    config_name: String,
-}
-
-#[function_component(CreateConfigInstancePage)]
-fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
-    let input_value_handle = use_state(String::default);
-    let input_value = (*input_value_handle).clone();
-
-    let on_change = Callback::from(move |e: Event| {
-        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
-        input_value_handle.set(value);
-    });
-
-    let config_name = props.config_name.clone();
-    let on_add_clicked = move |_| {
-        let config_name = config_name.clone(); // TODO: maybe handle this better?
-        let input_value = input_value.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            api::create_config_instance(&config_name, &input_value).await;
-        });
-    };
-
-    html! {
-        <div>
-            <h1>{format!("Create Config Instance {}", props.config_name)}</h1>
-
-            <h3>{"Data"}</h3>
-            <textarea onchange={on_change} />
-
-            <br />
-
-            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
         </div>
     }
 }
