@@ -343,15 +343,13 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
         .collect::<Vec<String>>()
         .join(", ");
 
-    let view_link = format!(
-        "/api/config/{}/instance/{}",
-        instance.config_name, instance.instance
-    );
+    let config_name = &instance.config_name;
+    let instance_id = &instance.instance;
 
-    let edit_link = format!(
-        "/edit-instance/{}/{}",
-        instance.config_name, instance.instance
-    );
+    let view_link = format!("/api/config/{config_name}/instance/{instance_id}");
+    let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
+    let history_link = format!("/history/{config_name}/{instance_id}");
+
     html! {
         <div
             key={instance.instance.clone()}
@@ -368,6 +366,13 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
                     { "Edit" }
                 </a>
             </p>
+
+            <p>
+                <a href={history_link}>
+                    { "History" }
+                </a>
+            </p>
+
 
             <p>{format!("{}", labels_text)}</p>
         </div>
