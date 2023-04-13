@@ -86,12 +86,12 @@ pub async fn create_label(label: LabelType) {
         .unwrap();
 }
 
-pub async fn fetch_instance_revisions(config_name: &str, instance: &str) -> Vec<ConfigInstanceRevision> {
+pub async fn fetch_instance_revisions(config_name: &str, instance: &str) -> Option<Vec<ConfigInstanceRevision>> {
     return Request::get(&format!("/api/config/{config_name}/instance/{instance}/revisions"))
     .send()
     .await
     .unwrap()
     .json()
     .await
-    .unwrap();
+    .ok();
 }
