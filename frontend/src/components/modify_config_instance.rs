@@ -50,47 +50,6 @@ pub fn label_selection(props: &LabelSelectionProps) -> Html {
 }
 
 #[derive(Properties, PartialEq)]
-pub struct EditConfigInstancePageProps {
-    pub config_name: String,
-    pub instance: String,
-}
-
-#[function_component(EditConfigInstancePage)]
-pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
-    let input_value_handle = use_state(String::default);
-    let input_value = (*input_value_handle).clone();
-
-    let on_change = Callback::from(move |e: Event| {
-        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
-        input_value_handle.set(value);
-    });
-
-    let config_name = props.config_name.clone();
-    let instance = props.instance.clone();
-    let on_add_clicked = move |_| {
-        let config_name = config_name.clone(); // TODO: maybe handle this better?
-        let instance = instance.clone();
-        let input_value = input_value.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            api::update_config_instance(&config_name, &instance, &input_value).await;
-        });
-    };
-
-    html! {
-        <div>
-            <h1>{format!("Edit Config Instance {} -> {}", props.config_name, props.instance)}</h1>
-
-            <h3>{"Data"}</h3>
-            <textarea onchange={on_change} />
-
-            <br />
-
-            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
-        </div>
-    }
-}
-
-#[derive(Properties, PartialEq)]
 pub struct CreateConfigInstancePageProps {
     pub config_name: String,
 }
@@ -180,3 +139,46 @@ pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Htm
         </div>
     }
 }
+
+
+#[derive(Properties, PartialEq)]
+pub struct EditConfigInstancePageProps {
+    pub config_name: String,
+    pub instance: String,
+}
+
+#[function_component(EditConfigInstancePage)]
+pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
+    let input_value_handle = use_state(String::default);
+    let input_value = (*input_value_handle).clone();
+
+    let on_change = Callback::from(move |e: Event| {
+        let value = e.target_unchecked_into::<HtmlTextAreaElement>().value();
+        input_value_handle.set(value);
+    });
+
+    let config_name = props.config_name.clone();
+    let instance = props.instance.clone();
+    let on_add_clicked = move |_| {
+        let config_name = config_name.clone(); // TODO: maybe handle this better?
+        let instance = instance.clone();
+        let input_value = input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            api::update_config_instance(&config_name, &instance, &input_value).await;
+        });
+    };
+
+    html! {
+        <div>
+            <h1>{format!("Edit Config Instance {} -> {}", props.config_name, props.instance)}</h1>
+
+            <h3>{"Data"}</h3>
+            <textarea onchange={on_change} />
+
+            <br />
+
+            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
+        </div>
+    }
+}
+
