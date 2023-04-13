@@ -1,6 +1,6 @@
 use sqlx::{postgres::PgPoolOptions, query_as, FromRow, Pool, Postgres};
 
-use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, Label, LabelType, ConfigInstanceRevision};
 
 use crate::adapters::ConfigStorageAdapter;
 
@@ -216,6 +216,14 @@ impl ConfigStorageAdapter for PostgresAdapter {
     }
 
     async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Option<Vec<ConfigInstanceRevision>> {
         todo!()
     }
 }

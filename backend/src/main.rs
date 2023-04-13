@@ -10,7 +10,7 @@ use std::{env, vec};
 use utils::raw_query::RawQuery;
 use yak_man_core::{
     load_yak_man_settings,
-    model::{Config, ConfigInstance, Label, LabelType},
+    model::{Config, ConfigInstance, Label, LabelType, ConfigInstanceRevision},
 };
 
 use crate::adapters::{
@@ -54,6 +54,7 @@ async fn rocket() -> _ {
                 instance,
                 create_config,
                 update_new_instance,
+                get_instance_revisions
             ],
         )
 }
@@ -79,7 +80,6 @@ async fn create_label(data: String, state: &State<StateManager>) {
     println!("{:?}", label_type);
 
     adapter.create_label(label_type).await.unwrap();
-
 }
 
 #[get("/instances/<id>")]
@@ -194,6 +194,22 @@ async fn create_config(config_name: &str, state: &State<StateManager>) {
     // - not a duplicate?
 
     adapter.create_config(config_name).await.unwrap();
+}
+
+#[get("/config/<config_name>/instance/<instance>/revisions")]
+async fn get_instance_revisions(
+    config_name: &str,
+    instance: &str,
+    state: &State<StateManager>,
+) -> Option<Json<Vec<ConfigInstanceRevision>>> {
+    let adapter = state.get_adapter();
+
+    
+
+    if let Some(data) = adapter.get_instance_revisions(config_name, instance).await {
+        return Some(Json(data));
+    }
+    return None;
 }
 
 fn create_adapter() -> Box<dyn ConfigStorageAdapter> {

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use gloo_net::http::Request;
-use yak_man_core::model::{Config, ConfigInstance, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
 pub async fn fetch_configs() -> Vec<Config> {
     return Request::get("/api/configs")
@@ -84,4 +84,14 @@ pub async fn create_label(label: LabelType) {
         .send()
         .await
         .unwrap();
+}
+
+pub async fn fetch_instance_revisions(config_name: &str, instance: &str) -> Option<Vec<ConfigInstanceRevision>> {
+    return Request::get(&format!("/api/config/{config_name}/instance/{instance}/revisions"))
+    .send()
+    .await
+    .unwrap()
+    .json()
+    .await
+    .ok();
 }

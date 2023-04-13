@@ -355,9 +355,51 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         return Ok(());
     }
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Option<Vec<ConfigInstanceRevision>> {
+        let instances = match self.get_config_instance_metadata(&config_name).await {
+            Some(value) => value,
+            None => return None,
+        };
+
+        let instance = match instances.iter().find(|inst| inst.instance == instance) {
+            Some(value) => value,
+            None => return None,
+        };
+
+        println!("found {} revisions", instance.revisions.len());
+
+        let mut revisions: Vec<ConfigInstanceRevision> = vec![];
+
+        for rev in instance.revisions.iter() {
+            if let Some(revision) = self.get_revsions(config_name, &rev) {
+                revisions.push(revision);
+            }
+        }
+
+        return Some(revisions);
+    }
 }
 
 impl LocalFileStorageAdapter {
+    fn get_revsions(&self, config_name: &str, revision: &str) -> Option<ConfigInstanceRevision> {
+        let dir = self.get_instance_revisions_path();
+        let path = format!("{dir}/{config_name}/{revision}");
+
+        println!("checking {} ", path);
+
+        if let Ok(content) = fs::read_to_string(&path) {
+            let data: Option<RevisionJson> = serde_json::from_str(&content).ok();
+            return data.map(|r| r.revision);
+        }
+
+        return None;
+    }
+
     fn get_yakman_dir(&self) -> String {
         return format!("{}/{YAK_MAN_DIR}", self.path.as_str());
     }
