@@ -51,8 +51,19 @@ pub async fn create_config_instance(
         .unwrap();
 }
 
-pub async fn update_config_instance(config_name: &str, instance: &str, data: &str) {
+pub async fn update_config_instance(
+    config_name: &str,
+    instance: &str,
+    data: &str,
+    labels: HashMap<String, String>,
+) {
+    let query_params: HashMap<&str, &str> = labels
+        .iter()
+        .map(|(key, value)| (&key[..], &value[..]))
+        .collect();
+
     Request::post(&format!("/api/config/{config_name}/instance/{instance}"))
+        .query(query_params)
         .body(data)
         .send()
         .await

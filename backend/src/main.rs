@@ -172,6 +172,8 @@ async fn update_new_instance(
         })
         .collect();
 
+    println!("lables {:?}", &labels);
+
     // TODO: do validation
     // - config exists
     // - labels are valid

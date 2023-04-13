@@ -220,7 +220,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_name: &str,
         instance: &str,
-        labels: Vec<Label>, // TODO: Handle labels
+        labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(mut instances) = self.get_config_instance_metadata(config_name).await {
@@ -254,6 +254,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
                 instance.current_revision = String::from(&revision.revision);
                 instance.revisions.push(String::from(&revision.revision));
+                instance.labels = labels;
                 self.update_instance_metadata(config_name, instances)
                     .await?;
                 println!("Updated instance metadata for config: {config_name}");
