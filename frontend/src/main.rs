@@ -9,7 +9,7 @@ use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::components::{CreateConfigInstancePage, EditConfigInstancePage};
+use crate::components::{CreateConfigInstancePage, EditConfigInstancePage, RevisionHistoryPage};
 // use components::modify_config_instance::create_config_instance_page;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -24,6 +24,11 @@ enum Route {
     CreateConfigInstancePage { config_name: String },
     #[at("/edit-instance/:config_name/:instance")]
     EditConfigInstancePage {
+        config_name: String,
+        instance: String,
+    },
+    #[at("/history/:config_name/:instance")]
+    RevisionHistoryPage {
         config_name: String,
         instance: String,
     },
@@ -58,6 +63,17 @@ fn switch(routes: Route) -> Html {
         } => {
             html! {
                 <EditConfigInstancePage
+                    config_name={config_name}
+                    instance={instance}
+                />
+            }
+        }
+        Route::RevisionHistoryPage {
+            config_name,
+            instance,
+        } => {
+            html! {
+                <RevisionHistoryPage
                     config_name={config_name}
                     instance={instance}
                 />
