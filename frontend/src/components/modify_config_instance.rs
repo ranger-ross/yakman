@@ -226,7 +226,7 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
 
             <br />
 
-            <button onclick={Callback::from(on_add_clicked)}>{"Add"}</button>
+            <button onclick={Callback::from(on_add_clicked)}>{"Update"}</button>
         </div>
     }
 }
