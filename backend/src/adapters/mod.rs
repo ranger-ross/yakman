@@ -1,4 +1,4 @@
-use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 pub mod local_file_adapter;
 pub mod postgres_adapter;
@@ -43,4 +43,10 @@ pub trait ConfigStorageAdapter: Sync + Send {
     async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>>;
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Option<Vec<ConfigInstanceRevision>>;
 }

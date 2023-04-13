@@ -1,5 +1,5 @@
 use crate::adapters::ConfigStorageAdapter;
-use yak_man_core::model::{Config, ConfigInstance, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 extern crate redis;
 use redis::{Commands, Connection, RedisResult};
@@ -120,7 +120,6 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         todo!();
     }
 
-        
     async fn update_config_instance(
         &self,
         config_name: &str,
@@ -136,6 +135,14 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Option<Vec<ConfigInstanceRevision>> {
         todo!()
     }
 }

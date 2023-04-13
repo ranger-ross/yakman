@@ -355,6 +355,14 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         return Ok(());
     }
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Option<Vec<ConfigInstanceRevision>> {
+        todo!()
+    }
 }
 
 impl LocalFileStorageAdapter {
