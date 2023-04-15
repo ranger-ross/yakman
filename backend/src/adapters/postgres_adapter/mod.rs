@@ -4,7 +4,7 @@ use yak_man_core::model::{Config, ConfigInstance, Label, LabelType, ConfigInstan
 
 use crate::adapters::ConfigStorageAdapter;
 
-use super::utils::select_instance;
+use super::{utils::select_instance, CreateConfigError, errors::CreateLabelError};
 
 pub struct PostgresAdapter {
     pub host: String,
@@ -192,7 +192,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
         todo!()
     }
 
-    async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
         todo!()
     }
 
@@ -215,7 +215,7 @@ impl ConfigStorageAdapter for PostgresAdapter {
         todo!();
     }
 
-    async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+    async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError> {
         todo!()
     }
 

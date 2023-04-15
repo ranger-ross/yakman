@@ -1,8 +1,12 @@
 mod adapters;
 mod utils;
 
-use adapters::ConfigStorageAdapter;
+use adapters::{
+    errors::{CreateConfigError, CreateLabelError},
+    ConfigStorageAdapter,
+};
 use rocket::{
+    http::Status,
     serde::json::{serde_json, Json},
     State,
 };
@@ -73,14 +77,27 @@ async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
 }
 
 #[put("/labels", data = "<data>")]
-async fn create_label(data: String, state: &State<StateManager>) {
+async fn create_label(data: String, state: &State<StateManager>) -> Status {
     let adapter = state.get_adapter();
 
-    let label_type: LabelType = serde_json::from_str(&data).unwrap();
+    let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
 
-    println!("{:?}", label_type);
+    if let Some(label_type) = label_type {
+        return match adapter.create_label(label_type).await {
+            Ok(()) => Status::Ok,
+            Err(e) => match e {
+                CreateLabelError::DuplicateLabelError { name } => Status::BadRequest,
+                CreateLabelError::EmptyOptionsError => Status::BadRequest,
+                CreateLabelError::InvalidPriorityError { prioity } => Status::BadRequest,
+                CreateLabelError::StorageError { message } => {
+                    println!("Failed to create label, error: {message}");
+                    Status::InternalServerError
+                }
+            },
+        };
+    }
 
-    adapter.create_label(label_type).await.unwrap();
+    return Status::BadRequest; // Bad input so parse failed
 }
 
 #[get("/instances/<id>")]
@@ -187,14 +204,20 @@ async fn update_new_instance(
 }
 
 #[put("/config/<config_name>")]
-async fn create_config(config_name: &str, state: &State<StateManager>) {
+async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
     let adapter = state.get_adapter();
+    let result = adapter.create_config(config_name).await;
 
-    // TODO: do validation
-    // - config exists
-    // - not a duplicate?
-
-    adapter.create_config(config_name).await.unwrap();
+    match result {
+        Ok(()) => Status::Ok,
+        Err(e) => match e {
+            CreateConfigError::StorageError { message } => {
+                println!("Failed to create config {config_name}, error: {message}");
+                Status::InternalServerError
+            }
+            CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
+        },
+    }
 }
 
 #[get("/config/<config_name>/instance/<instance>/revisions")]

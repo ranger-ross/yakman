@@ -1,5 +1,8 @@
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
+use self::errors::{CreateConfigError, CreateLabelError};
+
+pub mod errors;
 pub mod local_file_adapter;
 pub mod postgres_adapter;
 pub mod redis_adapter;
@@ -40,9 +43,9 @@ pub trait ConfigStorageAdapter: Sync + Send {
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>>;
 
-    async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>>;
+    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError>;
 
-    async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>>;
+    async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
 
     async fn get_instance_revisions(
         &self,
