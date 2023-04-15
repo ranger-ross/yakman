@@ -1,15 +1,12 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
-
 use super::super::api;
 use gloo_console::log;
-use web_sys::{HtmlInputElement, HtmlTextAreaElement};
-use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision, LabelType};
+use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
 use yew::prelude::*;
 
 extern crate chrono;
 use chrono::prelude::DateTime;
 use chrono::Utc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, UNIX_EPOCH};
 
 #[derive(Properties, PartialEq)]
 pub struct RevisionHistoryPageProps {
@@ -55,13 +52,17 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
 
     log!("current config = ", &current_revision.to_string());
 
+    let mut sorted_revisions = revisions.to_vec();
+    sorted_revisions.sort_by(|a,b| a.timestamp_ms.cmp(&b.timestamp_ms));
+
     html! {
         <div>
             <h1>{format!("History {} -> {}", props.config_name, props.instance)}</h1>
 
             <h3>{"Data"}</h3>
 
-            {revisions.iter().map(|revision| {
+            {sorted_revisions.iter()
+            .map(|revision| {
                 let is_current_instance = current_revision.to_string() == revision.revision;
                 let selected_message = if is_current_instance { "ACTIVE" } else { "" };
 
