@@ -1,9 +1,21 @@
-use yak_man_core::model::{ConfigInstance, LabelType};
+use yak_man_core::model::{ConfigInstance, LabelType, Config};
 use yew::{
     function_component, html, use_effect_with_deps, use_state, Html, Properties, UseStateHandle,
 };
 
-use crate::{api, PageConfig, PageData};
+use crate::api;
+
+#[derive(Debug, PartialEq, Clone)]
+struct PageConfig {
+    config: Config,
+    instances: Vec<ConfigInstance>,
+}
+
+#[derive(Debug, PartialEq)]
+struct PageData {
+    configs: Vec<PageConfig>,
+    labels: Vec<LabelType>,
+}
 
 #[function_component(ConfigListPage)]
 pub fn config_list_page() -> Html {

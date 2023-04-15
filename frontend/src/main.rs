@@ -4,7 +4,6 @@ mod routes;
 
 use components::{AddConfigPage, AddLabelPage, ConfigListPage};
 use routes::Route;
-use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -21,18 +20,6 @@ fn app() -> Html {
             <Switch<Route> render={switch} />
         </BrowserRouter>
     }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-struct PageConfig {
-    config: Config,
-    instances: Vec<ConfigInstance>,
-}
-
-#[derive(Debug, PartialEq)]
-struct PageData {
-    configs: Vec<PageConfig>,
-    labels: Vec<LabelType>,
 }
 
 fn switch(routes: Route) -> Html {
