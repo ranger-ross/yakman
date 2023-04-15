@@ -113,8 +113,10 @@ pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Htm
                 .filter_map(|(key, v)| v.map(|value| (key, value)))
                 .collect();
 
-            api::create_config_instance(&config_name, &input_value, selected_labels).await;
-            navigator.push(&Route::Home);
+            match api::create_config_instance(&config_name, &input_value, selected_labels).await {
+                Ok(()) => navigator.push(&Route::Home),
+                Err(err) => error!("Error creating config instance", err.to_string()),
+            };
         });
     };
 
