@@ -14,7 +14,7 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label,
 
 use crate::adapters::{utils::select_instance, ConfigStorageAdapter};
 
-use super::CreateConfigError;
+use super::{errors::CreateLabelError, CreateConfigError};
 
 pub struct LocalFileStorageAdapter {
     pub path: String,
@@ -277,7 +277,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             .find(|config| config.name == config_name)
             .is_some()
         {
-            return Err(CreateConfigError::duplicate_config_error(config_name));
+            return Err(CreateConfigError::duplicate_config(config_name));
         }
 
         configs.push(Config {
@@ -332,7 +332,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
-    async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>> {
+    async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError> {
         let mut labels = self.get_labels().await;
 
         let mut max_prioity: Option<i32> = None;
@@ -340,10 +340,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         // Prevent duplicates
         for lbl in &labels {
             if &lbl.name == &label.name {
-                return Err(Box::new(LabelAlreadyExistsError {
-                    // TODO: make this return 400 in endpoint
-                    description: String::from("Label already exists"),
-                }));
+                return Err(CreateLabelError::duplicate_label(&label.name));
             }
             if max_prioity.is_none() || lbl.priority > max_prioity.unwrap() {
                 max_prioity = Some(lbl.priority);
@@ -352,7 +349,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         if let Some(max_prioity) = max_prioity {
             if max_prioity < label.priority - 1 {
-                todo!(); // TODO: custom error
+                return Err(CreateLabelError::invalid_priority_error(label.priority));
             }
         }
 
