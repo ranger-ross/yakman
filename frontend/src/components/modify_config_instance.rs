@@ -1,10 +1,13 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+use crate::routes::Route;
+
 use super::super::api;
 use gloo_console::log;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::LabelType;
 use yew::prelude::*;
+use yew_router::prelude::use_navigator;
 
 #[derive(Properties, PartialEq)]
 pub struct LabelSelectionProps {
@@ -56,6 +59,7 @@ pub struct CreateConfigInstancePageProps {
 
 #[function_component(CreateConfigInstancePage)]
 pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Html {
+    let navigator = use_navigator().unwrap();
     let input_value_handle = use_state(String::default);
     let input_value = (*input_value_handle).clone();
 
@@ -95,6 +99,7 @@ pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Htm
         let config_name = config_name.clone(); // TODO: maybe handle this better?
         let input_value = input_value.clone();
         let selected_labels = selected_labels_state_value_clone.clone();
+        let navigator = navigator.clone();
 
         log!("Selected labels len = ", selected_labels.len());
 
@@ -105,6 +110,7 @@ pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Htm
                 .collect();
 
             api::create_config_instance(&config_name, &input_value, selected_labels).await;
+            navigator.push(&Route::Home);
         });
     };
 
@@ -148,6 +154,7 @@ pub struct EditConfigInstancePageProps {
 
 #[function_component(EditConfigInstancePage)]
 pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
+    let navigator = use_navigator().unwrap();
     let input_value_handle = use_state(String::default);
     let input_value = (*input_value_handle).clone();
 
@@ -187,6 +194,7 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
         let instance = instance.clone();
         let input_value = input_value.clone();
         let selected_labels = selected_labels_state_value_clone.clone();
+        let navigator = navigator.clone();
 
         log!("Selected labels len = ", selected_labels.len());
 
@@ -197,6 +205,7 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
                 .collect();
 
             api::update_config_instance(&config_name, &instance, &input_value, selected_labels).await;
+            navigator.push(&Route::Home);
         });
     };
 

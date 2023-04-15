@@ -1,41 +1,17 @@
 mod api;
 mod components;
+mod routes;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use gloo_console::log;
+use routes::Route;
 use web_sys::HtmlInputElement;
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
 use crate::components::{CreateConfigInstancePage, EditConfigInstancePage, RevisionHistoryPage};
-// use components::modify_config_instance::create_config_instance_page;
-
-#[derive(Clone, Routable, PartialEq)]
-enum Route {
-    #[at("/")]
-    Home,
-    #[at("/add-config")]
-    AddConfigPage,
-    #[at("/add-label")]
-    AddLabelPage,
-    #[at("/create-instance/:config_name")]
-    CreateConfigInstancePage { config_name: String },
-    #[at("/edit-instance/:config_name/:instance")]
-    EditConfigInstancePage {
-        config_name: String,
-        instance: String,
-    },
-    #[at("/history/:config_name/:instance")]
-    RevisionHistoryPage {
-        config_name: String,
-        instance: String,
-    },
-    #[not_found]
-    #[at("/404")]
-    NotFound,
-}
 
 #[derive(Debug, PartialEq, Clone)]
 struct PageConfig {
@@ -86,6 +62,7 @@ fn switch(routes: Route) -> Html {
 }
 #[function_component(AddConfigPage)]
 fn add_config_page() -> Html {
+    let navigator = use_navigator().unwrap();
     let input_value_handle = use_state(String::default);
     let input_value = (*input_value_handle).clone();
 
@@ -96,9 +73,11 @@ fn add_config_page() -> Html {
     });
 
     let on_add_clicked = move |_| {
+        let navigator = navigator.clone();
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
             api::create_config(&input_value).await;
+            navigator.push(&Route::Home);
         });
     };
 
@@ -176,6 +155,7 @@ fn label_selection(props: &LabelSelectionProps) -> Html {
 
 #[function_component(AddLabelPage)]
 fn add_label_page() -> Html {
+    let navigator = use_navigator().unwrap();
     let name = use_state(String::default);
     let name_value = (*name).clone();
     let prioity = use_state(String::default);
@@ -205,6 +185,7 @@ fn add_label_page() -> Html {
         let name = name_value.clone();
         let prioity = prioity_value.clone();
         let description = description_value.clone();
+        let navigator = navigator.clone();
         wasm_bindgen_futures::spawn_local(async move {
             api::create_label(LabelType {
                 name: name,
@@ -213,6 +194,7 @@ fn add_label_page() -> Html {
                 options: vec![],
             })
             .await;
+            navigator.push(&Route::Home);
         });
     };
 

@@ -55,7 +55,6 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
     let mut sorted_revisions = revisions.to_vec();
     sorted_revisions.sort_by(|a, b| a.timestamp_ms.cmp(&b.timestamp_ms));
 
-
     html! {
         <div>
             <h1>{format!("History {} -> {}", props.config_name, props.instance)}</h1>
@@ -67,6 +66,7 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                     let is_current_instance = current_revision.to_string() == revision.revision;
                     let color = if is_current_instance { "yellow" } else { "cyan" };
 
+                    let current_revision_data = current_revision.clone();
                     let rev = revision.clone();
                     let config_name = props.config_name.clone();
                     let instance = props.instance.clone();
@@ -81,9 +81,13 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                                     let rev = rev.clone();
                                     let config_name = config_name.clone();
                                     let instance = instance.clone();
+                                    let current_revision_data = current_revision_data.clone();
+
                                     wasm_bindgen_futures::spawn_local(async move {
                                         api::update_instance_revision(&config_name, &instance, &rev.revision).await;
+                                        current_revision_data.set(rev.revision);
                                     });
+
                                 })}
                             >{&revision.revision}</p>
                         </div>
