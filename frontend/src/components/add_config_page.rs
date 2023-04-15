@@ -1,3 +1,4 @@
+use gloo_console::error;
 use web_sys::HtmlInputElement;
 use yak_man_core::model::LabelType;
 use yew::prelude::*;
@@ -33,8 +34,10 @@ pub fn add_config_page() -> Html {
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let data = api::fetch_labels().await;
-                    label_data.set(data);
+                    match api::fetch_labels().await {
+                        Ok(data) => label_data.set(data),
+                        Err(err) => error!("Erro loading labels"),
+                    }
                 });
             },
             (),

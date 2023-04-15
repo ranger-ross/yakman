@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::routes::Route;
 
 use super::super::api;
-use gloo_console::log;
+use gloo_console::{error, log};
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yak_man_core::model::LabelType;
 use yew::prelude::*;
@@ -80,13 +80,17 @@ pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Htm
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let data = api::fetch_labels().await;
-                    let mut m = HashMap::new();
-                    for label in &data {
-                        m.insert(String::from(&label.name), None);
+                    match api::fetch_labels().await {
+                        Ok(data) => {
+                            let mut m = HashMap::new();
+                            for label in &data {
+                                m.insert(String::from(&label.name), None);
+                            }
+                            selected_labels_state.set(m);
+                            label_data.set(data);
+                        }
+                        Err(err) => error!("Error loading label"),
                     }
-                    selected_labels_state.set(m);
-                    label_data.set(data);
                 });
             },
             (),
@@ -173,13 +177,17 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let data = api::fetch_labels().await;
-                    let mut m = HashMap::new();
-                    for label in &data {
-                        m.insert(String::from(&label.name), None);
+                    match api::fetch_labels().await {
+                        Ok(data) => {
+                            let mut m = HashMap::new();
+                            for label in &data {
+                                m.insert(String::from(&label.name), None);
+                            }
+                            selected_labels_state.set(m);
+                            label_data.set(data);
+                        }
+                        Err(err) => error!("Error loading label"),
                     }
-                    selected_labels_state.set(m);
-                    label_data.set(data);
                 });
             },
             (),
@@ -204,7 +212,8 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
                 .filter_map(|(key, v)| v.map(|value| (key, value)))
                 .collect();
 
-            api::update_config_instance(&config_name, &instance, &input_value, selected_labels).await;
+            api::update_config_instance(&config_name, &instance, &input_value, selected_labels)
+                .await;
             navigator.push(&Route::Home);
         });
     };

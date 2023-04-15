@@ -48,13 +48,16 @@ fn use_config_data() -> UseStateHandle<PageData> {
                         Err(error) => error!("Error fetching configs"),
                     }
 
-                    let labels: Vec<LabelType> = api::fetch_labels().await;
-
-                    page_data.set(PageData {
-                        configs: configs_list,
-                        labels: labels,
-                        is_loading: false,
-                    });
+                    match api::fetch_labels().await {
+                        Ok(labels) => {
+                            page_data.set(PageData {
+                                configs: configs_list,
+                                labels: labels,
+                                is_loading: false,
+                            });
+                        }
+                        Err(err) => error!("Error loading data"),
+                    }
                 });
             },
             (),

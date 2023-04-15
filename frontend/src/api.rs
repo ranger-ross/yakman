@@ -6,18 +6,11 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelT
 use std::fmt;
 
 pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
-    let response = Request::get("/api/configs").send().await?.json().await?;
-    return Ok(response);
+    return Ok(Request::get("/api/configs").send().await?.json().await?);
 }
 
-pub async fn fetch_labels() -> Vec<LabelType> {
-    return Request::get("/api/labels")
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
+    return Ok(Request::get("/api/labels").send().await?.json().await?);
 }
 
 pub async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
