@@ -38,35 +38,29 @@ struct PageData {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home => html! { <ConfigListPage /> },
-        Route::CreateConfigInstancePage { config_name } => {
-            html! {
-                <CreateConfigInstancePage config_name={config_name} />
-            }
-        }
+        Route::AddConfigPage => html! { <AddConfigPage /> },
+        Route::AddLabelPage => html! { <AddLabelPage /> },
+        Route::CreateConfigInstancePage { config_name } => html! {
+            <CreateConfigInstancePage config_name={config_name} />
+        },
         Route::EditConfigInstancePage {
             config_name,
             instance,
-        } => {
-            html! {
-                <EditConfigInstancePage
-                    config_name={config_name}
-                    instance={instance}
-                />
-            }
-        }
+        } => html! {
+            <EditConfigInstancePage
+                config_name={config_name}
+                instance={instance}
+            />
+        },
         Route::RevisionHistoryPage {
             config_name,
             instance,
-        } => {
-            html! {
-                <RevisionHistoryPage
-                    config_name={config_name}
-                    instance={instance}
-                />
-            }
-        }
-        Route::AddConfigPage => html! { <AddConfigPage /> },
-        Route::AddLabelPage => html! { <AddLabelPage /> },
+        } => html! {
+            <RevisionHistoryPage
+                config_name={config_name}
+                instance={instance}
+            />
+        },
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
     }
 }
