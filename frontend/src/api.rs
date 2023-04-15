@@ -1,26 +1,16 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
 use gloo_net::http::Request;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
-pub async fn fetch_configs() -> Vec<Config> {
-    return Request::get("/api/configs")
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+use std::fmt;
+
+pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
+    return Ok(Request::get("/api/configs").send().await?.json().await?);
 }
 
-pub async fn fetch_labels() -> Vec<LabelType> {
-    return Request::get("/api/labels")
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
+    return Ok(Request::get("/api/labels").send().await?.json().await?);
 }
 
 pub async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
@@ -37,7 +27,7 @@ pub async fn create_config_instance(
     config_name: &str,
     data: &str,
     labels: HashMap<String, String>,
-) {
+) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()
         .map(|(key, value)| (&key[..], &value[..]))
@@ -47,8 +37,8 @@ pub async fn create_config_instance(
         .query(query_params)
         .body(data)
         .send()
-        .await
-        .unwrap();
+        .await?;
+    return Ok(());
 }
 
 pub async fn update_config_instance(
@@ -56,7 +46,7 @@ pub async fn update_config_instance(
     instance: &str,
     data: &str,
     labels: HashMap<String, String>,
-) {
+) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()
         .map(|(key, value)| (&key[..], &value[..]))
@@ -66,46 +56,82 @@ pub async fn update_config_instance(
         .query(query_params)
         .body(data)
         .send()
-        .await
-        .unwrap();
+        .await?;
+    return Ok(());
 }
 
-pub async fn create_config(config_name: &str) {
+pub async fn create_config(config_name: &str) -> Result<(), RequestError> {
     Request::put(&format!("/api/config/{config_name}"))
         .send()
-        .await
-        .unwrap();
+        .await?;
+    return Ok(());
 }
 
-pub async fn create_label(label: LabelType) {
-    let body = serde_json::to_string(&label).unwrap();
-    Request::put(&format!("/api/labels"))
-        .body(body)
-        .send()
-        .await
-        .unwrap();
+pub async fn create_label(label: LabelType) -> Result<(), RequestError> {
+    let body = serde_json::to_string(&label)?;
+    Request::put("/api/labels").body(body).send().await?;
+    return Ok(());
 }
 
 pub async fn fetch_instance_revisions(
     config_name: &str,
     instance: &str,
-) -> Option<Vec<ConfigInstanceRevision>> {
-    return Request::get(&format!(
+) -> Result<Vec<ConfigInstanceRevision>, RequestError> {
+    return Ok(Request::get(&format!(
         "/api/config/{config_name}/instance/{instance}/revisions"
     ))
     .send()
-    .await
-    .unwrap()
+    .await?
     .json()
-    .await
-    .ok();
+    .await?);
 }
 
-pub async fn update_instance_revision(config_name: &str, instance: &str, revision: &str) {
+pub async fn update_instance_revision(
+    config_name: &str,
+    instance: &str,
+    revision: &str,
+) -> Result<(), RequestError> {
     Request::post(&format!(
         "/api/config/{config_name}/instance/{instance}/revision/{revision}/current"
     ))
     .send()
-    .await
-    .ok(); // TODO: I think this error is not handle, the Option is just ignored
+    .await?;
+
+    return Ok(());
+}
+
+#[derive(Debug)]
+pub enum RequestError {
+    Reqwest(gloo_net::Error),
+    Json(serde_json::Error),
+}
+
+impl fmt::Display for RequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            RequestError::Reqwest(ref e) => e.fmt(f),
+            RequestError::Json(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl Error for RequestError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match *self {
+            RequestError::Reqwest(ref e) => Some(e),
+            RequestError::Json(ref e) => Some(e),
+        }
+    }
+}
+
+impl From<gloo_net::Error> for RequestError {
+    fn from(err: gloo_net::Error) -> RequestError {
+        RequestError::Reqwest(err)
+    }
+}
+
+impl From<serde_json::Error> for RequestError {
+    fn from(err: serde_json::Error) -> RequestError {
+        RequestError::Json(err)
+    }
 }
