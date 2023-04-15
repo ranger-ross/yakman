@@ -86,12 +86,26 @@ pub async fn create_label(label: LabelType) {
         .unwrap();
 }
 
-pub async fn fetch_instance_revisions(config_name: &str, instance: &str) -> Option<Vec<ConfigInstanceRevision>> {
-    return Request::get(&format!("/api/config/{config_name}/instance/{instance}/revisions"))
+pub async fn fetch_instance_revisions(
+    config_name: &str,
+    instance: &str,
+) -> Option<Vec<ConfigInstanceRevision>> {
+    return Request::get(&format!(
+        "/api/config/{config_name}/instance/{instance}/revisions"
+    ))
     .send()
     .await
     .unwrap()
     .json()
     .await
     .ok();
+}
+
+pub async fn update_instance_revision(config_name: &str, instance: &str, revision: &str) {
+    Request::post(&format!(
+        "/api/config/{config_name}/instance/{instance}/revision/{revision}/current"
+    ))
+    .send()
+    .await
+    .ok(); // TODO: I think this error is not handle, the Option is just ignored
 }

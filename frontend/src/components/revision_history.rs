@@ -53,7 +53,8 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
     log!("current config = ", &current_revision.to_string());
 
     let mut sorted_revisions = revisions.to_vec();
-    sorted_revisions.sort_by(|a,b| a.timestamp_ms.cmp(&b.timestamp_ms));
+    sorted_revisions.sort_by(|a, b| a.timestamp_ms.cmp(&b.timestamp_ms));
+
 
     html! {
         <div>
@@ -62,14 +63,33 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
             <h3>{"Data"}</h3>
 
             {sorted_revisions.iter()
-            .map(|revision| {
-                let is_current_instance = current_revision.to_string() == revision.revision;
-                let selected_message = if is_current_instance { "ACTIVE" } else { "" };
+                .map(|revision| {
+                    let is_current_instance = current_revision.to_string() == revision.revision;
+                    let selected_message = if is_current_instance { "ACTIVE" } else { "" };
 
-                html! {
-                    <p>{format!("{} => {} => {} {}", format_date(revision.timestamp_ms), revision.revision, revision.data_key, selected_message)}</p>
-                }
-            }).collect::<Html>()}
+                    let rev = revision.clone();
+                    let config_name = props.config_name.clone();
+                    let instance = props.instance.clone();
+                    html! {
+                        <div style="display: flex; gap: 10px">
+                            <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
+                            <p
+                                style="cursor: pointer; color: cyan"
+                                onclick={Callback::from(move |_| {
+                                    log!("Clicked", &rev.revision);
+
+                                    let rev = rev.clone();
+                                    let config_name = config_name.clone();
+                                    let instance = instance.clone();
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        api::update_instance_revision(&config_name, &instance, &rev.revision).await;
+                                    });
+                                })}
+                            >{&revision.revision}</p>
+                            <p>{selected_message}</p>
+                        </div>
+                    }
+                }).collect::<Html>()}
 
             <br />
         </div>
