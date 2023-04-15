@@ -62,6 +62,7 @@ fn switch(routes: Route) -> Html {
 }
 #[function_component(AddConfigPage)]
 fn add_config_page() -> Html {
+    let navigator = use_navigator().unwrap();
     let input_value_handle = use_state(String::default);
     let input_value = (*input_value_handle).clone();
 
@@ -72,9 +73,11 @@ fn add_config_page() -> Html {
     });
 
     let on_add_clicked = move |_| {
+        let navigator = navigator.clone();
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
             api::create_config(&input_value).await;
+            navigator.push(&Route::Home);
         });
     };
 
@@ -152,6 +155,7 @@ fn label_selection(props: &LabelSelectionProps) -> Html {
 
 #[function_component(AddLabelPage)]
 fn add_label_page() -> Html {
+    let navigator = use_navigator().unwrap();
     let name = use_state(String::default);
     let name_value = (*name).clone();
     let prioity = use_state(String::default);
@@ -181,6 +185,7 @@ fn add_label_page() -> Html {
         let name = name_value.clone();
         let prioity = prioity_value.clone();
         let description = description_value.clone();
+        let navigator = navigator.clone();
         wasm_bindgen_futures::spawn_local(async move {
             api::create_label(LabelType {
                 name: name,
@@ -189,6 +194,7 @@ fn add_label_page() -> Html {
                 options: vec![],
             })
             .await;
+            navigator.push(&Route::Home);
         });
     };
 
