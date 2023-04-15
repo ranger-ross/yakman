@@ -1,11 +1,12 @@
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
+use self::errors::CreateConfigError;
+
+pub mod errors;
 pub mod local_file_adapter;
 pub mod postgres_adapter;
 pub mod redis_adapter;
 mod utils;
-
-use std::fmt;
 
 // The base storage adapter to be able to load config from external storage
 
@@ -58,38 +59,4 @@ pub trait ConfigStorageAdapter: Sync + Send {
         instance: &str,
         revision: &str,
     ) -> Result<(), Box<dyn std::error::Error>>;
-}
-
-#[derive(Debug)]
-pub enum CreateConfigError {
-    DuplicateConfigError { name: String },
-    StorageError { message: String },
-}
-
-impl std::error::Error for CreateConfigError {}
-
-impl fmt::Display for CreateConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CreateConfigError::DuplicateConfigError { name } => {
-                write!(f, "Duplicate config: `{name}`")
-            }
-            CreateConfigError::StorageError { message } => {
-                write!(f, "Error storing config: {message}")
-            }
-        }
-    }
-}
-
-impl CreateConfigError {
-    fn duplicate_config_error(name: &str) -> CreateConfigError {
-        return CreateConfigError::DuplicateConfigError {
-            name: String::from(name),
-        };
-    }
-    fn storage_error(message: &str) -> CreateConfigError {
-        return CreateConfigError::StorageError {
-            message: String::from(message),
-        };
-    }
 }

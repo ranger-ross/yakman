@@ -1,7 +1,7 @@
 mod adapters;
 mod utils;
 
-use adapters::{ConfigStorageAdapter, CreateConfigError};
+use adapters::{errors::CreateConfigError, ConfigStorageAdapter};
 use rocket::{
     http::Status,
     serde::json::{serde_json, Json},
@@ -198,7 +198,7 @@ async fn create_config(config_name: &str, state: &State<StateManager>) -> Status
             CreateConfigError::StorageError { message } => {
                 println!("Failed to create config {config_name}, error: {message}");
                 Status::InternalServerError
-            },
+            }
             CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
         },
     }
