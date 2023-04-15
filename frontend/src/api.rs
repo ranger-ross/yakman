@@ -60,19 +60,16 @@ pub async fn update_config_instance(
         .unwrap();
 }
 
-pub async fn create_config(config_name: &str) {
+pub async fn create_config(config_name: &str) -> Result<(), RequestError> {
     Request::put(&format!("/api/config/{config_name}"))
         .send()
-        .await
-        .unwrap();
+        .await?;
+    return Ok(());
 }
 
 pub async fn create_label(label: LabelType) -> Result<(), RequestError> {
     let body = serde_json::to_string(&label)?;
-    Request::put(&format!("/api/labels"))
-        .body(body)
-        .send()
-        .await?;
+    Request::put("/api/labels").body(body).send().await?;
     return Ok(());
 }
 

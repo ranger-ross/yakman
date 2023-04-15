@@ -22,8 +22,10 @@ pub fn add_config_page() -> Html {
         let navigator = navigator.clone();
         let input_value = input_value.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            api::create_config(&input_value).await;
-            navigator.push(&Route::Home);
+            match api::create_config(&input_value).await {
+                Ok(()) => navigator.push(&Route::Home),
+                Err(err) => error!("Error creating config", err.to_string()),
+            };
         });
     };
 
@@ -36,7 +38,7 @@ pub fn add_config_page() -> Html {
                 wasm_bindgen_futures::spawn_local(async move {
                     match api::fetch_labels().await {
                         Ok(data) => label_data.set(data),
-                        Err(err) => error!("Erro loading labels"),
+                        Err(err) => error!("Erro loading labels", err.to_string()),
                     }
                 });
             },
