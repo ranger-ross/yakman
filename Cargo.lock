@@ -482,6 +482,7 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "gloo-console",
  "gloo-net",
  "serde",

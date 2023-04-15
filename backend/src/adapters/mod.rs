@@ -49,4 +49,11 @@ pub trait ConfigStorageAdapter: Sync + Send {
         config_name: &str,
         instance: &str,
     ) -> Option<Vec<ConfigInstanceRevision>>;
+
+    async fn update_instance_current_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), Box<dyn std::error::Error>>;
 }

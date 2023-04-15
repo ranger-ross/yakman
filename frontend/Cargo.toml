@@ -15,3 +15,4 @@ yak-man-core = {path = "../core"}
 gloo-console = "0.2.3"
 web-sys = "0.3.61"
 serde_json = "1.0"
+chrono = "0.4.24"

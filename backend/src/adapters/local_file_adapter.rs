@@ -383,6 +383,32 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         return Some(revisions);
     }
+
+    async fn update_instance_current_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut instances = self
+            .get_config_instance_metadata(config_name)
+            .await
+            .unwrap(); // TODO: propagate error
+
+        let mut instance = instances
+            .iter_mut()
+            .find(|i| i.instance == instance)
+            .unwrap(); // TODO: propagate error
+
+        if !instance.revisions.contains(&String::from(revision)) {
+            panic!("revision not found!"); // TODO: propagate error
+        }
+        instance.current_revision = String::from(revision);
+
+        self.update_instance_metadata(config_name, instances).await.unwrap();
+
+        return Ok(());
+    }
 }
 
 impl LocalFileStorageAdapter {

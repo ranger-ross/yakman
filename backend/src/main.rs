@@ -10,7 +10,7 @@ use std::{env, vec};
 use utils::raw_query::RawQuery;
 use yak_man_core::{
     load_yak_man_settings,
-    model::{Config, ConfigInstance, Label, LabelType, ConfigInstanceRevision},
+    model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
 };
 
 use crate::adapters::{
@@ -54,7 +54,8 @@ async fn rocket() -> _ {
                 instance,
                 create_config,
                 update_new_instance,
-                get_instance_revisions
+                get_instance_revisions,
+                update_instance_current_revision
             ],
         )
 }
@@ -204,12 +205,25 @@ async fn get_instance_revisions(
 ) -> Option<Json<Vec<ConfigInstanceRevision>>> {
     let adapter = state.get_adapter();
 
-    
-
     if let Some(data) = adapter.get_instance_revisions(config_name, instance).await {
         return Some(Json(data));
     }
     return None;
+}
+
+#[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")]
+async fn update_instance_current_revision(
+    config_name: &str,
+    instance: &str,
+    revision: &str,
+    state: &State<StateManager>,
+) {
+    let adapter = state.get_adapter();
+
+    adapter
+        .update_instance_current_revision(config_name, instance, revision)
+        .await
+        .unwrap();
 }
 
 fn create_adapter() -> Box<dyn ConfigStorageAdapter> {

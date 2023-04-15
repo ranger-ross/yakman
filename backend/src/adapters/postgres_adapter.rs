@@ -226,6 +226,11 @@ impl ConfigStorageAdapter for PostgresAdapter {
     ) -> Option<Vec<ConfigInstanceRevision>> {
         todo!()
     }
+
+    async fn update_instance_current_revision(&self, config_name: &str, instance: &str, revision: &str) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
+
 }
 
 impl PostgresAdapter {
