@@ -15,6 +15,8 @@ pub fn add_label_page() -> Html {
     let prioity_value = (*prioity).clone();
     let description = use_state(String::default);
     let description_value = (*description).clone();
+    let options = use_state(String::default);
+    let options_value = (*options).clone();
 
     let on_name_change = Callback::from(move |e: Event| {
         // TODO: make sure input matches config name requirements
@@ -25,13 +27,19 @@ pub fn add_label_page() -> Html {
     let on_prioity_change = Callback::from(move |e: Event| {
         // TODO: make sure input matches config name requirements
         let value = e.target_unchecked_into::<HtmlInputElement>().value();
-        prioity.set(value); // TODO: validate for duplicates?
+        prioity.set(value); // TODO: validate
     });
 
     let on_description_change = Callback::from(move |e: Event| {
         // TODO: make sure input matches config name requirements
         let value = e.target_unchecked_into::<HtmlInputElement>().value();
-        description.set(value); // TODO: validate for duplicates?
+        description.set(value);
+    });
+
+    let on_options_change = Callback::from(move |e: Event| {
+        // TODO: make sure input matches config name requirements
+        let value = e.target_unchecked_into::<HtmlInputElement>().value();
+        options.set(value); // TODO: validate
     });
 
     let on_add_clicked = move |_| {
@@ -39,12 +47,17 @@ pub fn add_label_page() -> Html {
         let prioity = prioity_value.clone();
         let description = description_value.clone();
         let navigator = navigator.clone();
+        let options = options_value
+            .split(",")
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<String>>();
         wasm_bindgen_futures::spawn_local(async move {
             match api::create_label(LabelType {
                 name: name,
                 description: description,
                 priority: prioity.parse().unwrap(),
-                options: vec![],
+                options: options,
             })
             .await
             {
@@ -61,8 +74,7 @@ pub fn add_label_page() -> Html {
             <div>{"Name: "} <input onchange={on_name_change} /></div>
             <div>{"Prioity: "} <input onchange={on_prioity_change} /></div>
             <div>{"Description: "} <input onchange={on_description_change} /></div>
-
-            // TODO: Support Options
+            <div>{"Options: "} <input onchange={on_options_change} /></div>
 
             <br />
 
