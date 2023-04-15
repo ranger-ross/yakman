@@ -5,6 +5,8 @@ pub mod postgres_adapter;
 pub mod redis_adapter;
 mod utils;
 
+use std::fmt;
+
 // The base storage adapter to be able to load config from external storage
 
 #[async_trait]
@@ -40,7 +42,7 @@ pub trait ConfigStorageAdapter: Sync + Send {
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>>;
 
-    async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>>;
+    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), Box<dyn std::error::Error>>;
 
@@ -56,4 +58,38 @@ pub trait ConfigStorageAdapter: Sync + Send {
         instance: &str,
         revision: &str,
     ) -> Result<(), Box<dyn std::error::Error>>;
+}
+
+#[derive(Debug)]
+pub enum CreateConfigError {
+    DuplicateConfigError { name: String },
+    StorageError { message: String },
+}
+
+impl std::error::Error for CreateConfigError {}
+
+impl fmt::Display for CreateConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CreateConfigError::DuplicateConfigError { name } => {
+                write!(f, "Duplicate config: `{name}`")
+            }
+            CreateConfigError::StorageError { message } => {
+                write!(f, "Error storing config: {message}")
+            }
+        }
+    }
+}
+
+impl CreateConfigError {
+    fn duplicate_config_error(name: &str) -> CreateConfigError {
+        return CreateConfigError::DuplicateConfigError {
+            name: String::from(name),
+        };
+    }
+    fn storage_error(message: &str) -> CreateConfigError {
+        return CreateConfigError::StorageError {
+            message: String::from(message),
+        };
+    }
 }

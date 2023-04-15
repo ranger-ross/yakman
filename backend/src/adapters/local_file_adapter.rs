@@ -14,6 +14,8 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label,
 
 use crate::adapters::{utils::select_instance, ConfigStorageAdapter};
 
+use super::CreateConfigError;
+
 pub struct LocalFileStorageAdapter {
     pub path: String,
 }
@@ -267,10 +269,16 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         }));
     }
 
-    async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
         let mut configs = self.get_configs().await;
 
-        // TODO: Check for dups
+        if configs
+            .iter()
+            .find(|config| config.name == config_name)
+            .is_some()
+        {
+            return Err(CreateConfigError::duplicate_config_error(config_name));
+        }
 
         configs.push(Config {
             name: String::from(config_name),
@@ -281,33 +289,45 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         let instace_metadata: Vec<ConfigInstance> = vec![];
         let data = serde_json::to_string(&InstanceJson {
             instances: instace_metadata,
-        })?;
+        })
+        .map_err(|e| CreateConfigError::storage_error("Failed to serialize data to JSON"))?;
         let yakman_path = self.get_yakman_dir();
         let path = format!("{yakman_path}/instance-metadata/{config_name}.json");
-        let mut file = File::create(&path)?;
-        Write::write_all(&mut file, data.as_bytes())?;
+        let mut file = File::create(&path)
+            .map_err(|e| CreateConfigError::storage_error("Failed to instance metadata file"))?;
+        Write::write_all(&mut file, data.as_bytes()).map_err(|e| {
+            CreateConfigError::storage_error("Failed to update instance metadata file")
+        })?;
         println!("Created instance metadata file: {}", path);
 
         // Create config instances directory
         let config_instance_dir = self.get_config_instance_dir();
         let config_instance_path = format!("{config_instance_dir}/{config_name}");
-        fs::create_dir(&config_instance_path)?;
+        fs::create_dir(&config_instance_path).map_err(|e| {
+            CreateConfigError::storage_error("Failed to create instances directory")
+        })?;
         println!("Created config instance directory: {config_instance_path}");
 
         // Create config revisions directory
         let revision_instance_dir = self.get_instance_revisions_path();
         let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-        fs::create_dir(&revision_instance_path)?;
+        fs::create_dir(&revision_instance_path).map_err(|e| {
+            CreateConfigError::storage_error("Failed to create revisions directory")
+        })?;
         println!(
             "Created config revision directory: {}",
             revision_instance_path
         );
 
         // Add config to base config file
-        let data = serde_json::to_string(&ConfigJson { configs: configs })?;
+        let data = serde_json::to_string(&ConfigJson { configs: configs }).map_err(|e| {
+            CreateConfigError::storage_error("Failed to convert base configs to JSON")
+        })?;
         let path = self.get_configs_datafile_path();
-        let mut file = File::create(&path)?;
-        Write::write_all(&mut file, data.as_bytes())?;
+        let mut file = File::create(&path)
+            .map_err(|e| CreateConfigError::storage_error("Failed to open configs file"))?;
+        Write::write_all(&mut file, data.as_bytes())
+            .map_err(|e| CreateConfigError::storage_error("Failed to update configs file"))?;
 
         Ok(())
     }
@@ -405,7 +425,9 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         }
         instance.current_revision = String::from(revision);
 
-        self.update_instance_metadata(config_name, instances).await.unwrap();
+        self.update_instance_metadata(config_name, instances)
+            .await
+            .unwrap();
 
         return Ok(());
     }

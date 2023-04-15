@@ -1,8 +1,9 @@
 mod adapters;
 mod utils;
 
-use adapters::ConfigStorageAdapter;
+use adapters::{ConfigStorageAdapter, CreateConfigError};
 use rocket::{
+    http::Status,
     serde::json::{serde_json, Json},
     State,
 };
@@ -187,14 +188,20 @@ async fn update_new_instance(
 }
 
 #[put("/config/<config_name>")]
-async fn create_config(config_name: &str, state: &State<StateManager>) {
+async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
     let adapter = state.get_adapter();
+    let result = adapter.create_config(config_name).await;
 
-    // TODO: do validation
-    // - config exists
-    // - not a duplicate?
-
-    adapter.create_config(config_name).await.unwrap();
+    match result {
+        Ok(()) => Status::Ok,
+        Err(e) => match e {
+            CreateConfigError::StorageError { message } => {
+                println!("Failed to create config {config_name}, error: {message}");
+                Status::InternalServerError
+            },
+            CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
+        },
+    }
 }
 
 #[get("/config/<config_name>/instance/<instance>/revisions")]

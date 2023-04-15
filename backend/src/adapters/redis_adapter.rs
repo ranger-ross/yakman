@@ -6,7 +6,7 @@ use redis::{Commands, Connection, RedisResult};
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
-use super::utils::select_instance;
+use super::{utils::select_instance, CreateConfigError};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigJson {
@@ -130,7 +130,7 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
         todo!();
     }
 
-    async fn create_config(&self, config_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
         todo!()
     }
 
