@@ -65,7 +65,7 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
             {sorted_revisions.iter()
                 .map(|revision| {
                     let is_current_instance = current_revision.to_string() == revision.revision;
-                    let selected_message = if is_current_instance { "ACTIVE" } else { "" };
+                    let color = if is_current_instance { "yellow" } else { "cyan" };
 
                     let rev = revision.clone();
                     let config_name = props.config_name.clone();
@@ -74,7 +74,7 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                         <div style="display: flex; gap: 10px">
                             <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
                             <p
-                                style="cursor: pointer; color: cyan"
+                                style={format!("cursor: pointer; color: {color}")}
                                 onclick={Callback::from(move |_| {
                                     log!("Clicked", &rev.revision);
 
@@ -86,7 +86,6 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                                     });
                                 })}
                             >{&revision.revision}</p>
-                            <p>{selected_message}</p>
                         </div>
                     }
                 }).collect::<Html>()}
