@@ -1,41 +1,17 @@
 mod api;
 mod components;
+mod routes;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use gloo_console::log;
+use routes::Route;
 use web_sys::HtmlInputElement;
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
 use crate::components::{CreateConfigInstancePage, EditConfigInstancePage, RevisionHistoryPage};
-// use components::modify_config_instance::create_config_instance_page;
-
-#[derive(Clone, Routable, PartialEq)]
-enum Route {
-    #[at("/")]
-    Home,
-    #[at("/add-config")]
-    AddConfigPage,
-    #[at("/add-label")]
-    AddLabelPage,
-    #[at("/create-instance/:config_name")]
-    CreateConfigInstancePage { config_name: String },
-    #[at("/edit-instance/:config_name/:instance")]
-    EditConfigInstancePage {
-        config_name: String,
-        instance: String,
-    },
-    #[at("/history/:config_name/:instance")]
-    RevisionHistoryPage {
-        config_name: String,
-        instance: String,
-    },
-    #[not_found]
-    #[at("/404")]
-    NotFound,
-}
 
 #[derive(Debug, PartialEq, Clone)]
 struct PageConfig {
