@@ -1,5 +1,5 @@
 use super::super::api;
-use gloo_console::log;
+use gloo_console::{error, log};
 use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
 use yew::prelude::*;
 
@@ -27,8 +27,7 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    if let Some(data) = api::fetch_instance_revisions(&config_name, &instance).await
-                    {
+                    if let Ok(data) = api::fetch_instance_revisions(&config_name, &instance).await {
                         revisions_data.set(data);
                     }
 
@@ -84,8 +83,10 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                                     let current_revision_data = current_revision_data.clone();
 
                                     wasm_bindgen_futures::spawn_local(async move {
-                                        api::update_instance_revision(&config_name, &instance, &rev.revision).await;
-                                        current_revision_data.set(rev.revision);
+                                        match api::update_instance_revision(&config_name, &instance, &rev.revision).await {
+                                            Ok(()) => current_revision_data.set(rev.revision),
+                                            Err(err) => error!("Error updating revision", err.to_string()),
+                                        };
                                     });
 
                                 })}
