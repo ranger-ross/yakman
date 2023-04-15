@@ -2746,6 +2746,7 @@ dependencies = [
  "rocket",
  "serde",
  "sqlx",
+ "thiserror",
  "uuid",
  "yak-man-core",
 ]
