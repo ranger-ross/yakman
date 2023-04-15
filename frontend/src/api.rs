@@ -67,13 +67,13 @@ pub async fn create_config(config_name: &str) {
         .unwrap();
 }
 
-pub async fn create_label(label: LabelType) {
-    let body = serde_json::to_string(&label).unwrap();
+pub async fn create_label(label: LabelType) -> Result<(), RequestError> {
+    let body = serde_json::to_string(&label)?;
     Request::put(&format!("/api/labels"))
         .body(body)
         .send()
-        .await
-        .unwrap();
+        .await?;
+    return Ok(());
 }
 
 pub async fn fetch_instance_revisions(

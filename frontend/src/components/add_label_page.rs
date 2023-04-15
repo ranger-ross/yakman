@@ -1,3 +1,4 @@
+use gloo_console::error;
 use web_sys::HtmlInputElement;
 use yak_man_core::model::LabelType;
 use yew::prelude::*;
@@ -39,13 +40,17 @@ pub fn add_label_page() -> Html {
         let description = description_value.clone();
         let navigator = navigator.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            api::create_label(LabelType {
+            match api::create_label(LabelType {
                 name: name,
                 description: description,
                 priority: prioity.parse().unwrap(),
                 options: vec![],
             })
-            .await;
+            .await
+            {
+                Ok(()) => {}
+                Err(err) => error!("Error creating label"),
+            };
             navigator.push(&Route::Home);
         });
     };
