@@ -49,7 +49,7 @@ pub fn add_label_page() -> Html {
             .await
             {
                 Ok(()) => {}
-                Err(err) => error!("Error creating label"),
+                Err(err) => error!("Error creating label", err.to_string()),
             };
             navigator.push(&Route::Home);
         });

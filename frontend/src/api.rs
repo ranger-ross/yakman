@@ -46,7 +46,7 @@ pub async fn update_config_instance(
     instance: &str,
     data: &str,
     labels: HashMap<String, String>,
-) {
+) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()
         .map(|(key, value)| (&key[..], &value[..]))
@@ -56,8 +56,8 @@ pub async fn update_config_instance(
         .query(query_params)
         .body(data)
         .send()
-        .await
-        .unwrap();
+        .await?;
+    return Ok(());
 }
 
 pub async fn create_config(config_name: &str) -> Result<(), RequestError> {

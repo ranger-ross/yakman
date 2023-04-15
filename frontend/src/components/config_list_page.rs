@@ -1,4 +1,4 @@
-use gloo_console::{error, log};
+use gloo_console::error;
 use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::{
     function_component, hook, html, use_effect_with_deps, use_state, Html, Properties,
@@ -45,7 +45,7 @@ fn use_config_data() -> UseStateHandle<PageData> {
                                 });
                             }
                         }
-                        Err(error) => error!("Error fetching configs"),
+                        Err(err) => error!("Error fetching configs", err.to_string()),
                     }
 
                     match api::fetch_labels().await {
@@ -56,7 +56,7 @@ fn use_config_data() -> UseStateHandle<PageData> {
                                 is_loading: false,
                             });
                         }
-                        Err(err) => error!("Error loading data"),
+                        Err(err) => error!("Error loading data", err.to_string()),
                     }
                 });
             },

@@ -89,7 +89,7 @@ pub fn create_config_instance_page(props: &CreateConfigInstancePageProps) -> Htm
                             selected_labels_state.set(m);
                             label_data.set(data);
                         }
-                        Err(err) => error!("Error loading label"),
+                        Err(err) => error!("Error loading label", err.to_string()),
                     }
                 });
             },
@@ -186,7 +186,7 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
                             selected_labels_state.set(m);
                             label_data.set(data);
                         }
-                        Err(err) => error!("Error loading label"),
+                        Err(err) => error!("Error loading label", err.to_string()),
                     }
                 });
             },
@@ -212,9 +212,17 @@ pub fn edit_config_instance_page(props: &EditConfigInstancePageProps) -> Html {
                 .filter_map(|(key, v)| v.map(|value| (key, value)))
                 .collect();
 
-            api::update_config_instance(&config_name, &instance, &input_value, selected_labels)
-                .await;
-            navigator.push(&Route::Home);
+            match api::update_config_instance(
+                &config_name,
+                &instance,
+                &input_value,
+                selected_labels,
+            )
+            .await
+            {
+                Ok(()) => navigator.push(&Route::Home),
+                Err(err) => error!("Error updating config instance", err.to_string()),
+            };
         });
     };
 
