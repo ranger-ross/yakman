@@ -1,6 +1,8 @@
-use yak_man_core::model::{ConfigInstance, LabelType, Config};
+use gloo_console::{error, log};
+use yak_man_core::model::{Config, ConfigInstance, LabelType};
 use yew::{
-    function_component, html, use_effect_with_deps, use_state, Html, Properties, UseStateHandle,
+    function_component, hook, html, use_effect_with_deps, use_state, Html, Properties,
+    UseStateHandle,
 };
 
 use crate::api;
@@ -11,15 +13,20 @@ struct PageConfig {
     instances: Vec<ConfigInstance>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct PageData {
     configs: Vec<PageConfig>,
     labels: Vec<LabelType>,
+    is_loading: bool,
 }
 
-#[function_component(ConfigListPage)]
-pub fn config_list_page() -> Html {
-    let page_data: UseStateHandle<Option<PageData>> = use_state(|| None);
+#[hook]
+fn use_config_data() -> UseStateHandle<PageData> {
+    let page_data: UseStateHandle<PageData> = use_state(|| PageData {
+        configs: vec![],
+        labels: vec![],
+        is_loading: true,
+    });
 
     {
         let page_data = page_data.clone();
@@ -28,27 +35,39 @@ pub fn config_list_page() -> Html {
                 wasm_bindgen_futures::spawn_local(async move {
                     let mut configs_list = vec![];
 
-                    for config in api::fetch_configs().await {
-                        let instances = api::fetch_instance_metadata(&config.name).await;
-                        configs_list.push(PageConfig {
-                            config: config,
-                            instances: instances,
-                        });
+                    match api::fetch_configs().await {
+                        Ok(configs) => {
+                            for config in configs {
+                                let instances = api::fetch_instance_metadata(&config.name).await;
+                                configs_list.push(PageConfig {
+                                    config: config,
+                                    instances: instances,
+                                });
+                            }
+                        }
+                        Err(error) => error!("Error fetching configs"),
                     }
 
                     let labels: Vec<LabelType> = api::fetch_labels().await;
 
-                    page_data.set(Some(PageData {
+                    page_data.set(PageData {
                         configs: configs_list,
                         labels: labels,
-                    }));
+                        is_loading: false,
+                    });
                 });
             },
             (),
         );
     }
+    return page_data;
+}
 
-    if page_data.is_none() {
+#[function_component(ConfigListPage)]
+pub fn config_list_page() -> Html {
+    let page_data: UseStateHandle<PageData> = use_config_data();
+
+    if page_data.is_loading {
         return html! {
             <div> {"Loading..."} </div>
         };
@@ -66,7 +85,7 @@ pub fn config_list_page() -> Html {
             <div style="display: flex; flex-direction: column; align-items: center">
                 <div>
                     <h1>{ "Configs" }</h1>
-                    {page_data.as_ref().unwrap().configs.iter().map(|config| {
+                    {page_data.configs.iter().map(|config| {
                         html! { <ConfigRow config={config.clone()} /> }
                     }).collect::<Html>()}
                 </div>

@@ -1,16 +1,13 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
 use gloo_net::http::Request;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
-pub async fn fetch_configs() -> Vec<Config> {
-    return Request::get("/api/configs")
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+use std::fmt;
+
+pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
+    let response = Request::get("/api/configs").send().await?.json().await?;
+    return Ok(response);
 }
 
 pub async fn fetch_labels() -> Vec<LabelType> {
@@ -108,4 +105,40 @@ pub async fn update_instance_revision(config_name: &str, instance: &str, revisio
     .send()
     .await
     .ok(); // TODO: I think this error is not handle, the Option is just ignored
+}
+
+#[derive(Debug)]
+pub enum RequestError {
+    Reqwest(gloo_net::Error),
+    Json(serde_json::Error),
+}
+
+impl fmt::Display for RequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            RequestError::Reqwest(ref e) => e.fmt(f),
+            RequestError::Json(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl Error for RequestError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match *self {
+            RequestError::Reqwest(ref e) => Some(e),
+            RequestError::Json(ref e) => Some(e),
+        }
+    }
+}
+
+impl From<gloo_net::Error> for RequestError {
+    fn from(err: gloo_net::Error) -> RequestError {
+        RequestError::Reqwest(err)
+    }
+}
+
+impl From<serde_json::Error> for RequestError {
+    fn from(err: serde_json::Error) -> RequestError {
+        RequestError::Json(err)
+    }
 }
