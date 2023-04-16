@@ -134,13 +134,12 @@ struct ConfigInstanceRowProps {
 #[function_component(ConfigInstanceRow)]
 fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
     let instance = &props.instance;
-    let labels_text = ""; // TODO: Fetch labels 
-    // let labels_text = instance
-    //     .labels
-    //     .iter()
-    //     .map(|label| format!("{}={}", label.label_type, label.value))
-    //     .collect::<Vec<String>>()
-    //     .join(", ");
+    let labels_text = instance
+        .labels
+        .iter()
+        .map(|label| format!("{}={}", label.label_type, label.value))
+        .collect::<Vec<String>>()
+        .join(", ");
 
     let config_name = &instance.config_name;
     let instance_id = &instance.instance;
