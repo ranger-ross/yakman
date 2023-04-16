@@ -4,7 +4,7 @@ use yak_man_core::model::{Config, ConfigInstance, Label, LabelType, ConfigInstan
 
 use crate::adapters::ConfigStorageAdapter;
 
-use super::{utils::select_instance, CreateConfigError, errors::CreateLabelError};
+use super::{utils::select_instance, CreateConfigError, errors::{CreateLabelError, ApproveRevisionError}};
 
 pub struct PostgresAdapter {
     pub host: String,
@@ -150,11 +150,21 @@ impl ConfigStorageAdapter for PostgresAdapter {
                 instance: instance.instance_id.to_string(),
                 labels: labels,
                 current_revision: String::from(""), // TODO: handle revisions
+                pending_revision: None, // TODO: handle revisions
                 revisions: vec![],
             });
         }
 
         return Some(instances);
+    }
+
+    async fn approve_pending_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), ApproveRevisionError> {
+        todo!()
     }
 
     async fn get_config_data_by_labels(

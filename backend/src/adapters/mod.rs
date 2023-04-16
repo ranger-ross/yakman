@@ -1,6 +1,6 @@
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
-use self::errors::{CreateConfigError, CreateLabelError};
+use self::errors::{CreateConfigError, CreateLabelError, ApproveRevisionError};
 
 pub mod errors;
 pub mod local_file_adapter;
@@ -59,4 +59,11 @@ pub trait ConfigStorageAdapter: Sync + Send {
         instance: &str,
         revision: &str,
     ) -> Result<(), Box<dyn std::error::Error>>;
+
+    async fn approve_pending_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), ApproveRevisionError>;
 }

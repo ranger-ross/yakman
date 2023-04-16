@@ -6,7 +6,7 @@ use redis::{Commands, Connection, RedisResult};
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
-use super::{utils::select_instance, CreateConfigError, errors::CreateLabelError};
+use super::{utils::select_instance, CreateConfigError, errors::{CreateLabelError, ApproveRevisionError}};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigJson {
@@ -147,6 +147,15 @@ impl ConfigStorageAdapter for RedisStorageAdapter {
     }
 
     async fn update_instance_current_revision(&self, config_name: &str, instance: &str, revision: &str) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
+    }
+
+    async fn approve_pending_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), ApproveRevisionError> {
         todo!()
     }
 

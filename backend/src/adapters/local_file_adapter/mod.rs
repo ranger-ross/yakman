@@ -14,7 +14,10 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label,
 
 use crate::adapters::{utils::select_instance, ConfigStorageAdapter};
 
-use super::{errors::CreateLabelError, CreateConfigError};
+use super::{
+    errors::{ApproveRevisionError, CreateLabelError},
+    CreateConfigError,
+};
 
 pub struct LocalFileStorageAdapter {
     pub path: String,
@@ -189,6 +192,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
                 timestamp_ms: Utc::now().timestamp_millis(),
+                approved: false,
             };
             let revision_data = serde_json::to_string(&RevisionJson {
                 revision: revision.clone(),
@@ -204,6 +208,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 instance: instance,
                 labels: labels,
                 current_revision: String::from(&revision.revision),
+                pending_revision: None,
                 revisions: vec![revision.revision],
             });
             self.update_instance_metadata(config_name, instances)
@@ -243,6 +248,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
                 timestamp_ms: Utc::now().timestamp_millis(),
+                approved: false,
             };
             let revision_data = serde_json::to_string(&RevisionJson {
                 revision: revision.clone(),
@@ -254,9 +260,9 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
-                instance.current_revision = String::from(&revision.revision);
-                instance.revisions.push(String::from(&revision.revision));
-                instance.labels = labels;
+                instance.pending_revision = Some(String::from(&revision.revision));
+                // instance.revisions.push(String::from(&revision.revision));
+                instance.labels = labels; // TODO: Should these labels be part of the revision????
                 self.update_instance_metadata(config_name, instances)
                     .await?;
                 println!("Updated instance metadata for config: {config_name}");
@@ -267,6 +273,46 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         return Err(Box::new(ConfigNotFoundError {
             description: format!("Config not found: {config_name}"),
         }));
+    }
+
+    async fn approve_pending_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), ApproveRevisionError> {
+        let mut metadata = match self.get_config_instance_metadata(config_name).await {
+            Some(metadata) => metadata,
+            None => return Err(ApproveRevisionError::InvalidConfig),
+        };
+
+        let mut instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+            Some(instance) => instance,
+            None => return Err(ApproveRevisionError::InvalidInstance),
+        };
+
+        // Verify instance is the pending revision
+        if let Some(pending_revision) = &instance.pending_revision {
+            if pending_revision != revision {
+                return Err(ApproveRevisionError::InvalidRevision);
+            }
+        } else {
+            return Err(ApproveRevisionError::InvalidRevision);
+        }
+
+        instance.current_revision = String::from(revision);
+        instance.pending_revision = None;
+        instance.revisions.push(String::from(revision));
+
+        // TODO: handle labels here when they are moved to revisions
+
+        self.update_instance_metadata(config_name, metadata)
+            .await
+            .map_err(|e| ApproveRevisionError::StorageError {
+                message: e.to_string(),
+            })?;
+
+        return Ok(());
     }
 
     async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
@@ -438,8 +484,11 @@ impl LocalFileStorageAdapter {
         println!("checking {} ", path);
 
         if let Ok(content) = fs::read_to_string(&path) {
+            println!("got data {} ", content);
             let data: Option<RevisionJson> = serde_json::from_str(&content).ok();
             return data.map(|r| r.revision);
+        } else {
+            println!("Failed to load revision file: {revision}");
         }
 
         return None;

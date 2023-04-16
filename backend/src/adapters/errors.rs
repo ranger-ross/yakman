@@ -49,3 +49,25 @@ impl CreateLabelError {
         }
     }
 }
+
+#[derive(Error, Debug)]
+pub enum ApproveRevisionError {
+    #[error("Invalid config")]
+    InvalidConfig,
+    #[error("Invalid instance")]
+    InvalidInstance,
+    #[error("Invalid revision")]
+    InvalidRevision,
+    #[error("Revision already approved")]
+    AlreadyApproved,
+    #[error("Error storing approval: {message}")]
+    StorageError { message: String },
+}
+
+impl ApproveRevisionError {
+    pub fn storage_label(message: &str) -> ApproveRevisionError {
+        ApproveRevisionError::StorageError {
+            message: String::from(message),
+        }
+    }
+}

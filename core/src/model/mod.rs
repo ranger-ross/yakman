@@ -27,6 +27,7 @@ pub struct ConfigInstance {
     pub instance: String, // Unique key
     pub labels: Vec<Label>,
     pub current_revision: String,
+    pub pending_revision: Option<String>,
     pub revisions: Vec<String>,
 }
 
@@ -35,6 +36,7 @@ pub struct ConfigInstanceRevision {
     pub revision: String, // Unique key
     pub data_key: String, // Key to fetch data
     pub timestamp_ms: i64,
+    pub approved: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
