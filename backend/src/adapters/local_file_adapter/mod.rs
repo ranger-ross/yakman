@@ -243,20 +243,13 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             println!("Created data file: {}", data_file_path);
 
             // Create revision
-            let revisions_path = self.get_instance_revisions_path();
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            let revision_data = serde_json::to_string(&RevisionJson {
-                revision: revision.clone(),
-            })?;
-            let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
-            let mut revision_file = File::create(&revision_file_path)?;
-            Write::write_all(&mut revision_file, revision_data.as_bytes())?;
-            println!("Created revision file: {}", revision_file_path);
+            self.update_revision_data(config_name, &revision)?;
 
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
@@ -299,6 +292,21 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         } else {
             return Err(ApproveRevisionError::InvalidRevision);
         }
+
+        let mut revision_data = match self.get_revsion(config_name, revision) {
+            Some(revision_data) => revision_data,
+            None => return Err(ApproveRevisionError::InvalidRevision),
+        };
+
+        if revision_data.approved {
+            return Err(ApproveRevisionError::AlreadyApproved);
+        }
+
+        revision_data.approved = true;
+        self.update_revision_data(config_name, &revision_data)
+            .map_err(|e| ApproveRevisionError::StorageError {
+                message: e.to_string(),
+            })?;
 
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
@@ -439,7 +447,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.get_revsions(config_name, &rev) {
+            if let Some(revision) = self.get_revsion(config_name, &rev) {
                 revisions.push(revision);
             }
         }
@@ -477,23 +485,6 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 }
 
 impl LocalFileStorageAdapter {
-    fn get_revsions(&self, config_name: &str, revision: &str) -> Option<ConfigInstanceRevision> {
-        let dir = self.get_instance_revisions_path();
-        let path = format!("{dir}/{config_name}/{revision}");
-
-        println!("checking {} ", path);
-
-        if let Ok(content) = fs::read_to_string(&path) {
-            println!("got data {} ", content);
-            let data: Option<RevisionJson> = serde_json::from_str(&content).ok();
-            return data.map(|r| r.revision);
-        } else {
-            println!("Failed to load revision file: {revision}");
-        }
-
-        return None;
-    }
-
     fn get_yakman_dir(&self) -> String {
         return format!("{}/{YAK_MAN_DIR}", self.path.as_str());
     }
@@ -553,6 +544,40 @@ impl LocalFileStorageAdapter {
         Write::write_all(&mut file, data.as_bytes())?;
 
         Ok(())
+    }
+
+    fn get_revsion(&self, config_name: &str, revision: &str) -> Option<ConfigInstanceRevision> {
+        let dir = self.get_instance_revisions_path();
+        let path = format!("{dir}/{config_name}/{revision}");
+
+        println!("checking {} ", path);
+
+        if let Ok(content) = fs::read_to_string(&path) {
+            println!("got data {} ", content);
+            let data: Option<RevisionJson> = serde_json::from_str(&content).ok();
+            return data.map(|r| r.revision);
+        } else {
+            println!("Failed to load revision file: {revision}");
+        }
+
+        return None;
+    }
+
+    fn update_revision_data(
+        &self,
+        config_name: &str,
+        revision: &ConfigInstanceRevision,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let revisions_path = self.get_instance_revisions_path();
+        let revision_key = &revision.revision;
+        let revision_data = serde_json::to_string(&RevisionJson {
+            revision: revision.clone(), // TODO: This does not need to be cloned if we use lifetime annotations
+        })?;
+        let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
+        let mut revision_file = File::create(&revision_file_path)?;
+        Write::write_all(&mut revision_file, revision_data.as_bytes())?;
+        println!("Created revision file: {}", revision_file_path);
+        return Ok(());
     }
 }
 
