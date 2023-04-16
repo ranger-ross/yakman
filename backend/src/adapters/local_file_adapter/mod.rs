@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
-use crate::adapters::{utils::select_instance, ConfigStorageAdapter};
+use crate::{adapters::{utils::select_instance, ConfigStorageAdapter}, labels};
 
 use super::{
     errors::{ApproveRevisionError, CreateLabelError},
@@ -191,6 +191,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
+                labels: labels,
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
@@ -206,7 +207,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
                 instance: instance,
-                labels: labels,
+                labels: revision.labels,
                 current_revision: String::from(&revision.revision),
                 pending_revision: None,
                 revisions: vec![revision.revision],
@@ -246,6 +247,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
+                labels: labels,
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
@@ -254,8 +256,6 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
                 instance.pending_revision = Some(String::from(&revision.revision));
-                // instance.revisions.push(String::from(&revision.revision));
-                instance.labels = labels; // TODO: Should these labels be part of the revision????
                 self.update_instance_metadata(config_name, instances)
                     .await?;
                 println!("Updated instance metadata for config: {config_name}");
@@ -311,8 +311,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
         instance.revisions.push(String::from(revision));
-
-        // TODO: handle labels here when they are moved to revisions
+        instance.labels = revision_data.labels;
 
         self.update_instance_metadata(config_name, metadata)
             .await

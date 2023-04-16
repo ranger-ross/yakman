@@ -25,7 +25,7 @@ pub struct Label {
 pub struct ConfigInstance {
     pub config_name: String,
     pub instance: String, // Unique key
-    pub labels: Vec<Label>,
+    pub labels: Vec<Label>, // These should match the labels in the current revision
     pub current_revision: String,
     pub pending_revision: Option<String>,
     pub revisions: Vec<String>,
@@ -35,6 +35,7 @@ pub struct ConfigInstance {
 pub struct ConfigInstanceRevision {
     pub revision: String, // Unique key
     pub data_key: String, // Key to fetch data
+    pub labels: Vec<Label>,
     pub timestamp_ms: i64,
     pub approved: bool,
 }
