@@ -235,7 +235,7 @@ async fn get_instance_revisions(
     return None;
 }
 
-#[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")]
+#[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
 async fn update_instance_current_revision(
     config_name: &str,
     instance: &str,

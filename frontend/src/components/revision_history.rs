@@ -18,9 +18,11 @@ pub struct RevisionHistoryPageProps {
 pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
     let revisions: UseStateHandle<Vec<ConfigInstanceRevision>> = use_state(|| vec![]);
     let current_revision: UseStateHandle<String> = use_state(String::default);
+    let pending_revision: UseStateHandle<Option<String>> = use_state(|| None);
 
     {
         let revisions_data = revisions.clone();
+        let pending_revision = pending_revision.clone();
         let current_revision = current_revision.clone();
         let config_name = props.config_name.clone();
         let instance = props.instance.clone();
@@ -41,7 +43,8 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                     }
 
                     if let Some(selected_instance) = selected_instance {
-                        current_revision.set(selected_instance.current_revision)
+                        current_revision.set(selected_instance.current_revision);
+                        pending_revision.set(selected_instance.pending_revision);
                     }
                 });
             },
@@ -50,9 +53,14 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
     }
 
     log!("current config = ", &current_revision.to_string());
+    log!("pending_revision = ", pending_revision.is_some());
 
     let mut sorted_revisions = revisions.to_vec();
     sorted_revisions.sort_by(|a, b| a.timestamp_ms.cmp(&b.timestamp_ms));
+
+    let config_name_data = props.config_name.clone();
+    let instance_data = props.instance.clone();
+    let pending_revision_data = pending_revision.clone();
 
     html! {
         <div>
@@ -96,6 +104,25 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                 }).collect::<Html>()}
 
             <br />
+
+            if let Some(pending_revision) = pending_revision.as_ref() {
+                <div>
+                    <h3> {"Pending Revision"} </h3>
+                    <p> {pending_revision} </p>
+                    <button onclick={Callback::from(move |e| {
+
+                        let config_name_data = config_name_data.clone();
+                        let instance_data = instance_data.clone();
+                        let pending_revision_data = pending_revision_data.clone();
+
+                        wasm_bindgen_futures::spawn_local(async move {
+                            log!("clicked!");
+                            api::approve_instance_revision(&config_name_data, &instance_data, &pending_revision_data.as_ref().unwrap()).await; // TODO: handle error
+
+                        })
+                    })}>{"Approve"}</button>
+                </div>
+            }
         </div>
     }
 }

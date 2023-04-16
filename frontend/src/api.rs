@@ -100,6 +100,20 @@ pub async fn update_instance_revision(
     return Ok(());
 }
 
+pub async fn approve_instance_revision(
+    config_name: &str,
+    instance: &str,
+    revision: &str,
+) -> Result<(), RequestError> {
+    Request::post(&format!(
+        "/api/config/{config_name}/instance/{instance}/revision/{revision}/approve"
+    ))
+    .send()
+    .await?;
+
+    return Ok(());
+}
+
 #[derive(Debug)]
 pub enum RequestError {
     Reqwest(gloo_net::Error),
