@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
-use crate::{adapters::{utils::select_instance, ConfigStorageAdapter}, labels};
+use crate::{
+    adapters::{utils::select_instance, ConfigStorageAdapter},
+    labels,
+};
 
 use super::{
     errors::{ApproveRevisionError, CreateLabelError},
@@ -298,9 +301,9 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             None => return Err(ApproveRevisionError::InvalidRevision),
         };
 
-        if revision_data.approved {
-            return Err(ApproveRevisionError::AlreadyApproved);
-        }
+        // if revision_data.approved {
+        //     return Err(ApproveRevisionError::AlreadyApproved);
+        // }
 
         revision_data.approved = true;
         self.update_revision_data(config_name, &revision_data)
@@ -310,8 +313,11 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
-        instance.revisions.push(String::from(revision));
         instance.labels = revision_data.labels;
+        
+        if !instance.revisions.contains(&String::from(revision)) {
+            instance.revisions.push(String::from(revision));
+        }
 
         self.update_instance_metadata(config_name, metadata)
             .await
@@ -473,7 +479,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         if !instance.revisions.contains(&String::from(revision)) {
             panic!("revision not found!"); // TODO: propagate error
         }
-        instance.current_revision = String::from(revision);
+        instance.pending_revision = Some(String::from(revision));
 
         self.update_instance_metadata(config_name, instances)
             .await
