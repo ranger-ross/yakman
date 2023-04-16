@@ -1,3 +1,5 @@
+use crate::routes::Route;
+
 use super::super::api;
 use gloo_console::{error, log};
 use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
@@ -6,6 +8,7 @@ use yew::prelude::*;
 extern crate chrono;
 use chrono::prelude::DateTime;
 use chrono::Utc;
+use yew_router::prelude::use_navigator;
 use std::time::{Duration, UNIX_EPOCH};
 
 #[derive(Properties, PartialEq)]
@@ -16,6 +19,7 @@ pub struct RevisionHistoryPageProps {
 
 #[function_component(RevisionHistoryPage)]
 pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
+    let navigator = use_navigator().unwrap();
     let revisions: UseStateHandle<Vec<ConfigInstanceRevision>> = use_state(|| vec![]);
     let current_revision: UseStateHandle<String> = use_state(String::default);
     let pending_revision: UseStateHandle<Option<String>> = use_state(|| None);
@@ -108,16 +112,19 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
             if let Some(pending_revision) = pending_revision.as_ref() {
                 <div>
                     <h3> {"Pending Revision"} </h3>
-                    <p> {pending_revision} </p>
+                    <p> {pending_revision} </p> // TODO: Add link to see data
                     <button onclick={Callback::from(move |e| {
 
                         let config_name_data = config_name_data.clone();
                         let instance_data = instance_data.clone();
                         let pending_revision_data = pending_revision_data.clone();
-
+                        let navigator = navigator.clone();
                         wasm_bindgen_futures::spawn_local(async move {
                             log!("clicked!");
-                            api::approve_instance_revision(&config_name_data, &instance_data, &pending_revision_data.as_ref().unwrap()).await; // TODO: handle error
+                            match api::approve_instance_revision(&config_name_data, &instance_data, &pending_revision_data.as_ref().unwrap()).await {
+                                Ok(()) => navigator.push(&Route::Home),
+                                Err(e) => error!("Error while approving config", e.to_string()),
+                            };
 
                         })
                     })}>{"Approve"}</button>
