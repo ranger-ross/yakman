@@ -314,6 +314,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
 
         // TODO: handle labels here when they are moved to revisions
 
+
         self.update_instance_metadata(config_name, metadata)
             .await
             .map_err(|e| ApproveRevisionError::StorageError {
