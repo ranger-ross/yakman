@@ -70,10 +70,6 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
     let mut sorted_revisions = revisions.to_vec();
     sorted_revisions.sort_by(|a, b| a.timestamp_ms.cmp(&b.timestamp_ms));
 
-    let config_name_data = props.config_name.clone();
-    let instance_data = props.instance.clone();
-    let pending_revision_data = pending_revision.clone();
-
     html! {
         <div>
             <h1>{format!("History {} -> {}", props.config_name, props.instance)}</h1>
@@ -109,7 +105,14 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                                     });
 
                                 })}
-                            >{&revision.revision}</p>
+                            >
+                                {&revision.revision}
+                            </p>
+                            if pending_revision.is_some() && pending_revision.as_ref().unwrap() == &revision.revision {
+                                <p>
+                                    {"(pending)"}
+                                </p>
+                            }
                         </div>
                     }
                 }).collect::<Html>()}
