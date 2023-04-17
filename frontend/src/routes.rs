@@ -20,6 +20,11 @@ pub enum Route {
         config_name: String,
         instance: String,
     },
+    #[at("/apply/:config_name/:instance")]
+    ApplyConfigPage {
+        config_name: String,
+        instance: String,
+    },
     #[not_found]
     #[at("/404")]
     NotFound,

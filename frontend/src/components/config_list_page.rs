@@ -147,6 +147,7 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
     let view_link = format!("/api/config/{config_name}/instance/{instance_id}");
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
     let history_link = format!("/history/{config_name}/{instance_id}");
+    let approval_link = format!("/apply/{config_name}/{instance_id}");
 
     html! {
         <div
@@ -170,6 +171,14 @@ fn config_instance_row(props: &ConfigInstanceRowProps) -> Html {
                     { "History" }
                 </a>
             </p>
+
+            if instance.pending_revision.is_some() {
+                <p>
+                    <a href={approval_link}>
+                        { "Pending Change" }
+                    </a>
+                </p>
+            }
 
 
             <p>{format!("{}", labels_text)}</p>
