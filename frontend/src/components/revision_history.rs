@@ -88,6 +88,7 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                     let rev = revision.clone();
                     let config_name = props.config_name.clone();
                     let instance = props.instance.clone();
+                    let navigator = navigator.clone();
                     html! {
                         <div style="display: flex; gap: 10px">
                             <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
@@ -96,13 +97,13 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
                                 onclick={Callback::from(move |_| {
                                     log!("Clicked", &rev.revision);
 
+                                    let navigator = navigator.clone();
                                     let rev = rev.clone();
                                     let config_name = config_name.clone();
                                     let instance = instance.clone();
-
                                     wasm_bindgen_futures::spawn_local(async move {
                                         match api::update_instance_revision(&config_name, &instance, &rev.revision).await {
-                                            Ok(()) => refresh_page(),
+                                            Ok(()) => navigator.push(&Route::ApplyConfigPage {config_name: config_name, instance: instance}),
                                             Err(err) => error!("Error updating revision", err.to_string()),
                                         };
                                     });
@@ -115,26 +116,6 @@ pub fn revision_history_page(props: &RevisionHistoryPageProps) -> Html {
 
             <br />
 
-            if let Some(pending_revision) = pending_revision.as_ref() {
-                <div>
-                    <h3> {"Pending Revision"} </h3>
-                    <p> {pending_revision} </p> // TODO: Add link to see data
-                    <button onclick={Callback::from(move |e| {
-
-                        let config_name_data = config_name_data.clone();
-                        let instance_data = instance_data.clone();
-                        let pending_revision_data = pending_revision_data.clone();
-                        wasm_bindgen_futures::spawn_local(async move {
-                            log!("clicked!");
-                            match api::approve_instance_revision(&config_name_data, &instance_data, &pending_revision_data.as_ref().unwrap()).await {
-                                Ok(()) => refresh_page(),
-                                Err(e) => error!("Error while approving config", e.to_string()),
-                            };
-
-                        })
-                    })}>{"Approve"}</button>
-                </div>
-            }
         </div>
     }
 }

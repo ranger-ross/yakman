@@ -2,7 +2,7 @@ mod api;
 mod components;
 mod routes;
 
-use components::{AddConfigPage, AddLabelPage, ConfigListPage};
+use components::{AddConfigPage, AddLabelPage, ConfigListPage, ApplyConfigPage};
 use routes::Route;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -46,6 +46,15 @@ fn switch(routes: Route) -> Html {
             <RevisionHistoryPage
                 config_name={config_name}
                 instance={instance}
+            />
+        },
+        Route::ApplyConfigPage {
+            config_name,
+            instance,
+        } => html! {
+            <ApplyConfigPage
+                config_name={config_name}
+                instance={instance} 
             />
         },
         Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
