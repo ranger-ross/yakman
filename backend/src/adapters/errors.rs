@@ -1,3 +1,5 @@
+use std::fmt;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -71,3 +73,38 @@ impl ApproveRevisionError {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct ConfigNotFoundError {
+    pub description: String,
+}
+
+impl fmt::Display for ConfigNotFoundError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description)
+    }
+}
+
+impl std::error::Error for ConfigNotFoundError {
+    fn description(&self) -> &str {
+        &self.description
+    }
+}
+
+#[derive(Debug)]
+pub struct LabelAlreadyExistsError {
+    pub description: String,
+}
+
+impl fmt::Display for LabelAlreadyExistsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description)
+    }
+}
+
+impl std::error::Error for LabelAlreadyExistsError {
+    fn description(&self) -> &str {
+        &self.description
+    }
+}
+
