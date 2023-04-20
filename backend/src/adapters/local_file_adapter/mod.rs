@@ -113,7 +113,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn create_config_instance_data_file(
+    async fn save_config_instance_data_file(
         &self,
         config_name: &str,
         data_key: &str,
@@ -182,7 +182,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
-    async fn update_revision_data(
+    async fn save_revision_data(
         &self,
         config_name: &str,
         revision: &ConfigInstanceRevision,
@@ -195,7 +195,6 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
         let mut revision_file = File::create(&revision_file_path)?;
         Write::write_all(&mut revision_file, revision_data.as_bytes())?;
-        println!("Created revision file: {}", revision_file_path);
         return Ok(());
     }
 }
@@ -249,45 +248,6 @@ impl LocalFileStorageAdapter {
         }
     }
 
-    async fn get_config_data_by_labels(
-        &self,
-        config_name: &str,
-        labels: Vec<Label>,
-    ) -> Option<String> {
-        if let Some(instances) = self.get_config_instance_metadata(config_name).await {
-            println!("Found {} instances", instances.len());
-            let label_types = self.get_labels().await.unwrap();
-            let selected_instance = select_instance(instances, labels, label_types);
-
-            if let Some(instance) = selected_instance {
-                return self
-                    .get_data_by_revision(config_name, &instance.current_revision)
-                    .await;
-            }
-            println!("No selected instance found");
-            return None;
-        }
-        return None;
-    }
-
-    async fn get_config_data(&self, config_name: &str, instance: &str) -> Option<String> {
-        if let Some(instances) = self.get_config_instance_metadata(config_name).await {
-            println!("Found {} instances", instances.len());
-
-            println!("Search for instance ID {}", instance);
-            let selected_instance = instances.iter().find(|i| i.instance == instance);
-
-            if let Some(instance) = selected_instance {
-                return self
-                    .get_data_by_revision(config_name, &instance.current_revision)
-                    .await;
-            }
-            println!("No selected instance found");
-            return None;
-        }
-        return None;
-    }
-
     async fn create_config_instance(
         &self,
         config_name: &str,
@@ -300,7 +260,7 @@ impl LocalFileStorageAdapter {
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
-            self.create_config_instance_data_file(config_name, &data_key, data)
+            self.save_config_instance_data_file(config_name, &data_key, data)
                 .await?;
 
             // Create revision
@@ -311,7 +271,7 @@ impl LocalFileStorageAdapter {
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            self.update_revision_data(config_name, &revision).await?;
+            self.save_revision_data(config_name, &revision).await?;
 
             // Add new instance to instances and update the instance datafile
             instances.push(ConfigInstance {
@@ -361,7 +321,7 @@ impl LocalFileStorageAdapter {
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            self.update_revision_data(config_name, &revision).await?;
+            self.save_revision_data(config_name, &revision).await?;
 
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
@@ -413,7 +373,7 @@ impl LocalFileStorageAdapter {
         // }
 
         revision_data.approved = true;
-        self.update_revision_data(config_name, &revision_data)
+        self.save_revision_data(config_name, &revision_data)
             .await
             .map_err(|e| ApproveRevisionError::StorageError {
                 message: e.to_string(),

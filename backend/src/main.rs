@@ -29,15 +29,10 @@ use crate::adapters::{
 extern crate rocket;
 
 struct StateManager {
-    // adapter: Box<dyn ConfigStorageAdapter>,
     service: Box<dyn StorageService>,
 }
 
 impl StateManager {
-    // fn get_adapter(&self) -> &dyn ConfigStorageAdapter {
-    //     return self.adapter.as_ref();
-    // }
-
     fn get_service(&self) -> &dyn StorageService {
         return self.service.as_ref();
     }
@@ -64,10 +59,10 @@ async fn rocket() -> _ {
                 configs,
                 labels,
                 create_label,
-                // get_instance_by_id,
-                // data,
-                // create_new_instance,
-                // instance,
+                get_instance_by_id,
+                data,
+                create_new_instance,
+                instance,
                 // create_config,
                 // update_new_instance,
                 // get_instance_revisions,
@@ -99,9 +94,9 @@ async fn create_label(data: String, state: &State<StateManager>) -> Status {
         return match service.create_label(label_type).await {
             Ok(()) => Status::Ok,
             Err(e) => match e {
-                CreateLabelError::DuplicateLabelError { name } => Status::BadRequest,
+                CreateLabelError::DuplicateLabelError { name: _ } => Status::BadRequest,
                 CreateLabelError::EmptyOptionsError => Status::BadRequest,
-                CreateLabelError::InvalidPriorityError { prioity } => Status::BadRequest,
+                CreateLabelError::InvalidPriorityError { prioity: _ } => Status::BadRequest,
                 CreateLabelError::StorageError { message } => {
                     println!("Failed to create label, error: {message}");
                     Status::InternalServerError
@@ -113,108 +108,108 @@ async fn create_label(data: String, state: &State<StateManager>) -> Status {
     return Status::BadRequest; // Bad input so parse failed
 }
 
-// #[get("/instances/<id>")]
-// async fn get_instance_by_id(
-//     id: &str,
-//     state: &State<StateManager>,
-// ) -> Option<Json<Vec<ConfigInstance>>> {
-//     let adapter = state.get_adapter();
-//     return match adapter.get_config_instance_metadata(id).await {
-//         Some(data) => Some(Json(data)),
-//         None => None,
-//     };
-// }
+#[get("/instances/<id>")]
+async fn get_instance_by_id(
+    id: &str,
+    state: &State<StateManager>,
+) -> Option<Json<Vec<ConfigInstance>>> {
+    let service = state.get_service();
+    return match service.get_config_instance_metadata(id).await.unwrap() {
+        Some(data) => Some(Json(data)),
+        None => None,
+    };
+}
 
 // // TODO: Standardize REST endpoint naming
 
-// #[get("/config/<config_name>/instance")]
-// async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
-//     let adapter = state.get_adapter();
+#[get("/config/<config_name>/instance")]
+async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
+    let service = state.get_service();
 
-//     let labels: Vec<Label> = query
-//         .params
-//         .iter()
-//         .map(|param| Label {
-//             label_type: param.0.to_string(),
-//             value: param.1.to_string(),
-//         })
-//         .collect();
+    let labels: Vec<Label> = query
+        .params
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
 
-//     println!("Search for config {config_name} with labels: {:?}", labels);
+    println!("Search for config {config_name} with labels: {:?}", labels);
 
-//     return adapter.get_config_data_by_labels(config_name, labels).await;
-// }
+    return service.get_config_data_by_labels(config_name, labels).await.unwrap();
+}
 
-// #[get("/config/<config_name>/instance/<instance>")]
-// async fn instance(
-//     config_name: &str,
-//     instance: &str,
-//     state: &State<StateManager>,
-// ) -> Option<String> {
-//     let adapter = state.get_adapter();
-//     return adapter.get_config_data(config_name, instance).await;
-// }
+#[get("/config/<config_name>/instance/<instance>")]
+async fn instance(
+    config_name: &str,
+    instance: &str,
+    state: &State<StateManager>,
+) -> Option<String> {
+    let service = state.get_service();
+    return service.get_config_data(config_name, instance).await.unwrap();
+}
 
-// #[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
-// async fn create_new_instance(
-//     config_name: &str,
-//     query: RawQuery,
-//     data: String,
-//     state: &State<StateManager>,
-// ) {
-//     let adapter = state.get_adapter();
+#[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
+async fn create_new_instance(
+    config_name: &str,
+    query: RawQuery,
+    data: String,
+    state: &State<StateManager>,
+) {
+    let service = state.get_service();
 
-//     let labels: Vec<Label> = query
-//         .params
-//         .iter()
-//         .map(|param| Label {
-//             label_type: param.0.to_string(),
-//             value: param.1.to_string(),
-//         })
-//         .collect();
+    let labels: Vec<Label> = query
+        .params
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
 
-//     // TODO: do validation
-//     // - config exists
-//     // - labels are valid
-//     // - not a duplicate?
+    // TODO: do validation
+    // - config exists
+    // - labels are valid
+    // - not a duplicate?
 
-//     adapter
-//         .create_config_instance(config_name, labels, &data)
-//         .await
-//         .unwrap();
-// }
+    service
+        .create_config_instance(config_name, labels, &data)
+        .await
+        .unwrap();
+}
 
-// #[post("/config/<config_name>/instance/<instance>", data = "<data>")]
-// async fn update_new_instance(
-//     config_name: &str,
-//     instance: &str,
-//     query: RawQuery,
-//     data: String,
-//     state: &State<StateManager>,
-// ) {
-//     let adapter = state.get_adapter();
+#[post("/config/<config_name>/instance/<instance>", data = "<data>")]
+async fn update_new_instance(
+    config_name: &str,
+    instance: &str,
+    query: RawQuery,
+    data: String,
+    state: &State<StateManager>,
+) {
+    let service = state.get_service();
 
-//     let labels: Vec<Label> = query
-//         .params
-//         .iter()
-//         .map(|param| Label {
-//             label_type: param.0.to_string(),
-//             value: param.1.to_string(),
-//         })
-//         .collect();
+    let labels: Vec<Label> = query
+        .params
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
 
-//     println!("lables {:?}", &labels);
+    println!("lables {:?}", &labels);
 
-//     // TODO: do validation
-//     // - config exists
-//     // - labels are valid
-//     // - not a duplicate?
+    // TODO: do validation
+    // - config exists
+    // - labels are valid
+    // - not a duplicate?
 
-//     adapter
-//         .update_config_instance(config_name, instance, labels, &data)
-//         .await
-//         .unwrap();
-// }
+    service
+        .save_config_instance(config_name, instance, labels, &data)
+        .await
+        .unwrap();
+}
 
 // #[put("/config/<config_name>")]
 // async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {

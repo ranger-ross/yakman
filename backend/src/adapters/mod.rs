@@ -109,7 +109,7 @@ pub trait FileBasedStorageAdapter: Sync + Send {
 
     async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>>;
 
-    async fn create_config_instance_data_file(
+    async fn save_config_instance_data_file(
         &self,
         config_name: &str,
         data_key: &str,
@@ -129,7 +129,7 @@ pub trait FileBasedStorageAdapter: Sync + Send {
         revision: &str,
     ) -> Option<ConfigInstanceRevision>;
 
-    async fn update_revision_data(
+    async fn save_revision_data(
         &self,
         config_name: &str,
         revision: &ConfigInstanceRevision,
