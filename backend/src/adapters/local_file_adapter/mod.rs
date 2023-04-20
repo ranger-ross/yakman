@@ -1,5 +1,4 @@
 use std::{
-    fmt,
     fs::{self, File},
     io::Write,
     path::Path,
@@ -9,16 +8,13 @@ use chrono::Utc;
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
-use thiserror::Error;
 use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 use crate::adapters::utils::select_instance;
-use crate::adapters::ConfigStorageAdapter;
 
 use super::{
-    errors::{ApproveRevisionError, ConfigNotFoundError, CreateLabelError},
-    CreateConfigError, FileBasedStorageAdapter, GenericStorageError,
+    errors::ApproveRevisionError, CreateConfigError, FileBasedStorageAdapter, GenericStorageError,
 };
 
 pub struct LocalFileStorageAdapter {
@@ -97,6 +93,26 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
+    async fn create_config_instance_dir(
+        &self,
+        config_name: &str,
+    ) -> Result<(), GenericStorageError> {
+        let config_instance_dir = self.get_config_instance_dir();
+        let config_instance_path = format!("{config_instance_dir}/{config_name}");
+        fs::create_dir(&config_instance_path)?;
+        return Ok(());
+    }
+
+    async fn create_revision_instance_dir(
+        &self,
+        config_name: &str,
+    ) -> Result<(), GenericStorageError> {
+        let revision_instance_dir = self.get_instance_revisions_path();
+        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
+        fs::create_dir(&revision_instance_path)?;
+        return Ok(());
+    }
+
     async fn create_config_instance_data_file(
         &self,
         config_name: &str,
@@ -128,7 +144,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return None;
     }
 
-    async fn update_instance_metadata(
+    async fn save_instance_metadata(
         &self,
         config_name: &str,
         instances: Vec<ConfigInstance>,
@@ -184,8 +200,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
     }
 }
 
-#[async_trait]
-impl ConfigStorageAdapter for LocalFileStorageAdapter {
+impl LocalFileStorageAdapter {
     async fn initialize_adapter(&mut self) {
         println!("initializing local storage adapter");
 
@@ -307,8 +322,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
                 pending_revision: None,
                 revisions: vec![revision.revision],
             });
-            self.update_instance_metadata(config_name, instances)
-                .await?;
+            self.save_instance_metadata(config_name, instances).await?;
             println!("Update instance metadata for config: {}", config_name);
 
             return Ok(());
@@ -352,8 +366,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
                 instance.pending_revision = Some(String::from(&revision.revision));
-                self.update_instance_metadata(config_name, instances)
-                    .await?;
+                self.save_instance_metadata(config_name, instances).await?;
                 println!("Updated instance metadata for config: {config_name}");
                 return Ok(());
             } // TODO: Throw a new custom for failed to update config metadata
@@ -414,76 +427,13 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
             instance.revisions.push(String::from(revision));
         }
 
-        self.update_instance_metadata(config_name, metadata)
+        self.save_instance_metadata(config_name, metadata)
             .await
             .map_err(|e| ApproveRevisionError::StorageError {
                 message: e.to_string(),
             })?;
 
         return Ok(());
-    }
-
-    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
-        let mut configs = self.get_configs().await.unwrap(); // TODO: Handle
-
-        if configs
-            .iter()
-            .find(|config| config.name == config_name)
-            .is_some()
-        {
-            return Err(CreateConfigError::duplicate_config(config_name));
-        }
-
-        configs.push(Config {
-            name: String::from(config_name),
-            description: String::from(""), // TODO: support descriptions?
-        });
-
-        // Create instance metadata file
-        let instace_metadata: Vec<ConfigInstance> = vec![];
-        let data = serde_json::to_string(&InstanceJson {
-            instances: instace_metadata,
-        })
-        .map_err(|e| CreateConfigError::storage_error("Failed to serialize data to JSON"))?;
-        let yakman_path = self.get_yakman_dir();
-        let path = format!("{yakman_path}/instance-metadata/{config_name}.json");
-        let mut file = File::create(&path)
-            .map_err(|e| CreateConfigError::storage_error("Failed to instance metadata file"))?;
-        Write::write_all(&mut file, data.as_bytes()).map_err(|e| {
-            CreateConfigError::storage_error("Failed to update instance metadata file")
-        })?;
-        println!("Created instance metadata file: {}", path);
-
-        // Create config instances directory
-        let config_instance_dir = self.get_config_instance_dir();
-        let config_instance_path = format!("{config_instance_dir}/{config_name}");
-        fs::create_dir(&config_instance_path).map_err(|e| {
-            CreateConfigError::storage_error("Failed to create instances directory")
-        })?;
-        println!("Created config instance directory: {config_instance_path}");
-
-        // Create config revisions directory
-        let revision_instance_dir = self.get_instance_revisions_path();
-        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-        fs::create_dir(&revision_instance_path).map_err(|e| {
-            CreateConfigError::storage_error("Failed to create revisions directory")
-        })?;
-        println!(
-            "Created config revision directory: {}",
-            revision_instance_path
-        );
-
-        // Add config to base config file
-        let data = serde_json::to_string(&ConfigJson { configs: configs }).map_err(|e| {
-            CreateConfigError::storage_error("Failed to convert base configs to JSON")
-        })?;
-        let path = self.get_configs_datafile_path();
-        let mut file = File::create(&path)
-            .map_err(|e| CreateConfigError::storage_error("Failed to open configs file"))?;
-        Write::write_all(&mut file, data.as_bytes())
-            .map_err(|e| CreateConfigError::storage_error("Failed to update configs file"))?;
-
-        Ok(())
     }
 
     async fn get_instance_revisions(
@@ -535,8 +485,7 @@ impl ConfigStorageAdapter for LocalFileStorageAdapter {
         }
         instance.pending_revision = Some(String::from(revision));
 
-        self.update_instance_metadata(config_name, instances)
-            .await?;
+        self.save_instance_metadata(config_name, instances).await?;
 
         return Ok(());
     }

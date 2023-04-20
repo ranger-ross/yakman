@@ -117,7 +117,7 @@ pub trait FileBasedStorageAdapter: Sync + Send {
     ) -> Result<(), GenericStorageError>;
     async fn get_data_by_revision(&self, config_name: &str, revision: &str) -> Option<String>;
 
-    async fn update_instance_metadata(
+    async fn save_instance_metadata(
         &self,
         config_name: &str,
         instances: Vec<ConfigInstance>,
@@ -134,6 +134,10 @@ pub trait FileBasedStorageAdapter: Sync + Send {
         config_name: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError>;
+
+    async fn create_config_instance_dir(&self, config_name: &str) -> Result<(), GenericStorageError>;
+    
+    async fn create_revision_instance_dir(&self, config_name: &str) -> Result<(), GenericStorageError>;
 
     // async fn get_config_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>>;
 

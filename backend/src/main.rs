@@ -63,7 +63,7 @@ async fn rocket() -> _ {
             routes![
                 configs,
                 labels,
-                // create_label,
+                create_label,
                 // get_instance_by_id,
                 // data,
                 // create_new_instance,
@@ -89,29 +89,29 @@ async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
     return Json(service.get_labels().await.unwrap());
 }
 
-// #[put("/labels", data = "<data>")]
-// async fn create_label(data: String, state: &State<StateManager>) -> Status {
-//     let adapter = state.get_adapter();
+#[put("/labels", data = "<data>")]
+async fn create_label(data: String, state: &State<StateManager>) -> Status {
+    let service = state.get_service();
 
-//     let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
+    let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
 
-//     if let Some(label_type) = label_type {
-//         return match adapter.create_label(label_type).await {
-//             Ok(()) => Status::Ok,
-//             Err(e) => match e {
-//                 CreateLabelError::DuplicateLabelError { name } => Status::BadRequest,
-//                 CreateLabelError::EmptyOptionsError => Status::BadRequest,
-//                 CreateLabelError::InvalidPriorityError { prioity } => Status::BadRequest,
-//                 CreateLabelError::StorageError { message } => {
-//                     println!("Failed to create label, error: {message}");
-//                     Status::InternalServerError
-//                 }
-//             },
-//         };
-//     }
+    if let Some(label_type) = label_type {
+        return match service.create_label(label_type).await {
+            Ok(()) => Status::Ok,
+            Err(e) => match e {
+                CreateLabelError::DuplicateLabelError { name } => Status::BadRequest,
+                CreateLabelError::EmptyOptionsError => Status::BadRequest,
+                CreateLabelError::InvalidPriorityError { prioity } => Status::BadRequest,
+                CreateLabelError::StorageError { message } => {
+                    println!("Failed to create label, error: {message}");
+                    Status::InternalServerError
+                }
+            },
+        };
+    }
 
-//     return Status::BadRequest; // Bad input so parse failed
-// }
+    return Status::BadRequest; // Bad input so parse failed
+}
 
 // #[get("/instances/<id>")]
 // async fn get_instance_by_id(

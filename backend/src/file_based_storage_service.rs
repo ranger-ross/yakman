@@ -1,11 +1,14 @@
-use std::{io::Write, fs::File};
+use std::{fs::File, io::Write};
 
 use chrono::Utc;
 use rocket::serde::json::serde_json;
 use uuid::Uuid;
-use yak_man_core::model::{Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
-use crate::adapters::{errors::{CreateLabelError, ConfigNotFoundError, CreateConfigError}, FileBasedStorageAdapter};
+use crate::adapters::{
+    errors::{ConfigNotFoundError, CreateConfigError, CreateLabelError},
+    FileBasedStorageAdapter,
+};
 
 #[async_trait] // TODO: refactor out to other file
 pub trait StorageService: Sync + Send {
@@ -89,7 +92,9 @@ impl StorageService for FileBasedStorageService {
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
-            self.adapter.create_config_instance_data_file(config_name, &data_key, data).await?;
+            self.adapter
+                .create_config_instance_data_file(config_name, &data_key, data)
+                .await?;
 
             // Create revision
             let revision = ConfigInstanceRevision {
@@ -99,7 +104,10 @@ impl StorageService for FileBasedStorageService {
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            self.adapter.update_revision_data(config_name, &revision).await.unwrap();
+            self.adapter
+                .update_revision_data(config_name, &revision)
+                .await
+                .unwrap();
 
             // Add new instance to instances and update the instance datafile
             instances.push(ConfigInstance {
@@ -110,7 +118,8 @@ impl StorageService for FileBasedStorageService {
                 pending_revision: None,
                 revisions: vec![revision.revision],
             });
-            self.adapter.update_instance_metadata(config_name, instances)
+            self.adapter
+                .save_instance_metadata(config_name, instances)
                 .await?;
             println!("Update instance metadata for config: {}", config_name);
 
@@ -122,59 +131,49 @@ impl StorageService for FileBasedStorageService {
         }));
     }
 
-
     async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
-        // let mut configs = self.get_configs().await.unwrap(); // TODO: Handle
+        let mut configs = self.get_configs().await.unwrap(); // TODO: Handle
 
-        // if configs
-        //     .iter()
-        //     .find(|config| config.name == config_name)
-        //     .is_some()
-        // {
-        //     return Err(CreateConfigError::duplicate_config(config_name));
-        // }
+        if configs
+            .iter()
+            .find(|config| config.name == config_name)
+            .is_some()
+        {
+            return Err(CreateConfigError::duplicate_config(config_name));
+        }
 
-        // configs.push(Config {
-        //     name: String::from(config_name),
-        //     description: String::from(""), // TODO: support descriptions?
-        // });
+        configs.push(Config {
+            name: String::from(config_name),
+            description: String::from(""), // TODO: support descriptions?
+        });
 
-        // // Create instance metadata file
-        // let instace_metadata: Vec<ConfigInstance> = vec![];
-        // let data = serde_json::to_string(&InstanceJson {
-        //     instances: instace_metadata,
-        // })
-        // .map_err(|e| CreateConfigError::storage_error("Failed to serialize data to JSON"))?;
-        // let yakman_path = self.get_yakman_dir();
-        // let path = format!("{yakman_path}/instance-metadata/{config_name}.json");
-        // let mut file = File::create(&path)
-        //     .map_err(|e| CreateConfigError::storage_error("Failed to instance metadata file"))?;
-        // Write::write_all(&mut file, data.as_bytes()).map_err(|e| {
-        //     CreateConfigError::storage_error("Failed to update instance metadata file")
-        // })?;
-        // println!("Created instance metadata file: {}", path);
+        // Create instance metadata file
+        self.adapter
+            .save_instance_metadata(config_name, vec![])
+            .await
+            .unwrap();
 
-        // // Create config instances directory
-        // let config_instance_dir = self.get_config_instance_dir();
-        // let config_instance_path = format!("{config_instance_dir}/{config_name}");
-        // fs::create_dir(&config_instance_path).map_err(|e| {
-        //     CreateConfigError::storage_error("Failed to create instances directory")
-        // })?;
-        // println!("Created config instance directory: {config_instance_path}");
+        // Create config instances directory
+        self.adapter
+            .create_config_instance_dir(config_name)
+            .await
+            .map_err(|_| {
+                CreateConfigError::storage_error("Failed to create instances directory")
+            })?;
 
-        // // Create config revisions directory
-        // let revision_instance_dir = self.get_instance_revisions_path();
-        // let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-        // fs::create_dir(&revision_instance_path).map_err(|e| {
-        //     CreateConfigError::storage_error("Failed to create revisions directory")
-        // })?;
-        // println!(
-        //     "Created config revision directory: {}",
-        //     revision_instance_path
-        // );
+        // Create config revisions directory
+        self.adapter
+            .create_revision_instance_dir(config_name)
+            .await
+            .map_err(|_| {
+                CreateConfigError::storage_error("Failed to create revisions directory")
+            })?;
 
-        // // Add config to base config file
-        // self.adapter.save_configs(configs);
+        // Add config to base config file
+        self.adapter
+            .save_configs(configs)
+            .await
+            .map_err(|_| CreateConfigError::storage_error("Failed to update configs file"))?;
 
         Ok(())
     }
