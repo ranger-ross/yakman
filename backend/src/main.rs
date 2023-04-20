@@ -63,9 +63,9 @@ async fn rocket() -> _ {
                 data,
                 create_new_instance,
                 instance,
-                // create_config,
-                // update_new_instance,
-                // get_instance_revisions,
+                create_config,
+                update_new_instance,
+                get_instance_revisions,
                 // update_instance_current_revision,
                 // approve_pending_instance_revision
             ],
@@ -211,36 +211,36 @@ async fn update_new_instance(
         .unwrap();
 }
 
-// #[put("/config/<config_name>")]
-// async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
-//     let adapter = state.get_adapter();
-//     let result = adapter.create_config(config_name).await;
+#[put("/config/<config_name>")]
+async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
+    let service = state.get_service();
+    let result = service.create_config(config_name).await;
 
-//     match result {
-//         Ok(()) => Status::Ok,
-//         Err(e) => match e {
-//             CreateConfigError::StorageError { message } => {
-//                 println!("Failed to create config {config_name}, error: {message}");
-//                 Status::InternalServerError
-//             }
-//             CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
-//         },
-//     }
-// }
+    match result {
+        Ok(()) => Status::Ok,
+        Err(e) => match e {
+            CreateConfigError::StorageError { message } => {
+                println!("Failed to create config {config_name}, error: {message}");
+                Status::InternalServerError
+            }
+            CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
+        },
+    }
+}
 
-// #[get("/config/<config_name>/instance/<instance>/revisions")]
-// async fn get_instance_revisions(
-//     config_name: &str,
-//     instance: &str,
-//     state: &State<StateManager>,
-// ) -> Option<Json<Vec<ConfigInstanceRevision>>> {
-//     let adapter = state.get_adapter();
+#[get("/config/<config_name>/instance/<instance>/revisions")]
+async fn get_instance_revisions(
+    config_name: &str,
+    instance: &str,
+    state: &State<StateManager>,
+) -> Option<Json<Vec<ConfigInstanceRevision>>> {
+    let service = state.get_service();
 
-//     if let Some(data) = adapter.get_instance_revisions(config_name, instance).await {
-//         return Some(Json(data));
-//     }
-//     return None;
-// }
+    if let Some(data) = service.get_instance_revisions(config_name, instance).await.unwrap() {
+        return Some(Json(data));
+    }
+    return None;
+}
 
 // #[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
 // async fn update_instance_current_revision(

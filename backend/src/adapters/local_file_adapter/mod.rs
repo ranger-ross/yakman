@@ -396,34 +396,6 @@ impl LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn get_instance_revisions(
-        &self,
-        config_name: &str,
-        instance: &str,
-    ) -> Option<Vec<ConfigInstanceRevision>> {
-        let instances = match self.get_config_instance_metadata(&config_name).await {
-            Some(value) => value,
-            None => return None,
-        };
-
-        let instance = match instances.iter().find(|inst| inst.instance == instance) {
-            Some(value) => value,
-            None => return None,
-        };
-
-        println!("found {} revisions", instance.revisions.len());
-
-        let mut revisions: Vec<ConfigInstanceRevision> = vec![];
-
-        for rev in instance.revisions.iter() {
-            if let Some(revision) = self.get_revsion(config_name, &rev).await {
-                revisions.push(revision);
-            }
-        }
-
-        return Some(revisions);
-    }
-
     async fn update_instance_current_revision(
         &self,
         config_name: &str,

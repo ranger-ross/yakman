@@ -1,7 +1,4 @@
-use std::{fs::File, io::Write};
-
 use chrono::Utc;
-use rocket::serde::json::serde_json;
 use std::{cmp::Ordering, collections::HashMap};
 use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
@@ -53,6 +50,12 @@ pub trait StorageService: Sync + Send {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>>;
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>>;
 }
 
 pub struct FileBasedStorageService {
@@ -268,7 +271,10 @@ impl StorageService for FileBasedStorageService {
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
-            self.adapter.save_config_instance_data_file(config_name, &data_key, data).await.unwrap();
+            self.adapter
+                .save_config_instance_data_file(config_name, &data_key, data)
+                .await
+                .unwrap();
 
             // Create revision
             let revision = ConfigInstanceRevision {
@@ -278,12 +284,16 @@ impl StorageService for FileBasedStorageService {
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            self.adapter.save_revision_data(config_name, &revision).await?;
+            self.adapter
+                .save_revision_data(config_name, &revision)
+                .await?;
 
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
                 instance.pending_revision = Some(String::from(&revision.revision));
-                self.adapter.save_instance_metadata(config_name, instances).await?;
+                self.adapter
+                    .save_instance_metadata(config_name, instances)
+                    .await?;
                 println!("Updated instance metadata for config: {config_name}");
                 return Ok(());
             } // TODO: Throw a new custom for failed to update config metadata
@@ -292,6 +302,34 @@ impl StorageService for FileBasedStorageService {
         return Err(Box::new(ConfigNotFoundError {
             description: format!("Config not found: {config_name}"),
         }));
+    }
+
+    async fn get_instance_revisions(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>> {
+        let instances = match self.get_config_instance_metadata(&config_name).await.unwrap() {
+            Some(value) => value,
+            None => return Ok(None),
+        };
+
+        let instance = match instances.iter().find(|inst| inst.instance == instance) {
+            Some(value) => value,
+            None => return Ok(None),
+        };
+
+        println!("found {} revisions", instance.revisions.len());
+
+        let mut revisions: Vec<ConfigInstanceRevision> = vec![];
+
+        for rev in instance.revisions.iter() {
+            if let Some(revision) = self.adapter.get_revsion(config_name, &rev).await {
+                revisions.push(revision);
+            }
+        }
+
+        return Ok(Some(revisions));
     }
 }
 
