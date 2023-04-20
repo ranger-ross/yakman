@@ -66,8 +66,8 @@ async fn rocket() -> _ {
                 create_config,
                 update_new_instance,
                 get_instance_revisions,
-                // update_instance_current_revision,
-                // approve_pending_instance_revision
+                update_instance_current_revision,
+                approve_pending_instance_revision
             ],
         )
 }
@@ -242,35 +242,35 @@ async fn get_instance_revisions(
     return None;
 }
 
-// #[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
-// async fn update_instance_current_revision(
-//     config_name: &str,
-//     instance: &str,
-//     revision: &str,
-//     state: &State<StateManager>,
-// ) {
-//     let adapter = state.get_adapter();
+#[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
+async fn update_instance_current_revision(
+    config_name: &str,
+    instance: &str,
+    revision: &str,
+    state: &State<StateManager>,
+) {
+    let service = state.get_service();
 
-//     adapter
-//         .update_instance_current_revision(config_name, instance, revision)
-//         .await
-//         .unwrap();
-// }
+    service
+        .update_instance_current_revision(config_name, instance, revision)
+        .await
+        .unwrap();
+}
 
-// #[post("/config/<config_name>/instance/<instance>/revision/<revision>/approve")]
-// async fn approve_pending_instance_revision(
-//     config_name: &str,
-//     instance: &str,
-//     revision: &str,
-//     state: &State<StateManager>,
-// ) {
-//     let adapter = state.get_adapter();
+#[post("/config/<config_name>/instance/<instance>/revision/<revision>/approve")]
+async fn approve_pending_instance_revision(
+    config_name: &str,
+    instance: &str,
+    revision: &str,
+    state: &State<StateManager>,
+) {
+    let service = state.get_service();
 
-//     adapter
-//         .approve_pending_instance_revision(config_name, instance, revision)
-//         .await
-//         .unwrap();
-// }
+    service
+        .approve_pending_instance_revision(config_name, instance, revision)
+        .await
+        .unwrap();
+}
 
 fn create_service() -> impl StorageService {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");

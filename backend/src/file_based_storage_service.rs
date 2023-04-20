@@ -4,7 +4,7 @@ use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 use crate::adapters::{
-    errors::{ConfigNotFoundError, CreateConfigError, CreateLabelError},
+    errors::{ConfigNotFoundError, CreateConfigError, CreateLabelError, ApproveRevisionError},
     FileBasedStorageAdapter,
 };
 
@@ -56,6 +56,20 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>>;
+
+    async fn update_instance_current_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), Box<dyn std::error::Error>>;
+
+    async fn approve_pending_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), ApproveRevisionError>;
 }
 
 pub struct FileBasedStorageService {
@@ -309,7 +323,11 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>> {
-        let instances = match self.get_config_instance_metadata(&config_name).await.unwrap() {
+        let instances = match self
+            .get_config_instance_metadata(&config_name)
+            .await
+            .unwrap()
+        {
             Some(value) => value,
             None => return Ok(None),
         };
@@ -330,6 +348,93 @@ impl StorageService for FileBasedStorageService {
         }
 
         return Ok(Some(revisions));
+    }
+
+    async fn update_instance_current_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut instances = self
+            .get_config_instance_metadata(config_name)
+            .await
+            .unwrap()
+            .unwrap(); // TODO: propagate error
+
+        let mut instance = instances
+            .iter_mut()
+            .find(|i| i.instance == instance)
+            .unwrap(); // TODO: propagate error
+
+        if !instance.revisions.contains(&String::from(revision)) {
+            panic!("revision not found!"); // TODO: propagate error
+        }
+        instance.pending_revision = Some(String::from(revision));
+
+        self.adapter
+            .save_instance_metadata(config_name, instances)
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn approve_pending_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> Result<(), ApproveRevisionError> {
+        let mut metadata = match self.get_config_instance_metadata(config_name).await.unwrap() {
+            Some(metadata) => metadata,
+            None => return Err(ApproveRevisionError::InvalidConfig),
+        };
+
+        let mut instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+            Some(instance) => instance,
+            None => return Err(ApproveRevisionError::InvalidInstance),
+        };
+
+        // Verify instance is the pending revision
+        if let Some(pending_revision) = &instance.pending_revision {
+            if pending_revision != revision {
+                return Err(ApproveRevisionError::InvalidRevision);
+            }
+        } else {
+            return Err(ApproveRevisionError::InvalidRevision);
+        }
+
+        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await {
+            Some(revision_data) => revision_data,
+            None => return Err(ApproveRevisionError::InvalidRevision),
+        };
+
+        // if revision_data.approved {
+        //     return Err(ApproveRevisionError::AlreadyApproved);
+        // }
+
+        revision_data.approved = true;
+        self.adapter.save_revision_data(config_name, &revision_data)
+            .await
+            .map_err(|e| ApproveRevisionError::StorageError {
+                message: e.to_string(),
+            })?;
+
+        instance.current_revision = String::from(revision);
+        instance.pending_revision = None;
+        instance.labels = revision_data.labels;
+
+        if !instance.revisions.contains(&String::from(revision)) {
+            instance.revisions.push(String::from(revision));
+        }
+
+        self.adapter.save_instance_metadata(config_name, metadata)
+            .await
+            .map_err(|e| ApproveRevisionError::StorageError {
+                message: e.to_string(),
+            })?;
+
+        return Ok(());
     }
 }
 
