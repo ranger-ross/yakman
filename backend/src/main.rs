@@ -43,11 +43,9 @@ async fn rocket() -> _ {
     let settings = load_yak_man_settings();
     println!("Settings: {:?}", settings);
 
-    // let mut adapter = create_adapter();
-
     let service = create_service();
 
-    // service.adapter.initialize_adapter().await; // TODO: fix
+    service.initialize_storage().await.expect("Failed to initialize storage");
 
     rocket::build()
         .manage(StateManager {

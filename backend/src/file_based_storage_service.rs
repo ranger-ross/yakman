@@ -5,7 +5,7 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label,
 
 use crate::adapters::{
     errors::{ConfigNotFoundError, CreateConfigError, CreateLabelError, ApproveRevisionError},
-    FileBasedStorageAdapter,
+    FileBasedStorageAdapter, GenericStorageError,
 };
 
 #[async_trait] // TODO: refactor out to other file
@@ -70,6 +70,8 @@ pub trait StorageService: Sync + Send {
         instance: &str,
         revision: &str,
     ) -> Result<(), ApproveRevisionError>;
+
+    async fn initialize_storage(&self) -> Result<(), GenericStorageError>;
 }
 
 pub struct FileBasedStorageService {
@@ -129,14 +131,14 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_config_instance_metadata(config_name).await {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await {
             let instance = Uuid::new_v4().to_string();
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
             self.adapter
-                .save_config_instance_data_file(config_name, &data_key, data)
+                .save_instance_data(config_name, &data_key, data)
                 .await?;
 
             // Create revision
@@ -148,7 +150,7 @@ impl StorageService for FileBasedStorageService {
                 approved: false,
             };
             self.adapter
-                .save_revision_data(config_name, &revision)
+                .save_revision(config_name, &revision)
                 .await
                 .unwrap();
 
@@ -225,7 +227,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>> {
-        return Ok(self.adapter.get_config_instance_metadata(config_name).await);
+        return Ok(self.adapter.get_instance_metadata(config_name).await);
     }
 
     async fn get_config_data(
@@ -233,7 +235,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_config_instance_metadata(config_name).await {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await {
             println!("Found {} instances", instances.len());
 
             println!("Search for instance ID {}", instance);
@@ -256,7 +258,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_config_instance_metadata(config_name).await {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await.unwrap();
             let selected_instance = select_instance(instances, labels, label_types);
@@ -280,13 +282,13 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_config_instance_metadata(config_name).await {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await {
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
             self.adapter
-                .save_config_instance_data_file(config_name, &data_key, data)
+                .save_instance_data(config_name, &data_key, data)
                 .await
                 .unwrap();
 
@@ -299,7 +301,7 @@ impl StorageService for FileBasedStorageService {
                 approved: false,
             };
             self.adapter
-                .save_revision_data(config_name, &revision)
+                .save_revision(config_name, &revision)
                 .await?;
 
             // Update instance data
@@ -414,7 +416,7 @@ impl StorageService for FileBasedStorageService {
         // }
 
         revision_data.approved = true;
-        self.adapter.save_revision_data(config_name, &revision_data)
+        self.adapter.save_revision(config_name, &revision_data)
             .await
             .map_err(|e| ApproveRevisionError::StorageError {
                 message: e.to_string(),
@@ -436,6 +438,16 @@ impl StorageService for FileBasedStorageService {
 
         return Ok(());
     }
+
+    async fn initialize_storage(&self) -> Result<(), GenericStorageError> {
+        println!("initializing local storage adapter");
+
+        self.adapter.create_yakman_required_files().await?;
+     
+        Ok(())
+    }
+
+
 }
 
 /// Common logic to select a config instance from a selected labels
