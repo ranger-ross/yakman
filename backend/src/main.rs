@@ -2,10 +2,7 @@ mod adapters;
 mod file_based_storage_service;
 mod utils;
 
-use adapters::{
-    errors::{CreateConfigError, CreateLabelError},
-    ConfigStorageAdapter, FileBasedStorageAdapter,
-};
+use adapters::errors::{CreateConfigError, CreateLabelError};
 use file_based_storage_service::{FileBasedStorageService, StorageService};
 use rocket::{
     http::Status,
@@ -19,11 +16,7 @@ use yak_man_core::{
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
 };
 
-use crate::adapters::{
-    local_file_adapter::create_local_file_adapter, 
-    // postgres_adapter::create_postgres_adapter,
-    // redis_adapter::create_redis_adapter,
-};
+use crate::adapters::local_file_adapter::create_local_file_adapter;
 
 #[macro_use]
 extern crate rocket;
@@ -45,7 +38,10 @@ async fn rocket() -> _ {
 
     let service = create_service();
 
-    service.initialize_storage().await.expect("Failed to initialize storage");
+    service
+        .initialize_storage()
+        .await
+        .expect("Failed to initialize storage");
 
     rocket::build()
         .manage(StateManager {
@@ -135,7 +131,10 @@ async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -
 
     println!("Search for config {config_name} with labels: {:?}", labels);
 
-    return service.get_config_data_by_labels(config_name, labels).await.unwrap();
+    return service
+        .get_config_data_by_labels(config_name, labels)
+        .await
+        .unwrap();
 }
 
 #[get("/config/<config_name>/instance/<instance>")]
@@ -145,7 +144,10 @@ async fn instance(
     state: &State<StateManager>,
 ) -> Option<String> {
     let service = state.get_service();
-    return service.get_config_data(config_name, instance).await.unwrap();
+    return service
+        .get_config_data(config_name, instance)
+        .await
+        .unwrap();
 }
 
 #[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
@@ -234,7 +236,11 @@ async fn get_instance_revisions(
 ) -> Option<Json<Vec<ConfigInstanceRevision>>> {
     let service = state.get_service();
 
-    if let Some(data) = service.get_instance_revisions(config_name, instance).await.unwrap() {
+    if let Some(data) = service
+        .get_instance_revisions(config_name, instance)
+        .await
+        .unwrap()
+    {
         return Some(Json(data));
     }
     return None;

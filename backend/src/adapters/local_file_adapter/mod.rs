@@ -4,18 +4,12 @@ use std::{
     path::Path,
 };
 
-use chrono::Utc;
 use rocket::serde::json::serde_json;
 use serde::{Deserialize, Serialize};
 
-use uuid::Uuid;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
-use crate::adapters::utils::select_instance;
-
-use super::{
-    errors::ApproveRevisionError, CreateConfigError, FileBasedStorageAdapter, GenericStorageError,
-};
+use super::{FileBasedStorageAdapter, GenericStorageError};
 
 pub struct LocalFileStorageAdapter {
     pub path: String,
@@ -147,6 +141,16 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
+    async fn get_instance_data(
+        &self,
+        config_name: &str,
+        data_key: &str,
+    ) -> Result<String, GenericStorageError> {
+        let instance_dir = self.get_config_instance_dir();
+        let instance_path = format!("{instance_dir}/{config_name}/{data_key}");
+        return Ok(fs::read_to_string(instance_path)?);
+    }
+
     async fn save_instance_data(
         &self,
         config_name: &str,
@@ -159,44 +163,6 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         let mut data_file = File::create(&data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
 
-        return Ok(());
-    }
-
-    async fn get_data_by_revision(&self, config_name: &str, revision: &str) -> Option<String> {
-        let revision_dir = self.get_instance_revisions_path();
-        let revision_path = format!("{revision_dir}/{config_name}/{}", revision);
-        println!("Fetching revision {}", revision_path);
-        if let Some(content) = fs::read_to_string(revision_path).ok() {
-            let revision_data: RevisionJson = serde_json::from_str(&content).unwrap();
-            let key = &revision_data.revision.data_key;
-            let instance_dir = self.get_config_instance_dir();
-            let instance_path = format!("{instance_dir}/{config_name}/{key}");
-            println!("Fetching instance data {}", instance_path);
-            return fs::read_to_string(instance_path).ok();
-        }
-        println!("Fetching revision not found");
-        return None;
-    }
-
-    // Directory modification funcs
-
-    async fn create_config_instance_dir(
-        &self,
-        config_name: &str,
-    ) -> Result<(), GenericStorageError> {
-        let config_instance_dir = self.get_config_instance_dir();
-        let config_instance_path = format!("{config_instance_dir}/{config_name}");
-        fs::create_dir(&config_instance_path)?;
-        return Ok(());
-    }
-
-    async fn create_revision_instance_dir(
-        &self,
-        config_name: &str,
-    ) -> Result<(), GenericStorageError> {
-        let revision_instance_dir = self.get_instance_revisions_path();
-        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-        fs::create_dir(&revision_instance_path)?;
         return Ok(());
     }
 
@@ -247,145 +213,27 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
 
         Ok(())
     }
-}
 
-impl LocalFileStorageAdapter {
-    async fn initialize_adapter(&mut self) {
-        println!("initializing local storage adapter");
+    // Directory modification funcs
 
-        let yakman_dir = self.get_yakman_dir();
-        if !Path::new(&yakman_dir).is_dir() {
-            println!("Creating {}", yakman_dir);
-            fs::create_dir(&yakman_dir)
-                .expect(&format!("Failed to create base dir: {}", yakman_dir));
-        }
-
-        let config_file = self.get_configs_file_path();
-        if !Path::new(&config_file).is_file() {
-            println!("Creating {}", config_file);
-            let data = serde_json::to_string(&ConfigJson { configs: vec![] })
-                .expect("Failed to create configs json");
-            let mut file = File::create(&config_file).expect("Failed to create configs file");
-            Write::write_all(&mut file, data.as_bytes())
-                .expect("Failed to write data to the configs file");
-        }
-
-        self.save_labels(vec![])
-            .await
-            .expect("Failed to create labels file");
-
-        let instance_dir = self.get_config_instance_dir();
-        if !Path::new(&instance_dir).is_dir() {
-            println!("Creating {}", instance_dir);
-            fs::create_dir(&instance_dir)
-                .expect(&format!("Failed to create instance dir: {}", instance_dir));
-        }
-
-        let revision_dir = self.get_instance_revisions_path();
-        if !Path::new(&revision_dir).is_dir() {
-            println!("Creating {}", revision_dir);
-            fs::create_dir(&revision_dir)
-                .expect(&format!("Failed to create revision dir: {}", instance_dir));
-        }
-
-        let instance_metadata_dir = self.get_config_instance_metadata_dir();
-        if !Path::new(&instance_metadata_dir).is_dir() {
-            println!("Creating {}", instance_metadata_dir);
-            fs::create_dir(&instance_metadata_dir).expect(&format!(
-                "Failed to create instance metadata dir: {}",
-                instance_metadata_dir
-            ));
-        }
-    }
-
-    async fn create_config_instance(
+    async fn create_config_instance_dir(
         &self,
         config_name: &str,
-        labels: Vec<Label>,
-        data: &str,
     ) -> Result<(), GenericStorageError> {
-        if let Some(mut instances) = self.get_instance_metadata(config_name).await {
-            let instance = Uuid::new_v4().to_string();
-            let revision_key = Uuid::new_v4().to_string();
-            let data_key = Uuid::new_v4().to_string();
-
-            // Create new file with data
-            self.save_instance_data(config_name, &data_key, data)
-                .await?;
-
-            // Create revision
-            let revision = ConfigInstanceRevision {
-                revision: String::from(&revision_key),
-                data_key: String::from(&data_key),
-                labels: labels,
-                timestamp_ms: Utc::now().timestamp_millis(),
-                approved: false,
-            };
-            self.save_revision(config_name, &revision).await?;
-
-            // Add new instance to instances and update the instance datafile
-            instances.push(ConfigInstance {
-                config_name: config_name.to_string(),
-                instance: instance,
-                labels: revision.labels,
-                current_revision: String::from(&revision.revision),
-                pending_revision: None,
-                revisions: vec![revision.revision],
-            });
-            self.save_instance_metadata(config_name, instances).await?;
-            println!("Update instance metadata for config: {}", config_name);
-
-            return Ok(());
-        }
-
-        todo!()
-        // return Err(Box::new(ConfigNotFoundError {
-        //     description: format!("Config not found: {config_name}"),
-        // }));
+        let config_instance_dir = self.get_config_instance_dir();
+        let config_instance_path = format!("{config_instance_dir}/{config_name}");
+        fs::create_dir(&config_instance_path)?;
+        return Ok(());
     }
 
-    async fn update_config_instance(
+    async fn create_revision_instance_dir(
         &self,
         config_name: &str,
-        instance: &str,
-        labels: Vec<Label>,
-        data: &str,
     ) -> Result<(), GenericStorageError> {
-        if let Some(mut instances) = self.get_instance_metadata(config_name).await {
-            let revision_key = Uuid::new_v4().to_string();
-            let data_key = Uuid::new_v4().to_string();
-
-            let base_path = self.path.to_string(); // TODO: replace with helper func
-
-            // Create new file with data
-            let data_file_path = format!("{base_path}/{DATA_DIR}/{config_name}/{data_key}");
-            let mut data_file = File::create(&data_file_path)?;
-            Write::write_all(&mut data_file, data.as_bytes())?;
-            println!("Created data file: {}", data_file_path);
-
-            // Create revision
-            let revision = ConfigInstanceRevision {
-                revision: String::from(&revision_key),
-                data_key: String::from(&data_key),
-                labels: labels,
-                timestamp_ms: Utc::now().timestamp_millis(),
-                approved: false,
-            };
-            self.save_revision(config_name, &revision).await?;
-
-            // Update instance data
-            if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
-                instance.pending_revision = Some(String::from(&revision.revision));
-                self.save_instance_metadata(config_name, instances).await?;
-                println!("Updated instance metadata for config: {config_name}");
-                return Ok(());
-            } // TODO: Throw a new custom for failed to update config metadata
-        }
-
-        todo!()
-        // return Err(Box::new(ConfigNotFoundError {
-        //     description: format!("Config not found: {config_name}"),
-        // }));
+        let revision_instance_dir = self.get_instance_revisions_path();
+        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
+        fs::create_dir(&revision_instance_path)?;
+        return Ok(());
     }
 }
 
