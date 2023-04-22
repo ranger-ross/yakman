@@ -108,15 +108,21 @@ impl error::ResponseError for YakManError {
     }
 }
 
+impl From<GenericStorageError> for YakManError {
+    fn from(err: GenericStorageError) -> Self {
+        YakManError {
+            error: err.to_string(),
+        }
+    }
+}
+
 #[get("/configs")]
 async fn configs(state: web::Data<StateManager>) -> actix_web::Result<impl Responder, YakManError> {
     let service = state.get_service();
 
     return match service.get_configs().await {
         Ok(data) => Ok(web::Json(data)),
-        Err(err) => Err(YakManError {
-            error: err.to_string()
-        }),
+        Err(err) => Err(YakManError::from(err)),
     };
 }
 
