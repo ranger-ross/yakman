@@ -1,9 +1,9 @@
 mod adapters;
-mod file_based_storage_service;
+mod services;
 mod utils;
 
 use adapters::errors::{CreateConfigError, CreateLabelError};
-use file_based_storage_service::{FileBasedStorageService, StorageService};
+use services::file_based_storage_service::{FileBasedStorageService, StorageService};
 use rocket::{
     http::Status,
     serde::json::{serde_json, Json},
