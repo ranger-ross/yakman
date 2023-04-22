@@ -28,7 +28,7 @@ use yak_man_core::{
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
 };
 
-use crate::{adapters::local_file_adapter::create_local_file_adapter, api_routes::{get_configs, get_labels, create_label}};
+use crate::{adapters::local_file_adapter::create_local_file_adapter, api_routes::{get_configs, get_labels, create_label, get_data_by_labels}};
 
 use actix_web::{
     body::BoxBody,
@@ -72,6 +72,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_configs)
             .service(get_labels)
             .service(create_label)
+            .service(get_data_by_labels)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
@@ -154,28 +155,6 @@ impl From<GenericStorageError> for YakManError {
 //     };
 // }
 
-// // // TODO: Standardize REST endpoint naming
-
-// #[get("/config/<config_name>/instance")]
-// async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
-//     let service = state.get_service();
-
-//     let labels: Vec<Label> = query
-//         .params
-//         .iter()
-//         .map(|param| Label {
-//             label_type: param.0.to_string(),
-//             value: param.1.to_string(),
-//         })
-//         .collect();
-
-//     println!("Search for config {config_name} with labels: {:?}", labels);
-
-//     return service
-//         .get_config_data_by_labels(config_name, labels)
-//         .await
-//         .unwrap();
-// }
 
 // #[get("/config/<config_name>/instance/<instance>")]
 // async fn instance(

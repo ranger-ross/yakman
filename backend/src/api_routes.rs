@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use crate::{adapters::errors::CreateLabelError, StateManager, YakManError};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
-use yak_man_core::model::LabelType;
+use yak_man_core::model::{LabelType, Label};
 
 #[get("/configs")]
 pub async fn get_configs(
@@ -56,3 +58,34 @@ pub async fn create_label(data: String, state: web::Data<StateManager>) -> HttpR
 
     return HttpResponse::BadRequest().body(""); // Bad input so parse failed
 }
+
+// TODO: Standardize REST endpoint naming
+
+#[get("/config/{config_name}/instance")]
+async fn get_data_by_labels(path: web::Path<String>, query: web::Query<HashMap<String, String>>, state: web::Data<StateManager>) -> HttpResponse  {
+    let config_name = path.into_inner();
+    let service = state.get_service();
+
+    let labels: Vec<Label> = query
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
+
+    println!("Search for config {config_name} with labels: {:?}", labels);
+
+    return match service.get_config_data_by_labels(&config_name, labels).await {
+        Ok(data) =>  {
+            if let Some(data) = data {
+                HttpResponse::Ok().body(data)
+            } else {
+                HttpResponse::NotFound().body("Config not found")
+            }
+        },
+        Err(err) => HttpResponse::NotFound().body(err.to_string())
+    };
+
+}
+
