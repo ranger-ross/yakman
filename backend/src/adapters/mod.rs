@@ -7,7 +7,7 @@ pub mod postgres_adapter;
 pub mod redis_adapter;
 
 #[derive(Error, Debug)]
-#[error("Error storing approval: ")]
+#[error("Error accessing storage: {message}")]
 pub struct GenericStorageError {
     pub message: String,
     pub raw_message: String,

@@ -3,12 +3,13 @@ mod services;
 mod utils;
 
 use adapters::errors::{CreateConfigError, CreateLabelError};
-use services::file_based_storage_service::{FileBasedStorageService, StorageService};
 use rocket::{
     http::Status,
     serde::json::{serde_json, Json},
     State,
 };
+use serde::{Deserialize, Serialize};
+use services::file_based_storage_service::{FileBasedStorageService, StorageService};
 use std::{env, vec};
 use utils::raw_query::RawQuery;
 use yak_man_core::{
@@ -66,10 +67,28 @@ async fn rocket() -> _ {
         )
 }
 
+#[derive(Responder, Debug, Serialize, Deserialize, PartialEq, Clone)]
+struct GenericError {
+    error: String,
+}
+#[derive(Responder)]
+enum GetConfigsResponse {
+    #[response(status = 200, content_type = "json")]
+    ConfigData(Json<Vec<Config>>),
+    #[response(status = 500, content_type = "json")]
+    Error(Json<GenericError>),
+}
+
 #[get("/configs")]
-async fn configs(state: &State<StateManager>) -> Json<Vec<Config>> {
+async fn configs(state: &State<StateManager>) -> GetConfigsResponse {
     let service = state.get_service();
-    return Json(service.get_configs().await.unwrap()); // TODO: Handle err
+
+    return match service.get_configs().await {
+        Ok(data) => GetConfigsResponse::ConfigData(Json(data)),
+        Err(err) => GetConfigsResponse::Error(Json(GenericError {
+            error: err.to_string(),
+        })),
+    };
 }
 
 #[get("/labels")]

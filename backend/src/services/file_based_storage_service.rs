@@ -10,7 +10,7 @@ use crate::{adapters::{
 
 #[async_trait] // TODO: refactor out to other file
 pub trait StorageService: Sync + Send {
-    async fn get_configs(&self) -> Result<Vec<Config>, ()>;
+    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
 
     // Labels CRUD
     async fn get_labels(&self) -> Result<Vec<LabelType>, ()>;
@@ -86,8 +86,8 @@ pub struct FileBasedStorageService {
 
 #[async_trait]
 impl StorageService for FileBasedStorageService {
-    async fn get_configs(&self) -> Result<Vec<Config>, ()> {
-        return Ok(self.adapter.get_configs().await.unwrap());
+    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
+        return Ok(self.adapter.get_configs().await?);
     }
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, ()> {
