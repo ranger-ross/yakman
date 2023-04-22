@@ -2,7 +2,10 @@ mod adapters;
 mod services;
 mod utils;
 
-use adapters::errors::{CreateConfigError, CreateLabelError};
+use adapters::{
+    errors::{CreateConfigError, CreateLabelError},
+    GenericStorageError,
+};
 // use rocket::{
 //     http::Status,
 //     serde::json::{serde_json, Json},
@@ -10,7 +13,15 @@ use adapters::errors::{CreateConfigError, CreateLabelError};
 // };
 use serde::{Deserialize, Serialize};
 use services::file_based_storage_service::{FileBasedStorageService, StorageService};
-use std::{env, rc::Rc, vec, sync::{Mutex, Arc}};
+use std::{
+    env,
+    fmt::{Display, Formatter},
+    future::Future,
+    io::ErrorKind,
+    rc::Rc,
+    sync::{Arc, Mutex},
+    vec,
+};
 use yak_man_core::{
     load_yak_man_settings,
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
@@ -18,13 +29,18 @@ use yak_man_core::{
 
 use crate::adapters::local_file_adapter::create_local_file_adapter;
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, dev::Server};
+use actix_web::{
+    body::BoxBody,
+    dev::Server,
+    get,
+    http::{header::ContentType, StatusCode},
+    post, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError,
+};
 
 #[derive(Clone)]
 struct StateManager {
     service: Arc<dyn StorageService>,
 }
-
 
 impl StateManager {
     fn get_service(&self) -> &dyn StorageService {
@@ -44,20 +60,14 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to initialize storage");
 
-
     let state = web::Data::new(StateManager {
         service: Arc::new(service),
     });
 
-    HttpServer::new(move || {
-        App::new()
-            .app_data(state.clone())
-            .service(hello)
-            .service(echo)
-    })
-    .bind(("127.0.0.1", 8000))?
-    .run()
-    .await
+    HttpServer::new(move || App::new().app_data(state.clone()).service(configs))
+        .bind(("127.0.0.1", 8000))?
+        .run()
+        .await
 
     // rocket::build()
     //     .manage(StateManager {
@@ -82,25 +92,86 @@ async fn main() -> std::io::Result<()> {
     //     )
 }
 
+use actix_web::error;
+use derive_more::{Display, Error};
 
-
-#[get("/")]
-async fn hello(data: web::Data<StateManager>) -> impl Responder {
-    let service = data.get_service();
-    let x = service.get_configs().await.unwrap();
-    println!("{x:?}");
-
-    let r = serde_json::to_string(&x).unwrap();
-
-    HttpResponse::Ok().body(r)
+#[derive(Debug, Display, Error, Serialize)]
+struct YakManError {
+    error: String,
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+impl error::ResponseError for YakManError {
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::build(self.status_code())
+            .insert_header(ContentType::json())
+            .body(serde_json::to_string(self).unwrap_or(String::from("{}"))) // TODO: add internal server error message
+    }
 }
 
-// #[derive(Responder, Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[get("/configs")]
+async fn configs(state: web::Data<StateManager>) -> actix_web::Result<impl Responder, YakManError> {
+    let service = state.get_service();
+
+    return match service.get_configs().await {
+        Ok(data) => Ok(web::Json(data)),
+        Err(err) => Err(YakManError {
+            error: err.to_string()
+        }),
+    };
+}
+
+// #[derive(Debug, Serialize)]
+// struct Error {
+//     msg: String,
+//     status: u16,
+// }
+
+// impl Display for Error {
+//   fn fmt(&self, f: &mut Formatter) -> FmtResult {
+//     write!(f, "{}", to_string_pretty(self).unwrap())
+//   }
+// }
+
+// impl ResponseError for Error {
+//     // builds the actual response to send back when an error occurs
+//     fn render_response(&self) -> HttpResponse {
+//         let err_json = json!({ "error": self.msg });
+//         HttpResponse::build(StatusCode::from_u16(self.status).unwrap()).json(err_json)
+//     }
+
+//     fn status_code(&self) -> StatusCode {
+//         StatusCode::INTERNAL_SERVER_ERROR
+//     }
+
+//     fn error_response(&self) -> HttpResponse<BoxBody> {
+//         let mut res = HttpResponse::new(self.status_code());
+
+//         let mut buf = web::BytesMut::new();
+//         let _ = write!(helpers::MutWriter(&mut buf), "{}", self);
+
+//         let mime = mime::TEXT_PLAIN_UTF_8.try_into_value().unwrap();
+//         res.headers_mut()
+//             .insert(actix_web::http::header::CONTENT_TYPE, mime);
+
+//         res.set_body(BoxBody::new(buf))
+//     }
+
+//     fn __private_get_type_id__(&self, _: PrivateHelper) -> (std::any::TypeId, PrivateHelper)
+//     where
+//         Self: 'static,
+//     {
+//         (std::any::TypeId::of::<Self>(), PrivateHelper(()))
+//     }
+// }
+
+// fn index(_: HttpRequest) -> impl Future<Item = HttpResponse, Error = Error> {
+//     Err(Error {
+//         msg: "an example error message".to_string(),
+//         status: 400,
+//     })
+// }
+
+// #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 // struct GenericError {
 //     error: String,
 // }

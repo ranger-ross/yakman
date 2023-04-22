@@ -3115,6 +3115,7 @@ dependencies = [
  "actix-web",
  "async-trait",
  "chrono",
+ "derive_more",
  "redis",
  "serde",
  "serde_json",
