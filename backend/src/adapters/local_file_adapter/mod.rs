@@ -4,13 +4,14 @@ use std::{
     path::Path,
 };
 
-use rocket::serde::json::serde_json;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
 use super::{FileBasedStorageAdapter, GenericStorageError};
 
+#[derive(Clone)]
 pub struct LocalFileStorageAdapter {
     pub path: String,
 }
@@ -43,6 +44,13 @@ struct InstanceJson {
 struct RevisionJson {
     revision: ConfigInstanceRevision,
 }
+
+
+
+
+
+
+
 
 #[async_trait]
 impl FileBasedStorageAdapter for LocalFileStorageAdapter {

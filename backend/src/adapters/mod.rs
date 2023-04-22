@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use thiserror::Error;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
@@ -28,8 +29,8 @@ impl From<std::io::Error> for GenericStorageError {
     }
 }
 
-impl From<rocket::serde::json::serde_json::Error> for GenericStorageError {
-    fn from(e: rocket::serde::json::serde_json::Error) -> Self {
+impl From<serde_json::Error> for GenericStorageError {
+    fn from(e: serde_json::Error) -> Self {
         GenericStorageError::new(String::from("JSON Error"), e.to_string())
     }
 }

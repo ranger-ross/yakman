@@ -1,12 +1,15 @@
+use async_trait::async_trait;
 use chrono::Utc;
 use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
-
-use crate::{adapters::{
-    errors::{ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateLabelError},
-    FileBasedStorageAdapter, GenericStorageError,
-}, services::service_utils::select_instance};
+use crate::{
+    adapters::{
+        errors::{ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateLabelError},
+        FileBasedStorageAdapter, GenericStorageError,
+    },
+    services::service_utils::select_instance,
+};
 
 #[async_trait] // TODO: refactor out to other file
 pub trait StorageService: Sync + Send {
@@ -468,4 +471,3 @@ impl StorageService for FileBasedStorageService {
         Ok(())
     }
 }
-

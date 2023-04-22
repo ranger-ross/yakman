@@ -3,15 +3,14 @@ mod services;
 mod utils;
 
 use adapters::errors::{CreateConfigError, CreateLabelError};
-use rocket::{
-    http::Status,
-    serde::json::{serde_json, Json},
-    State,
-};
+// use rocket::{
+//     http::Status,
+//     serde::json::{serde_json, Json},
+//     State,
+// };
 use serde::{Deserialize, Serialize};
 use services::file_based_storage_service::{FileBasedStorageService, StorageService};
-use std::{env, vec};
-use utils::raw_query::RawQuery;
+use std::{env, rc::Rc, vec, sync::{Mutex, Arc}};
 use yak_man_core::{
     load_yak_man_settings,
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
@@ -19,12 +18,13 @@ use yak_man_core::{
 
 use crate::adapters::local_file_adapter::create_local_file_adapter;
 
-#[macro_use]
-extern crate rocket;
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, dev::Server};
 
+#[derive(Clone)]
 struct StateManager {
-    service: Box<dyn StorageService>,
+    service: Arc<dyn StorageService>,
 }
+
 
 impl StateManager {
     fn get_service(&self) -> &dyn StorageService {
@@ -32,8 +32,8 @@ impl StateManager {
     }
 }
 
-#[launch]
-async fn rocket() -> _ {
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     let settings = load_yak_man_settings();
     println!("Settings: {:?}", settings);
 
@@ -44,256 +44,289 @@ async fn rocket() -> _ {
         .await
         .expect("Failed to initialize storage");
 
-    rocket::build()
-        .manage(StateManager {
-            service: Box::new(service),
-        })
-        .mount(
-            "/",
-            routes![
-                configs,
-                labels,
-                create_label,
-                get_instance_by_id,
-                data,
-                create_new_instance,
-                instance,
-                create_config,
-                update_new_instance,
-                get_instance_revisions,
-                update_instance_current_revision,
-                approve_pending_instance_revision
-            ],
-        )
+
+    let state = web::Data::new(StateManager {
+        service: Arc::new(service),
+    });
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(state.clone())
+            .service(hello)
+            .service(echo)
+    })
+    .bind(("127.0.0.1", 8000))?
+    .run()
+    .await
+
+    // rocket::build()
+    //     .manage(StateManager {
+    //         service: Box::new(service),
+    //     })
+    //     .mount(
+    //         "/",
+    //         routes![
+    //             configs,
+    //             labels,
+    //             create_label,
+    //             get_instance_by_id,
+    //             data,
+    //             create_new_instance,
+    //             instance,
+    //             create_config,
+    //             update_new_instance,
+    //             get_instance_revisions,
+    //             update_instance_current_revision,
+    //             approve_pending_instance_revision
+    //         ],
+    //     )
 }
 
-#[derive(Responder, Debug, Serialize, Deserialize, PartialEq, Clone)]
-struct GenericError {
-    error: String,
-}
-#[derive(Responder)]
-enum GetConfigsResponse {
-    #[response(status = 200, content_type = "json")]
-    ConfigData(Json<Vec<Config>>),
-    #[response(status = 500, content_type = "json")]
-    Error(Json<GenericError>),
-}
 
-#[get("/configs")]
-async fn configs(state: &State<StateManager>) -> GetConfigsResponse {
-    let service = state.get_service();
 
-    return match service.get_configs().await {
-        Ok(data) => GetConfigsResponse::ConfigData(Json(data)),
-        Err(err) => GetConfigsResponse::Error(Json(GenericError {
-            error: err.to_string(),
-        })),
-    };
+#[get("/")]
+async fn hello(data: web::Data<StateManager>) -> impl Responder {
+    let service = data.get_service();
+    let x = service.get_configs().await.unwrap();
+    println!("{x:?}");
+
+    let r = serde_json::to_string(&x).unwrap();
+
+    HttpResponse::Ok().body(r)
 }
 
-#[get("/labels")]
-async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
-    let service = state.get_service();
-    return Json(service.get_labels().await.unwrap());
+#[post("/echo")]
+async fn echo(req_body: String) -> impl Responder {
+    HttpResponse::Ok().body(req_body)
 }
 
-#[put("/labels", data = "<data>")]
-async fn create_label(data: String, state: &State<StateManager>) -> Status {
-    let service = state.get_service();
+// #[derive(Responder, Debug, Serialize, Deserialize, PartialEq, Clone)]
+// struct GenericError {
+//     error: String,
+// }
+// #[derive(Responder)]
+// enum GetConfigsResponse {
+//     #[response(status = 200, content_type = "json")]
+//     ConfigData(Json<Vec<Config>>),
+//     #[response(status = 500, content_type = "json")]
+//     Error(Json<GenericError>),
+// }
 
-    let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
+// #[get("/configs")]
+// async fn configs(state: &State<StateManager>) -> GetConfigsResponse {
+//     let service = state.get_service();
 
-    if let Some(label_type) = label_type {
-        return match service.create_label(label_type).await {
-            Ok(()) => Status::Ok,
-            Err(e) => match e {
-                CreateLabelError::DuplicateLabelError { name: _ } => Status::BadRequest,
-                CreateLabelError::EmptyOptionsError => Status::BadRequest,
-                CreateLabelError::InvalidPriorityError { prioity: _ } => Status::BadRequest,
-                CreateLabelError::StorageError { message } => {
-                    println!("Failed to create label, error: {message}");
-                    Status::InternalServerError
-                }
-            },
-        };
-    }
+//     return match service.get_configs().await {
+//         Ok(data) => GetConfigsResponse::ConfigData(Json(data)),
+//         Err(err) => GetConfigsResponse::Error(Json(GenericError {
+//             error: err.to_string(),
+//         })),
+//     };
+// }
 
-    return Status::BadRequest; // Bad input so parse failed
-}
+// #[get("/labels")]
+// async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
+//     let service = state.get_service();
+//     return Json(service.get_labels().await.unwrap());
+// }
 
-#[get("/instances/<id>")]
-async fn get_instance_by_id(
-    id: &str,
-    state: &State<StateManager>,
-) -> Option<Json<Vec<ConfigInstance>>> {
-    let service = state.get_service();
-    return match service.get_config_instance_metadata(id).await.unwrap() {
-        Some(data) => Some(Json(data)),
-        None => None,
-    };
-}
+// #[put("/labels", data = "<data>")]
+// async fn create_label(data: String, state: &State<StateManager>) -> Status {
+//     let service = state.get_service();
 
-// // TODO: Standardize REST endpoint naming
+//     let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
 
-#[get("/config/<config_name>/instance")]
-async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
-    let service = state.get_service();
+//     if let Some(label_type) = label_type {
+//         return match service.create_label(label_type).await {
+//             Ok(()) => Status::Ok,
+//             Err(e) => match e {
+//                 CreateLabelError::DuplicateLabelError { name: _ } => Status::BadRequest,
+//                 CreateLabelError::EmptyOptionsError => Status::BadRequest,
+//                 CreateLabelError::InvalidPriorityError { prioity: _ } => Status::BadRequest,
+//                 CreateLabelError::StorageError { message } => {
+//                     println!("Failed to create label, error: {message}");
+//                     Status::InternalServerError
+//                 }
+//             },
+//         };
+//     }
 
-    let labels: Vec<Label> = query
-        .params
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+//     return Status::BadRequest; // Bad input so parse failed
+// }
 
-    println!("Search for config {config_name} with labels: {:?}", labels);
+// #[get("/instances/<id>")]
+// async fn get_instance_by_id(
+//     id: &str,
+//     state: &State<StateManager>,
+// ) -> Option<Json<Vec<ConfigInstance>>> {
+//     let service = state.get_service();
+//     return match service.get_config_instance_metadata(id).await.unwrap() {
+//         Some(data) => Some(Json(data)),
+//         None => None,
+//     };
+// }
 
-    return service
-        .get_config_data_by_labels(config_name, labels)
-        .await
-        .unwrap();
-}
+// // // TODO: Standardize REST endpoint naming
 
-#[get("/config/<config_name>/instance/<instance>")]
-async fn instance(
-    config_name: &str,
-    instance: &str,
-    state: &State<StateManager>,
-) -> Option<String> {
-    let service = state.get_service();
-    return service
-        .get_config_data(config_name, instance)
-        .await
-        .unwrap();
-}
+// #[get("/config/<config_name>/instance")]
+// async fn data(config_name: &str, query: RawQuery, state: &State<StateManager>) -> Option<String> {
+//     let service = state.get_service();
 
-#[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
-async fn create_new_instance(
-    config_name: &str,
-    query: RawQuery,
-    data: String,
-    state: &State<StateManager>,
-) {
-    let service = state.get_service();
+//     let labels: Vec<Label> = query
+//         .params
+//         .iter()
+//         .map(|param| Label {
+//             label_type: param.0.to_string(),
+//             value: param.1.to_string(),
+//         })
+//         .collect();
 
-    let labels: Vec<Label> = query
-        .params
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+//     println!("Search for config {config_name} with labels: {:?}", labels);
 
-    // TODO: do validation
-    // - config exists
-    // - labels are valid
-    // - not a duplicate?
+//     return service
+//         .get_config_data_by_labels(config_name, labels)
+//         .await
+//         .unwrap();
+// }
 
-    service
-        .create_config_instance(config_name, labels, &data)
-        .await
-        .unwrap();
-}
+// #[get("/config/<config_name>/instance/<instance>")]
+// async fn instance(
+//     config_name: &str,
+//     instance: &str,
+//     state: &State<StateManager>,
+// ) -> Option<String> {
+//     let service = state.get_service();
+//     return service
+//         .get_config_data(config_name, instance)
+//         .await
+//         .unwrap();
+// }
 
-#[post("/config/<config_name>/instance/<instance>", data = "<data>")]
-async fn update_new_instance(
-    config_name: &str,
-    instance: &str,
-    query: RawQuery,
-    data: String,
-    state: &State<StateManager>,
-) {
-    let service = state.get_service();
+// #[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
+// async fn create_new_instance(
+//     config_name: &str,
+//     query: RawQuery,
+//     data: String,
+//     state: &State<StateManager>,
+// ) {
+//     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .params
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+//     let labels: Vec<Label> = query
+//         .params
+//         .iter()
+//         .map(|param| Label {
+//             label_type: param.0.to_string(),
+//             value: param.1.to_string(),
+//         })
+//         .collect();
 
-    println!("lables {:?}", &labels);
+//     // TODO: do validation
+//     // - config exists
+//     // - labels are valid
+//     // - not a duplicate?
 
-    // TODO: do validation
-    // - config exists
-    // - labels are valid
-    // - not a duplicate?
+//     service
+//         .create_config_instance(config_name, labels, &data)
+//         .await
+//         .unwrap();
+// }
 
-    service
-        .save_config_instance(config_name, instance, labels, &data)
-        .await
-        .unwrap();
-}
+// #[post("/config/<config_name>/instance/<instance>", data = "<data>")]
+// async fn update_new_instance(
+//     config_name: &str,
+//     instance: &str,
+//     query: RawQuery,
+//     data: String,
+//     state: &State<StateManager>,
+// ) {
+//     let service = state.get_service();
 
-#[put("/config/<config_name>")]
-async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
-    let service = state.get_service();
-    let result = service.create_config(config_name).await;
+//     let labels: Vec<Label> = query
+//         .params
+//         .iter()
+//         .map(|param| Label {
+//             label_type: param.0.to_string(),
+//             value: param.1.to_string(),
+//         })
+//         .collect();
 
-    match result {
-        Ok(()) => Status::Ok,
-        Err(e) => match e {
-            CreateConfigError::StorageError { message } => {
-                println!("Failed to create config {config_name}, error: {message}");
-                Status::InternalServerError
-            }
-            CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
-        },
-    }
-}
+//     println!("lables {:?}", &labels);
 
-#[get("/config/<config_name>/instance/<instance>/revisions")]
-async fn get_instance_revisions(
-    config_name: &str,
-    instance: &str,
-    state: &State<StateManager>,
-) -> Option<Json<Vec<ConfigInstanceRevision>>> {
-    let service = state.get_service();
+//     // TODO: do validation
+//     // - config exists
+//     // - labels are valid
+//     // - not a duplicate?
 
-    if let Some(data) = service
-        .get_instance_revisions(config_name, instance)
-        .await
-        .unwrap()
-    {
-        return Some(Json(data));
-    }
-    return None;
-}
+//     service
+//         .save_config_instance(config_name, instance, labels, &data)
+//         .await
+//         .unwrap();
+// }
 
-#[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
-async fn update_instance_current_revision(
-    config_name: &str,
-    instance: &str,
-    revision: &str,
-    state: &State<StateManager>,
-) {
-    let service = state.get_service();
+// #[put("/config/<config_name>")]
+// async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
+//     let service = state.get_service();
+//     let result = service.create_config(config_name).await;
 
-    service
-        .update_instance_current_revision(config_name, instance, revision)
-        .await
-        .unwrap();
-}
+//     match result {
+//         Ok(()) => Status::Ok,
+//         Err(e) => match e {
+//             CreateConfigError::StorageError { message } => {
+//                 println!("Failed to create config {config_name}, error: {message}");
+//                 Status::InternalServerError
+//             }
+//             CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
+//         },
+//     }
+// }
 
-#[post("/config/<config_name>/instance/<instance>/revision/<revision>/approve")]
-async fn approve_pending_instance_revision(
-    config_name: &str,
-    instance: &str,
-    revision: &str,
-    state: &State<StateManager>,
-) {
-    let service = state.get_service();
+// #[get("/config/<config_name>/instance/<instance>/revisions")]
+// async fn get_instance_revisions(
+//     config_name: &str,
+//     instance: &str,
+//     state: &State<StateManager>,
+// ) -> Option<Json<Vec<ConfigInstanceRevision>>> {
+//     let service = state.get_service();
 
-    service
-        .approve_pending_instance_revision(config_name, instance, revision)
-        .await
-        .unwrap();
-}
+//     if let Some(data) = service
+//         .get_instance_revisions(config_name, instance)
+//         .await
+//         .unwrap()
+//     {
+//         return Some(Json(data));
+//     }
+//     return None;
+// }
+
+// #[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
+// async fn update_instance_current_revision(
+//     config_name: &str,
+//     instance: &str,
+//     revision: &str,
+//     state: &State<StateManager>,
+// ) {
+//     let service = state.get_service();
+
+//     service
+//         .update_instance_current_revision(config_name, instance, revision)
+//         .await
+//         .unwrap();
+// }
+
+// #[post("/config/<config_name>/instance/<instance>/revision/<revision>/approve")]
+// async fn approve_pending_instance_revision(
+//     config_name: &str,
+//     instance: &str,
+//     revision: &str,
+//     state: &State<StateManager>,
+// ) {
+//     let service = state.get_service();
+
+//     service
+//         .approve_pending_instance_revision(config_name, instance, revision)
+//         .await
+//         .unwrap();
+// }
 
 fn create_service() -> impl StorageService {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
