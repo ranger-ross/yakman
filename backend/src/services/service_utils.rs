@@ -1,6 +1,7 @@
 use std::{cmp::Ordering, collections::HashMap};
-
 use yak_man_core::model::{ConfigInstance, Label, LabelType};
+
+
 
 /// Common logic to select a config instance from a selected labels
 /// labels = selected labels, label_types = all label types avaiable, instances = all instances to select from
@@ -22,63 +23,71 @@ pub fn select_instance(
     let mut matched_instance: Option<ConfigInstance> = None;
     let mut matched_instance_labels: Vec<&Label> = vec![];
 
-    todo!("Need to fix this logic after moving labels to revisions");
+    // todo!("Need to fix this logic after moving labels to revisions");
 
-    // for instance in instances {
-    //     if instance.labels == labels {
-    //         // All labels are a perfect match, just return early
-    //         return Some(instance);
-    //     }
+    for instance in instances {
+        if instance.labels == labels {
+            // All labels are a perfect match, just return early
+            return Some(instance);
+        }
 
-    //     // Find all matching labels for this instance
-    //     let mut matched_labels: Vec<&Label> = vec![];
-    //     for label in &instance.labels {
-    //         let label_type = label_type_map.get(&label.label_type).unwrap(); // todo: handle
-    //         let selected_label = selected_label_type_map.get(&label_type.name);
-    //         match selected_label {
-    //             Some(selected_label) => {
-    //                 if selected_label.value == label.value {
-    //                     matched_labels.push(selected_label.to_owned());
-    //                 }
-    //             }
-    //             _ => {
-    //                 continue;
-    //             }
-    //         }
-    //     }
+        // Find all matching labels for this instance
+        let mut matched_labels: Vec<&Label> = vec![];
+        for label in &instance.labels {
 
-    //     // If the current instance is missing a label, it is not eligible, so continue to the next instance
-    //     if label_count > matched_labels.len() {
-    //         continue;
-    //     }
+            let label_type = match label_type_map.get(&label.label_type) {
+                Some(l) => l,
+                None => {
+                    println!("Invalid label found {label:?}, ignoring");
+                    continue;
+                }
+            };
 
-    //     if matched_labels.len() > matched_instance_labels.len() {
-    //         matched_instance = Some(instance);
-    //         matched_instance_labels = matched_labels;
-    //     } else {
-    //         // IF THE MATCHING LABELS ARE THE SAME, CHECK IF THE LABELS ARE HIGHER PRIORITY
-    //         matched_labels.sort_by(|a, b| order_by_priority(a, b, &label_type_map));
-    //         matched_instance_labels.sort_by(|a, b| order_by_priority(a, b, &label_type_map));
+            let selected_label = selected_label_type_map.get(&label_type.name);
+            match selected_label {
+                Some(selected_label) => {
+                    if selected_label.value == label.value {
+                        matched_labels.push(selected_label.to_owned());
+                    }
+                }
+                _ => {
+                    continue;
+                }
+            }
+        }
 
-    //         for i in 0..matched_labels.len() {
-    //             let lbl = label_type_map
-    //                 .get(&matched_labels.get(i).unwrap().label_type)
-    //                 .unwrap(); // todo: handle
-    //             let matched_lbl = label_type_map
-    //                 .get(&matched_instance_labels.get(i).unwrap().label_type)
-    //                 .unwrap(); // todo: handle
+        // If the current instance is missing a label, it is not eligible, so continue to the next instance
+        if label_count > matched_labels.len() {
+            continue;
+        }
 
-    //             if lbl.priority > matched_lbl.priority {
-    //                 println!("Found better match");
-    //                 matched_instance = Some(instance);
-    //                 matched_instance_labels = matched_labels;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
+        if matched_labels.len() > matched_instance_labels.len() {
+            matched_instance = Some(instance);
+            matched_instance_labels = matched_labels;
+        } else {
+            // IF THE MATCHING LABELS ARE THE SAME, CHECK IF THE LABELS ARE HIGHER PRIORITY
+            matched_labels.sort_by(|a, b| order_by_priority(a, b, &label_type_map));
+            matched_instance_labels.sort_by(|a, b| order_by_priority(a, b, &label_type_map));
 
-    // return matched_instance;
+            for i in 0..matched_labels.len() {
+                let lbl = label_type_map
+                    .get(&matched_labels.get(i).unwrap().label_type)
+                    .unwrap(); // todo: handle
+                let matched_lbl = label_type_map
+                    .get(&matched_instance_labels.get(i).unwrap().label_type)
+                    .unwrap(); // todo: handle
+
+                if lbl.priority > matched_lbl.priority {
+                    println!("Found better match");
+                    matched_instance = Some(instance);
+                    matched_instance_labels = matched_labels;
+                    break;
+                }
+            }
+        }
+    }
+
+    return matched_instance;
 }
 
 fn order_by_priority(
@@ -100,7 +109,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_select_instance_exact_match() {
+    fn test_select_instance_exact_match() { 
         let instances = vec![
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -115,6 +124,9 @@ mod tests {
                         value: "api".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -129,6 +141,9 @@ mod tests {
                         value: "api".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
         ];
         let labels = vec![
@@ -186,6 +201,9 @@ mod tests {
                         value: "api".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -200,6 +218,9 @@ mod tests {
                         value: "api".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -214,6 +235,9 @@ mod tests {
                         value: "web".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
         ];
         let labels = vec![Label {
@@ -264,6 +288,9 @@ mod tests {
                         value: "frontend".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
             ConfigInstance {
                 config_name: "instance2_config".to_owned(),
@@ -278,6 +305,9 @@ mod tests {
                         value: "backend".to_owned(),
                     },
                 ],
+                current_revision: "test".to_string(),
+                revisions: vec![],
+                pending_revision: None
             },
         ];
 
