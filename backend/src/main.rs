@@ -1,4 +1,5 @@
 mod adapters;
+mod api_routes;
 mod services;
 mod utils;
 
@@ -27,7 +28,7 @@ use yak_man_core::{
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
 };
 
-use crate::adapters::local_file_adapter::create_local_file_adapter;
+use crate::{adapters::local_file_adapter::create_local_file_adapter, api_routes::{get_configs, get_labels}};
 
 use actix_web::{
     body::BoxBody,
@@ -64,10 +65,16 @@ async fn main() -> std::io::Result<()> {
         service: Arc::new(service),
     });
 
-    HttpServer::new(move || App::new().app_data(state.clone()).service(configs))
-        .bind(("127.0.0.1", 8000))?
-        .run()
-        .await
+    println!("Starting server");
+    HttpServer::new(move || {
+        App::new()
+            .app_data(state.clone())
+            .service(get_configs)
+            .service(get_labels)
+    })
+    .bind(("127.0.0.1", 8000))?
+    .run()
+    .await
 
     // rocket::build()
     //     .manage(StateManager {
@@ -96,8 +103,14 @@ use actix_web::error;
 use derive_more::{Display, Error};
 
 #[derive(Debug, Display, Error, Serialize)]
-struct YakManError {
+pub struct YakManError {
     error: String,
+}
+
+impl YakManError {
+    fn new(error: &str) -> YakManError {
+        YakManError { error: String::from(error) }
+    }
 }
 
 impl error::ResponseError for YakManError {
@@ -116,67 +129,6 @@ impl From<GenericStorageError> for YakManError {
     }
 }
 
-#[get("/configs")]
-async fn configs(state: web::Data<StateManager>) -> actix_web::Result<impl Responder, YakManError> {
-    let service = state.get_service();
-
-    return match service.get_configs().await {
-        Ok(data) => Ok(web::Json(data)),
-        Err(err) => Err(YakManError::from(err)),
-    };
-}
-
-// #[derive(Debug, Serialize)]
-// struct Error {
-//     msg: String,
-//     status: u16,
-// }
-
-// impl Display for Error {
-//   fn fmt(&self, f: &mut Formatter) -> FmtResult {
-//     write!(f, "{}", to_string_pretty(self).unwrap())
-//   }
-// }
-
-// impl ResponseError for Error {
-//     // builds the actual response to send back when an error occurs
-//     fn render_response(&self) -> HttpResponse {
-//         let err_json = json!({ "error": self.msg });
-//         HttpResponse::build(StatusCode::from_u16(self.status).unwrap()).json(err_json)
-//     }
-
-//     fn status_code(&self) -> StatusCode {
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     }
-
-//     fn error_response(&self) -> HttpResponse<BoxBody> {
-//         let mut res = HttpResponse::new(self.status_code());
-
-//         let mut buf = web::BytesMut::new();
-//         let _ = write!(helpers::MutWriter(&mut buf), "{}", self);
-
-//         let mime = mime::TEXT_PLAIN_UTF_8.try_into_value().unwrap();
-//         res.headers_mut()
-//             .insert(actix_web::http::header::CONTENT_TYPE, mime);
-
-//         res.set_body(BoxBody::new(buf))
-//     }
-
-//     fn __private_get_type_id__(&self, _: PrivateHelper) -> (std::any::TypeId, PrivateHelper)
-//     where
-//         Self: 'static,
-//     {
-//         (std::any::TypeId::of::<Self>(), PrivateHelper(()))
-//     }
-// }
-
-// fn index(_: HttpRequest) -> impl Future<Item = HttpResponse, Error = Error> {
-//     Err(Error {
-//         msg: "an example error message".to_string(),
-//         status: 400,
-//     })
-// }
-
 // #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 // struct GenericError {
 //     error: String,
@@ -187,24 +139,6 @@ async fn configs(state: web::Data<StateManager>) -> actix_web::Result<impl Respo
 //     ConfigData(Json<Vec<Config>>),
 //     #[response(status = 500, content_type = "json")]
 //     Error(Json<GenericError>),
-// }
-
-// #[get("/configs")]
-// async fn configs(state: &State<StateManager>) -> GetConfigsResponse {
-//     let service = state.get_service();
-
-//     return match service.get_configs().await {
-//         Ok(data) => GetConfigsResponse::ConfigData(Json(data)),
-//         Err(err) => GetConfigsResponse::Error(Json(GenericError {
-//             error: err.to_string(),
-//         })),
-//     };
-// }
-
-// #[get("/labels")]
-// async fn labels(state: &State<StateManager>) -> Json<Vec<LabelType>> {
-//     let service = state.get_service();
-//     return Json(service.get_labels().await.unwrap());
 // }
 
 // #[put("/labels", data = "<data>")]
