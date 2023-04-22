@@ -34,7 +34,15 @@ pub fn select_instance(
         // Find all matching labels for this instance
         let mut matched_labels: Vec<&Label> = vec![];
         for label in &instance.labels {
-            let label_type = label_type_map.get(&label.label_type).unwrap(); // todo: handle
+
+            let label_type = match label_type_map.get(&label.label_type) {
+                Some(l) => l,
+                None => {
+                    println!("Invalid label found {label:?}, ignoring");
+                    continue;
+                }
+            };
+
             let selected_label = selected_label_type_map.get(&label_type.name);
             match selected_label {
                 Some(selected_label) => {
