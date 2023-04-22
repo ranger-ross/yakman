@@ -28,7 +28,7 @@ use yak_man_core::{
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
 };
 
-use crate::{adapters::local_file_adapter::create_local_file_adapter, api_routes::{get_configs, get_labels}};
+use crate::{adapters::local_file_adapter::create_local_file_adapter, api_routes::{get_configs, get_labels, create_label}};
 
 use actix_web::{
     body::BoxBody,
@@ -71,6 +71,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(state.clone())
             .service(get_configs)
             .service(get_labels)
+            .service(create_label)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
@@ -139,30 +140,6 @@ impl From<GenericStorageError> for YakManError {
 //     ConfigData(Json<Vec<Config>>),
 //     #[response(status = 500, content_type = "json")]
 //     Error(Json<GenericError>),
-// }
-
-// #[put("/labels", data = "<data>")]
-// async fn create_label(data: String, state: &State<StateManager>) -> Status {
-//     let service = state.get_service();
-
-//     let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
-
-//     if let Some(label_type) = label_type {
-//         return match service.create_label(label_type).await {
-//             Ok(()) => Status::Ok,
-//             Err(e) => match e {
-//                 CreateLabelError::DuplicateLabelError { name: _ } => Status::BadRequest,
-//                 CreateLabelError::EmptyOptionsError => Status::BadRequest,
-//                 CreateLabelError::InvalidPriorityError { prioity: _ } => Status::BadRequest,
-//                 CreateLabelError::StorageError { message } => {
-//                     println!("Failed to create label, error: {message}");
-//                     Status::InternalServerError
-//                 }
-//             },
-//         };
-//     }
-
-//     return Status::BadRequest; // Bad input so parse failed
 // }
 
 // #[get("/instances/<id>")]
