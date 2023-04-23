@@ -30,7 +30,7 @@ use yak_man_core::{
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
-    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance, create_config, update_new_instance},
+    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance, create_config, update_new_instance, get_instance_revisions},
 };
 
 use actix_web::{
@@ -81,6 +81,7 @@ async fn main() -> std::io::Result<()> {
             .service(create_new_instance)
             .service(create_config)
             .service(update_new_instance)
+            .service(get_instance_revisions)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
@@ -153,24 +154,6 @@ impl From<GenericStorageError> for YakManError {
 //     Error(Json<GenericError>),
 // }
 
-
-// #[get("/config/<config_name>/instance/<instance>/revisions")]
-// async fn get_instance_revisions(
-//     config_name: &str,
-//     instance: &str,
-//     state: &State<StateManager>,
-// ) -> Option<Json<Vec<ConfigInstanceRevision>>> {
-//     let service = state.get_service();
-
-//     if let Some(data) = service
-//         .get_instance_revisions(config_name, instance)
-//         .await
-//         .unwrap()
-//     {
-//         return Some(Json(data));
-//     }
-//     return None;
-// }
 
 // #[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
 // async fn update_instance_current_revision(

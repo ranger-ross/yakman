@@ -5,7 +5,7 @@ use crate::{
     StateManager, YakManError,
 };
 
-use actix_web::{get, put, web, HttpResponse, Responder, post};
+use actix_web::{get, post, put, web, HttpResponse, Responder};
 use yak_man_core::model::{Label, LabelType};
 
 #[get("/configs")]
@@ -218,4 +218,22 @@ async fn update_new_instance(
         Ok(_) => HttpResponse::Ok().body(""),
         Err(_) => HttpResponse::InternalServerError().body("failed to create instance"),
     };
+}
+
+#[get("/config/{config_name}/instance/{instance}/revisions")]
+async fn get_instance_revisions(
+    path: web::Path<(String, String)>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let (config_name, instance) = path.into_inner();
+    let service = state.get_service();
+
+    if let Some(data) = service
+        .get_instance_revisions(&config_name, &instance)
+        .await
+        .unwrap()
+    {
+        return HttpResponse::Ok().body(serde_json::to_string(&data).unwrap());
+    }
+    return HttpResponse::NotFound().body("");
 }
