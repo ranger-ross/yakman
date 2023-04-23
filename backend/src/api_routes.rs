@@ -113,3 +113,20 @@ async fn get_instance_by_id(
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     };
 }
+
+#[get("/config/{config_name}/instance/{instance}")]
+async fn get_instance(
+    path: web::Path<(String, String)>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let (config_name, instance) = path.into_inner();
+    let service = state.get_service();
+
+    return match service.get_config_data(&config_name, &instance).await {
+        Ok(data) => match data {
+            Some(data) => HttpResponse::Ok().body(data),
+            None => HttpResponse::NotFound().body("Instance not found"),
+        },
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    };
+}

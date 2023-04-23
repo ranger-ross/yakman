@@ -28,7 +28,10 @@ use yak_man_core::{
     model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
 };
 
-use crate::{adapters::local_file_adapter::create_local_file_adapter, api_routes::{get_configs, get_labels, create_label, get_data_by_labels, get_instance_by_id}};
+use crate::{
+    adapters::local_file_adapter::create_local_file_adapter,
+    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance},
+};
 
 use actix_web::{
     body::BoxBody,
@@ -74,6 +77,7 @@ async fn main() -> std::io::Result<()> {
             .service(create_label)
             .service(get_data_by_labels)
             .service(get_instance_by_id)
+            .service(get_instance)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
@@ -112,7 +116,9 @@ pub struct YakManError {
 
 impl YakManError {
     fn new(error: &str) -> YakManError {
-        YakManError { error: String::from(error) }
+        YakManError {
+            error: String::from(error),
+        }
     }
 }
 
@@ -142,19 +148,6 @@ impl From<GenericStorageError> for YakManError {
 //     ConfigData(Json<Vec<Config>>),
 //     #[response(status = 500, content_type = "json")]
 //     Error(Json<GenericError>),
-// }
-
-// #[get("/config/<config_name>/instance/<instance>")]
-// async fn instance(
-//     config_name: &str,
-//     instance: &str,
-//     state: &State<StateManager>,
-// ) -> Option<String> {
-//     let service = state.get_service();
-//     return service
-//         .get_config_data(config_name, instance)
-//         .await
-//         .unwrap();
 // }
 
 // #[put("/config/<config_name>/data", data = "<data>")] // TODO: Rename to /instance
