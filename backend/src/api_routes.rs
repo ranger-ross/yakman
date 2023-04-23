@@ -130,3 +130,35 @@ async fn get_instance(
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     };
 }
+
+#[put("/config/{config_name}/data")] // TODO: Rename to /instance
+async fn create_new_instance(
+    path: web::Path<String>,
+    query: web::Query<HashMap<String, String>>,
+    data: String,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let config_name = path.into_inner();
+    let service = state.get_service();
+
+    let labels: Vec<Label> = query
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
+
+    // TODO: do validation
+    // - config exists
+    // - labels are valid
+    // - not a duplicate?
+
+    match service
+        .create_config_instance(&config_name, labels, &data)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().body(""),
+        Err(_) => HttpResponse::InternalServerError().body("Failed to create config"),
+    }
+}
