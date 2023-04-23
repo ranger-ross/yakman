@@ -33,34 +33,29 @@ pub async fn get_labels(
 }
 
 #[put("/labels")]
-pub async fn create_label(data: String, state: web::Data<StateManager>) -> HttpResponse {
+pub async fn create_label(label_type: web::Json<LabelType>, state: web::Data<StateManager>) -> HttpResponse {
     let service = state.get_service();
 
-    let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
+    return match service.create_label(label_type.into_inner()).await {
+        Ok(()) => HttpResponse::Ok().body(""),
+        Err(e) => match e {
+            CreateLabelError::DuplicateLabelError { name: _ } => {
+                HttpResponse::BadRequest().body("Duplicate label")
+            }
+            CreateLabelError::EmptyOptionsError => {
+                // TODO: This does not appear to be working
+                HttpResponse::BadRequest().body("Label must have at least 1 option")
+            }
+            CreateLabelError::InvalidPriorityError { prioity } => {
+                HttpResponse::BadRequest().body(format!("Invalid prioity: {prioity}"))
+            }
+            CreateLabelError::StorageError { message } => {
+                println!("Failed to create label, error: {message}");
+                HttpResponse::InternalServerError().body("Failed to create label")
+            }
+        },
+    };
 
-    if let Some(label_type) = label_type {
-        return match service.create_label(label_type).await {
-            Ok(()) => HttpResponse::Ok().body(""),
-            Err(e) => match e {
-                CreateLabelError::DuplicateLabelError { name: _ } => {
-                    HttpResponse::BadRequest().body("Duplicate label")
-                }
-                CreateLabelError::EmptyOptionsError => {
-                    // TODO: This does not appear to be working
-                    HttpResponse::BadRequest().body("Label must have at least 1 option")
-                }
-                CreateLabelError::InvalidPriorityError { prioity } => {
-                    HttpResponse::BadRequest().body(format!("Invalid prioity: {prioity}"))
-                }
-                CreateLabelError::StorageError { message } => {
-                    println!("Failed to create label, error: {message}");
-                    HttpResponse::InternalServerError().body("Failed to create label")
-                }
-            },
-        };
-    }
-
-    return HttpResponse::BadRequest().body(""); // Bad input so parse failed
 }
 
 // TODO: Standardize REST endpoint naming
@@ -100,7 +95,6 @@ async fn get_instance_by_id(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let config_name = path.into_inner();
-    println!("Searching for config {config_name}");
     let service = state.get_service();
     return match service.get_config_instance_metadata(&config_name).await {
         Ok(data) => match data {

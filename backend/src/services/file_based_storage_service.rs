@@ -28,6 +28,10 @@ impl StorageService for FileBasedStorageService {
     }
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError> {
+        if label.options.len() == 0 {
+            return Err(CreateLabelError::EmptyOptionsError);
+        }
+
         let mut labels = self.adapter.get_labels().await.unwrap();
 
         let mut max_prioity: Option<i32> = None;

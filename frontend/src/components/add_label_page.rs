@@ -51,6 +51,7 @@ pub fn add_label_page() -> Html {
             .split(",")
             .into_iter()
             .map(String::from)
+            .filter(|o| !o.is_empty())
             .collect::<Vec<String>>();
         wasm_bindgen_futures::spawn_local(async move {
             match api::create_label(LabelType {
