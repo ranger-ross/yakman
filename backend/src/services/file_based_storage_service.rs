@@ -140,7 +140,12 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
+        if let Some(mut instances) = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await
+            .unwrap()
+        {
             let instance = Uuid::new_v4().to_string();
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
@@ -236,7 +241,11 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>> {
-        return Ok(self.adapter.get_instance_metadata(config_name).await.unwrap());
+        return Ok(self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await
+            .unwrap());
     }
 
     async fn get_config_data(
@@ -244,7 +253,12 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
+        if let Some(instances) = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await
+            .unwrap()
+        {
             println!("Found {} instances", instances.len());
 
             println!("Search for instance ID {}", instance);
@@ -266,7 +280,12 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
+        if let Some(instances) = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await
+            .unwrap()
+        {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await.unwrap();
             let selected_instance = select_instance(instances, labels, label_types);
@@ -289,7 +308,12 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
+        if let Some(mut instances) = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await
+            .unwrap()
+        {
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 
@@ -349,7 +373,7 @@ impl StorageService for FileBasedStorageService {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.adapter.get_revsion(config_name, &rev).await {
+            if let Some(revision) = self.adapter.get_revsion(config_name, &rev).await? {
                 revisions.push(revision);
             }
         }
@@ -362,7 +386,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         revision: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await {
+        if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await? {
             let key = &revision_data.data_key;
             return Ok(self.adapter.get_instance_data(config_name, key).await.ok());
         }
@@ -428,9 +452,9 @@ impl StorageService for FileBasedStorageService {
             return Err(ApproveRevisionError::InvalidRevision);
         }
 
-        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await {
-            Some(revision_data) => revision_data,
-            None => return Err(ApproveRevisionError::InvalidRevision),
+        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+            Some(Some(revision_data)) => revision_data,
+            None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
 
         // if revision_data.approved {

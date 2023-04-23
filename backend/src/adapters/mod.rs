@@ -70,7 +70,7 @@ pub trait FileBasedStorageAdapter: Sync + Send {
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Option<ConfigInstanceRevision>;
+    ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError>;
 
     async fn save_revision(
         &self,

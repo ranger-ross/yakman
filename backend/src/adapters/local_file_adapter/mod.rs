@@ -112,7 +112,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Option<ConfigInstanceRevision> {
+    ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         let dir = self.get_instance_revisions_path();
         let path = format!("{dir}/{config_name}/{revision}");
 
@@ -120,13 +120,13 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
 
         if let Ok(content) = fs::read_to_string(&path) {
             println!("got data {} ", content);
-            let data: Option<RevisionJson> = serde_json::from_str(&content).ok();
-            return data.map(|r| r.revision);
+            let data: RevisionJson = serde_json::from_str(&content)?;
+            return Ok(Some(data.revision));
         } else {
             println!("Failed to load revision file: {revision}");
         }
 
-        return None;
+        return Ok(None);
     }
 
     async fn save_revision(
