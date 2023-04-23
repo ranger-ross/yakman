@@ -30,7 +30,7 @@ use yak_man_core::{
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
-    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance, create_config},
+    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance, create_config, update_new_instance},
 };
 
 use actix_web::{
@@ -80,6 +80,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_instance)
             .service(create_new_instance)
             .service(create_config)
+            .service(update_new_instance)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
@@ -150,38 +151,6 @@ impl From<GenericStorageError> for YakManError {
 //     ConfigData(Json<Vec<Config>>),
 //     #[response(status = 500, content_type = "json")]
 //     Error(Json<GenericError>),
-// }
-
-// #[post("/config/<config_name>/instance/<instance>", data = "<data>")]
-// async fn update_new_instance(
-//     config_name: &str,
-//     instance: &str,
-//     query: RawQuery,
-//     data: String,
-//     state: &State<StateManager>,
-// ) {
-//     let service = state.get_service();
-
-//     let labels: Vec<Label> = query
-//         .params
-//         .iter()
-//         .map(|param| Label {
-//             label_type: param.0.to_string(),
-//             value: param.1.to_string(),
-//         })
-//         .collect();
-
-//     println!("lables {:?}", &labels);
-
-//     // TODO: do validation
-//     // - config exists
-//     // - labels are valid
-//     // - not a duplicate?
-
-//     service
-//         .save_config_instance(config_name, instance, labels, &data)
-//         .await
-//         .unwrap();
 // }
 
 

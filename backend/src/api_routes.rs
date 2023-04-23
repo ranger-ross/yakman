@@ -5,7 +5,7 @@ use crate::{
     StateManager, YakManError,
 };
 
-use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web::{get, put, web, HttpResponse, Responder, post};
 use yak_man_core::model::{Label, LabelType};
 
 #[get("/configs")]
@@ -183,5 +183,39 @@ async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) 
                 HttpResponse::BadRequest().body("duplicate config")
             }
         },
+    };
+}
+
+#[post("/config/{config_name}/instance/{instance}")]
+async fn update_new_instance(
+    path: web::Path<(String, String)>,
+    query: web::Query<HashMap<String, String>>,
+    data: String,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let (config_name, instance) = path.into_inner();
+    let service = state.get_service();
+
+    let labels: Vec<Label> = query
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
+
+    println!("lables {:?}", &labels);
+
+    // TODO: do validation
+    // - config exists
+    // - labels are valid
+    // - not a duplicate?
+
+    return match service
+        .save_config_instance(&config_name, &instance, labels, &data)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().body(""),
+        Err(_) => HttpResponse::InternalServerError().body("failed to create instance"),
     };
 }
