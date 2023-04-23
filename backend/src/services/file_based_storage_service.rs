@@ -394,17 +394,11 @@ impl StorageService for FileBasedStorageService {
             None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
 
-        // if revision_data.approved {
-        //     return Err(ApproveRevisionError::AlreadyApproved);
-        // }
-
         revision_data.approved = true;
         self.adapter
             .save_revision(config_name, &revision_data)
             .await
-            .map_err(|e| ApproveRevisionError::StorageError {
-                message: e.to_string(),
-            })?;
+            .map_err(|e| ApproveRevisionError::storage_error(&e.to_string()))?;
 
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
@@ -417,9 +411,7 @@ impl StorageService for FileBasedStorageService {
         self.adapter
             .save_instance_metadata(config_name, metadata)
             .await
-            .map_err(|e| ApproveRevisionError::StorageError {
-                message: e.to_string(),
-            })?;
+            .map_err(|e| ApproveRevisionError::storage_error(&e.to_string()))?;
 
         return Ok(());
     }

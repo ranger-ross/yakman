@@ -59,14 +59,12 @@ pub enum ApproveRevisionError {
     InvalidInstance,
     #[error("Invalid revision")]
     InvalidRevision,
-    #[error("Revision already approved")]
-    AlreadyApproved,
     #[error("Error storing approval: {message}")]
     StorageError { message: String },
 }
 
 impl ApproveRevisionError {
-    pub fn storage_label(message: &str) -> ApproveRevisionError {
+    pub fn storage_error(message: &str) -> ApproveRevisionError {
         ApproveRevisionError::StorageError {
             message: String::from(message),
         }

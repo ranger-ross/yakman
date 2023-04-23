@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
 use crate::{
     services::errors::{CreateConfigError, CreateLabelError},
@@ -33,7 +33,10 @@ pub async fn get_labels(
 }
 
 #[put("/labels")]
-pub async fn create_label(label_type: web::Json<LabelType>, state: web::Data<StateManager>) -> HttpResponse {
+pub async fn create_label(
+    label_type: web::Json<LabelType>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
     let service = state.get_service();
 
     return match service.create_label(label_type.into_inner()).await {
@@ -55,7 +58,6 @@ pub async fn create_label(label_type: web::Json<LabelType>, state: web::Data<Sta
             }
         },
     };
-
 }
 
 // TODO: Standardize REST endpoint naming
