@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    adapters::errors::{CreateConfigError, CreateLabelError},
+    services::errors::{CreateConfigError, CreateLabelError},
     StateManager, YakManError,
 };
 

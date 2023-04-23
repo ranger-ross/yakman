@@ -4,11 +4,12 @@ use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 use crate::{
-    adapters::{
-        errors::{ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateLabelError},
-        FileBasedStorageAdapter, GenericStorageError,
-    },
+    adapters::{errors::GenericStorageError, FileBasedStorageAdapter},
     services::service_utils::select_instance,
+};
+
+use super::errors::{
+    ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateLabelError,
 };
 
 #[async_trait] // TODO: refactor out to other file

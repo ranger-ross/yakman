@@ -3,7 +3,7 @@ mod api_routes;
 mod services;
 mod utils;
 
-use adapters::GenericStorageError;
+use adapters::errors::GenericStorageError;
 
 use serde::Serialize;
 use services::file_based_storage_service::{FileBasedStorageService, StorageService};
