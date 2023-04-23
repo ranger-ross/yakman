@@ -6,7 +6,7 @@ mod utils;
 use adapters::errors::GenericStorageError;
 
 use serde::Serialize;
-use services::file_based_storage_service::{FileBasedStorageService, StorageService};
+use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
 use yak_man_core::load_yak_man_settings;
 
@@ -22,7 +22,7 @@ use crate::{
 use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
 
 #[derive(Clone)]
-struct StateManager {
+pub struct StateManager {
     service: Arc<dyn StorageService>,
 }
 

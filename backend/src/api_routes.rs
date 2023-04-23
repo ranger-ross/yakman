@@ -28,7 +28,7 @@ pub async fn get_labels(
 
     return match service.get_labels().await {
         Ok(data) => Ok(web::Json(data)),
-        Err(err) => Err(YakManError::new("Failed to load labels from storage")),
+        Err(_) => Err(YakManError::new("Failed to load labels from storage")),
     };
 }
 
