@@ -9,11 +9,10 @@ pub mod errors;
 pub mod file_based_storage_service;
 mod service_utils;
 
-#[async_trait] // TODO: refactor out to other file
+#[async_trait]
 pub trait StorageService: Sync + Send {
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
 
-    // Labels CRUD
     async fn get_labels(&self) -> Result<Vec<LabelType>, ()>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
