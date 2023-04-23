@@ -30,7 +30,7 @@ use yak_man_core::{
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
-    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance},
+    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance, create_config},
 };
 
 use actix_web::{
@@ -79,6 +79,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_instance_by_id)
             .service(get_instance)
             .service(create_new_instance)
+            .service(create_config)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
@@ -183,22 +184,6 @@ impl From<GenericStorageError> for YakManError {
 //         .unwrap();
 // }
 
-// #[put("/config/<config_name>")]
-// async fn create_config(config_name: &str, state: &State<StateManager>) -> Status {
-//     let service = state.get_service();
-//     let result = service.create_config(config_name).await;
-
-//     match result {
-//         Ok(()) => Status::Ok,
-//         Err(e) => match e {
-//             CreateConfigError::StorageError { message } => {
-//                 println!("Failed to create config {config_name}, error: {message}");
-//                 Status::InternalServerError
-//             }
-//             CreateConfigError::DuplicateConfigError { name: _ } => Status::BadRequest,
-//         },
-//     }
-// }
 
 // #[get("/config/<config_name>/instance/<instance>/revisions")]
 // async fn get_instance_revisions(

@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{adapters::errors::CreateLabelError, StateManager, YakManError};
+use crate::{
+    adapters::errors::{CreateConfigError, CreateLabelError},
+    StateManager, YakManError,
+};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
 use yak_man_core::model::{Label, LabelType};
@@ -161,4 +164,24 @@ async fn create_new_instance(
         Ok(_) => HttpResponse::Ok().body(""),
         Err(_) => HttpResponse::InternalServerError().body("Failed to create config"),
     }
+}
+
+#[put("/config/{config_name}")]
+async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) -> HttpResponse {
+    let config_name = path.into_inner();
+    let service = state.get_service();
+    let result = service.create_config(&config_name).await;
+
+    return match result {
+        Ok(()) => HttpResponse::Ok().body(""),
+        Err(e) => match e {
+            CreateConfigError::StorageError { message } => {
+                println!("Failed to create config {config_name}, error: {message}");
+                HttpResponse::InternalServerError().body("")
+            }
+            CreateConfigError::DuplicateConfigError { name: _ } => {
+                HttpResponse::BadRequest().body("duplicate config")
+            }
+        },
+    };
 }
