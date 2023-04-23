@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use crate::{
     services::errors::{CreateConfigError, CreateLabelError},
@@ -74,13 +74,7 @@ async fn get_data_by_labels(
     let config_name = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+    let labels: Vec<Label> = extract_labels(query);
 
     println!("Search for config {config_name} with labels: {:?}", labels);
 
@@ -144,13 +138,7 @@ async fn create_new_instance(
     let config_name = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+    let labels: Vec<Label> = extract_labels(query);
 
     // TODO: do validation
     // - config exists
@@ -177,7 +165,7 @@ async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) 
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 println!("Failed to create config {config_name}, error: {message}");
-                HttpResponse::InternalServerError().body("")
+                HttpResponse::InternalServerError().body("Failed to create config")
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
                 HttpResponse::BadRequest().body("duplicate config")
@@ -196,13 +184,7 @@ async fn update_new_instance(
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+    let labels: Vec<Label> = extract_labels(query);
 
     println!("lables {:?}", &labels);
 
@@ -270,4 +252,14 @@ async fn approve_pending_instance_revision(
         Ok(_) => HttpResponse::Ok().body(""),
         Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
     };
+}
+
+fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<Label> {
+    return query
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
 }

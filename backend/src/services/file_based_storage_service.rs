@@ -23,8 +23,8 @@ impl StorageService for FileBasedStorageService {
         return Ok(self.adapter.get_configs().await?);
     }
 
-    async fn get_labels(&self) -> Result<Vec<LabelType>, ()> {
-        return Ok(self.adapter.get_labels().await.unwrap());
+    async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
+        return Ok(self.adapter.get_labels().await?);
     }
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError> {
@@ -121,7 +121,10 @@ impl StorageService for FileBasedStorageService {
     }
 
     async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
-        let mut configs = self.get_configs().await.unwrap(); // TODO: Handle
+        let mut configs = self
+            .get_configs()
+            .await
+            .map_err(|_| CreateConfigError::storage_error("Failed to load configs"))?;
 
         if configs
             .iter()
@@ -140,7 +143,7 @@ impl StorageService for FileBasedStorageService {
         self.adapter
             .save_instance_metadata(config_name, vec![])
             .await
-            .unwrap();
+            .map_err(|_| CreateConfigError::storage_error("Failed to save instance metadata"))?;
 
         // Create config instances directory
         self.adapter

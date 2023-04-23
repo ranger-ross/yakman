@@ -13,7 +13,7 @@ mod service_utils;
 pub trait StorageService: Sync + Send {
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
 
-    async fn get_labels(&self) -> Result<Vec<LabelType>, ()>;
+    async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
 
