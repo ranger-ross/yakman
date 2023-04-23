@@ -140,7 +140,7 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
             let instance = Uuid::new_v4().to_string();
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
@@ -236,7 +236,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>> {
-        return Ok(self.adapter.get_instance_metadata(config_name).await);
+        return Ok(self.adapter.get_instance_metadata(config_name).await.unwrap());
     }
 
     async fn get_config_data(
@@ -244,7 +244,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
             println!("Found {} instances", instances.len());
 
             println!("Search for instance ID {}", instance);
@@ -266,7 +266,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await.unwrap();
             let selected_instance = select_instance(instances, labels, label_types);
@@ -289,7 +289,7 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
         data: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await.unwrap() {
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 

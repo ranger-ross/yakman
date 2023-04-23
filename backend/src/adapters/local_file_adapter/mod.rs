@@ -45,13 +45,6 @@ struct RevisionJson {
     revision: ConfigInstanceRevision,
 }
 
-
-
-
-
-
-
-
 #[async_trait]
 impl FileBasedStorageAdapter for LocalFileStorageAdapter {
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
@@ -85,14 +78,17 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn get_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
+    async fn get_instance_metadata(
+        &self,
+        config_name: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_dir}/{config_name}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
-            let v: InstanceJson = serde_json::from_str(&content).unwrap();
-            return Some(v.instances);
+            let v: InstanceJson = serde_json::from_str(&content)?;
+            return Ok(Some(v.instances));
         }
-        return None;
+        return Ok(None);
     }
 
     async fn save_instance_metadata(

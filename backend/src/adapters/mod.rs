@@ -45,7 +45,7 @@ pub trait FileBasedStorageAdapter: Sync + Send {
 
     async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError>;
 
-    async fn get_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>>;
+    async fn get_instance_metadata(&self, config_name: &str) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
     async fn get_instance_data(
         &self,
