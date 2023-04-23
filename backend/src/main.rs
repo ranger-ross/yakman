@@ -3,43 +3,23 @@ mod api_routes;
 mod services;
 mod utils;
 
-use adapters::{
-    errors::{CreateConfigError, CreateLabelError},
-    GenericStorageError,
-};
-// use rocket::{
-//     http::Status,
-//     serde::json::{serde_json, Json},
-//     State,
-// };
-use serde::{Deserialize, Serialize};
+use adapters::GenericStorageError;
+
+use serde::Serialize;
 use services::file_based_storage_service::{FileBasedStorageService, StorageService};
-use std::{
-    env,
-    fmt::{Display, Formatter},
-    future::Future,
-    io::ErrorKind,
-    rc::Rc,
-    sync::{Arc, Mutex},
-    vec,
-};
-use yak_man_core::{
-    load_yak_man_settings,
-    model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType},
-};
+use std::{env, sync::Arc};
+use yak_man_core::load_yak_man_settings;
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
-    api_routes::{create_label, get_configs, get_data_by_labels, get_instance_by_id, get_labels, get_instance, create_new_instance, create_config, update_new_instance, get_instance_revisions},
+    api_routes::{
+        approve_pending_instance_revision, create_config, create_label, create_new_instance,
+        get_configs, get_data_by_labels, get_instance, get_instance_by_id, get_instance_revisions,
+        get_labels, update_instance_current_revision, update_new_instance,
+    },
 };
 
-use actix_web::{
-    body::BoxBody,
-    dev::Server,
-    get,
-    http::{header::ContentType, StatusCode},
-    post, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError,
-};
+use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
 
 #[derive(Clone)]
 struct StateManager {
@@ -82,32 +62,12 @@ async fn main() -> std::io::Result<()> {
             .service(create_config)
             .service(update_new_instance)
             .service(get_instance_revisions)
+            .service(update_instance_current_revision)
+            .service(approve_pending_instance_revision)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
     .await
-
-    // rocket::build()
-    //     .manage(StateManager {
-    //         service: Box::new(service),
-    //     })
-    //     .mount(
-    //         "/",
-    //         routes![
-    //             configs,
-    //             labels,
-    //             create_label,
-    //             get_instance_by_id,
-    //             data,
-    //             create_new_instance,
-    //             instance,
-    //             create_config,
-    //             update_new_instance,
-    //             get_instance_revisions,
-    //             update_instance_current_revision,
-    //             approve_pending_instance_revision
-    //         ],
-    //     )
 }
 
 use actix_web::error;
@@ -141,49 +101,6 @@ impl From<GenericStorageError> for YakManError {
         }
     }
 }
-
-// #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-// struct GenericError {
-//     error: String,
-// }
-// #[derive(Responder)]
-// enum GetConfigsResponse {
-//     #[response(status = 200, content_type = "json")]
-//     ConfigData(Json<Vec<Config>>),
-//     #[response(status = 500, content_type = "json")]
-//     Error(Json<GenericError>),
-// }
-
-
-// #[post("/config/<config_name>/instance/<instance>/revision/<revision>/current")] // TODO: This should be renamed to /submit
-// async fn update_instance_current_revision(
-//     config_name: &str,
-//     instance: &str,
-//     revision: &str,
-//     state: &State<StateManager>,
-// ) {
-//     let service = state.get_service();
-
-//     service
-//         .update_instance_current_revision(config_name, instance, revision)
-//         .await
-//         .unwrap();
-// }
-
-// #[post("/config/<config_name>/instance/<instance>/revision/<revision>/approve")]
-// async fn approve_pending_instance_revision(
-//     config_name: &str,
-//     instance: &str,
-//     revision: &str,
-//     state: &State<StateManager>,
-// ) {
-//     let service = state.get_service();
-
-//     service
-//         .approve_pending_instance_revision(config_name, instance, revision)
-//         .await
-//         .unwrap();
-// }
 
 fn create_service() -> impl StorageService {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");

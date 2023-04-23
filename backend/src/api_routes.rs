@@ -237,3 +237,37 @@ async fn get_instance_revisions(
     }
     return HttpResponse::NotFound().body("");
 }
+
+#[post("/config/{config_name}/instance/{instance}/revision/{revision}/current")] // TODO: This should be renamed to /submit
+async fn update_instance_current_revision(
+    path: web::Path<(String, String, String)>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let (config_name, instance, revision) = path.into_inner();
+    let service = state.get_service();
+
+    return match service
+        .update_instance_current_revision(&config_name, &instance, &revision)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().body(""),
+        Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
+    };
+}
+
+#[post("/config/{config_name}/instance/{instance}/revision/{revision}/approve")]
+async fn approve_pending_instance_revision(
+    path: web::Path<(String, String, String)>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let (config_name, instance, revision) = path.into_inner();
+    let service = state.get_service();
+
+    return match service
+        .approve_pending_instance_revision(&config_name, &instance, &revision)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().body(""),
+        Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
+    };
+}
