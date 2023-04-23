@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{adapters::errors::CreateLabelError, StateManager, YakManError};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
-use yak_man_core::model::{LabelType, Label};
+use yak_man_core::model::{Label, LabelType};
 
 #[get("/configs")]
 pub async fn get_configs(
@@ -42,7 +42,8 @@ pub async fn create_label(data: String, state: web::Data<StateManager>) -> HttpR
                 CreateLabelError::DuplicateLabelError { name: _ } => {
                     HttpResponse::BadRequest().body("Duplicate label")
                 }
-                CreateLabelError::EmptyOptionsError => { // TODO: This does not appear to be working
+                CreateLabelError::EmptyOptionsError => {
+                    // TODO: This does not appear to be working
                     HttpResponse::BadRequest().body("Label must have at least 1 option")
                 }
                 CreateLabelError::InvalidPriorityError { prioity } => {
@@ -62,7 +63,11 @@ pub async fn create_label(data: String, state: web::Data<StateManager>) -> HttpR
 // TODO: Standardize REST endpoint naming
 
 #[get("/config/{config_name}/instance")]
-async fn get_data_by_labels(path: web::Path<String>, query: web::Query<HashMap<String, String>>, state: web::Data<StateManager>) -> HttpResponse  {
+async fn get_data_by_labels(
+    path: web::Path<String>,
+    query: web::Query<HashMap<String, String>>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
     let config_name = path.into_inner();
     let service = state.get_service();
 
@@ -76,16 +81,35 @@ async fn get_data_by_labels(path: web::Path<String>, query: web::Query<HashMap<S
 
     println!("Search for config {config_name} with labels: {:?}", labels);
 
-    return match service.get_config_data_by_labels(&config_name, labels).await {
-        Ok(data) =>  {
+    return match service
+        .get_config_data_by_labels(&config_name, labels)
+        .await
+    {
+        Ok(data) => {
             if let Some(data) = data {
                 HttpResponse::Ok().body(data)
             } else {
                 HttpResponse::NotFound().body("Config not found")
             }
-        },
-        Err(err) => HttpResponse::NotFound().body(err.to_string())
+        }
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     };
-
 }
 
+// TODO: Rename method to get Config by ID
+#[get("/instances/{config_name}")]
+async fn get_instance_by_id(
+    path: web::Path<String>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let config_name = path.into_inner();
+    println!("Searching for config {config_name}");
+    let service = state.get_service();
+    return match service.get_config_instance_metadata(&config_name).await {
+        Ok(data) => match data {
+            Some(data) => HttpResponse::Ok().body(serde_json::to_string(&data).unwrap()),
+            None => HttpResponse::NotFound().body("Instance not found"),
+        },
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    };
+}
