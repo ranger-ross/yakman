@@ -10,8 +10,8 @@ use crate::{
 
 use super::{
     errors::{
-        ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError,
+        ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
+        SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
     },
     StorageService,
 };
@@ -35,7 +35,7 @@ impl StorageService for FileBasedStorageService {
             return Err(CreateLabelError::EmptyOptionsError);
         }
 
-        let mut labels = self.adapter.get_labels().await.unwrap();
+        let mut labels = self.adapter.get_labels().await?;
 
         let mut max_prioity: Option<i32> = None;
 
@@ -63,10 +63,7 @@ impl StorageService for FileBasedStorageService {
 
         labels.push(label);
 
-        self.adapter
-            .save_labels(labels)
-            .await
-            .map_err(|e| CreateLabelError::storage_label(&e.to_string()))?;
+        self.adapter.save_labels(labels).await?;
 
         return Ok(());
     }
@@ -170,7 +167,7 @@ impl StorageService for FileBasedStorageService {
     async fn get_config_instance_metadata(
         &self,
         config_name: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         return Ok(self.adapter.get_instance_metadata(config_name).await?);
     }
 
@@ -178,7 +175,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<String>, GenericStorageError> {
         if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
 
@@ -200,7 +197,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         labels: Vec<Label>,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<String>, GenericStorageError> {
         if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await?;
@@ -223,20 +220,15 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
         labels: Vec<Label>,
         data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self
-            .adapter
-            .get_instance_metadata(config_name)
-            .await?
-        {
+    ) -> Result<(), SaveConfigInstanceError> {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
             self.adapter
                 .save_instance_data(config_name, &data_key, data)
-                .await
-                .unwrap();
+                .await?;
 
             // Create revision
             let revision = ConfigInstanceRevision {
@@ -259,21 +251,15 @@ impl StorageService for FileBasedStorageService {
             } // TODO: Throw a new custom for failed to update config metadata
         }
 
-        return Err(Box::new(ConfigNotFoundError {
-            description: format!("Config not found: {config_name}"),
-        }));
+        return Err(SaveConfigInstanceError::NoConfigFound);
     }
 
     async fn get_instance_revisions(
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>> {
-        let instances = match self
-            .get_config_instance_metadata(&config_name)
-            .await
-            .unwrap()
-        {
+    ) -> Result<Option<Vec<ConfigInstanceRevision>>, GenericStorageError> {
+        let instances = match self.get_config_instance_metadata(&config_name).await? {
             Some(value) => value,
             None => return Ok(None),
         };
@@ -300,7 +286,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<String>, GenericStorageError> {
         if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await? {
             let key = &revision_data.data_key;
             return Ok(self.adapter.get_instance_data(config_name, key).await.ok());
@@ -314,20 +300,19 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
         revision: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), UpdateConfigInstanceCurrentRevisionError> {
         let mut instances = self
             .get_config_instance_metadata(config_name)
-            .await
-            .unwrap()
-            .unwrap(); // TODO: propagate error
+            .await?
+            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
 
         let mut instance = instances
             .iter_mut()
             .find(|i| i.instance == instance)
-            .unwrap(); // TODO: propagate error
+            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
 
         if !instance.revisions.contains(&String::from(revision)) {
-            panic!("revision not found!"); // TODO: propagate error
+            return Err(UpdateConfigInstanceCurrentRevisionError::NoRevisionFound);
         }
         instance.pending_revision = Some(String::from(revision));
 

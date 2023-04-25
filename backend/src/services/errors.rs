@@ -45,13 +45,14 @@ impl CreateLabelError {
     pub fn invalid_priority_error(prioity: i32) -> CreateLabelError {
         CreateLabelError::InvalidPriorityError { prioity: prioity }
     }
+}
 
-    pub fn storage_label(message: &str) -> CreateLabelError {
-        CreateLabelError::StorageError {
-            message: String::from(message),
-        }
+impl From<GenericStorageError> for CreateLabelError {
+    fn from(e: GenericStorageError) -> Self {
+        CreateLabelError::StorageError { message: e.message }
     }
 }
+
 
 #[derive(Error, Debug)]
 pub enum CreateConfigInstanceError {
@@ -64,6 +65,36 @@ pub enum CreateConfigInstanceError {
 impl From<GenericStorageError> for CreateConfigInstanceError {
     fn from(e: GenericStorageError) -> Self {
         CreateConfigInstanceError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum SaveConfigInstanceError {
+    #[error("No config found")]
+    NoConfigFound,
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for SaveConfigInstanceError {
+    fn from(e: GenericStorageError) -> Self {
+        SaveConfigInstanceError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum UpdateConfigInstanceCurrentRevisionError {
+    #[error("No config found")]
+    NoConfigFound,
+    #[error("Revision not found")]
+    NoRevisionFound,
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for UpdateConfigInstanceCurrentRevisionError {
+    fn from(e: GenericStorageError) -> Self {
+        UpdateConfigInstanceCurrentRevisionError::StorageError { message: e.message }
     }
 }
 
@@ -84,23 +115,6 @@ impl ApproveRevisionError {
         ApproveRevisionError::StorageError {
             message: String::from(message),
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct ConfigNotFoundError {
-    pub description: String,
-}
-
-impl fmt::Display for ConfigNotFoundError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description)
-    }
-}
-
-impl std::error::Error for ConfigNotFoundError {
-    fn description(&self) -> &str {
-        &self.description
     }
 }
 
