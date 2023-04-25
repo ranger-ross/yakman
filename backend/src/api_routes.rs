@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    services::errors::{CreateConfigError, CreateLabelError},
+    services::errors::{CreateConfigError, CreateConfigInstanceError, CreateLabelError},
     StateManager, YakManError,
 };
 
@@ -137,7 +137,6 @@ async fn create_new_instance(
     let labels: Vec<Label> = extract_labels(query);
 
     // TODO: do validation
-    // - config exists
     // - labels are valid
     // - not a duplicate?
 
@@ -146,7 +145,12 @@ async fn create_new_instance(
         .await
     {
         Ok(_) => HttpResponse::Ok().body(""),
-        Err(_) => HttpResponse::InternalServerError().body("Failed to create config"),
+        Err(CreateConfigInstanceError::NoConfigFound) => {
+            HttpResponse::BadRequest().body("Invalid config name")
+        }
+        Err(CreateConfigInstanceError::StorageError { message: _ }) => {
+            HttpResponse::InternalServerError().body("Failed to create config")
+        }
     }
 }
 

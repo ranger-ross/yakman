@@ -1,6 +1,8 @@
 use std::fmt;
 use thiserror::Error;
 
+use crate::adapters::errors::GenericStorageError;
+
 #[derive(Error, Debug)]
 pub enum CreateConfigError {
     #[error("Duplicate config: `{name}`")]
@@ -48,6 +50,20 @@ impl CreateLabelError {
         CreateLabelError::StorageError {
             message: String::from(message),
         }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum CreateConfigInstanceError {
+    #[error("No config found")]
+    NoConfigFound,
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for CreateConfigInstanceError {
+    fn from(e: GenericStorageError) -> Self {
+        CreateConfigInstanceError::StorageError { message: e.message }
     }
 }
 

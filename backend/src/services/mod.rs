@@ -3,7 +3,7 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label,
 
 use crate::adapters::errors::GenericStorageError;
 
-use self::errors::{ApproveRevisionError, CreateConfigError, CreateLabelError};
+use self::errors::{ApproveRevisionError, CreateConfigError, CreateLabelError, CreateConfigInstanceError};
 
 pub mod errors;
 pub mod file_based_storage_service;
@@ -24,7 +24,7 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         labels: Vec<Label>,
         data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>>;
+    ) -> Result<(), CreateConfigInstanceError>;
 
     async fn get_config_instance_metadata(
         &self,

@@ -1,7 +1,6 @@
 mod adapters;
 mod api_routes;
 mod services;
-mod utils;
 
 use adapters::errors::GenericStorageError;
 

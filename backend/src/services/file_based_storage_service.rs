@@ -9,7 +9,10 @@ use crate::{
 };
 
 use super::{
-    errors::{ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateLabelError},
+    errors::{
+        ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateConfigInstanceError,
+        CreateLabelError,
+    },
     StorageService,
 };
 
@@ -73,13 +76,8 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
         data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self
-            .adapter
-            .get_instance_metadata(config_name)
-            .await
-            .unwrap()
-        {
+    ) -> Result<(), CreateConfigInstanceError> {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = Uuid::new_v4().to_string();
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
@@ -97,12 +95,9 @@ impl StorageService for FileBasedStorageService {
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            self.adapter
-                .save_revision(config_name, &revision)
-                .await
-                .unwrap();
+            self.adapter.save_revision(config_name, &revision).await?;
 
-            // Add new instance to instances and update the instance datafile
+            // Add new instance to instances and update the instance metadata
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
                 instance: instance,
@@ -119,9 +114,7 @@ impl StorageService for FileBasedStorageService {
             return Ok(());
         }
 
-        return Err(Box::new(ConfigNotFoundError {
-            description: format!("Config not found: {config_name}"),
-        }));
+        return Err(CreateConfigInstanceError::NoConfigFound);
     }
 
     async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
@@ -178,11 +171,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>> {
-        return Ok(self
-            .adapter
-            .get_instance_metadata(config_name)
-            .await
-            .unwrap());
+        return Ok(self.adapter.get_instance_metadata(config_name).await?);
     }
 
     async fn get_config_data(
@@ -190,12 +179,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self
-            .adapter
-            .get_instance_metadata(config_name)
-            .await
-            .unwrap()
-        {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
 
             println!("Search for instance ID {}", instance);
@@ -217,14 +201,9 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self
-            .adapter
-            .get_instance_metadata(config_name)
-            .await
-            .unwrap()
-        {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
-            let label_types = self.get_labels().await.unwrap();
+            let label_types = self.get_labels().await?;
             let selected_instance = select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
@@ -248,8 +227,7 @@ impl StorageService for FileBasedStorageService {
         if let Some(mut instances) = self
             .adapter
             .get_instance_metadata(config_name)
-            .await
-            .unwrap()
+            .await?
         {
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
