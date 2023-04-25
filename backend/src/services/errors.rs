@@ -110,11 +110,9 @@ pub enum ApproveRevisionError {
     StorageError { message: String },
 }
 
-impl ApproveRevisionError {
-    pub fn storage_error(message: &str) -> ApproveRevisionError {
-        ApproveRevisionError::StorageError {
-            message: String::from(message),
-        }
+impl From<GenericStorageError> for ApproveRevisionError {
+    fn from(e: GenericStorageError) -> Self {
+        ApproveRevisionError::StorageError { message: e.message }
     }
 }
 

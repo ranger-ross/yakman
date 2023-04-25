@@ -329,11 +329,7 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
         revision: &str,
     ) -> Result<(), ApproveRevisionError> {
-        let mut metadata = match self
-            .get_config_instance_metadata(config_name)
-            .await
-            .unwrap()
-        {
+        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
             Some(metadata) => metadata,
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
@@ -360,8 +356,7 @@ impl StorageService for FileBasedStorageService {
         revision_data.approved = true;
         self.adapter
             .save_revision(config_name, &revision_data)
-            .await
-            .map_err(|e| ApproveRevisionError::storage_error(&e.to_string()))?;
+            .await?;
 
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
@@ -373,8 +368,7 @@ impl StorageService for FileBasedStorageService {
 
         self.adapter
             .save_instance_metadata(config_name, metadata)
-            .await
-            .map_err(|e| ApproveRevisionError::storage_error(&e.to_string()))?;
+            .await?;
 
         return Ok(());
     }
