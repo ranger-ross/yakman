@@ -80,8 +80,8 @@ async fn get_data_by_labels(
         .await
     {
         Ok(data) => {
-            if let Some(data) = data {
-                HttpResponse::Ok().body(data)
+            if let Some((data, content_type)) = data {
+                HttpResponse::Ok().content_type(content_type).body(data)
             } else {
                 HttpResponse::NotFound().body("Config not found")
             }
@@ -117,7 +117,7 @@ async fn get_instance(
 
     return match service.get_config_data(&config_name, &instance).await {
         Ok(data) => match data {
-            Some(data) => HttpResponse::Ok().body(data),
+            Some((data, content_type)) => HttpResponse::Ok().content_type(content_type).body(data),
             None => HttpResponse::NotFound().body("Instance not found"),
         },
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),

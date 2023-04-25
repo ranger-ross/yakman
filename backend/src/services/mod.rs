@@ -39,19 +39,19 @@ pub trait StorageService: Sync + Send {
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<String>, GenericStorageError>;
+    ) -> Result<Option<(String, String)>, GenericStorageError>;
 
     async fn get_config_data_by_labels(
         &self,
         config_name: &str,
         labels: Vec<Label>,
-    ) -> Result<Option<String>, GenericStorageError>;
+    ) -> Result<Option<(String, String)>, GenericStorageError>;
 
     async fn get_data_by_revision(
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Result<Option<String>, GenericStorageError>;
+    ) -> Result<Option<(String, String)>, GenericStorageError>;
 
     async fn save_config_instance(
         &self,
