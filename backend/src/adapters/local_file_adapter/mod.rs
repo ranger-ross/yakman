@@ -45,13 +45,6 @@ struct RevisionJson {
     revision: ConfigInstanceRevision,
 }
 
-
-
-
-
-
-
-
 #[async_trait]
 impl FileBasedStorageAdapter for LocalFileStorageAdapter {
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
@@ -85,14 +78,17 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn get_instance_metadata(&self, config_name: &str) -> Option<Vec<ConfigInstance>> {
+    async fn get_instance_metadata(
+        &self,
+        config_name: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_dir}/{config_name}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
-            let v: InstanceJson = serde_json::from_str(&content).unwrap();
-            return Some(v.instances);
+            let v: InstanceJson = serde_json::from_str(&content)?;
+            return Ok(Some(v.instances));
         }
-        return None;
+        return Ok(None);
     }
 
     async fn save_instance_metadata(
@@ -116,7 +112,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Option<ConfigInstanceRevision> {
+    ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         let dir = self.get_instance_revisions_path();
         let path = format!("{dir}/{config_name}/{revision}");
 
@@ -124,13 +120,13 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
 
         if let Ok(content) = fs::read_to_string(&path) {
             println!("got data {} ", content);
-            let data: Option<RevisionJson> = serde_json::from_str(&content).ok();
-            return data.map(|r| r.revision);
+            let data: RevisionJson = serde_json::from_str(&content)?;
+            return Ok(Some(data.revision));
         } else {
             println!("Failed to load revision file: {revision}");
         }
 
-        return None;
+        return Ok(None);
     }
 
     async fn save_revision(

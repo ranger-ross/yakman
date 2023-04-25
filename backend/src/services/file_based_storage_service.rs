@@ -4,84 +4,17 @@ use uuid::Uuid;
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
 
 use crate::{
-    adapters::{
-        errors::{ApproveRevisionError, ConfigNotFoundError, CreateConfigError, CreateLabelError},
-        FileBasedStorageAdapter, GenericStorageError,
-    },
+    adapters::{errors::GenericStorageError, FileBasedStorageAdapter},
     services::service_utils::select_instance,
 };
 
-#[async_trait] // TODO: refactor out to other file
-pub trait StorageService: Sync + Send {
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
-
-    // Labels CRUD
-    async fn get_labels(&self) -> Result<Vec<LabelType>, ()>;
-
-    async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
-
-    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError>;
-
-    async fn create_config_instance(
-        &self,
-        config_name: &str,
-        labels: Vec<Label>,
-        data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>>;
-
-    async fn get_config_instance_metadata(
-        &self,
-        config_name: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>>;
-
-    async fn get_config_data(
-        &self,
-        config_name: &str,
-        instance: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>>;
-
-    async fn get_config_data_by_labels(
-        &self,
-        config_name: &str,
-        labels: Vec<Label>,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>>;
-
-    async fn get_data_by_revision(
-        &self,
-        config_name: &str,
-        revision: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>>;
-
-    async fn save_config_instance(
-        &self,
-        config_name: &str,
-        instance: &str,
-        labels: Vec<Label>,
-        data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>>;
-
-    async fn get_instance_revisions(
-        &self,
-        config_name: &str,
-        instance: &str,
-    ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>>;
-
-    async fn update_instance_current_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-    ) -> Result<(), Box<dyn std::error::Error>>;
-
-    async fn approve_pending_instance_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-    ) -> Result<(), ApproveRevisionError>;
-
-    async fn initialize_storage(&self) -> Result<(), GenericStorageError>;
-}
+use super::{
+    errors::{
+        ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
+        SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+    },
+    StorageService,
+};
 
 pub struct FileBasedStorageService {
     pub adapter: Box<dyn FileBasedStorageAdapter>,
@@ -93,12 +26,16 @@ impl StorageService for FileBasedStorageService {
         return Ok(self.adapter.get_configs().await?);
     }
 
-    async fn get_labels(&self) -> Result<Vec<LabelType>, ()> {
-        return Ok(self.adapter.get_labels().await.unwrap());
+    async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
+        return Ok(self.adapter.get_labels().await?);
     }
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError> {
-        let mut labels = self.adapter.get_labels().await.unwrap();
+        if label.options.len() == 0 {
+            return Err(CreateLabelError::EmptyOptionsError);
+        }
+
+        let mut labels = self.adapter.get_labels().await?;
 
         let mut max_prioity: Option<i32> = None;
 
@@ -126,10 +63,7 @@ impl StorageService for FileBasedStorageService {
 
         labels.push(label);
 
-        self.adapter
-            .save_labels(labels)
-            .await
-            .map_err(|e| CreateLabelError::storage_label(&e.to_string()))?;
+        self.adapter.save_labels(labels).await?;
 
         return Ok(());
     }
@@ -139,8 +73,8 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
         data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await {
+    ) -> Result<(), CreateConfigInstanceError> {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = Uuid::new_v4().to_string();
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
@@ -158,12 +92,9 @@ impl StorageService for FileBasedStorageService {
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
             };
-            self.adapter
-                .save_revision(config_name, &revision)
-                .await
-                .unwrap();
+            self.adapter.save_revision(config_name, &revision).await?;
 
-            // Add new instance to instances and update the instance datafile
+            // Add new instance to instances and update the instance metadata
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
                 instance: instance,
@@ -180,13 +111,14 @@ impl StorageService for FileBasedStorageService {
             return Ok(());
         }
 
-        return Err(Box::new(ConfigNotFoundError {
-            description: format!("Config not found: {config_name}"),
-        }));
+        return Err(CreateConfigInstanceError::NoConfigFound);
     }
 
     async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
-        let mut configs = self.get_configs().await.unwrap(); // TODO: Handle
+        let mut configs = self
+            .get_configs()
+            .await
+            .map_err(|_| CreateConfigError::storage_error("Failed to load configs"))?;
 
         if configs
             .iter()
@@ -205,7 +137,7 @@ impl StorageService for FileBasedStorageService {
         self.adapter
             .save_instance_metadata(config_name, vec![])
             .await
-            .unwrap();
+            .map_err(|_| CreateConfigError::storage_error("Failed to save instance metadata"))?;
 
         // Create config instances directory
         self.adapter
@@ -235,16 +167,16 @@ impl StorageService for FileBasedStorageService {
     async fn get_config_instance_metadata(
         &self,
         config_name: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, Box<dyn std::error::Error>> {
-        return Ok(self.adapter.get_instance_metadata(config_name).await);
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
+        return Ok(self.adapter.get_instance_metadata(config_name).await?);
     }
 
     async fn get_config_data(
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await {
+    ) -> Result<Option<String>, GenericStorageError> {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
 
             println!("Search for instance ID {}", instance);
@@ -265,10 +197,10 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         labels: Vec<Label>,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await {
+    ) -> Result<Option<String>, GenericStorageError> {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
-            let label_types = self.get_labels().await.unwrap();
+            let label_types = self.get_labels().await?;
             let selected_instance = select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
@@ -288,16 +220,15 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
         labels: Vec<Label>,
         data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await {
+    ) -> Result<(), SaveConfigInstanceError> {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
             self.adapter
                 .save_instance_data(config_name, &data_key, data)
-                .await
-                .unwrap();
+                .await?;
 
             // Create revision
             let revision = ConfigInstanceRevision {
@@ -320,21 +251,15 @@ impl StorageService for FileBasedStorageService {
             } // TODO: Throw a new custom for failed to update config metadata
         }
 
-        return Err(Box::new(ConfigNotFoundError {
-            description: format!("Config not found: {config_name}"),
-        }));
+        return Err(SaveConfigInstanceError::NoConfigFound);
     }
 
     async fn get_instance_revisions(
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<Vec<ConfigInstanceRevision>>, Box<dyn std::error::Error>> {
-        let instances = match self
-            .get_config_instance_metadata(&config_name)
-            .await
-            .unwrap()
-        {
+    ) -> Result<Option<Vec<ConfigInstanceRevision>>, GenericStorageError> {
+        let instances = match self.get_config_instance_metadata(&config_name).await? {
             Some(value) => value,
             None => return Ok(None),
         };
@@ -349,7 +274,7 @@ impl StorageService for FileBasedStorageService {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.adapter.get_revsion(config_name, &rev).await {
+            if let Some(revision) = self.adapter.get_revsion(config_name, &rev).await? {
                 revisions.push(revision);
             }
         }
@@ -361,8 +286,8 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await {
+    ) -> Result<Option<String>, GenericStorageError> {
+        if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await? {
             let key = &revision_data.data_key;
             return Ok(self.adapter.get_instance_data(config_name, key).await.ok());
         }
@@ -375,20 +300,19 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         instance: &str,
         revision: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), UpdateConfigInstanceCurrentRevisionError> {
         let mut instances = self
             .get_config_instance_metadata(config_name)
-            .await
-            .unwrap()
-            .unwrap(); // TODO: propagate error
+            .await?
+            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
 
         let mut instance = instances
             .iter_mut()
             .find(|i| i.instance == instance)
-            .unwrap(); // TODO: propagate error
+            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
 
         if !instance.revisions.contains(&String::from(revision)) {
-            panic!("revision not found!"); // TODO: propagate error
+            return Err(UpdateConfigInstanceCurrentRevisionError::NoRevisionFound);
         }
         instance.pending_revision = Some(String::from(revision));
 
@@ -405,11 +329,7 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
         revision: &str,
     ) -> Result<(), ApproveRevisionError> {
-        let mut metadata = match self
-            .get_config_instance_metadata(config_name)
-            .await
-            .unwrap()
-        {
+        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
             Some(metadata) => metadata,
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
@@ -428,22 +348,15 @@ impl StorageService for FileBasedStorageService {
             return Err(ApproveRevisionError::InvalidRevision);
         }
 
-        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await {
-            Some(revision_data) => revision_data,
-            None => return Err(ApproveRevisionError::InvalidRevision),
+        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+            Some(Some(revision_data)) => revision_data,
+            None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
-
-        // if revision_data.approved {
-        //     return Err(ApproveRevisionError::AlreadyApproved);
-        // }
 
         revision_data.approved = true;
         self.adapter
             .save_revision(config_name, &revision_data)
-            .await
-            .map_err(|e| ApproveRevisionError::StorageError {
-                message: e.to_string(),
-            })?;
+            .await?;
 
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
@@ -455,10 +368,7 @@ impl StorageService for FileBasedStorageService {
 
         self.adapter
             .save_instance_metadata(config_name, metadata)
-            .await
-            .map_err(|e| ApproveRevisionError::StorageError {
-                message: e.to_string(),
-            })?;
+            .await?;
 
         return Ok(());
     }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    adapters::errors::{CreateConfigError, CreateLabelError},
+    services::errors::{CreateConfigError, CreateConfigInstanceError, CreateLabelError},
     StateManager, YakManError,
 };
 
@@ -28,39 +28,36 @@ pub async fn get_labels(
 
     return match service.get_labels().await {
         Ok(data) => Ok(web::Json(data)),
-        Err(err) => Err(YakManError::new("Failed to load labels from storage")),
+        Err(_) => Err(YakManError::new("Failed to load labels from storage")),
     };
 }
 
 #[put("/labels")]
-pub async fn create_label(data: String, state: web::Data<StateManager>) -> HttpResponse {
+pub async fn create_label(
+    label_type: web::Json<LabelType>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
     let service = state.get_service();
 
-    let label_type: Option<LabelType> = serde_json::from_str(&data).ok();
-
-    if let Some(label_type) = label_type {
-        return match service.create_label(label_type).await {
-            Ok(()) => HttpResponse::Ok().body(""),
-            Err(e) => match e {
-                CreateLabelError::DuplicateLabelError { name: _ } => {
-                    HttpResponse::BadRequest().body("Duplicate label")
-                }
-                CreateLabelError::EmptyOptionsError => {
-                    // TODO: This does not appear to be working
-                    HttpResponse::BadRequest().body("Label must have at least 1 option")
-                }
-                CreateLabelError::InvalidPriorityError { prioity } => {
-                    HttpResponse::BadRequest().body(format!("Invalid prioity: {prioity}"))
-                }
-                CreateLabelError::StorageError { message } => {
-                    println!("Failed to create label, error: {message}");
-                    HttpResponse::InternalServerError().body("Failed to create label")
-                }
-            },
-        };
-    }
-
-    return HttpResponse::BadRequest().body(""); // Bad input so parse failed
+    return match service.create_label(label_type.into_inner()).await {
+        Ok(()) => HttpResponse::Ok().body(""),
+        Err(e) => match e {
+            CreateLabelError::DuplicateLabelError { name: _ } => {
+                HttpResponse::BadRequest().body("Duplicate label")
+            }
+            CreateLabelError::EmptyOptionsError => {
+                // TODO: This does not appear to be working
+                HttpResponse::BadRequest().body("Label must have at least 1 option")
+            }
+            CreateLabelError::InvalidPriorityError { prioity } => {
+                HttpResponse::BadRequest().body(format!("Invalid prioity: {prioity}"))
+            }
+            CreateLabelError::StorageError { message } => {
+                println!("Failed to create label, error: {message}");
+                HttpResponse::InternalServerError().body("Failed to create label")
+            }
+        },
+    };
 }
 
 // TODO: Standardize REST endpoint naming
@@ -74,13 +71,7 @@ async fn get_data_by_labels(
     let config_name = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+    let labels: Vec<Label> = extract_labels(query);
 
     println!("Search for config {config_name} with labels: {:?}", labels);
 
@@ -106,7 +97,6 @@ async fn get_instance_by_id(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let config_name = path.into_inner();
-    println!("Searching for config {config_name}");
     let service = state.get_service();
     return match service.get_config_instance_metadata(&config_name).await {
         Ok(data) => match data {
@@ -144,16 +134,9 @@ async fn create_new_instance(
     let config_name = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+    let labels: Vec<Label> = extract_labels(query);
 
     // TODO: do validation
-    // - config exists
     // - labels are valid
     // - not a duplicate?
 
@@ -162,7 +145,12 @@ async fn create_new_instance(
         .await
     {
         Ok(_) => HttpResponse::Ok().body(""),
-        Err(_) => HttpResponse::InternalServerError().body("Failed to create config"),
+        Err(CreateConfigInstanceError::NoConfigFound) => {
+            HttpResponse::BadRequest().body("Invalid config name")
+        }
+        Err(CreateConfigInstanceError::StorageError { message: _ }) => {
+            HttpResponse::InternalServerError().body("Failed to create config")
+        }
     }
 }
 
@@ -177,7 +165,7 @@ async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) 
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 println!("Failed to create config {config_name}, error: {message}");
-                HttpResponse::InternalServerError().body("")
+                HttpResponse::InternalServerError().body("Failed to create config")
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
                 HttpResponse::BadRequest().body("duplicate config")
@@ -196,13 +184,7 @@ async fn update_new_instance(
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = query
-        .iter()
-        .map(|param| Label {
-            label_type: param.0.to_string(),
-            value: param.1.to_string(),
-        })
-        .collect();
+    let labels: Vec<Label> = extract_labels(query);
 
     println!("lables {:?}", &labels);
 
@@ -270,4 +252,14 @@ async fn approve_pending_instance_revision(
         Ok(_) => HttpResponse::Ok().body(""),
         Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
     };
+}
+
+fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<Label> {
+    return query
+        .iter()
+        .map(|param| Label {
+            label_type: param.0.to_string(),
+            value: param.1.to_string(),
+        })
+        .collect();
 }
