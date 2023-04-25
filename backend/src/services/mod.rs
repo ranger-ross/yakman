@@ -27,6 +27,7 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         labels: Vec<Label>,
         data: &str,
+        content_type: Option<String>,
     ) -> Result<(), CreateConfigInstanceError>;
 
     async fn get_config_instance_metadata(
@@ -58,6 +59,7 @@ pub trait StorageService: Sync + Send {
         instance: &str,
         labels: Vec<Label>,
         data: &str,
+        content_type: Option<String>,
     ) -> Result<(), SaveConfigInstanceError>;
 
     async fn get_instance_revisions(

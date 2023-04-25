@@ -73,6 +73,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
         data: &str,
+        content_type: Option<String>
     ) -> Result<(), CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = Uuid::new_v4().to_string();
@@ -91,6 +92,7 @@ impl StorageService for FileBasedStorageService {
                 labels: labels,
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
+                content_type: content_type.unwrap_or(String::from("text/plain"))
             };
             self.adapter.save_revision(config_name, &revision).await?;
 
@@ -220,6 +222,7 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
         labels: Vec<Label>,
         data: &str,
+        content_type: Option<String>
     ) -> Result<(), SaveConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let revision_key = Uuid::new_v4().to_string();
@@ -237,6 +240,7 @@ impl StorageService for FileBasedStorageService {
                 labels: labels,
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
+                content_type: content_type.unwrap_or(String::from("text/plain"))
             };
             self.adapter.save_revision(config_name, &revision).await?;
 
