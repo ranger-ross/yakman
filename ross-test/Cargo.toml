@@ -10,3 +10,11 @@ leptos = { git = "https://github.com/leptos-rs/leptos" }
 console_log = "0.2"
 log = "0.4"
 console_error_panic_hook = "0.1.7"
+
+gloo-net = "0.2.6"
+serde = {version = "1.0", features = ["derive"]}
+wasm-bindgen-futures = "0.4.34"
+yak-man-core = {path = "../core"}
+web-sys = "0.3.61"
+serde_json = "1.0"
+chrono = "0.4.24"
