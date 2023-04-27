@@ -73,6 +73,7 @@ impl StorageService for FileBasedStorageService {
         config_name: &str,
         labels: Vec<Label>,
         data: &str,
+        content_type: Option<String>,
     ) -> Result<(), CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = Uuid::new_v4().to_string();
@@ -91,6 +92,7 @@ impl StorageService for FileBasedStorageService {
                 labels: labels,
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
+                content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
 
@@ -175,7 +177,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<String>, GenericStorageError> {
+    ) -> Result<Option<(String, String)>, GenericStorageError> {
         if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
 
@@ -197,7 +199,7 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         labels: Vec<Label>,
-    ) -> Result<Option<String>, GenericStorageError> {
+    ) -> Result<Option<(String, String)>, GenericStorageError> {
         if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
             println!("Found {} instances", instances.len());
             let label_types = self.get_labels().await?;
@@ -220,6 +222,7 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
         labels: Vec<Label>,
         data: &str,
+        content_type: Option<String>,
     ) -> Result<(), SaveConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let revision_key = Uuid::new_v4().to_string();
@@ -237,6 +240,7 @@ impl StorageService for FileBasedStorageService {
                 labels: labels,
                 timestamp_ms: Utc::now().timestamp_millis(),
                 approved: false,
+                content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
 
@@ -286,10 +290,13 @@ impl StorageService for FileBasedStorageService {
         &self,
         config_name: &str,
         revision: &str,
-    ) -> Result<Option<String>, GenericStorageError> {
+    ) -> Result<Option<(String, String)>, GenericStorageError> {
         if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await? {
             let key = &revision_data.data_key;
-            return Ok(self.adapter.get_instance_data(config_name, key).await.ok());
+            return Ok(Some((
+                self.adapter.get_instance_data(config_name, key).await?,
+                revision_data.content_type,
+            )));
         }
         println!("Fetching revision not found");
         return Ok(None);

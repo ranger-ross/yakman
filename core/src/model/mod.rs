@@ -38,6 +38,7 @@ pub struct ConfigInstanceRevision {
     pub labels: Vec<Label>,
     pub timestamp_ms: i64,
     pub approved: bool,
+    pub content_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
