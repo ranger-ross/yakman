@@ -9,7 +9,7 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
     let (description, set_description) = create_signal(cx, String::from(""));
     let (options, set_options) = create_signal(cx, String::from(""));
 
-    let add_todo = create_action(cx, |d: &(String, String, String, String)| {
+    let on_create_label = create_action(cx, |d: &(String, String, String, String)| {
         let (name, description, prioity, options) = d;
 
         let options = options
@@ -42,7 +42,7 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
 
             <br />
 
-            <button on:click=move |_| add_todo.dispatch((name(), description(), prioity(), options()))>"Create"</button>
+            <button on:click=move |_| on_create_label.dispatch((name(), description(), prioity(), options()))>"Create"</button>
 
         </div>
     }

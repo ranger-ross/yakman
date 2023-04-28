@@ -49,9 +49,8 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                         None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
                         Some(configs) => {
                             view! { cx,
-                                {configs.into_iter().map(|config| {
-
-                                    view! {cx, <ConfigRow config={config} /> }
+                                {configs.into_iter().map(|config| view! {cx, 
+                                    <ConfigRow config={config} /> 
                                 }).collect::<Vec<_>>()}
                             }.into_view(cx)
                         }

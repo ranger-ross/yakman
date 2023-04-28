@@ -5,7 +5,7 @@ use leptos::*;
 pub fn add_config_page(cx: Scope) -> impl IntoView {
     let (name, set_name) = create_signal(cx, String::from(""));
 
-    let add_todo = create_action(cx, |name: &String| {
+    let on_create_config = create_action(cx, |name: &String| {
         let name = name.clone();
 
         async move {
@@ -23,7 +23,7 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
 
             <br />
 
-            <button on:click=move |_| add_todo.dispatch(name())>"Create"</button>
+            <button on:click=move |_| on_create_config.dispatch(name())>"Create"</button>
 
         </div>
     }

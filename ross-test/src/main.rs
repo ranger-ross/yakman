@@ -1,10 +1,12 @@
 mod add_config_page;
 mod add_label_page;
 mod api;
+mod apply_config_page;
 mod config_list_page;
 
 use add_config_page::*;
 use add_label_page::*;
+use apply_config_page::*;
 use config_list_page::*;
 use leptos::*;
 use leptos_router::*;
@@ -26,16 +28,19 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
                         view=move |cx| view! { cx,  <ConfigListPage /> }
                     />
                     <Route
-                        path="add-config"
+                        path="/add-config"
                         view=move |cx| view! { cx,  <AddConfigPage /> }
                     />
                     <Route
-                        path="add-label"
+                        path="/add-label"
                         view=move |cx| view! { cx,  <AddLabelPage /> }
+                    />
+                    <Route
+                        path="/apply/:config_name/:instance"
+                        view=move |cx| view! { cx,  <ApplyConfigPage /> }
                     />
                 </Routes>
             </main>
         </Router>
     }
 }
-
