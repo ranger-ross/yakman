@@ -21,7 +21,6 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
         let config_name = config_name();
         let input_value = input();
         let selected_labels = selected_labels();
-        // let navigator = navigator.clone();
 
         log!("Selected labels len = {}", selected_labels.len());
 
@@ -32,7 +31,8 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
 
         match api::create_config_instance(&config_name, &input_value, selected_labels).await {
             Ok(()) => {
-                log!("TODO: navigate home")
+                let navigate = use_navigate(cx);
+                _ = navigate("/", Default::default()); // TODO: Fix warnings (Question in Discord: https://discordapp.com/channels/1031524867910148188/1049869221636620300/1101740642478084156)
             }
             Err(err) => error!("Error creating config instance {}", err.to_string()),
         };
@@ -42,6 +42,7 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
         cx,
         || (),
         |_| async move {
+            log!("fetching");
             let mut label_data = vec![];
 
             match api::fetch_labels().await {
@@ -79,6 +80,10 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
              />
 
             <br />
+            {move || {
+                log!("render");
+                1
+            }}
 
             <button on:click=move |_| on_create.dispatch(())>{"Add"}</button>
         </div>
