@@ -68,7 +68,7 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div>
-            <h1>{format!("Create Config Instance {}", config_name())}</h1>
+            <h1>"Create Config Instance "{config_name}</h1>
 
             <h3>{"Data"}</h3>
             <textarea on:input=move |ev| set_input(event_target_value(&ev)) prop:value=input />
@@ -80,10 +80,6 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
              />
 
             <br />
-            {move || {
-                log!("render");
-                1
-            }}
 
             <button on:click=move |_| on_create.dispatch(())>{"Add"}</button>
         </div>
