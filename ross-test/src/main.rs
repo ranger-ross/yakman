@@ -45,6 +45,10 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
                         path="/create-instance/:config_name"
                         view=move |cx| view! { cx,  <CreateConfigInstancePage /> }
                     />
+                    <Route
+                        path="/edit-instance/:config_name/:instance"
+                        view=move |cx| view! { cx,  <EditConfigInstancePage /> }
+                    />
                 </Routes>
             </main>
         </Router>
