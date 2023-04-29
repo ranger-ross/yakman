@@ -89,7 +89,7 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
 
             <h3>{"Data"}</h3>
 
-            {move || sorted_revisions().iter()
+            {move || sorted_revisions().into_iter()
                 .map(|revision| {
                     let is_current_instance = current_revision().to_string() == revision.revision;
                     let color = if is_current_instance { "yellow" } else { "cyan" };
@@ -123,17 +123,12 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
                             </p>
 
 
-                            // {move || match pending_revision() {
-                            //     None => view! { cx, <></> }.into_view(cx),
-                            //     Some(_) => { // TODO: check if pending revision is equal to &revision.revision
-                            //         view! { cx,
-                            //             <p>
-                            //                 {"(pending)"}
-                            //             </p>
-                            //         }.into_view(cx)
-
-                            //     }
-                            // }}
+                            <p>
+                                {move || match pending_revision() {
+                                    Some(rev) if rev == revision.revision => "(pending)",
+                                    _ => "",
+                                }}
+                            </p>
 
                         </div>
                     }
