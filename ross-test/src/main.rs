@@ -3,8 +3,10 @@ mod add_label_page;
 mod api;
 mod apply_config_page;
 mod config_list_page;
+mod modify_config_instance;
 
 use add_config_page::*;
+use modify_config_instance::*;
 use add_label_page::*;
 use apply_config_page::*;
 use config_list_page::*;
@@ -38,6 +40,10 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
                     <Route
                         path="/apply/:config_name/:instance"
                         view=move |cx| view! { cx,  <ApplyConfigPage /> }
+                    />
+                    <Route
+                        path="/create-instance/:config_name"
+                        view=move |cx| view! { cx,  <CreateConfigInstancePage /> }
                     />
                 </Routes>
             </main>
