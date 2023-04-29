@@ -62,7 +62,10 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
             match api::approve_instance_revision(&config_name(), &instance(), &pending_revision())
                 .await
             {
-                Ok(()) => (), //navigator.push(&Route::Home) // TODO: fix
+                Ok(()) => {
+                    let navigate = use_navigate(cx);
+                    let _ = navigate("/", Default::default()); // TODO: Fix warning
+                },
                 Err(e) => error!("Error while approving config: {}", e.to_string()),
             };
         }
