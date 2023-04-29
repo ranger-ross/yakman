@@ -1,15 +1,11 @@
-mod add_config_page;
-mod add_label_page;
 mod api;
-mod apply_config_page;
-mod config_list_page;
-mod modify_config_instance;
+mod components;
 
-use add_config_page::*;
-use modify_config_instance::*;
-use add_label_page::*;
-use apply_config_page::*;
-use config_list_page::*;
+use components::add_config_page::*;
+use components::modify_config_instance::*;
+use components::add_label_page::*;
+use components::apply_config_page::*;
+use components::config_list_page::*;
 use leptos::*;
 use leptos_router::*;
 
