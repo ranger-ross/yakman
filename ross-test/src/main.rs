@@ -6,6 +6,7 @@ use components::modify_config_instance::*;
 use components::add_label_page::*;
 use components::apply_config_page::*;
 use components::config_list_page::*;
+use components::revision_history::*;
 use leptos::*;
 use leptos_router::*;
 
@@ -44,6 +45,10 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
                     <Route
                         path="/edit-instance/:config_name/:instance"
                         view=move |cx| view! { cx,  <EditConfigInstancePage /> }
+                    />
+                    <Route
+                        path="/history/:config_name/:instance"
+                        view=move |cx| view! { cx,  <RevisionHistoryPage /> }
                     />
                 </Routes>
             </main>
