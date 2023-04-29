@@ -1,62 +1,57 @@
 mod api;
 mod components;
-mod routes;
 
-use components::{AddConfigPage, AddLabelPage, ConfigListPage, ApplyConfigPage};
-use routes::Route;
-use yew::prelude::*;
-use yew_router::prelude::*;
+use components::add_config_page::*;
+use components::modify_config_instance::*;
+use components::add_label_page::*;
+use components::apply_config_page::*;
+use components::config_list_page::*;
+use components::revision_history::*;
+use leptos::*;
+use leptos_router::*;
 
-use crate::components::{CreateConfigInstancePage, EditConfigInstancePage, RevisionHistoryPage};
-
-fn main() {
-    yew::Renderer::<App>::new().render();
+pub fn main() {
+    _ = console_log::init_with_level(log::Level::Debug);
+    console_error_panic_hook::set_once();
+    mount_to_body(|cx| view! { cx, <RouterExample/> })
 }
 
-#[function_component(App)]
-fn app() -> Html {
-    html! {
-        <BrowserRouter>
-            <Switch<Route> render={switch} />
-        </BrowserRouter>
-    }
-}
-
-fn switch(routes: Route) -> Html {
-    match routes {
-        Route::Home => html! { <ConfigListPage /> },
-        Route::AddConfigPage => html! { <AddConfigPage /> },
-        Route::AddLabelPage => html! { <AddLabelPage /> },
-        Route::CreateConfigInstancePage { config_name } => html! {
-            <CreateConfigInstancePage config_name={config_name} />
-        },
-        Route::EditConfigInstancePage {
-            config_name,
-            instance,
-        } => html! {
-            <EditConfigInstancePage
-                config_name={config_name}
-                instance={instance}
-            />
-        },
-        Route::RevisionHistoryPage {
-            config_name,
-            instance,
-        } => html! {
-            <RevisionHistoryPage
-                config_name={config_name}
-                instance={instance}
-            />
-        },
-        Route::ApplyConfigPage {
-            config_name,
-            instance,
-        } => html! {
-            <ApplyConfigPage
-                config_name={config_name}
-                instance={instance} 
-            />
-        },
-        Route::NotFound => html! { <h1>{ "Not Found" }</h1> },
+#[component]
+pub fn RouterExample(cx: Scope) -> impl IntoView {
+    view! { cx,
+        <Router>
+            <main>
+                <Routes>
+                    <Route
+                        path="/"
+                        view=move |cx| view! { cx,  <ConfigListPage /> }
+                    />
+                    <Route
+                        path="/add-config"
+                        view=move |cx| view! { cx,  <AddConfigPage /> }
+                    />
+                    <Route
+                        path="/add-label"
+                        view=move |cx| view! { cx,  <AddLabelPage /> }
+                    />
+                    <Route
+                        path="/apply/:config_name/:instance"
+                        view=move |cx| view! { cx,  <ApplyConfigPage /> }
+                    />
+                    <Route
+                        path="/create-instance/:config_name"
+                        view=move |cx| view! { cx,  <CreateConfigInstancePage /> }
+                    />
+                    <Route
+                        path="/edit-instance/:config_name/:instance"
+                        view=move |cx| view! { cx,  <EditConfigInstancePage /> }
+                    />
+                    <Route
+                        path="/history/:config_name/:instance"
+                        view=move |cx| view! { cx,  <RevisionHistoryPage /> }
+                    />
+                </Routes>
+            </main>
+        </Router>
     }
 }

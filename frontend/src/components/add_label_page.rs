@@ -1,85 +1,49 @@
-use gloo_console::error;
-use web_sys::HtmlInputElement;
+use crate::api::create_label;
+use leptos::*;
 use yak_man_core::model::LabelType;
-use yew::prelude::*;
-use yew_router::prelude::*;
 
-use crate::{api, routes::Route};
+#[component]
+pub fn add_label_page(cx: Scope) -> impl IntoView {
+    let (name, set_name) = create_signal(cx, String::from(""));
+    let (prioity, set_prioity) = create_signal(cx, String::from(""));
+    let (description, set_description) = create_signal(cx, String::from(""));
+    let (options, set_options) = create_signal(cx, String::from(""));
 
-#[function_component(AddLabelPage)]
-pub fn add_label_page() -> Html {
-    let navigator = use_navigator().unwrap();
-    let name = use_state(String::default);
-    let name_value = (*name).clone();
-    let prioity = use_state(String::default);
-    let prioity_value = (*prioity).clone();
-    let description = use_state(String::default);
-    let description_value = (*description).clone();
-    let options = use_state(String::default);
-    let options_value = (*options).clone();
+    let on_create_label = create_action(cx, |d: &(String, String, String, String)| {
+        let (name, description, prioity, options) = d;
 
-    let on_name_change = Callback::from(move |e: Event| {
-        // TODO: make sure input matches config name requirements
-        let value = e.target_unchecked_into::<HtmlInputElement>().value();
-        name.set(value); // TODO: validate for duplicates?
-    });
-
-    let on_prioity_change = Callback::from(move |e: Event| {
-        // TODO: make sure input matches config name requirements
-        let value = e.target_unchecked_into::<HtmlInputElement>().value();
-        prioity.set(value); // TODO: validate
-    });
-
-    let on_description_change = Callback::from(move |e: Event| {
-        // TODO: make sure input matches config name requirements
-        let value = e.target_unchecked_into::<HtmlInputElement>().value();
-        description.set(value);
-    });
-
-    let on_options_change = Callback::from(move |e: Event| {
-        // TODO: make sure input matches config name requirements
-        let value = e.target_unchecked_into::<HtmlInputElement>().value();
-        options.set(value); // TODO: validate
-    });
-
-    let on_add_clicked = move |_| {
-        let name = name_value.clone();
-        let prioity = prioity_value.clone();
-        let description = description_value.clone();
-        let navigator = navigator.clone();
-        let options = options_value
+        let options = options
             .split(",")
             .into_iter()
             .map(String::from)
             .filter(|o| !o.is_empty())
             .collect::<Vec<String>>();
-        wasm_bindgen_futures::spawn_local(async move {
-            match api::create_label(LabelType {
-                name: name,
-                description: description,
-                priority: prioity.parse().unwrap(),
-                options: options,
-            })
-            .await
-            {
-                Ok(()) => {}
-                Err(err) => error!("Error creating label", err.to_string()),
-            };
-            navigator.push(&Route::Home);
-        });
-    };
 
-    html! {
+        let label = LabelType {
+            name: name.clone(),
+            description: description.clone(),
+            priority: prioity.parse().unwrap(),
+            options: options,
+        };
+
+        async move {
+            log!("from action! {:?}", label);
+            create_label(label).await.unwrap()
+        }
+    });
+
+    view! { cx,
         <div>
             <h1>{"Add Label"}</h1>
-            <div>{"Name: "} <input onchange={on_name_change} /></div>
-            <div>{"Prioity: "} <input onchange={on_prioity_change} /></div>
-            <div>{"Description: "} <input onchange={on_description_change} /></div>
-            <div>{"Options: "} <input onchange={on_options_change} /></div>
+            <div>{"Name: "} <input type="text" on:input=move |ev| set_name(event_target_value(&ev)) prop:value=name /></div>
+            <div>{"Prioity: "} <input  type="text" on:input=move |ev| set_prioity(event_target_value(&ev)) prop:value=prioity/></div>
+            <div>{"Description: "} <input  type="text" on:input=move |ev| set_description(event_target_value(&ev)) prop:value=description /></div>
+            <div>{"Options: "} <input  type="text" on:input=move |ev| set_options(event_target_value(&ev)) prop:value=options /></div>
 
             <br />
 
-            <button onclick={on_add_clicked}>{"Create"}</button>
+            <button on:click=move |_| on_create_label.dispatch((name(), description(), prioity(), options()))>"Create"</button>
+
         </div>
     }
 }
