@@ -1,5 +1,5 @@
 mod adapters;
-mod api_routes;
+mod api;
 mod services;
 
 use adapters::errors::GenericStorageError;
@@ -16,11 +16,6 @@ use yak_man_core::{
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
-    api_routes::{
-        approve_pending_instance_revision, create_config, create_label, create_new_instance,
-        get_configs, get_data_by_labels, get_instance, get_instance_by_id, get_instance_revisions,
-        get_labels, update_instance_current_revision, update_new_instance,
-    },
 };
 
 use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
@@ -39,18 +34,18 @@ impl StateManager {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        api_routes::get_configs,
-        api_routes::get_labels,
-        api_routes::create_label,
-        api_routes::get_data_by_labels,
-        api_routes::get_instance_by_id,
-        api_routes::get_instance,
-        api_routes::create_new_instance,
-        api_routes::create_config,
-        api_routes::update_new_instance,
-        api_routes::get_instance_revisions,
-        api_routes::update_instance_current_revision,
-        api_routes::approve_pending_instance_revision,
+        api::configs::get_configs,
+        api::configs::create_config,
+        api::labels::get_labels,
+        api::labels::create_label,
+        api::instances::get_data_by_labels,
+        api::instances::get_instance_by_id,
+        api::instances::get_instance,
+        api::instances::create_new_instance,
+        api::instances::update_new_instance,
+        api::revisions::get_instance_revisions,
+        api::revisions::update_instance_current_revision,
+        api::revisions::approve_pending_instance_revision,
     ),
     components(
         schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, YakManSettings)
@@ -86,18 +81,22 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(get_configs)
-            .service(get_labels)
-            .service(create_label)
-            .service(get_data_by_labels)
-            .service(get_instance_by_id)
-            .service(get_instance)
-            .service(create_new_instance)
-            .service(create_config)
-            .service(update_new_instance)
-            .service(get_instance_revisions)
-            .service(update_instance_current_revision)
-            .service(approve_pending_instance_revision)
+            // Configs
+            .service(api::configs::get_configs)
+            .service(api::configs::create_config)
+            // Labels
+            .service(api::labels::get_labels)
+            .service(api::labels::create_label)
+            // Revisions
+            .service(api::revisions::get_instance_revisions)
+            .service(api::revisions::update_instance_current_revision)
+            .service(api::revisions::approve_pending_instance_revision)
+            // Other
+            .service(api::instances::get_data_by_labels)
+            .service(api::instances::get_instance_by_id)
+            .service(api::instances::get_instance)
+            .service(api::instances::create_new_instance)
+            .service(api::instances::update_new_instance)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
