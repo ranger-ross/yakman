@@ -1,7 +1,9 @@
-use crate::{services::errors::CreateConfigError, StateManager, YakManError};
+use crate::{
+    api::is_alphanumeric_kebab_case, services::errors::CreateConfigError, StateManager, YakManError,
+};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
-use log::{error, info};
+use log::error;
 
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
@@ -20,9 +22,13 @@ pub async fn get_configs(
 #[utoipa::path(responses((status = 200, body = String)))]
 #[put("/configs/{config_name}")]
 async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) -> HttpResponse {
-    let config_name = path.into_inner();
+    let config_name = path.into_inner().to_lowercase();
+    if !is_alphanumeric_kebab_case(&config_name) {
+        return HttpResponse::BadRequest().body("Invalid config name. Must be alphanumeric kebab case");
+    }
+
     let service = state.get_service();
-    let result = service.create_config(&config_name).await;
+    let result: Result<(), CreateConfigError> = service.create_config(&config_name).await;
 
     return match result {
         Ok(()) => HttpResponse::Ok().body(""),
