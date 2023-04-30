@@ -5,6 +5,14 @@ use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelT
 
 use std::fmt;
 
+pub async fn fetch_oauth_redirect_uri() -> Result<String, RequestError> {
+    return Ok(Request::post("/api/oauth2/init")
+        .send()
+        .await?
+        .text()
+        .await?);
+}
+
 pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
     return Ok(Request::get("/api/configs").send().await?.json().await?);
 }
@@ -33,7 +41,6 @@ pub async fn fetch_instance_metadata(config_name: &str, instance: &str) -> Confi
         .expect("Failed to deserialize instance metadata JSON");
 }
 
-
 pub async fn create_config_instance(
     config_name: &str,
     data: &str,
@@ -59,7 +66,7 @@ pub async fn update_config_instance(
     instance: &str,
     data: &str,
     labels: HashMap<String, String>,
-    content_type: Option<&str>
+    content_type: Option<&str>,
 ) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()

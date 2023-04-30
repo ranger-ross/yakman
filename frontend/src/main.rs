@@ -7,8 +7,11 @@ use components::add_label_page::*;
 use components::apply_config_page::*;
 use components::config_list_page::*;
 use components::revision_history::*;
+use components::login_page::*;
 use leptos::*;
 use leptos_router::*;
+
+use crate::components::LoginPage;
 
 pub fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
@@ -22,6 +25,10 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
         <Router>
             <main>
                 <Routes>
+                    <Route
+                        path="/login"
+                        view=move |cx| view! { cx,  <LoginPage /> }
+                    />
                     <Route
                         path="/"
                         view=move |cx| view! { cx,  <ConfigListPage /> }

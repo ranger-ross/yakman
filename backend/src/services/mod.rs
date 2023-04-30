@@ -10,6 +10,7 @@ use self::errors::{
 
 pub mod errors;
 pub mod file_based_storage_service;
+pub mod oauth_service;
 mod service_utils;
 
 #[async_trait]
