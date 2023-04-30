@@ -56,10 +56,32 @@ async fn get_instances_by_config_name(
     };
 }
 
-/// Get config data by instance ID
-#[utoipa::path(responses((status = 200, body = String)))]
+/// Get config instance by instance ID
+#[utoipa::path(responses((status = 200, body = ConfigInstance)))]
 #[get("/configs/{config_name}/instances/{instance}")]
 async fn get_instance(
+    path: web::Path<(String, String)>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let (config_name, instance) = path.into_inner();
+    let service = state.get_service();
+    return match service.get_config_instance(&config_name, &instance).await {
+        Ok(data) => match data {
+            Some(data) => HttpResponse::Ok().body(
+                serde_json::to_string(&data)
+                    .expect("Failed to serialize Vec<ConfigInstance> to JSON"),
+            ),
+            None => HttpResponse::NotFound().body("Instance not found"),
+        },
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    };
+}
+
+
+/// Get config data by instance ID
+#[utoipa::path(responses((status = 200, body = String)))]
+#[get("/configs/{config_name}/instances/{instance}/data")]
+async fn get_instance_data(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {

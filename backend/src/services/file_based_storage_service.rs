@@ -181,6 +181,20 @@ impl StorageService for FileBasedStorageService {
         return Ok(self.adapter.get_instance_metadata(config_name).await?);
     }
 
+    async fn get_config_instance(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<Option<ConfigInstance>, GenericStorageError> {
+        let instances = self.get_config_instance_metadata(config_name).await?;
+        return match instances {
+            Some(instances) => {
+                Ok(instances.into_iter().find(|inst| inst.instance == instance))
+            },
+            None => Ok(None)
+        };
+    }
+    
     async fn get_config_data(
         &self,
         config_name: &str,

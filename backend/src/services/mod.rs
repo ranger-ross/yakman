@@ -35,6 +35,12 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
+    async fn get_config_instance(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<Option<ConfigInstance>, GenericStorageError>;
+    
     async fn get_config_data(
         &self,
         config_name: &str,

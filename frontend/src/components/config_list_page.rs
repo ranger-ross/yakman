@@ -20,7 +20,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
             match api::fetch_configs().await {
                 Ok(configs) => {
                     for config in configs {
-                        let instances = api::fetch_instance_metadata(&config.name).await;
+                        let instances = api::fetch_config_metadata(&config.name).await;
                         configs_list.push(PageConfig {
                             config: config,
                             instances: instances,
@@ -97,7 +97,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
     let config_name = &instance.config_name;
     let instance_id = &instance.instance;
 
-    let view_link = format!("/api/configs/{config_name}/instances/{instance_id}");
+    let view_link = format!("/api/configs/{config_name}/instances/{instance_id}/data");
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
     let history_link = format!("/history/{config_name}/{instance_id}");
     let approval_link = format!("/apply/{config_name}/{instance_id}");

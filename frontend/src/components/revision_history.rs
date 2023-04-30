@@ -30,7 +30,10 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
                 .await
                 .unwrap_or(vec![]);
 
-            let metadata = api::fetch_instance_metadata(&config_name()).await; // TODO: add a instance query param to avoid over fetching data
+            let metadata = api::fetch_config_metadata(&config_name()).await; // TODO: add a instance query param to avoid over fetching data
+
+            let m = api::fetch_instance_metadata(&config_name(), &instance()).await;
+            log!("{m:?}");
 
             let mut selected_instance: Option<ConfigInstance> = None;
             for inst in metadata {
