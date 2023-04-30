@@ -5,36 +5,6 @@ use crate::{services::errors::CreateConfigInstanceError, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use yak_man_core::model::Label;
 
-/// Get config data by using labels
-#[utoipa::path(responses((status = 200, body = String)))]
-#[get("/configs/{config_name}/instances/data")]
-async fn get_data_by_labels(
-    path: web::Path<String>,
-    query: web::Query<HashMap<String, String>>,
-    state: web::Data<StateManager>,
-) -> HttpResponse {
-    let config_name = path.into_inner();
-    let service = state.get_service();
-
-    let labels: Vec<Label> = extract_labels(query);
-
-    println!("Search for config {config_name} with labels: {:?}", labels);
-
-    return match service
-        .get_config_data_by_labels(&config_name, labels)
-        .await
-    {
-        Ok(data) => {
-            if let Some((data, content_type)) = data {
-                HttpResponse::Ok().content_type(content_type).body(data)
-            } else {
-                HttpResponse::NotFound().body("Config not found")
-            }
-        }
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-    };
-}
-
 /// Get config instances by config_name
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstance>)))]
 #[get("/configs/{config_name}/instances")]
@@ -56,8 +26,8 @@ async fn get_instances_by_config_name(
     };
 }
 
-/// Get config data by instance ID
-#[utoipa::path(responses((status = 200, body = String)))]
+/// Get config instance by instance ID
+#[utoipa::path(responses((status = 200, body = ConfigInstance)))]
 #[get("/configs/{config_name}/instances/{instance}")]
 async fn get_instance(
     path: web::Path<(String, String)>,
@@ -65,10 +35,12 @@ async fn get_instance(
 ) -> HttpResponse {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
-
-    return match service.get_config_data(&config_name, &instance).await {
+    return match service.get_config_instance(&config_name, &instance).await {
         Ok(data) => match data {
-            Some((data, content_type)) => HttpResponse::Ok().content_type(content_type).body(data),
+            Some(data) => HttpResponse::Ok().body(
+                serde_json::to_string(&data)
+                    .expect("Failed to serialize Vec<ConfigInstance> to JSON"),
+            ),
             None => HttpResponse::NotFound().body("Instance not found"),
         },
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),

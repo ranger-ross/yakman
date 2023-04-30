@@ -13,7 +13,7 @@ pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
     return Ok(Request::get("/api/labels").send().await?.json().await?);
 }
 
-pub async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
+pub async fn fetch_config_metadata(config_name: &str) -> Vec<ConfigInstance> {
     return Request::get(&format!("/api/configs/{config_name}/instances"))
         .send()
         .await
@@ -22,6 +22,17 @@ pub async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
         .await
         .expect("Failed to deserialize instance metadata JSON");
 }
+
+pub async fn fetch_instance_metadata(config_name: &str, instance: &str) -> ConfigInstance {
+    return Request::get(&format!("/api/configs/{config_name}/instances/{instance}"))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .expect("Failed to deserialize instance metadata JSON");
+}
+
 
 pub async fn create_config_instance(
     config_name: &str,

@@ -32,7 +32,7 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
                 revsions = data;
             }
 
-            let metadata = api::fetch_instance_metadata(&config_name).await; // TODO: add a instance query param to avoid over fetching data
+            let metadata = api::fetch_config_metadata(&config_name).await; // TODO: add a instance query param to avoid over fetching data
 
             for inst in metadata {
                 if inst.instance == instance {
@@ -64,7 +64,10 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
             {
                 Ok(()) => {
                     let navigate = use_navigate(cx);
-                    let _ = navigate("/", Default::default()); // TODO: Fix warning
+                    let _ = navigate(
+                        &format!("/history/{}/{}", config_name(), instance()),
+                        Default::default(),
+                    ); // TODO: Fix warning
                 }
                 Err(e) => error!("Error while approving config: {}", e.to_string()),
             };

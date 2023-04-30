@@ -2,8 +2,9 @@ mod adapters;
 mod api;
 mod services;
 
+use crate::adapters::local_file_adapter::create_local_file_adapter;
+use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
 use adapters::errors::GenericStorageError;
-
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -11,14 +12,11 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use yak_man_core::{
     load_yak_man_settings,
-    model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManSettings},
+    model::{
+        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+        YakManSettings,
+    },
 };
-
-use crate::{
-    adapters::local_file_adapter::create_local_file_adapter,
-};
-
-use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
 
 #[derive(Clone)]
 pub struct StateManager {
@@ -38,22 +36,24 @@ impl StateManager {
         api::configs::create_config,
         api::labels::get_labels,
         api::labels::create_label,
-        api::instances::get_data_by_labels,
         api::instances::get_instances_by_config_name,
         api::instances::get_instance,
         api::instances::create_new_instance,
         api::instances::update_new_instance,
+        api::data::get_data_by_labels,
+        api::data::get_instance_data,
         api::revisions::get_instance_revisions,
         api::revisions::submit_instance_revision,
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, YakManSettings)
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings)
     ),
     tags(
         (name = "api::configs", description = "Config management endpoints"),
         (name = "api::labels", description = "Label management endpoints"),
         (name = "api::instances", description = "Config Instance management endpoints"),
+        (name = "api::data", description = "Config data fetching endpoints"),
         (name = "api::revisions", description = "Config Instance Revision management endpoints"),
     )
 )]
@@ -91,11 +91,13 @@ async fn main() -> std::io::Result<()> {
             .service(api::labels::get_labels)
             .service(api::labels::create_label)
             // Instances
-            .service(api::instances::get_data_by_labels)
             .service(api::instances::get_instances_by_config_name)
             .service(api::instances::get_instance)
             .service(api::instances::create_new_instance)
             .service(api::instances::update_new_instance)
+            // Data
+            .service(api::data::get_data_by_labels)
+            .service(api::data::get_instance_data)
             // Revisions
             .service(api::revisions::get_instance_revisions)
             .service(api::revisions::submit_instance_revision)

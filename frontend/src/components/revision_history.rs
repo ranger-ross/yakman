@@ -5,13 +5,14 @@ use leptos::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, UNIX_EPOCH};
-use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
+use yak_man_core::model::{ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision};
 
 #[derive(Serialize, Deserialize, Clone)]
 struct PageData {
     revisions: Vec<ConfigInstanceRevision>,
-    current_revision: String,
-    pending_revision: Option<String>,
+    instance: ConfigInstance,
+    // current_revision: String,
+    // pending_revision: Option<String>,
 }
 
 #[component]
@@ -30,28 +31,11 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
                 .await
                 .unwrap_or(vec![]);
 
-            let metadata = api::fetch_instance_metadata(&config_name()).await; // TODO: add a instance query param to avoid over fetching data
-
-            let mut selected_instance: Option<ConfigInstance> = None;
-            for inst in metadata {
-                if inst.instance == instance() {
-                    selected_instance = Some(inst);
-                }
-            }
-
-            let current_revision = &selected_instance
-                .clone()
-                .map(|i| String::from(&i.current_revision.clone()))
-                .unwrap_or(String::new());
-            let pending_revision: Option<String> = selected_instance
-                .clone()
-                .map(|i| i.pending_revision)
-                .unwrap_or(None);
+            let instance_metadata = api::fetch_instance_metadata(&config_name(), &instance()).await;
 
             PageData {
                 revisions: data,
-                current_revision: String::from(current_revision),
-                pending_revision: pending_revision,
+                instance: instance_metadata,
             }
         },
     );
@@ -64,10 +48,24 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
 
     let current_revision = move || {
         data.read(cx)
-            .map(|d| d.current_revision)
+            .map(|d| d.instance.current_revision)
             .unwrap_or(String::from(""))
     };
-    let pending_revision = move || data.read(cx).map(|d| d.pending_revision).unwrap_or(None);
+    let pending_revision = move || {
+        data.read(cx)
+            .map(|d| d.instance.pending_revision)
+            .unwrap_or(None)
+    };
+
+    let changelog = move || {
+        data.read(cx)
+            .map(|d| {
+                let mut changelog = d.instance.changelog;
+                changelog.reverse();
+                changelog
+            })
+            .unwrap_or(vec![])
+    };
 
     let on_select_revision = create_action(cx, move |revision: &String| {
         let revision = revision.clone();
@@ -90,7 +88,7 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
         <div>
             <h1>{format!("History {} -> {}", config_name(), instance())}</h1>
 
-            <h3>{"Data"}</h3>
+            <h3>{"Revisions"}</h3>
 
             <For
                 each=sorted_revisions
@@ -117,6 +115,20 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
                             </p>
                         </div>
                     }
+                }
+            />
+
+            <h3>{"Changelog"}</h3>
+
+            <For
+                each=changelog
+                key=|change| change.timestamp_ms
+                view=move |cx, change: ConfigInstanceChange| view! { cx,
+                    <div style="display: flex; gap: 10px">
+                        <p>{format_date(change.timestamp_ms)}{" =>"}</p>
+                        <p>"Previous: "{change.previous_revision}{" =>"}</p>
+                        <p>"New: "{change.new_revision}</p>
+                    </div>
                 }
             />
 
