@@ -127,7 +127,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -144,7 +145,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
         ];
         let labels = vec![
@@ -204,7 +206,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -221,7 +224,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
             ConfigInstance {
                 config_name: "config1".to_owned(),
@@ -238,7 +242,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
         ];
         let labels = vec![Label {
@@ -291,7 +296,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
             ConfigInstance {
                 config_name: "instance2_config".to_owned(),
@@ -308,7 +314,8 @@ mod tests {
                 ],
                 current_revision: "test".to_string(),
                 revisions: vec![],
-                pending_revision: None
+                pending_revision: None,
+                changelog: vec![]
             },
         ];
 

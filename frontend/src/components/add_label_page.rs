@@ -1,5 +1,6 @@
-use crate::api::create_label;
+use crate::api;
 use leptos::*;
+use leptos_router::use_navigate;
 use yak_man_core::model::LabelType;
 
 #[component]
@@ -9,7 +10,7 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
     let (description, set_description) = create_signal(cx, String::from(""));
     let (options, set_options) = create_signal(cx, String::from(""));
 
-    let on_create_label = create_action(cx, |d: &(String, String, String, String)| {
+    let on_create_label = create_action(cx, move |d: &(String, String, String, String)| {
         let (name, description, prioity, options) = d;
 
         let options = options
@@ -27,8 +28,13 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
         };
 
         async move {
-            log!("from action! {:?}", label);
-            create_label(label).await.unwrap()
+            match api::create_label(label).await {
+                Ok(()) => {
+                    let navigate = use_navigate(cx);
+                    let _ = navigate("/", Default::default()); // TODO: Fix warning
+                },
+                Err(err) => error!("Error creating config: {}", err.to_string()),
+            };
         }
     });
 

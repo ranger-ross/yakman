@@ -1,4 +1,4 @@
-use crate::{services::errors::CreateLabelError, StateManager, YakManError};
+use crate::{services::errors::CreateLabelError, StateManager, YakManError, api::is_alphanumeric_kebab_case};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
 use log::error;
@@ -26,8 +26,14 @@ pub async fn create_label(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_service();
+    let mut label_type = label_type.into_inner();
+    label_type.name = label_type.name.to_lowercase();
 
-    return match service.create_label(label_type.into_inner()).await {
+    if !is_alphanumeric_kebab_case(&label_type.name) {
+        return HttpResponse::BadRequest().body("Invalid label name. Must be alphanumeric kebab case");
+    }
+
+    return match service.create_label(label_type).await {
         Ok(()) => HttpResponse::Ok().body(""),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {
