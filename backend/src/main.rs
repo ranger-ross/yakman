@@ -44,7 +44,7 @@ impl StateManager {
         api::instances::create_new_instance,
         api::instances::update_new_instance,
         api::revisions::get_instance_revisions,
-        api::revisions::update_instance_current_revision,
+        api::revisions::submit_instance_revision,
         api::revisions::approve_pending_instance_revision,
     ),
     components(
@@ -98,7 +98,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::instances::update_new_instance)
             // Revisions
             .service(api::revisions::get_instance_revisions)
-            .service(api::revisions::update_instance_current_revision)
+            .service(api::revisions::submit_instance_revision)
             .service(api::revisions::approve_pending_instance_revision)
     })
     .bind(("127.0.0.1", 8000))?

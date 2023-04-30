@@ -1,10 +1,10 @@
 use crate::StateManager;
 
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse, put};
 
 /// Get all of the revisions for a config
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
-#[get("/config/{config_name}/instance/{instance}/revisions")]
+#[get("/configs/{config_name}/instance/{instance}/revisions")]
 async fn get_instance_revisions(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
@@ -24,8 +24,8 @@ async fn get_instance_revisions(
 
 /// Submit a new revision for review
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/config/{config_name}/instance/{instance}/revision/{revision}/current")] // TODO: This should be renamed to /submit
-async fn update_instance_current_revision(
+#[put("/configs/{config_name}/instance/{instance}/revision/{revision}/submit")]
+async fn submit_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
@@ -43,7 +43,7 @@ async fn update_instance_current_revision(
 
 /// Approves and applies a revision to a config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/config/{config_name}/instance/{instance}/revision/{revision}/approve")]
+#[post("/configs/{config_name}/instance/{instance}/revision/{revision}/approve")]
 async fn approve_pending_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
