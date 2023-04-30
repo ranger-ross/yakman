@@ -1,16 +1,20 @@
 use crate::api;
 use leptos::*;
+use leptos_router::*;
 
 #[component]
 pub fn add_config_page(cx: Scope) -> impl IntoView {
     let (name, set_name) = create_signal(cx, String::from(""));
 
-    let on_create_config = create_action(cx, |name: &String| {
+    let on_create_config = create_action(cx, move |name: &String| {
         let name = name.clone();
 
         async move {
             match api::create_config(&name).await {
-                Ok(()) => log!("TODO: navigate to home"),
+                Ok(()) => {
+                    let navigate = use_navigate(cx);
+                    let _ = navigate("/", Default::default()); // TODO: Fix warning
+                },
                 Err(err) => error!("Error creating config: {}", err.to_string()),
             };
         }

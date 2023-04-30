@@ -65,7 +65,7 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
                 Ok(()) => {
                     let navigate = use_navigate(cx);
                     let _ = navigate("/", Default::default()); // TODO: Fix warning
-                },
+                }
                 Err(e) => error!("Error while approving config: {}", e.to_string()),
             };
         }
@@ -76,21 +76,19 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
             <h1>{"Apply Config "} {config_name} {" -> "} {instance}</h1>
 
             {move || match page_data.read(cx) {
-                Some(data) => {
-                    view! { cx,
-                        {move || match &data.pending_revision {
-                            Some(pending_revision) => view! {cx,
-                                <div>
-                                    <h3> {"Pending Revision"} </h3>
-                                    <p> {pending_revision} </p>
-                                    <p>{"TODO: Show diffs"}</p>
-                                    <button on:click=move |_| on_approve.dispatch(())>{"Approve"}</button>
-                                </div>
-                            }.into_view(cx),
-                            None => view! {cx, "No pending revisions"}.into_view(cx)
-                        }}
-                    }.into_view(cx)
-                },
+                Some(data) => view! { cx,
+                    {move || match &data.pending_revision {
+                        Some(pending_revision) => view! {cx,
+                            <div>
+                                <h3> {"Pending Revision"} </h3>
+                                <p> {pending_revision} </p>
+                                <p>{"TODO: Show diffs"}</p>
+                                <button on:click=move |_| on_approve.dispatch(())>{"Approve"}</button>
+                            </div>
+                        }.into_view(cx),
+                        None => view! {cx, "No pending revisions"}.into_view(cx)
+                    }}
+                }.into_view(cx),
                 None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
             }}
 
