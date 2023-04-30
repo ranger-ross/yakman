@@ -8,7 +8,8 @@ use crate::{
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
 use yak_man_core::model::{Label, LabelType};
 
-#[utoipa::path(responses((status = 200, description = "List of all configs", body = Vec<Config>)))]
+/// List of all configs
+#[utoipa::path(responses((status = 200, body = Vec<Config>)))]
 #[get("/configs")]
 pub async fn get_configs(
     state: web::Data<StateManager>,
@@ -21,7 +22,8 @@ pub async fn get_configs(
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "List of all labels", body = Vec<LabelType>)))]
+/// List of all labels
+#[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
 #[get("/labels")]
 pub async fn get_labels(
     state: web::Data<StateManager>,
@@ -34,7 +36,8 @@ pub async fn get_labels(
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "Create a new label", body = String)))]
+/// Create a new label
+#[utoipa::path(responses((status = 200, body = String)))]
 #[put("/labels")]
 pub async fn create_label(
     label_type: web::Json<LabelType>,
@@ -65,7 +68,8 @@ pub async fn create_label(
 
 // TODO: Standardize REST endpoint naming
 
-#[utoipa::path(responses((status = 200, description = "Get config data by using labels", body = String)))]
+/// Get config data by using labels
+#[utoipa::path(responses((status = 200, body = String)))]
 #[get("/config/{config_name}/instance")]
 async fn get_data_by_labels(
     path: web::Path<String>,
@@ -95,7 +99,8 @@ async fn get_data_by_labels(
 }
 
 // TODO: Rename method to get Config by ID
-#[utoipa::path(responses((status = 200, description = "Get config data by instance ID", body = String)))]
+/// Get config data by instance ID
+#[utoipa::path(responses((status = 200, body = String)))]
 #[get("/instances/{config_name}")]
 async fn get_instance_by_id(
     path: web::Path<String>,
@@ -112,7 +117,8 @@ async fn get_instance_by_id(
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "Get config data by instance ID", body = String)))]
+/// Get config data by instance ID
+#[utoipa::path(responses((status = 200, body = String)))]
 #[get("/config/{config_name}/instance/{instance}")]
 async fn get_instance(
     path: web::Path<(String, String)>,
@@ -130,7 +136,8 @@ async fn get_instance(
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "Create a new config instance", body = String)))]
+/// Create a new config instance
+#[utoipa::path(responses((status = 200, body = String)))]
 #[put("/config/{config_name}/data")] // TODO: Rename to /instance
 async fn create_new_instance(
     path: web::Path<String>,
@@ -163,7 +170,8 @@ async fn create_new_instance(
     }
 }
 
-#[utoipa::path(responses((status = 200, description = "Create a new config", body = String)))]
+/// Create a new config
+#[utoipa::path(responses((status = 200, body = String)))]
 #[put("/config/{config_name}")]
 async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) -> HttpResponse {
     let config_name = path.into_inner();
@@ -184,7 +192,8 @@ async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) 
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "Create a update config instance", body = String)))]
+/// Create a update config instance
+#[utoipa::path(responses((status = 200, body = String)))]
 #[post("/config/{config_name}/instance/{instance}")]
 async fn update_new_instance(
     path: web::Path<(String, String)>,
@@ -213,7 +222,8 @@ async fn update_new_instance(
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "Get the revisions for a config", body = Vec<ConfigInstanceRevision>)))]
+/// Get the revisions for a config
+#[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
 #[get("/config/{config_name}/instance/{instance}/revisions")]
 async fn get_instance_revisions(
     path: web::Path<(String, String)>,
@@ -232,7 +242,8 @@ async fn get_instance_revisions(
     return HttpResponse::NotFound().body("");
 }
 
-#[utoipa::path(responses((status = 200, description = "Submit a new revision for review", body = String)))]
+/// Submit a new revision for review
+#[utoipa::path(responses((status = 200, body = String)))]
 #[post("/config/{config_name}/instance/{instance}/revision/{revision}/current")] // TODO: This should be renamed to /submit
 async fn update_instance_current_revision(
     path: web::Path<(String, String, String)>,
@@ -250,7 +261,8 @@ async fn update_instance_current_revision(
     };
 }
 
-#[utoipa::path(responses((status = 200, description = "Approves and applies a revision to a config instance", body = String)))]
+/// Approves and applies a revision to a config instance
+#[utoipa::path(responses((status = 200, body = String)))]
 #[post("/config/{config_name}/instance/{instance}/revision/{revision}/approve")]
 async fn approve_pending_instance_revision(
     path: web::Path<(String, String, String)>,
