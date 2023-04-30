@@ -1,7 +1,7 @@
 use crate::{services::errors::CreateConfigError, StateManager, YakManError};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
-use log::error;
+use log::{error, info};
 
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
@@ -11,8 +11,15 @@ pub async fn get_configs(
 ) -> actix_web::Result<impl Responder, YakManError> {
     let service = state.get_service();
 
+    
+
     return match service.get_configs().await {
-        Ok(data) => Ok(web::Json(data)),
+        Ok(data) => {
+
+            info!("{data:?}");
+
+            Ok(web::Json(data))
+        },
         Err(err) => Err(YakManError::from(err)),
     };
 }

@@ -86,8 +86,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
-            .wrap(Logger::new("%s %r"))
             .wrap(Etag::default())
+            .wrap(Logger::new("%s %r"))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
