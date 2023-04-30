@@ -7,7 +7,12 @@ use adapters::errors::GenericStorageError;
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
-use yak_man_core::load_yak_man_settings;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+use yak_man_core::{
+    load_yak_man_settings,
+    model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManSettings},
+};
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
@@ -31,6 +36,31 @@ impl StateManager {
     }
 }
 
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        api_routes::get_configs,
+        api_routes::get_labels,
+        api_routes::create_label,
+        api_routes::get_data_by_labels,
+        api_routes::get_instance_by_id,
+        api_routes::get_instance,
+        api_routes::create_new_instance,
+        api_routes::create_config,
+        api_routes::update_new_instance,
+        api_routes::get_instance_revisions,
+        api_routes::update_instance_current_revision,
+        api_routes::approve_pending_instance_revision,
+    ),
+    components(
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, YakManSettings)
+    ),
+    tags(
+        // (name = "todo", description = "Todo management endpoints.")
+    )
+)]
+struct ApiDoc;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let settings = load_yak_man_settings();
@@ -47,10 +77,15 @@ async fn main() -> std::io::Result<()> {
         service: Arc::new(service),
     });
 
+    let openapi = ApiDoc::openapi();
+
     println!("Starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+            )
             .service(get_configs)
             .service(get_labels)
             .service(create_label)
