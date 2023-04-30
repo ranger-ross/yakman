@@ -10,16 +10,8 @@ pub async fn get_configs(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
     let service = state.get_service();
-
-    
-
     return match service.get_configs().await {
-        Ok(data) => {
-
-            info!("{data:?}");
-
-            Ok(web::Json(data))
-        },
+        Ok(data) => Ok(web::Json(data)),
         Err(err) => Err(YakManError::from(err)),
     };
 }
