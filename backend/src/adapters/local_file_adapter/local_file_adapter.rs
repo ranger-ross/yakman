@@ -18,10 +18,8 @@ use super::{
 #[derive(Clone)]
 pub struct LocalFileStorageAdapter {
     pub path: String,
+    pub yakman_dir: Option<String>,
 }
-
-const YAK_MAN_DIR: &str = ".yakman"; // TODO: clean up
-const DATA_DIR: &str = "config-instances"; // TODO: clean up
 
 #[async_trait]
 impl FileBasedStorageAdapter for LocalFileStorageAdapter {
@@ -222,7 +220,9 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
 // Helper functions
 impl LocalFileStorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        return format!("{}/{YAK_MAN_DIR}", self.path.as_str());
+        let default_dir = String::from(".yakman");
+        let yakman_dir = self.yakman_dir.as_ref().unwrap_or(&default_dir);
+        return format!("{}/{yakman_dir}", self.path.as_str());
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -241,7 +241,8 @@ impl LocalFileStorageAdapter {
     }
 
     fn get_config_instance_dir(&self) -> String {
-        return format!("{}/{DATA_DIR}", self.path.as_str());
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/instances");
     }
 
     fn get_config_instance_metadata_dir(&self) -> String {
