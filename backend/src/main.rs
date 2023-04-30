@@ -2,8 +2,9 @@ mod adapters;
 mod api;
 mod services;
 
+use crate::adapters::local_file_adapter::create_local_file_adapter;
+use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
 use adapters::errors::GenericStorageError;
-
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -11,14 +12,11 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use yak_man_core::{
     load_yak_man_settings,
-    model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManSettings},
+    model::{
+        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+        YakManSettings,
+    },
 };
-
-use crate::{
-    adapters::local_file_adapter::create_local_file_adapter,
-};
-
-use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
 
 #[derive(Clone)]
 pub struct StateManager {
@@ -49,7 +47,7 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, YakManSettings)
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings)
     ),
     tags(
         (name = "api::configs", description = "Config management endpoints"),
