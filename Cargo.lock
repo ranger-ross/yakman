@@ -69,6 +69,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-middleware-etag"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fd852a334e1a592c2decb06e3fa4e90d2fbaac5dfe3d94b46b3f911d314d047"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "base64 0.21.0",
+ "futures 0.3.27",
+ "str-buf",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "actix-router"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2672,6 +2686,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "str-buf"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e75b72ee54e2f93c3ea1354066162be893ee5e25773ab743de3e088cecbb4f31"
+
+[[package]]
 name = "stringprep"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3451,6 +3471,7 @@ dependencies = [
 name = "yak-man-backend"
 version = "0.1.0"
 dependencies = [
+ "actix-middleware-etag",
  "actix-web",
  "async-trait",
  "chrono",
