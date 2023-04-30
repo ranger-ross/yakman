@@ -1,6 +1,7 @@
 use crate::{services::errors::CreateLabelError, StateManager, YakManError};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
+use log::error;
 use yak_man_core::model::LabelType;
 
 /// List of all labels
@@ -40,7 +41,7 @@ pub async fn create_label(
                 HttpResponse::BadRequest().body(format!("Invalid prioity: {prioity}"))
             }
             CreateLabelError::StorageError { message } => {
-                println!("Failed to create label, error: {message}");
+                error!("Failed to create label, error: {message}");
                 HttpResponse::InternalServerError().body("Failed to create label")
             }
         },

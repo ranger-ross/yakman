@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::StateManager;
 
 use actix_web::{get, web, HttpResponse};
+use log::info;
 use yak_man_core::model::Label;
 
 /// Get config data by using labels
@@ -18,7 +19,7 @@ async fn get_data_by_labels(
 
     let labels: Vec<Label> = extract_labels(query);
 
-    println!("Search for config {config_name} with labels: {:?}", labels);
+    info!("Search for config {config_name} with labels: {:?}", labels);
 
     return match service
         .get_config_data_by_labels(&config_name, labels)

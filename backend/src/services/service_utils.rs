@@ -1,4 +1,5 @@
 use std::{cmp::Ordering, collections::HashMap};
+use log::{debug, warn};
 use yak_man_core::model::{ConfigInstance, Label, LabelType};
 
 
@@ -38,7 +39,7 @@ pub fn select_instance(
             let label_type = match label_type_map.get(&label.label_type) {
                 Some(l) => l,
                 None => {
-                    println!("Invalid label found {label:?}, ignoring");
+                    warn!("Invalid label found {label:?}, ignoring");
                     continue;
                 }
             };
@@ -78,7 +79,7 @@ pub fn select_instance(
                     .unwrap(); // todo: handle
 
                 if lbl.priority > matched_lbl.priority {
-                    println!("Found better match");
+                    debug!("Found better match");
                     matched_instance = Some(instance);
                     matched_instance_labels = matched_labels;
                     break;

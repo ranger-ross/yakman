@@ -6,6 +6,7 @@ use std::{
 
 use async_trait::async_trait;
 
+use log::{error, info};
 use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
 
 use crate::adapters::local_file_adapter::storage_types::RevisionJson;
@@ -92,14 +93,11 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_instance_revisions_path();
         let path = format!("{dir}/{config_name}/{revision}");
 
-        println!("checking {} ", path);
-
         if let Ok(content) = fs::read_to_string(&path) {
-            println!("got data {} ", content);
             let data: RevisionJson = serde_json::from_str(&content)?;
             return Ok(Some(data.revision));
         } else {
-            println!("Failed to load revision file: {revision}");
+            error!("Failed to load revision file: {revision}");
         }
 
         return Ok(None);
@@ -149,28 +147,28 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
     async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
         let yakman_dir = self.get_yakman_dir();
         if !Path::new(&yakman_dir).is_dir() {
-            println!("Creating {}", yakman_dir);
+            info!("Creating {}", yakman_dir);
             fs::create_dir(&yakman_dir)
                 .expect(&format!("Failed to create base dir: {}", yakman_dir));
         }
 
         let instance_dir = self.get_config_instance_dir();
         if !Path::new(&instance_dir).is_dir() {
-            println!("Creating {}", instance_dir);
+            info!("Creating {}", instance_dir);
             fs::create_dir(&instance_dir)
                 .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
 
         let revision_dir = self.get_instance_revisions_path();
         if !Path::new(&revision_dir).is_dir() {
-            println!("Creating {}", revision_dir);
+            info!("Creating {}", revision_dir);
             fs::create_dir(&revision_dir)
                 .expect(&format!("Failed to create revision dir: {}", instance_dir));
         }
 
         let instance_metadata_dir = self.get_config_instance_metadata_dir();
         if !Path::new(&instance_metadata_dir).is_dir() {
-            println!("Creating {}", instance_metadata_dir);
+            info!("Creating {}", instance_metadata_dir);
             fs::create_dir(&instance_metadata_dir).expect(&format!(
                 "Failed to create instance metadata dir: {}",
                 instance_metadata_dir
