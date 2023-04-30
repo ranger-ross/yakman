@@ -27,6 +27,7 @@ pub async fn create_config_instance(
     config_name: &str,
     data: &str,
     labels: HashMap<String, String>,
+    content_type: Option<&str>,
 ) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()
@@ -35,6 +36,7 @@ pub async fn create_config_instance(
 
     Request::put(&format!("/api/config/{config_name}/data"))
         .query(query_params)
+        .header("content-type", content_type.unwrap_or("text/plain"))
         .body(data)
         .send()
         .await?;
@@ -46,6 +48,7 @@ pub async fn update_config_instance(
     instance: &str,
     data: &str,
     labels: HashMap<String, String>,
+    content_type: Option<&str>
 ) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()
@@ -54,6 +57,7 @@ pub async fn update_config_instance(
 
     Request::post(&format!("/api/config/{config_name}/instance/{instance}"))
         .query(query_params)
+        .header("content-type", content_type.unwrap_or("text/plain"))
         .body(data)
         .send()
         .await?;
