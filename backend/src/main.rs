@@ -1,5 +1,5 @@
 mod adapters;
-mod api_routes;
+mod api;
 mod services;
 
 use adapters::errors::GenericStorageError;
@@ -7,15 +7,15 @@ use adapters::errors::GenericStorageError;
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
-use yak_man_core::load_yak_man_settings;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+use yak_man_core::{
+    load_yak_man_settings,
+    model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManSettings},
+};
 
 use crate::{
     adapters::local_file_adapter::create_local_file_adapter,
-    api_routes::{
-        approve_pending_instance_revision, create_config, create_label, create_new_instance,
-        get_configs, get_data_by_labels, get_instance, get_instance_by_id, get_instance_revisions,
-        get_labels, update_instance_current_revision, update_new_instance,
-    },
 };
 
 use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
@@ -30,6 +30,34 @@ impl StateManager {
         return self.service.as_ref();
     }
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        api::configs::get_configs,
+        api::configs::create_config,
+        api::labels::get_labels,
+        api::labels::create_label,
+        api::instances::get_data_by_labels,
+        api::instances::get_instances_by_config_name,
+        api::instances::get_instance,
+        api::instances::create_new_instance,
+        api::instances::update_new_instance,
+        api::revisions::get_instance_revisions,
+        api::revisions::submit_instance_revision,
+        api::revisions::approve_pending_instance_revision,
+    ),
+    components(
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, YakManSettings)
+    ),
+    tags(
+        (name = "api::configs", description = "Config management endpoints"),
+        (name = "api::labels", description = "Label management endpoints"),
+        (name = "api::instances", description = "Config Instance management endpoints"),
+        (name = "api::revisions", description = "Config Instance Revision management endpoints"),
+    )
+)]
+struct ApiDoc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -47,22 +75,31 @@ async fn main() -> std::io::Result<()> {
         service: Arc::new(service),
     });
 
+    let openapi = ApiDoc::openapi();
+
     println!("Starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
-            .service(get_configs)
-            .service(get_labels)
-            .service(create_label)
-            .service(get_data_by_labels)
-            .service(get_instance_by_id)
-            .service(get_instance)
-            .service(create_new_instance)
-            .service(create_config)
-            .service(update_new_instance)
-            .service(get_instance_revisions)
-            .service(update_instance_current_revision)
-            .service(approve_pending_instance_revision)
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+            )
+            // Configs
+            .service(api::configs::get_configs)
+            .service(api::configs::create_config)
+            // Labels
+            .service(api::labels::get_labels)
+            .service(api::labels::create_label)
+            // Instances
+            .service(api::instances::get_data_by_labels)
+            .service(api::instances::get_instances_by_config_name)
+            .service(api::instances::get_instance)
+            .service(api::instances::create_new_instance)
+            .service(api::instances::update_new_instance)
+            // Revisions
+            .service(api::revisions::get_instance_revisions)
+            .service(api::revisions::submit_instance_revision)
+            .service(api::revisions::approve_pending_instance_revision)
     })
     .bind(("127.0.0.1", 8000))?
     .run()

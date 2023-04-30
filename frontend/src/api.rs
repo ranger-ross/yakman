@@ -14,13 +14,13 @@ pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
 }
 
 pub async fn fetch_instance_metadata(config_name: &str) -> Vec<ConfigInstance> {
-    return Request::get(&format!("/api/instances/{config_name}"))
+    return Request::get(&format!("/api/configs/{config_name}/instances"))
         .send()
         .await
         .unwrap()
         .json()
         .await
-        .unwrap();
+        .expect("Failed to deserialize instance metadata JSON");
 }
 
 pub async fn create_config_instance(
@@ -34,7 +34,7 @@ pub async fn create_config_instance(
         .map(|(key, value)| (&key[..], &value[..]))
         .collect();
 
-    Request::put(&format!("/api/config/{config_name}/data"))
+    Request::put(&format!("/api/configs/{config_name}/instances"))
         .query(query_params)
         .header("content-type", content_type.unwrap_or("text/plain"))
         .body(data)
@@ -55,7 +55,7 @@ pub async fn update_config_instance(
         .map(|(key, value)| (&key[..], &value[..]))
         .collect();
 
-    Request::post(&format!("/api/config/{config_name}/instance/{instance}"))
+    Request::post(&format!("/api/configs/{config_name}/instances/{instance}"))
         .query(query_params)
         .header("content-type", content_type.unwrap_or("text/plain"))
         .body(data)
@@ -65,7 +65,7 @@ pub async fn update_config_instance(
 }
 
 pub async fn create_config(config_name: &str) -> Result<(), RequestError> {
-    Request::put(&format!("/api/config/{config_name}"))
+    Request::put(&format!("/api/configs/{config_name}"))
         .send()
         .await?;
     return Ok(());
@@ -86,7 +86,7 @@ pub async fn fetch_instance_revisions(
     instance: &str,
 ) -> Result<Vec<ConfigInstanceRevision>, RequestError> {
     return Ok(Request::get(&format!(
-        "/api/config/{config_name}/instance/{instance}/revisions"
+        "/api/configs/{config_name}/instances/{instance}/revisions"
     ))
     .send()
     .await?
@@ -99,8 +99,8 @@ pub async fn update_instance_revision(
     instance: &str,
     revision: &str,
 ) -> Result<(), RequestError> {
-    Request::post(&format!(
-        "/api/config/{config_name}/instance/{instance}/revision/{revision}/current"
+    Request::put(&format!(
+        "/api/configs/{config_name}/instances/{instance}/revisions/{revision}/submit"
     ))
     .send()
     .await?;
@@ -114,7 +114,7 @@ pub async fn approve_instance_revision(
     revision: &str,
 ) -> Result<(), RequestError> {
     Request::post(&format!(
-        "/api/config/{config_name}/instance/{instance}/revision/{revision}/approve"
+        "/api/configs/{config_name}/instances/{instance}/revisions/{revision}/approve"
     ))
     .send()
     .await?;
