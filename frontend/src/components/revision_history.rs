@@ -33,8 +33,6 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
 
             let instance_metadata = api::fetch_instance_metadata(&config_name(), &instance()).await;
 
-            log!("{:?}", instance_metadata);
-
             PageData {
                 revisions: data,
                 instance: instance_metadata,
