@@ -5,11 +5,9 @@ use crate::{services::errors::CreateConfigInstanceError, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use yak_man_core::model::Label;
 
-// TODO: Standardize REST endpoint naming
-
 /// Get config data by using labels
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/configs/{config_name}/instance")]
+#[get("/configs/{config_name}/instances/data")]
 async fn get_data_by_labels(
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
@@ -37,11 +35,10 @@ async fn get_data_by_labels(
     };
 }
 
-// TODO: Rename method to get Config by ID
-/// Get config data by instance ID
-#[utoipa::path(responses((status = 200, body = String)))]
-#[get("/instances/{config_name}")]
-async fn get_instance_by_id(
+/// Get config instances by config_name
+#[utoipa::path(responses((status = 200, body = Vec<ConfigInstance>)))]
+#[get("/configs/{config_name}/instances")]
+async fn get_instances_by_config_name(
     path: web::Path<String>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
@@ -49,7 +46,10 @@ async fn get_instance_by_id(
     let service = state.get_service();
     return match service.get_config_instance_metadata(&config_name).await {
         Ok(data) => match data {
-            Some(data) => HttpResponse::Ok().body(serde_json::to_string(&data).unwrap()),
+            Some(data) => HttpResponse::Ok().body(
+                serde_json::to_string(&data)
+                    .expect("Failed to serialize Vec<ConfigInstance> to JSON"),
+            ),
             None => HttpResponse::NotFound().body("Instance not found"),
         },
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
@@ -58,7 +58,7 @@ async fn get_instance_by_id(
 
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/configs/{config_name}/instance/{instance}")]
+#[get("/configs/{config_name}/instances/{instance}")]
 async fn get_instance(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
@@ -77,7 +77,7 @@ async fn get_instance(
 
 /// Create a new config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[put("/configs/{config_name}/data")] // TODO: Rename to /instance
+#[put("/configs/{config_name}/instances")]
 async fn create_new_instance(
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
@@ -111,7 +111,7 @@ async fn create_new_instance(
 
 /// Create a update config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/configs/{config_name}/instance/{instance}")]
+#[post("/configs/{config_name}/instances/{instance}")]
 async fn update_new_instance(
     path: web::Path<(String, String)>,
     query: web::Query<HashMap<String, String>>,
@@ -138,7 +138,6 @@ async fn update_new_instance(
         Err(_) => HttpResponse::InternalServerError().body("failed to create instance"),
     };
 }
-
 
 fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<Label> {
     return query

@@ -39,7 +39,7 @@ impl StateManager {
         api::labels::get_labels,
         api::labels::create_label,
         api::instances::get_data_by_labels,
-        api::instances::get_instance_by_id,
+        api::instances::get_instances_by_config_name,
         api::instances::get_instance,
         api::instances::create_new_instance,
         api::instances::update_new_instance,
@@ -92,7 +92,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::labels::create_label)
             // Instances
             .service(api::instances::get_data_by_labels)
-            .service(api::instances::get_instance_by_id)
+            .service(api::instances::get_instances_by_config_name)
             .service(api::instances::get_instance)
             .service(api::instances::create_new_instance)
             .service(api::instances::update_new_instance)

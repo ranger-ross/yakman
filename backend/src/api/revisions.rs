@@ -4,7 +4,7 @@ use actix_web::{get, post, web, HttpResponse, put};
 
 /// Get all of the revisions for a config
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
-#[get("/configs/{config_name}/instance/{instance}/revisions")]
+#[get("/configs/{config_name}/instances/{instance}/revisions")]
 async fn get_instance_revisions(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
@@ -24,7 +24,7 @@ async fn get_instance_revisions(
 
 /// Submit a new revision for review
 #[utoipa::path(responses((status = 200, body = String)))]
-#[put("/configs/{config_name}/instance/{instance}/revision/{revision}/submit")]
+#[put("/configs/{config_name}/instances/{instance}/revisions/{revision}/submit")]
 async fn submit_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
@@ -43,7 +43,7 @@ async fn submit_instance_revision(
 
 /// Approves and applies a revision to a config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/configs/{config_name}/instance/{instance}/revision/{revision}/approve")]
+#[post("/configs/{config_name}/instances/{instance}/revisions/{revision}/approve")]
 async fn approve_pending_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
