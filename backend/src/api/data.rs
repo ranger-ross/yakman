@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::StateManager;
 
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{get, web, HttpResponse};
 use yak_man_core::model::Label;
 
 /// Get config data by using labels

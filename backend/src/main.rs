@@ -17,6 +17,7 @@ use yak_man_core::{
         YakManSettings,
     },
 };
+use actix_middleware_etag::{Etag};
 
 #[derive(Clone)]
 pub struct StateManager {
@@ -81,6 +82,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .wrap(Etag::default())
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
