@@ -14,6 +14,7 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
     let config_name = move || params.with(|params| params.get("config_name").cloned().unwrap());
 
     let (input, set_input) = create_signal(cx, String::from(""));
+    let (content_type, set_content_type) = create_signal(cx, String::from("text/plain"));
     let (selected_labels, set_selected_labels) =
         create_signal::<HashMap<String, Option<String>>>(cx, HashMap::new());
 
@@ -23,7 +24,7 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
             .filter_map(|(key, v)| v.map(|value| (key, value)))
             .collect();
 
-        match api::create_config_instance(&config_name(), &input(), selected_labels).await {
+        match api::create_config_instance(&config_name(), &input(), selected_labels, Some(&content_type())).await {
             Ok(()) => {
                 let navigate = use_navigate(cx);
                 _ = navigate("/", Default::default()); // TODO: Fix warnings (Question in Discord: https://discordapp.com/channels/1031524867910148188/1049869221636620300/1101740642478084156)
@@ -75,6 +76,10 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
 
             <br />
 
+            {"Content Type "} <input on:input=move |ev| set_content_type(event_target_value(&ev)) prop:value=content_type />
+
+            <br />
+
             <button on:click=move |_| on_create.dispatch(())>{"Add"}</button>
         </div>
     }
@@ -89,6 +94,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
     let instance = move || params.with(|params| params.get("instance").cloned().unwrap());
 
     let (input, set_input) = create_signal(cx, String::from(""));
+    let (content_type, set_content_type) = create_signal(cx, String::from("text/plain"));
     let (selected_labels, set_selected_labels) =
         create_signal::<HashMap<String, Option<String>>>(cx, HashMap::new());
 
@@ -98,7 +104,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
             .filter_map(|(key, v)| v.map(|value| (key, value)))
             .collect();
 
-        match api::update_config_instance(&config_name(), &instance(), &input(), selected_labels)
+        match api::update_config_instance(&config_name(), &instance(), &input(), selected_labels, Some(&content_type()))
             .await
         {
             Ok(()) => {
@@ -149,6 +155,10 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
                 selected_labels={selected_labels.into()}
                 set_selected_labels={set_selected_labels}
              />
+
+            <br />
+
+            {"Content Type "} <input on:input=move |ev| set_content_type(event_target_value(&ev)) prop:value=content_type />
 
             <br />
 
