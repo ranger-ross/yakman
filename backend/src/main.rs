@@ -51,7 +51,10 @@ impl StateManager {
         schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, YakManSettings)
     ),
     tags(
-        // (name = "todo", description = "Todo management endpoints.")
+        (name = "api::configs", description = "Config management endpoints"),
+        (name = "api::labels", description = "Label management endpoints"),
+        (name = "api::instances", description = "Config Instance management endpoints"),
+        (name = "api::revisions", description = "Config Instance Revision management endpoints"),
     )
 )]
 struct ApiDoc;
@@ -87,16 +90,16 @@ async fn main() -> std::io::Result<()> {
             // Labels
             .service(api::labels::get_labels)
             .service(api::labels::create_label)
-            // Revisions
-            .service(api::revisions::get_instance_revisions)
-            .service(api::revisions::update_instance_current_revision)
-            .service(api::revisions::approve_pending_instance_revision)
-            // Other
+            // Instances
             .service(api::instances::get_data_by_labels)
             .service(api::instances::get_instance_by_id)
             .service(api::instances::get_instance)
             .service(api::instances::create_new_instance)
             .service(api::instances::update_new_instance)
+            // Revisions
+            .service(api::revisions::get_instance_revisions)
+            .service(api::revisions::update_instance_current_revision)
+            .service(api::revisions::approve_pending_instance_revision)
     })
     .bind(("127.0.0.1", 8000))?
     .run()

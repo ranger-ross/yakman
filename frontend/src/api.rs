@@ -65,7 +65,7 @@ pub async fn update_config_instance(
 }
 
 pub async fn create_config(config_name: &str) -> Result<(), RequestError> {
-    Request::put(&format!("/api/config/{config_name}"))
+    Request::put(&format!("/api/configs/{config_name}"))
         .send()
         .await?;
     return Ok(());

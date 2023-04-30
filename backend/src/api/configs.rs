@@ -1,12 +1,6 @@
-use std::collections::HashMap;
+use crate::{services::errors::CreateConfigError, StateManager, YakManError};
 
-use crate::{
-    services::errors::{CreateConfigError, CreateConfigInstanceError, CreateLabelError},
-    StateManager, YakManError,
-};
-
-use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
-use yak_man_core::model::{Label, LabelType};
+use actix_web::{get, put, web, HttpResponse, Responder};
 
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
@@ -24,7 +18,7 @@ pub async fn get_configs(
 
 /// Create a new config
 #[utoipa::path(responses((status = 200, body = String)))]
-#[put("/config/{config_name}")]
+#[put("/configs/{config_name}")]
 async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) -> HttpResponse {
     let config_name = path.into_inner();
     let service = state.get_service();
