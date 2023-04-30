@@ -26,7 +26,8 @@ pub async fn create_label(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_service();
-    let label_type = label_type.into_inner();
+    let mut label_type = label_type.into_inner();
+    label_type.name = label_type.name.to_lowercase();
 
     if !is_alphanumeric_kebab_case(&label_type.name) {
         return HttpResponse::BadRequest().body("Invalid label name. Must be alphanumeric kebab case");
