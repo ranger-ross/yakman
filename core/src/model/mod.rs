@@ -30,6 +30,14 @@ pub struct ConfigInstance {
     pub current_revision: String,
     pub pending_revision: Option<String>,
     pub revisions: Vec<String>,
+    pub changelog: Vec<ConfigInstanceChange>
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct ConfigInstanceChange {
+    pub timestamp_ms: i64,
+    pub previous_revision: Option<String>,
+    pub new_revision: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

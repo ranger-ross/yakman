@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use chrono::Utc;
 use uuid::Uuid;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+};
 
 use crate::{
     adapters::{errors::GenericStorageError, FileBasedStorageAdapter},
@@ -79,6 +81,7 @@ impl StorageService for FileBasedStorageService {
             let instance = Uuid::new_v4().to_string();
             let revision_key = Uuid::new_v4().to_string();
             let data_key = Uuid::new_v4().to_string();
+            let now = Utc::now().timestamp_millis();
 
             // Create new file with data
             self.adapter
@@ -90,7 +93,7 @@ impl StorageService for FileBasedStorageService {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
                 labels: labels,
-                timestamp_ms: Utc::now().timestamp_millis(),
+                timestamp_ms: now,
                 approved: false,
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
@@ -101,9 +104,14 @@ impl StorageService for FileBasedStorageService {
                 config_name: config_name.to_string(),
                 instance: instance,
                 labels: revision.labels,
-                current_revision: String::from(&revision.revision),
+                current_revision: revision.revision.clone(),
                 pending_revision: None,
-                revisions: vec![revision.revision],
+                revisions: vec![revision.revision.clone()],
+                changelog: vec![ConfigInstanceChange {
+                    timestamp_ms: now,
+                    previous_revision: None,
+                    new_revision: revision.revision,
+                }],
             });
             self.adapter
                 .save_instance_metadata(config_name, instances)
@@ -365,6 +373,12 @@ impl StorageService for FileBasedStorageService {
             .save_revision(config_name, &revision_data)
             .await?;
 
+        let now = Utc::now().timestamp_millis();
+        instance.changelog.push(ConfigInstanceChange {
+            timestamp_ms: now,
+            previous_revision: Some(instance.current_revision.clone()),
+            new_revision: String::from(revision),
+        });
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
         instance.labels = revision_data.labels;
