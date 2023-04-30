@@ -3,8 +3,12 @@ mod api;
 mod services;
 
 use crate::adapters::local_file_adapter::create_local_file_adapter;
-use actix_web::{http::header::ContentType, web, App, HttpResponse, HttpServer};
+use actix_middleware_etag::Etag;
+use actix_web::{
+    http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
+};
 use adapters::errors::GenericStorageError;
+use log::info;
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -17,7 +21,6 @@ use yak_man_core::{
         YakManSettings,
     },
 };
-use actix_middleware_etag::{Etag};
 
 #[derive(Clone)]
 pub struct StateManager {
@@ -62,8 +65,10 @@ struct ApiDoc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init();
+
     let settings = load_yak_man_settings();
-    println!("Settings: {:?}", settings);
+    info!("Settings {settings:?}");
 
     let service = create_service();
 
@@ -78,11 +83,11 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
-    println!("Starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
             .wrap(Etag::default())
+            .wrap(Logger::new("%s %r"))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

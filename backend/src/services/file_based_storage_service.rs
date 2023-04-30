@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use chrono::Utc;
+use log::info;
 use uuid::Uuid;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
@@ -116,7 +117,7 @@ impl StorageService for FileBasedStorageService {
             self.adapter
                 .save_instance_metadata(config_name, instances)
                 .await?;
-            println!("Update instance metadata for config: {}", config_name);
+            info!("Update instance metadata for config: {}", config_name);
 
             return Ok(());
         }
@@ -201,9 +202,9 @@ impl StorageService for FileBasedStorageService {
         instance: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError> {
         if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
-            println!("Found {} instances", instances.len());
+            info!("Found {} instances", instances.len());
 
-            println!("Search for instance ID {}", instance);
+            info!("Search for instance ID {}", instance);
             let selected_instance = instances.iter().find(|i| i.instance == instance);
 
             if let Some(instance) = selected_instance {
@@ -211,7 +212,7 @@ impl StorageService for FileBasedStorageService {
                     .get_data_by_revision(config_name, &instance.current_revision)
                     .await;
             }
-            println!("No selected instance found");
+            info!("No selected instance found");
             return Ok(None);
         }
         return Ok(None);
@@ -223,7 +224,7 @@ impl StorageService for FileBasedStorageService {
         labels: Vec<Label>,
     ) -> Result<Option<(String, String)>, GenericStorageError> {
         if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
-            println!("Found {} instances", instances.len());
+            info!("Found {} instances", instances.len());
             let label_types = self.get_labels().await?;
             let selected_instance = select_instance(instances, labels, label_types);
 
@@ -232,7 +233,7 @@ impl StorageService for FileBasedStorageService {
                     .get_data_by_revision(config_name, &instance.current_revision)
                     .await;
             }
-            println!("No selected instance found");
+            info!("No selected instance found");
             return Ok(None);
         }
         return Ok(None);
@@ -272,7 +273,7 @@ impl StorageService for FileBasedStorageService {
                 self.adapter
                     .save_instance_metadata(config_name, instances)
                     .await?;
-                println!("Updated instance metadata for config: {config_name}");
+                info!("Updated instance metadata for config: {config_name}");
                 return Ok(());
             } // TODO: Throw a new custom for failed to update config metadata
         }
@@ -295,7 +296,7 @@ impl StorageService for FileBasedStorageService {
             None => return Ok(None),
         };
 
-        println!("found {} revisions", instance.revisions.len());
+        info!("found {} revisions", instance.revisions.len());
 
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
@@ -320,7 +321,7 @@ impl StorageService for FileBasedStorageService {
                 revision_data.content_type,
             )));
         }
-        println!("Fetching revision not found");
+        info!("Fetching revision not found");
         return Ok(None);
     }
 
@@ -409,7 +410,7 @@ impl StorageService for FileBasedStorageService {
     }
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError> {
-        println!("initializing local storage adapter");
+        info!("initializing local storage adapter");
 
         self.adapter.create_yakman_required_files().await?;
 

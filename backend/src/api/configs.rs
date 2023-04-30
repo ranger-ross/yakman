@@ -1,6 +1,7 @@
 use crate::{services::errors::CreateConfigError, StateManager, YakManError};
 
 use actix_web::{get, put, web, HttpResponse, Responder};
+use log::{error, info};
 
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
@@ -9,7 +10,6 @@ pub async fn get_configs(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
     let service = state.get_service();
-
     return match service.get_configs().await {
         Ok(data) => Ok(web::Json(data)),
         Err(err) => Err(YakManError::from(err)),
@@ -28,7 +28,7 @@ async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) 
         Ok(()) => HttpResponse::Ok().body(""),
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
-                println!("Failed to create config {config_name}, error: {message}");
+                error!("Failed to create config {config_name}, error: {message}");
                 HttpResponse::InternalServerError().body("Failed to create config")
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
