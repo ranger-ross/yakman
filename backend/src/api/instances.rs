@@ -9,7 +9,7 @@ use yak_man_core::model::Label;
 
 /// Get config data by using labels
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/config/{config_name}/instance")]
+#[get("/configs/{config_name}/instance")]
 async fn get_data_by_labels(
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
@@ -58,7 +58,7 @@ async fn get_instance_by_id(
 
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/config/{config_name}/instance/{instance}")]
+#[get("/configs/{config_name}/instance/{instance}")]
 async fn get_instance(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
@@ -77,7 +77,7 @@ async fn get_instance(
 
 /// Create a new config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[put("/config/{config_name}/data")] // TODO: Rename to /instance
+#[put("/configs/{config_name}/data")] // TODO: Rename to /instance
 async fn create_new_instance(
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
@@ -111,7 +111,7 @@ async fn create_new_instance(
 
 /// Create a update config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/config/{config_name}/instance/{instance}")]
+#[post("/configs/{config_name}/instance/{instance}")]
 async fn update_new_instance(
     path: web::Path<(String, String)>,
     query: web::Query<HashMap<String, String>>,

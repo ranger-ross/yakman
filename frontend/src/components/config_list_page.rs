@@ -97,7 +97,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
     let config_name = &instance.config_name;
     let instance_id = &instance.instance;
 
-    let view_link = format!("/api/config/{config_name}/instance/{instance_id}");
+    let view_link = format!("/api/configs/{config_name}/instance/{instance_id}");
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
     let history_link = format!("/history/{config_name}/{instance_id}");
     let approval_link = format!("/apply/{config_name}/{instance_id}");

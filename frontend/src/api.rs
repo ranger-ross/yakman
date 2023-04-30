@@ -34,7 +34,7 @@ pub async fn create_config_instance(
         .map(|(key, value)| (&key[..], &value[..]))
         .collect();
 
-    Request::put(&format!("/api/config/{config_name}/data"))
+    Request::put(&format!("/api/configs/{config_name}/data"))
         .query(query_params)
         .header("content-type", content_type.unwrap_or("text/plain"))
         .body(data)
@@ -55,7 +55,7 @@ pub async fn update_config_instance(
         .map(|(key, value)| (&key[..], &value[..]))
         .collect();
 
-    Request::post(&format!("/api/config/{config_name}/instance/{instance}"))
+    Request::post(&format!("/api/configs/{config_name}/instance/{instance}"))
         .query(query_params)
         .header("content-type", content_type.unwrap_or("text/plain"))
         .body(data)
