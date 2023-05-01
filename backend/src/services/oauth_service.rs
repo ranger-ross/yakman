@@ -1,45 +1,56 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::env;
+use std::sync::Arc;
 
 use log::info;
 use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl, Scope, TokenUrl,
+    AuthUrl, ClientId, ClientSecret, CsrfToken, IntrospectionUrl, PkceCodeChallenge, RedirectUrl,
+    Scope, TokenResponse, TokenUrl,
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
 
-pub struct OauthService;
+use super::StorageService;
+
+pub struct OauthService {
+    pub storage: Arc<dyn StorageService>,
+    client: BasicClient,
+}
 
 impl OauthService {
-    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> String {
-        info!("init oauth");
-        let auth_url = get_auth_url();
-        let token_url = get_token_url();
-
-        // Create an OAuth2 client by specifying the client ID, client secret, authorization URL and
-        // token URL.
+    pub fn new(storage: Arc<dyn StorageService>) -> OauthService {
         let client = BasicClient::new(
             get_client_id(),
             Some(get_client_secret()),
-            auth_url,
-            Some(token_url),
+            get_auth_url(),
+            Some(get_token_url()),
         )
         // Set the URL the user will be redirected to after the authorization process.
-        .set_redirect_uri(get_redirect_url());
+        .set_redirect_uri(get_redirect_url())
+        .set_introspection_uri(
+            IntrospectionUrl::new("https://www.googleapis.com/oauth2/v3/tokeninfo".to_string())
+                .unwrap(),
+        );
 
-        // Generate the full authorization URL.
-        let (auth_url, csrf_token) = client
+        return OauthService {
+            storage: storage,
+            client: client,
+        };
+    }
+
+    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> String {
+        let (auth_url, csrf_token) = self
+            .client
             .authorize_url(CsrfToken::new_random)
             // Set the desired scopes.
             .add_scope(Scope::new("email".to_string()))
+            .add_scope(Scope::new("profile".to_string()))
+            .add_scope(Scope::new("openid".to_string()))
             // Set the PKCE code challenge.
             .set_pkce_challenge(challenge)
             .url();
-
-        // This is the URL you should redirect the user to, in order to trigger the authorization
-        // process.
-        println!("Browse to: {}", auth_url);
 
         return String::from(auth_url.as_str());
     }
@@ -53,35 +64,39 @@ impl OauthService {
 
         info!("Using secret = {:?}", pkce_verifier.secret());
 
-        let auth_url = get_auth_url();
-        let token_url = get_token_url();
-
-        // Create an OAuth2 client by specifying the client ID, client secret, authorization URL and
-        // token URL.
-        let client = BasicClient::new(
-            get_client_id(),
-            Some(get_client_secret()),
-            auth_url,
-            Some(token_url),
-        );
-
-        let redirect_url: RedirectUrl = get_redirect_url();
-
-        let x = Cow::Owned(redirect_url);
-
-        // Now you can trade it for an access token.
-        return client
+        let data = self
+            .client
             .exchange_code(AuthorizationCode::new(code))
             // Set the PKCE code verifier.
             .set_pkce_verifier(pkce_verifier)
-            .set_redirect_uri(x)
+            .set_redirect_uri(Cow::Owned(get_redirect_url()))
             .request_async(async_http_client)
             .await
             .unwrap();
+
+        let token: String = data.access_token().secret().clone();
+        let username = get_username(&token).await.unwrap();
+
+        if let None = self.storage.get_user(&username).await.unwrap() {
+            panic!("user not registered")
+        }
+
+        return data;
     }
 }
 
-// TODO: make these properties during start up
+async fn get_username(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let url = format!("https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access_token}");
+
+    let resp = reqwest::get(url)
+        .await?
+        .json::<HashMap<String, String>>()
+        .await?;
+
+    let username = resp.get("email").unwrap().to_owned();
+    Ok(username)
+}
+
 fn get_auth_url() -> AuthUrl {
     AuthUrl::new(env::var("YAKMAN_OAUTH_AUTH_URL").expect("$YAKMAN_OAUTH_AUTH_URL is not set"))
         .expect("YAKMAN_OAUTH_AUTH_URL is not a valid URL")

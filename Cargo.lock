@@ -3586,6 +3586,7 @@ dependencies = [
  "log",
  "oauth2",
  "redis",
+ "reqwest",
  "serde",
  "serde_json",
  "sqlx",

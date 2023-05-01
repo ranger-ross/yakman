@@ -24,3 +24,4 @@ log = "0.4"
 env_logger = "0.10.0"
 oauth2 = "4.3.0"
 dotenv = "0.15.0"
+reqwest = { version = "0.11", features = ["json"] }

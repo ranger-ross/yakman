@@ -87,10 +87,12 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to initialize storage");
 
-    let oauth_service = OauthService {};
+    let arc = Arc::new(service);
+
+    let oauth_service = OauthService::new(arc.clone());
 
     let state = web::Data::new(StateManager {
-        service: Arc::new(service),
+        service: arc,
         oauth_service: Arc::new(oauth_service),
     });
 
