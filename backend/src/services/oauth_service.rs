@@ -81,6 +81,7 @@ impl OauthService {
     }
 }
 
+// TODO: make these properties during start up
 fn get_auth_url() -> AuthUrl {
     AuthUrl::new(env::var("YAKMAN_OAUTH_AUTH_URL").expect("$YAKMAN_OAUTH_AUTH_URL is not set"))
         .expect("YAKMAN_OAUTH_AUTH_URL is not a valid URL")

@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::StateManager;
 use actix_web::{
     cookie::{time::Duration, Cookie},
@@ -7,13 +5,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse,
 };
-use log::info;
-use oauth2::{
-    basic::{BasicClient, BasicTokenType},
-    reqwest::async_http_client,
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, EmptyExtraTokenFields, PkceCodeVerifier,
-    RedirectUrl, StandardTokenResponse, TokenResponse, TokenUrl,
-};
+use oauth2::TokenResponse;
 use yak_man_core::model::{OAuthExchangePayload, OAuthInitPayload};
 
 /// Begins the oauth login flow
@@ -37,11 +29,12 @@ pub async fn oauth_exchange(
 ) -> HttpResponse {
     let service = state.get_oauth_service();
 
-    let token_result = service.exchange_oauth_code(
-        String::from(payload.code.to_string()),
-        String::from(payload.verifier.secret()),
-    )
-    .await;
+    let token_result = service
+        .exchange_oauth_code(
+            String::from(payload.code.to_string()),
+            String::from(payload.verifier.secret()),
+        )
+        .await;
 
     println!("{:?}", token_result);
 
@@ -56,4 +49,3 @@ pub async fn oauth_exchange(
         // .cookie(Cookie::build("refresh_token", token_result.refresh_token()).finish()) // TODO: Handle refresh token
         .body("")
 }
-

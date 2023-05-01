@@ -68,3 +68,17 @@ pub struct OAuthExchangePayload {
     pub code: String,
     pub verifier: PkceCodeVerifier,
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub enum YakManRole {
+    Admin,
+    Approver,
+    Operator,
+    Viewer,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct YakManUser {
+    pub email: String,
+    pub role: YakManRole,
+}

@@ -4,6 +4,7 @@ use log::info;
 use uuid::Uuid;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+    YakManUser,
 };
 
 use crate::{
@@ -189,13 +190,11 @@ impl StorageService for FileBasedStorageService {
     ) -> Result<Option<ConfigInstance>, GenericStorageError> {
         let instances = self.get_config_instance_metadata(config_name).await?;
         return match instances {
-            Some(instances) => {
-                Ok(instances.into_iter().find(|inst| inst.instance == instance))
-            },
-            None => Ok(None)
+            Some(instances) => Ok(instances.into_iter().find(|inst| inst.instance == instance)),
+            None => Ok(None),
         };
     }
-    
+
     async fn get_config_data(
         &self,
         config_name: &str,
@@ -415,5 +414,17 @@ impl StorageService for FileBasedStorageService {
         self.adapter.create_yakman_required_files().await?;
 
         Ok(())
+    }
+
+    async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
+        return self.adapter.get_users().await;
+    }
+
+    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        return self.adapter.get_user(id).await;
+    }
+
+    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
+        return self.adapter.save_users(users).await;
     }
 }

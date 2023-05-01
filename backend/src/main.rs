@@ -13,12 +13,6 @@ use actix_web::{
 use adapters::errors::GenericStorageError;
 use dotenv::dotenv;
 use log::info;
-use oauth2::basic::BasicClient;
-use oauth2::reqwest::http_client;
-use oauth2::{
-    reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
-    PkceCodeChallenge, RedirectUrl, Scope, TokenResponse, TokenUrl,
-};
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -112,6 +106,9 @@ async fn main() -> std::io::Result<()> {
             )
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)
+            // Admin
+            .service(api::admin::get_yakman_users)
+            .service(api::admin::create_yakman_user)
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)
