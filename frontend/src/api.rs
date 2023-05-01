@@ -1,12 +1,42 @@
 use std::{collections::HashMap, error::Error};
 
 use gloo_net::http::Request;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
+use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, OAuthExchangePayload,
+    OAuthInitPayload,
+};
 
 use std::fmt;
 
-pub async fn fetch_oauth_redirect_uri() -> Result<String, RequestError> {
+pub async fn fetch_oauth_redirect_uri(
+    challenge: PkceCodeChallenge,
+) -> Result<String, RequestError> {
+    let body = serde_json::to_string(&OAuthInitPayload {
+        challenge: challenge,
+    })?;
     return Ok(Request::post("/api/oauth2/init")
+        .body(body)
+        .header("content-type", "application/json")
+        .send()
+        .await?
+        .text()
+        .await?);
+}
+
+pub async fn exchange_oauth_code(
+    code: &str,
+    state: &str,
+    verifier: PkceCodeVerifier,
+) -> Result<String, RequestError> {
+    let body = serde_json::to_string(&OAuthExchangePayload {
+        code: String::from(code),
+        state: String::from(state),
+        verifier: verifier,
+    })?;
+    return Ok(Request::post("/api/oauth2/exchange")
+        .body(body)
+        .header("content-type", "application/json")
         .send()
         .await?
         .text()

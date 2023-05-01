@@ -1,6 +1,16 @@
+use std::collections::HashMap;
+
+use gloo_storage::LocalStorage;
+use gloo_storage::Storage;
 use leptos::*;
+use leptos_router::use_navigate;
+use leptos_router::{use_params_map, use_query_map};
+use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
+use serde::Serialize;
 
 use crate::api;
+
+const LOCAL_STORAGE_OAUTH2_VERIFER_KEY: &str = "oauth2-verifier";
 
 #[component]
 pub fn login_page(cx: Scope) -> impl IntoView {
@@ -8,7 +18,14 @@ pub fn login_page(cx: Scope) -> impl IntoView {
         cx,
         move || (),
         |()| async move {
-            let uri = api::fetch_oauth_redirect_uri().await;
+            let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
+            let verifier = serde_json::to_string(&pkce_verifier).unwrap();
+
+            LocalStorage::raw()
+                .set(LOCAL_STORAGE_OAUTH2_VERIFER_KEY, &verifier)
+                .unwrap();
+
+            let uri = api::fetch_oauth_redirect_uri(pkce_challenge).await;
             uri.expect("failed to get oauth redirect uri")
         },
     );
@@ -20,6 +37,50 @@ pub fn login_page(cx: Scope) -> impl IntoView {
             <h1>{"Login"}</h1>
 
             <a href=redirect_uri>"Click to login"</a>
+
+        </div>
+    }
+}
+
+#[component]
+pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
+    let query = use_query_map(cx);
+
+    let state = move || query.with(|params| params.get("state").cloned().unwrap());
+    let code = move || query.with(|params| params.get("code").cloned().unwrap());
+    let scope = move || query.with(|params| params.get("scope").cloned().unwrap());
+    let authuser = move || query.with(|params| params.get("authuser").cloned().unwrap());
+    let prompt = move || query.with(|params| params.get("prompt").cloned().unwrap());
+
+    create_resource(
+        cx,
+        move || (),
+        move |()| async move {
+            let verifier = LocalStorage::raw()
+                .get(LOCAL_STORAGE_OAUTH2_VERIFER_KEY)
+                .unwrap()
+                .map(|s| serde_json::from_str::<PkceCodeVerifier>(&s))
+                .unwrap()
+                .unwrap();
+
+            api::exchange_oauth_code(&code(), &state(), verifier)
+                .await
+                .unwrap();
+
+            let navigate = use_navigate(cx);
+            navigate("/", Default::default()).unwrap();
+        },
+    );
+
+    view! { cx,
+        <div>
+            <h1>{"Callback page (loading....)"}</h1>
+
+            {state} <br />
+            {code} <br />
+            {scope} <br />
+            {authuser} <br />
+            {prompt} <br />
 
         </div>
     }

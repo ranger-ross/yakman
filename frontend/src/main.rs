@@ -2,12 +2,12 @@ mod api;
 mod components;
 
 use components::add_config_page::*;
-use components::modify_config_instance::*;
 use components::add_label_page::*;
 use components::apply_config_page::*;
 use components::config_list_page::*;
-use components::revision_history::*;
 use components::login_page::*;
+use components::modify_config_instance::*;
+use components::revision_history::*;
 use leptos::*;
 use leptos_router::*;
 
@@ -29,6 +29,11 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
                         path="/login"
                         view=move |cx| view! { cx,  <LoginPage /> }
                     />
+                    <Route
+                        path="/oauth-callback"
+                        view=move |cx| view! { cx,  <OauthCallbackPage /> }
+                    />
+
                     <Route
                         path="/"
                         view=move |cx| view! { cx,  <ConfigListPage /> }
