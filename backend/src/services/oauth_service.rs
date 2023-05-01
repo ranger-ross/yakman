@@ -83,6 +83,10 @@ impl OauthService {
 
         return data;
     }
+
+    pub async fn get_username(&self, access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
+        return get_google_email(access_token).await; // TODO: Support other providers in the future
+    }
 }
 
 async fn get_google_email(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {

@@ -8,8 +8,10 @@ use crate::adapters::local_file_adapter::create_local_file_adapter;
 use crate::services::oauth_service::OauthService;
 use actix_middleware_etag::Etag;
 use actix_web::{
-    http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
+    dev::ServiceRequest, http::header::ContentType, middleware::Logger, web, App, Error,
+    HttpResponse, HttpServer,
 };
+use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
 use dotenv::dotenv;
 use log::info;
@@ -22,7 +24,7 @@ use yak_man_core::{
     load_yak_man_settings,
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManSettings,
+        YakManRole, YakManSettings,
     },
 };
 
@@ -71,6 +73,31 @@ impl StateManager {
 )]
 struct ApiDoc;
 
+// You can use custom type instead of String
+async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
+    let state = req.app_data::<web::Data<StateManager>>().unwrap();
+    let cookie_name = "access_token";
+    let cookies = req.cookies().unwrap();
+    let token = cookies.iter().find(|c| c.name() == cookie_name);
+
+    if token.is_none() {
+        return Ok(vec![]);
+    }
+
+    let username = state.get_oauth_service().get_username(token.unwrap().value()).await.unwrap();
+
+    info!("user: {}", username);
+
+    let user = state
+        .get_service()
+        .get_user(&username)
+        .await
+        .unwrap()
+        .unwrap();
+
+    Ok(vec![user.role])
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -103,6 +130,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(state.clone())
             .wrap(Etag::default())
             .wrap(Logger::new("%s %r"))
+            .wrap(GrantsMiddleware::with_extractor(extract))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

@@ -69,7 +69,7 @@ pub struct OAuthExchangePayload {
     pub verifier: PkceCodeVerifier,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]
 pub enum YakManRole {
     Admin,
     Approver,

@@ -20,6 +20,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-grants-proc-macro"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48df3c1e0019e6f46bf3277e9b339688f476ccd9f5d5161419fdd305648fcac2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "actix-http"
 version = "3.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -195,6 +206,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "actix-web-grants"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef8ecad01ac8f2e4d0355a825e141c2077bba4d4e7bf740da34810a4aa872aea"
+dependencies = [
+ "actix-grants-proc-macro",
+ "actix-web",
 ]
 
 [[package]]
@@ -3578,6 +3599,7 @@ version = "0.1.0"
 dependencies = [
  "actix-middleware-etag",
  "actix-web",
+ "actix-web-grants",
  "async-trait",
  "chrono",
  "derive_more",

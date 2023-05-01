@@ -9,12 +9,14 @@ use actix_web::{
     web::{self, Json},
     HttpResponse,
 };
+use actix_web_grants::proc_macro::{has_permissions, has_any_role};
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::YakManUser;
+use yak_man_core::model::{YakManUser, YakManRole};
 
 /// Gets users
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
 #[get("/admin/v1/users")]
+#[has_any_role("YakManRole::Admin", type = "YakManRole")]
 pub async fn get_yakman_users(state: web::Data<StateManager>) -> HttpResponse {
     let users = get_users();
     HttpResponse::Ok().body(serde_json::to_string(&users).unwrap())
@@ -23,6 +25,7 @@ pub async fn get_yakman_users(state: web::Data<StateManager>) -> HttpResponse {
 /// Create YakMan user
 #[utoipa::path(responses((status = 200, body = String)))]
 #[put("/admin/v1/users")]
+#[has_any_role("YakManRole::Admin", type = "YakManRole")]
 pub async fn create_yakman_user(
     user: Json<YakManUser>,
     state: web::Data<StateManager>,
