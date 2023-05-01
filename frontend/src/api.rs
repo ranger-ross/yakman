@@ -4,10 +4,34 @@ use gloo_net::http::Request;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, OAuthExchangePayload,
-    OAuthInitPayload,
+    OAuthInitPayload, YakManUser, YakManRole,
 };
 
 use std::fmt;
+
+pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
+    return Ok(Request::get("/api/admin/v1/users")
+        .send()
+        .await?
+        .json()
+        .await?);
+}
+
+pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError>  {
+    let body = serde_json::to_string(&YakManUser {
+        email: String::from(username),
+        role: role.clone()
+    })?;
+    
+    Request::put("/api/admin/v1/users")
+    .body(body)
+    .header("content-type", "application/json")
+    .send()
+    .await?
+    .text()
+    .await?;
+    return Ok(());
+}
 
 pub async fn fetch_oauth_redirect_uri(
     challenge: PkceCodeChallenge,
@@ -29,7 +53,7 @@ pub async fn exchange_oauth_code(
     state: &str,
     verifier: PkceCodeVerifier,
 ) -> Result<String, RequestError> {
-    let body = serde_json::to_string(&OAuthExchangePayload {
+    let body: String = serde_json::to_string(&OAuthExchangePayload {
         code: String::from(code),
         state: String::from(state),
         verifier: verifier,

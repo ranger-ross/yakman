@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use yak_man_core::model::YakManUser;
 
 /// Gets users
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
 #[get("/admin/v1/users")]
 pub async fn get_yakman_users(state: web::Data<StateManager>) -> HttpResponse {
     let users = get_users();

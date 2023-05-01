@@ -75,7 +75,7 @@ impl OauthService {
             .unwrap();
 
         let token: String = data.access_token().secret().clone();
-        let username = get_username(&token).await.unwrap();
+        let username = get_google_email(&token).await.unwrap();
 
         if let None = self.storage.get_user(&username).await.unwrap() {
             panic!("user not registered")
@@ -85,7 +85,7 @@ impl OauthService {
     }
 }
 
-async fn get_username(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn get_google_email(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
     let url = format!("https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access_token}");
 
     let resp = reqwest::get(url)

@@ -8,9 +8,11 @@ use components::config_list_page::*;
 use components::login_page::*;
 use components::modify_config_instance::*;
 use components::revision_history::*;
+use components::admin_page::*;
 use leptos::*;
 use leptos_router::*;
 
+use crate::components::AdminPage;
 use crate::components::LoginPage;
 
 pub fn main() {
@@ -33,7 +35,10 @@ pub fn RouterExample(cx: Scope) -> impl IntoView {
                         path="/oauth-callback"
                         view=move |cx| view! { cx,  <OauthCallbackPage /> }
                     />
-
+                    <Route
+                        path="/admin"
+                        view=move |cx| view! { cx,  <AdminPage /> }
+                    />
                     <Route
                         path="/"
                         view=move |cx| view! { cx,  <ConfigListPage /> }
