@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::env;
 
 use log::info;
 use oauth2::basic::{BasicClient, BasicTokenType};
@@ -81,25 +82,28 @@ impl OauthService {
 }
 
 fn get_auth_url() -> AuthUrl {
-    AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())
-        .expect("Invalid authorization endpoint URL")
+    AuthUrl::new(env::var("YAKMAN_OAUTH_AUTH_URL").expect("$YAKMAN_OAUTH_AUTH_URL is not set"))
+        .expect("YAKMAN_OAUTH_AUTH_URL is not a valid URL")
 }
 
 fn get_token_url() -> TokenUrl {
-    TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
-        .expect("Invalid token endpoint URL")
+    TokenUrl::new(env::var("YAKMAN_OAUTH_TOKEN_URL").expect("$YAKMAN_OAUTH_TOKEN_URL is not set"))
+        .expect("YAKMAN_OAUTH_TOKEN_URL is not a valid URL")
 }
 
 fn get_redirect_url() -> RedirectUrl {
-    RedirectUrl::new("http://127.0.0.1:8080/oauth-callback".to_string()).unwrap()
+    RedirectUrl::new(
+        env::var("YAKMAN_OAUTH_REDIRECT_URL").expect("$YAKMAN_OAUTH_REDIRECT_URL is not set"),
+    )
+    .expect("YAKMAN_OAUTH_REDIRECT_URL is not a valid URL")
 }
 
 fn get_client_id() -> ClientId {
-    ClientId::new(
-        "".to_string(),
-    )
+    ClientId::new(env::var("YAKMAN_OAUTH_CLIENT_ID").expect("$YAKMAN_OAUTH_CLIENT_ID is not set"))
 }
 
 fn get_client_secret() -> ClientSecret {
-    ClientSecret::new("".to_string())
+    ClientSecret::new(
+        env::var("YAKMAN_OAUTH_CLIENT_SECRET").expect("$YAKMAN_OAUTH_CLIENT_SECRET is not set"),
+    )
 }

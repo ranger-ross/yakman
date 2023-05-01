@@ -2,6 +2,8 @@ mod adapters;
 mod api;
 mod services;
 
+extern crate dotenv;
+
 use crate::adapters::local_file_adapter::create_local_file_adapter;
 use crate::services::oauth_service::OauthService;
 use actix_middleware_etag::Etag;
@@ -9,6 +11,7 @@ use actix_web::{
     http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
 };
 use adapters::errors::GenericStorageError;
+use dotenv::dotenv;
 use log::info;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
@@ -76,6 +79,8 @@ struct ApiDoc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     env_logger::init();
 
     let settings = load_yak_man_settings();
