@@ -14,7 +14,7 @@ use actix_web::{
 };
 use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
-use auth::jwt::JwtService;
+use auth::token::TokenService;
 use dotenv::dotenv;
 use log::{debug, info};
 use serde::Serialize;
@@ -34,7 +34,7 @@ use yak_man_core::{
 pub struct StateManager {
     service: Arc<dyn StorageService>,
     oauth_service: Arc<OauthService>,
-    jwt_service: Arc<JwtService>,
+    jwt_service: Arc<TokenService>,
 }
 
 impl StateManager {
@@ -44,7 +44,7 @@ impl StateManager {
     fn get_oauth_service(&self) -> &OauthService {
         return self.oauth_service.as_ref();
     }
-    fn get_jwt_service(&self) -> &JwtService {
+    fn get_token_service(&self) -> &TokenService {
         return self.jwt_service.as_ref();
     }
 }
@@ -90,8 +90,8 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     }
 
     match state
-        .get_jwt_service()
-        .validate_token(token.unwrap().value())
+        .get_token_service()
+        .validate_access_token(token.unwrap().value())
     {
         Ok(claims) => {
             if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
@@ -126,7 +126,7 @@ async fn main() -> std::io::Result<()> {
     let arc = Arc::new(service);
 
     let oauth_service = OauthService::new(arc.clone());
-    let jwt_service = JwtService::from_env().expect("Failed to create jwt service");
+    let jwt_service = TokenService::from_env().expect("Failed to create jwt service");
 
     let state = web::Data::new(StateManager {
         service: arc,

@@ -1,23 +1,19 @@
 use chrono::Utc;
 use hmac::{Hmac, Mac};
 use jwt::Header;
-use jwt::RegisteredClaims;
 use jwt::SignWithKey;
 use jwt::Token;
 use jwt::VerifyWithKey;
 use log::debug;
-use log::info;
+use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Sha256;
-use std::{
-    collections::BTreeMap,
-    env::{self, VarError},
-};
+use std::env::{self, VarError};
 use thiserror::Error;
 use yak_man_core::model::YakManRole;
 
-pub struct JwtService {
+pub struct TokenService {
     secret: String,
 }
 
@@ -30,18 +26,18 @@ pub struct YakManJwtClaims {
     pub yakman_role: String,
 }
 
-impl JwtService {
-    pub fn from_env() -> Result<JwtService, JwtServiceCreateError> {
-        let secret = env::var("YAKMAN_JWT_SECRET")
+impl TokenService {
+    pub fn from_env() -> Result<TokenService, JwtServiceCreateError> {
+        let secret = env::var("YAKMAN_TOKEN_SECRET")
             .map_err(|e| JwtServiceCreateError::FailedToLoadEnvVar(Box::new(e)))?;
 
-        Ok(JwtService {
+        Ok(TokenService {
             secret: String::from(secret),
         })
     }
 
     /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
-    pub fn create_acess_token(
+    pub fn create_acess_token_jwt(
         &self,
         user: &str,
         role: &YakManRole,
@@ -72,7 +68,15 @@ impl JwtService {
         ));
     }
 
-    pub fn validate_token(&self, token: &str) -> Result<YakManJwtClaims, JwtValidationError> {
+    pub fn encrypt_refresh_token(&self, refresh_token: &str) -> String {
+        warn!("Refresh token encyrption is not yet implmented");
+        refresh_token.to_string() // TODO: encrypt refresh token
+    }
+
+    pub fn validate_access_token(
+        &self,
+        token: &str,
+    ) -> Result<YakManJwtClaims, JwtValidationError> {
         debug!("Validating token");
         let key: Hmac<Sha256> = Hmac::new_from_slice(self.secret.as_bytes())
             .map_err(|e| JwtValidationError::InvalidSecret(Box::new(e)))?;
@@ -89,7 +93,7 @@ impl JwtService {
 
 #[derive(Error, Debug)]
 pub enum JwtServiceCreateError {
-    #[error("Failed to load YAKMAN_JWT_SECRET env var")]
+    #[error("Failed to load YAKMAN_TOKEN_SECRET env var")]
     FailedToLoadEnvVar(Box<VarError>),
 }
 

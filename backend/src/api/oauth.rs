@@ -5,7 +5,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse,
 };
-use log::error;
+use log::{error, warn};
 use oauth2::TokenResponse;
 use yak_man_core::model::{OAuthExchangePayload, OAuthInitPayload};
 
@@ -29,7 +29,7 @@ pub async fn oauth_exchange(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
-    let jwt_service = state.get_jwt_service();
+    let token_service = state.get_token_service();
 
     let (username, role, token_result) = match service
         .exchange_oauth_code(
@@ -54,22 +54,38 @@ pub async fn oauth_exchange(
 
     println!("{:?}", token_result);
 
-    let (access_token_jwt, expire_timestamp) = match jwt_service.create_acess_token(&username, &role) {
-        Ok(data) => data,
-        Err(e) => {
-            error!("Failed to create token {e}");
-            return HttpResponse::InternalServerError().body("Failed to create token");
-        }
-    };
+    let (access_token_jwt, expire_timestamp) =
+        match token_service.create_acess_token_jwt(&username, &role) {
+            Ok(data) => data,
+            Err(e) => {
+                error!("Failed to create token {e}");
+                return HttpResponse::InternalServerError().body("Failed to create token");
+            }
+        };
 
-    HttpResponse::Ok()
-        .cookie(
-            Cookie::build("access_token", access_token_jwt)
+    let mut response = HttpResponse::Ok();
+    response.cookie(
+        Cookie::build("access_token", access_token_jwt)
+            .path("/")
+            .http_only(true)
+            .max_age(Duration::milliseconds(expire_timestamp))
+            .finish(),
+    );
+
+    if let Some(refresh_token) = token_result.refresh_token() {
+        let refresh_token = refresh_token.secret();
+
+        let encrypted_refresh_token = token_service.encrypt_refresh_token(refresh_token);
+        response.cookie(
+            Cookie::build("resfresh_token", encrypted_refresh_token)
                 .path("/")
                 .http_only(true)
-                .max_age(Duration::milliseconds(expire_timestamp))
+                .max_age(Duration::days(365 * 10)) // TODO: make this dynamic
                 .finish(),
-        )
-        // .cookie(Cookie::build("refresh_token", token_result.refresh_token()).finish()) // TODO: Handle refresh token
-        .body("")
+        );
+    } else {
+        warn!("No refresh token found, skipping refresh token cookie")
+    }
+
+    response.body("")
 }
