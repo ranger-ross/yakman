@@ -8,6 +8,7 @@ use oauth2::{
     TokenResponse, TokenUrl,
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
+use yak_man_core::model::YakManRole;
 use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
@@ -60,7 +61,14 @@ impl OauthService {
         &self,
         code: String,
         verifier: String,
-    ) -> Result<StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>, LoginError> {
+    ) -> Result<
+        (
+            String,
+            YakManRole,
+            StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>,
+        ),
+        LoginError,
+    > {
         let pkce_verifier = PkceCodeVerifier::new(verifier);
 
         let data = self
@@ -74,23 +82,23 @@ impl OauthService {
 
         let token: String = data.access_token().secret().clone();
         let username = self
-            .get_email(&token)
+            .get_username(&token)
             .await
             .map_err(|e| LoginError::FailedToFetchUserData(Box::new(e)))?;
 
-        if let None = self
+        if let Some(yakman_user) = self
             .storage
             .get_user(&username)
             .await
             .map_err(|_| LoginError::FailedToCheckRegisteredUsers)?
         {
-            return Err(LoginError::UserNotRegistered);
+            return Ok((username, yakman_user.role, data));
         }
 
-        return Ok(data);
+        return Err(LoginError::UserNotRegistered);
     }
 
-    pub async fn get_email(&self, access_token: &str) -> Result<String, OAuthEmailResolverError> {
+    pub async fn get_username(&self, access_token: &str) -> Result<String, OAuthEmailResolverError> {
         return self
             .oauth_provider
             .get_email_resolver()

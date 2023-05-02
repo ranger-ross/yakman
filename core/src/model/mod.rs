@@ -1,5 +1,8 @@
+use std::fmt;
+
 use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
+use serde::ser::Error;
 pub use serde::Deserialize;
 pub use serde::Serialize;
 use utoipa::ToSchema;
@@ -75,6 +78,31 @@ pub enum YakManRole {
     Approver,
     Operator,
     Viewer,
+}
+
+impl fmt::Display for YakManRole {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            YakManRole::Admin => write!(f, "Admin"),
+            YakManRole::Approver => write!(f, "Approver"),
+            YakManRole::Operator => write!(f, "Operator"),
+            YakManRole::Viewer => write!(f, "Viewer"),
+        }
+    }
+}
+
+impl TryFrom<String> for YakManRole {
+    type Error = &'static str;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        return match value.as_str() {
+            "Admin" => Ok(YakManRole::Admin),
+            "Approver" => Ok(YakManRole::Approver),
+            "Operator" => Ok(YakManRole::Operator),
+            "Viewer" => Ok(YakManRole::Viewer),
+            _ => Err("Invalid role"),
+        };
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]

@@ -14,8 +14,9 @@ use actix_web::{
 };
 use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
+use auth::jwt::JwtService;
 use dotenv::dotenv;
-use log::info;
+use log::{debug, info};
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -33,6 +34,7 @@ use yak_man_core::{
 pub struct StateManager {
     service: Arc<dyn StorageService>,
     oauth_service: Arc<OauthService>,
+    jwt_service: Arc<JwtService>,
 }
 
 impl StateManager {
@@ -41,6 +43,9 @@ impl StateManager {
     }
     fn get_oauth_service(&self) -> &OauthService {
         return self.oauth_service.as_ref();
+    }
+    fn get_jwt_service(&self) -> &JwtService {
+        return self.jwt_service.as_ref();
     }
 }
 
@@ -74,7 +79,6 @@ impl StateManager {
 )]
 struct ApiDoc;
 
-// You can use custom type instead of String
 async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     let state = req.app_data::<web::Data<StateManager>>().unwrap();
     let cookie_name = "access_token";
@@ -85,17 +89,20 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
         return Ok(vec![]);
     }
 
-    if let Ok(username) = state
-        .get_oauth_service()
-        .get_email(token.unwrap().value())
-        .await
+    match state
+        .get_jwt_service()
+        .validate_token(token.unwrap().value())
     {
-        info!("user: {}", username);
-
-        if let Ok(Some(user)) = state.get_service().get_user(&username).await {
-            return Ok(vec![user.role]);
+        Ok(claims) => {
+            if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
+                debug!("role = {role}");
+                return Ok(vec![role]);
+            }
         }
-    };
+        Err(e) => {
+            debug!("token invalid {e:?}");
+        }
+    }
 
     return Ok(vec![]);
 }
@@ -119,10 +126,12 @@ async fn main() -> std::io::Result<()> {
     let arc = Arc::new(service);
 
     let oauth_service = OauthService::new(arc.clone());
+    let jwt_service = JwtService::from_env().expect("Failed to create jwt service");
 
     let state = web::Data::new(StateManager {
         service: arc,
         oauth_service: Arc::new(oauth_service),
+        jwt_service: Arc::new(jwt_service),
     });
 
     let openapi = ApiDoc::openapi();

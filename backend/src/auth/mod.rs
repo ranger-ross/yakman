@@ -2,6 +2,7 @@ mod google;
 mod github;
 mod oauth_provider;
 pub mod oauth_service;
+pub mod jwt;
 
 use async_trait::async_trait;
 use thiserror::Error;

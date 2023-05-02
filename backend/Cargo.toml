@@ -26,3 +26,6 @@ oauth2 = "4.3.0"
 dotenv = "0.15.0"
 reqwest = { version = "0.11", features = ["json"] }
 actix-web-grants = "3.0.1"
+jwt = "0.16.0"
+hmac = { version = "0.12", features = ["reset"] }
+sha2 = "0.10"

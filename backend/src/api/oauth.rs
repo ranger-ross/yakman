@@ -1,4 +1,4 @@
-use crate::{StateManager, auth::LoginError};
+use crate::{auth::LoginError, StateManager};
 use actix_web::{
     cookie::{time::Duration, Cookie},
     post,
@@ -29,8 +29,9 @@ pub async fn oauth_exchange(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
+    let jwt_service = state.get_jwt_service();
 
-    let token_result = match service
+    let (username, role, token_result) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -46,16 +47,24 @@ pub async fn oauth_exchange(
                 e => {
                     error!("Login error {e:?}");
                     HttpResponse::InternalServerError().body("Failed to validate user")
-                },
+                }
             }
         }
     };
 
     println!("{:?}", token_result);
 
+    let jwt = match jwt_service.create_acess_token(&username, &role) {
+        Ok(jwt) => jwt,
+        Err(e) => {
+            error!("Failed to create token {e}");
+            return HttpResponse::InternalServerError().body("Failed to create token");
+        }
+    };
+
     HttpResponse::Ok()
         .cookie(
-            Cookie::build("access_token", token_result.access_token().secret())
+            Cookie::build("access_token", jwt)
                 .path("/")
                 .http_only(true)
                 .max_age(Duration::minutes(30)) // TODO: make this dynamic
