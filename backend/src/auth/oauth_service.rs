@@ -1,8 +1,6 @@
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::env;
-use std::sync::Arc;
-
+use super::{LoginError, OAuthEmailResolver, OAuthEmailResolverError};
+use super::github::GitHubEmailResolver;
+use crate::services::StorageService;
 use log::info;
 use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::reqwest::async_http_client;
@@ -13,12 +11,10 @@ use oauth2::{
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-
-use crate::services::StorageService;
-
-use super::LoginError;
-
-// use super::errors::LoginError;
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::env;
+use std::sync::Arc;
 
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
@@ -82,9 +78,9 @@ impl OauthService {
 
         let token: String = data.access_token().secret().clone();
         let username = self
-            .get_username(&token)
+            .get_email(&token)
             .await
-            .map_err(|e| LoginError::FailedToFetchUserData(e))?;
+            .map_err(|e| LoginError::FailedToFetchUserData(Box::new(e)))?;
 
         if let None = self
             .storage
@@ -98,12 +94,12 @@ impl OauthService {
         return Ok(data);
     }
 
-    pub async fn get_username(
+    pub async fn get_email(
         &self,
         access_token: &str,
-    ) -> Result<String, Box<dyn std::error::Error>> {
-        return get_github_email(access_token).await; // TODO: Support other providers in the future
-                                                     // return get_google_email(access_token).await; // TODO: Support other providers in the future
+    ) -> Result<String, OAuthEmailResolverError> {
+        let resolver: Box<dyn OAuthEmailResolver> = Box::new(GitHubEmailResolver::new()); // TODO: Support other providers in the future
+        return resolver.resolve_email(access_token).await;
     }
 }
 
@@ -119,33 +115,6 @@ async fn get_google_email(access_token: &str) -> Result<String, Box<dyn std::err
     Ok(username)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct GitHubResponse {
-    email: String,
-    primary: bool,
-}
-
-async fn get_github_email(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
-    info!("Sending request to github {access_token}");
-    let resp = Client::builder()
-        .user_agent("YakMan Backend")
-        .build()?
-        .get("https://api.github.com/user/emails")
-        .bearer_auth(access_token)
-        .send()
-        .await?
-        .json::<Vec<GitHubResponse>>()
-        .await?;
-
-    info!("{resp:?}");
-
-    let email = resp
-        .into_iter()
-        .find(|e| e.primary)
-        .map(|e| e.email)
-        .expect("Not valid email found");
-    Ok(email)
-}
 
 fn get_auth_url() -> AuthUrl {
     AuthUrl::new(env::var("YAKMAN_OAUTH_AUTH_URL").expect("$YAKMAN_OAUTH_AUTH_URL is not set"))

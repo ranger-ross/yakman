@@ -85,7 +85,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
         return Ok(vec![]);
     }
 
-    let username = state.get_oauth_service().get_username(token.unwrap().value()).await.unwrap();
+    let username = state.get_oauth_service().get_email(token.unwrap().value()).await.unwrap();
 
     info!("user: {}", username);
 
