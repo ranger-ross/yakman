@@ -3,12 +3,20 @@ use std::collections::HashMap;
 use crate::StateManager;
 
 use actix_web::{get, web, HttpResponse};
+use actix_web_grants::proc_macro::has_any_role;
 use log::info;
-use yak_man_core::model::Label;
+use yak_man_core::model::{Label, YakManRole};
 
 /// Get config data by using labels
 #[utoipa::path(responses((status = 200, body = String)))]
 #[get("/configs/{config_name}/instances/data")]
+#[has_any_role(
+    "YakManRole::Admin",
+    "YakManRole::Approver",
+    "YakManRole::Operator",
+    "YakManRole::Viewer",
+    type = "YakManRole"
+)]
 async fn get_data_by_labels(
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
@@ -39,6 +47,13 @@ async fn get_data_by_labels(
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
 #[get("/configs/{config_name}/instances/{instance}/data")]
+#[has_any_role(
+    "YakManRole::Admin",
+    "YakManRole::Approver",
+    "YakManRole::Operator",
+    "YakManRole::Viewer",
+    type = "YakManRole"
+)]
 async fn get_instance_data(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,

@@ -1,7 +1,7 @@
-use std::{collections::HashMap, error::Error};
-
 use gloo_net::http::Request;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
+use std::collections::HashMap;
+use thiserror::Error;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, OAuthExchangePayload,
     OAuthInitPayload, YakManRole, YakManUser,
@@ -10,11 +10,13 @@ use yak_man_core::model::{
 use std::fmt;
 
 pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
-    return Ok(Request::get("/api/admin/v1/users")
-        .send()
-        .await?
-        .json()
-        .await?);
+    let response = Request::get("/api/admin/v1/users").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.json().await?);
 }
 
 pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError> {
@@ -204,8 +206,9 @@ pub async fn refresh_token() -> Result<(), RequestError> {
     return Ok(());
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum RequestError {
+    UnexpectedHttpStatus(u16),
     Reqwest(gloo_net::Error),
     Json(serde_json::Error),
 }
@@ -215,15 +218,7 @@ impl fmt::Display for RequestError {
         match *self {
             RequestError::Reqwest(ref e) => e.fmt(f),
             RequestError::Json(ref e) => e.fmt(f),
-        }
-    }
-}
-
-impl Error for RequestError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match *self {
-            RequestError::Reqwest(ref e) => Some(e),
-            RequestError::Json(ref e) => Some(e),
+            RequestError::UnexpectedHttpStatus(ref e) => panic!("TODO: FIX THIS"),
         }
     }
 }
