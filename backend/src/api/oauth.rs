@@ -1,4 +1,4 @@
-use crate::StateManager;
+use crate::{services::errors::LoginError, StateManager};
 use actix_web::{
     cookie::{time::Duration, Cookie},
     post,
@@ -29,12 +29,23 @@ pub async fn oauth_exchange(
 ) -> HttpResponse {
     let service = state.get_oauth_service();
 
-    let token_result = service
+    let token_result = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
         )
-        .await;
+        .await
+    {
+        Ok(result) => result,
+        Err(e) => {
+            return match e {
+                LoginError::UserNotRegistered => {
+                    HttpResponse::Forbidden().body("User not registered")
+                }
+                _ => HttpResponse::InternalServerError().body("Failed to validate user"),
+            }
+        }
+    };
 
     println!("{:?}", token_result);
 

@@ -12,6 +12,7 @@ use oauth2::{
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
 
+use super::errors::LoginError;
 use super::StorageService;
 
 pub struct OauthService {
@@ -59,32 +60,39 @@ impl OauthService {
         &self,
         code: String,
         verifier: String,
-    ) -> StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType> {
+    ) -> Result<StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>, LoginError> {
         let pkce_verifier = PkceCodeVerifier::new(verifier);
-
-        info!("Using secret = {:?}", pkce_verifier.secret());
 
         let data = self
             .client
             .exchange_code(AuthorizationCode::new(code))
-            // Set the PKCE code verifier.
             .set_pkce_verifier(pkce_verifier)
             .set_redirect_uri(Cow::Owned(get_redirect_url()))
             .request_async(async_http_client)
             .await
-            .unwrap();
+            .map_err(|_| LoginError::FailedToExchangeCode)?;
 
         let token: String = data.access_token().secret().clone();
-        let username = get_google_email(&token).await.unwrap();
+        let username = get_google_email(&token)
+            .await
+            .map_err(|_| LoginError::FailedToFetchUserData)?;
 
-        if let None = self.storage.get_user(&username).await.unwrap() {
-            panic!("user not registered")
+        if let None = self
+            .storage
+            .get_user(&username)
+            .await
+            .map_err(|_| LoginError::FailedToCheckRegisteredUsers)?
+        {
+            return Err(LoginError::UserNotRegistered);
         }
 
-        return data;
+        return Ok(data);
     }
 
-    pub async fn get_username(&self, access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn get_username(
+        &self,
+        access_token: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         return get_google_email(access_token).await; // TODO: Support other providers in the future
     }
 }

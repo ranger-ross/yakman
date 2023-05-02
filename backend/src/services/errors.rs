@@ -53,7 +53,6 @@ impl From<GenericStorageError> for CreateLabelError {
     }
 }
 
-
 #[derive(Error, Debug)]
 pub enum CreateConfigInstanceError {
     #[error("No config found")]
@@ -131,4 +130,16 @@ impl std::error::Error for LabelAlreadyExistsError {
     fn description(&self) -> &str {
         &self.description
     }
+}
+
+#[derive(Error, Debug)]
+pub enum LoginError {
+    #[error("Failed to exchange token")]
+    FailedToExchangeCode,
+    #[error("User not registered")]
+    UserNotRegistered,
+    #[error("Failed to check registered users")]
+    FailedToCheckRegisteredUsers,
+    #[error("Failed to get user data from OAuth provider")]
+    FailedToFetchUserData,
 }
