@@ -12,6 +12,8 @@ use crate::api;
 
 const LOCAL_STORAGE_OAUTH2_VERIFER_KEY: &str = "oauth2-verifier";
 
+use wasm_bindgen_futures::spawn_local;
+
 #[component]
 pub fn login_page(cx: Scope) -> impl IntoView {
     let data = create_resource(
@@ -32,12 +34,21 @@ pub fn login_page(cx: Scope) -> impl IntoView {
 
     let redirect_uri = move || data.read(cx).unwrap_or(String::new());
 
+    let on_refresh_token = move |_| {
+        spawn_local(async {
+            log!("async it");
+            api::refresh_token().await.unwrap();
+        })
+    };
+
     view! { cx,
         <div>
             <h1>{"Login"}</h1>
 
             <a href=redirect_uri>"Click to login"</a>
 
+            <br />
+            <button on:click=on_refresh_token>"Refresh Token"</button>
         </div>
     }
 }
@@ -53,7 +64,6 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
         cx,
         move || (),
         move |()| async move {
-
             log!("Call create_resource");
 
             let verifier = LocalStorage::raw()
@@ -80,7 +90,7 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
 
             {state} <br />
             {code} <br />
-      
+
         </div>
     }
 }

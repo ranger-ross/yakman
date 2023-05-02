@@ -14,7 +14,7 @@ use actix_web::{
 };
 use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
-use auth::token::TokenService;
+use auth::{token::TokenService, oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME};
 use dotenv::dotenv;
 use log::{debug, info};
 use serde::Serialize;
@@ -81,9 +81,8 @@ struct ApiDoc;
 
 async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     let state = req.app_data::<web::Data<StateManager>>().unwrap();
-    let cookie_name = "access_token";
     let cookies = req.cookies().unwrap();
-    let token = cookies.iter().find(|c| c.name() == cookie_name);
+    let token = cookies.iter().find(|c| c.name() == OAUTH_ACCESS_TOKEN_COOKIE_NAME);
 
     if token.is_none() {
         return Ok(vec![]);
@@ -147,6 +146,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)
+            .service(api::oauth::oauth_refresh)
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)

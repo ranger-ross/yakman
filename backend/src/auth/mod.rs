@@ -19,6 +19,14 @@ pub enum LoginError {
     FailedToFetchUserData(Box<dyn std::error::Error>),
 }
 
+
+#[derive(Error, Debug)]
+pub enum RefreshTokenError {
+    #[error("Failed to refresh token from OAuth provider")]
+    FailedToRefreshToken(Box<dyn std::error::Error>),
+}
+
+
 #[derive(Error, Debug)]
 pub enum OAuthEmailResolverError {
     #[error("Failed to build request to OAuth provider")]

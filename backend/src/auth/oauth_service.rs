@@ -1,17 +1,21 @@
 use super::oauth_provider::OAuthProvider;
-use super::{LoginError, OAuthEmailResolverError};
+use super::{LoginError, OAuthEmailResolverError, RefreshTokenError};
 use crate::services::StorageService;
+use log::{info, debug};
 use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
+    AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl, RefreshToken,
+    Scope, TokenResponse, TokenUrl,
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
-use yak_man_core::model::YakManRole;
 use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
+use yak_man_core::model::YakManRole;
+
+pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
+pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";
 
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
@@ -98,7 +102,24 @@ impl OauthService {
         return Err(LoginError::UserNotRegistered);
     }
 
-    pub async fn get_username(&self, access_token: &str) -> Result<String, OAuthEmailResolverError> {
+    pub async fn refresh_token(&self, refresh_token: &str) -> Result<String, RefreshTokenError> {
+        debug!("Attempting to refresh token");
+        let token = RefreshToken::new(refresh_token.to_string());
+        let response = self
+            .client
+            .exchange_refresh_token(&token)
+            .request_async(async_http_client)
+            .await
+            .map_err(|e| RefreshTokenError::FailedToRefreshToken(Box::new(e)))?;
+
+        let access_token = response.access_token().secret();
+        return Ok(String::from(access_token));
+    }
+
+    pub async fn get_username(
+        &self,
+        access_token: &str,
+    ) -> Result<String, OAuthEmailResolverError> {
         return self
             .oauth_provider
             .get_email_resolver()

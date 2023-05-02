@@ -4,7 +4,7 @@ use gloo_net::http::Request;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, OAuthExchangePayload,
-    OAuthInitPayload, YakManUser, YakManRole,
+    OAuthInitPayload, YakManRole, YakManUser,
 };
 
 use std::fmt;
@@ -17,19 +17,19 @@ pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
         .await?);
 }
 
-pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError>  {
+pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError> {
     let body = serde_json::to_string(&YakManUser {
         email: String::from(username),
-        role: role.clone()
+        role: role.clone(),
     })?;
-    
+
     Request::put("/api/admin/v1/users")
-    .body(body)
-    .header("content-type", "application/json")
-    .send()
-    .await?
-    .text()
-    .await?;
+        .body(body)
+        .header("content-type", "application/json")
+        .send()
+        .await?
+        .text()
+        .await?;
     return Ok(());
 }
 
@@ -191,6 +191,16 @@ pub async fn approve_instance_revision(
     .send()
     .await?;
 
+    return Ok(());
+}
+
+pub async fn refresh_token() -> Result<(), RequestError> {
+    Request::post("/api/oauth2/refresh")
+        // .header("content-type", "application/json")
+        .send()
+        .await?
+        .text()
+        .await?;
     return Ok(());
 }
 
