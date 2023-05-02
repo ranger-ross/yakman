@@ -40,11 +40,12 @@ impl JwtService {
         })
     }
 
+    /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
     pub fn create_acess_token(
         &self,
         user: &str,
         role: &YakManRole,
-    ) -> Result<String, JwtCreateError> {
+    ) -> Result<(String, i64), JwtCreateError> {
         let key: Hmac<Sha256> = Hmac::new_from_slice(self.secret.as_bytes())
             .map_err(|e| JwtCreateError::InvalidSecret(Box::new(e)))?;
 
@@ -65,7 +66,10 @@ impl JwtService {
             .sign_with_key(&key)
             .map_err(|e| JwtCreateError::SigingError(Box::new(e)))?;
 
-        return Ok(token_str.as_str().to_string());
+        return Ok((
+            token_str.as_str().to_string(),
+            (now + (token_time_to_live_seconds)) * 1000,
+        ));
     }
 
     pub fn validate_token(&self, token: &str) -> Result<YakManJwtClaims, JwtValidationError> {

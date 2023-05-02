@@ -54,8 +54,8 @@ pub async fn oauth_exchange(
 
     println!("{:?}", token_result);
 
-    let jwt = match jwt_service.create_acess_token(&username, &role) {
-        Ok(jwt) => jwt,
+    let (access_token_jwt, expire_timestamp) = match jwt_service.create_acess_token(&username, &role) {
+        Ok(data) => data,
         Err(e) => {
             error!("Failed to create token {e}");
             return HttpResponse::InternalServerError().body("Failed to create token");
@@ -64,10 +64,10 @@ pub async fn oauth_exchange(
 
     HttpResponse::Ok()
         .cookie(
-            Cookie::build("access_token", jwt)
+            Cookie::build("access_token", access_token_jwt)
                 .path("/")
                 .http_only(true)
-                .max_age(Duration::minutes(30)) // TODO: make this dynamic
+                .max_age(Duration::milliseconds(expire_timestamp))
                 .finish(),
         )
         // .cookie(Cookie::build("refresh_token", token_result.refresh_token()).finish()) // TODO: Handle refresh token
