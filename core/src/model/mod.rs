@@ -2,7 +2,6 @@ use std::fmt;
 
 use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
-use serde::ser::Error;
 pub use serde::Deserialize;
 pub use serde::Serialize;
 use utoipa::ToSchema;

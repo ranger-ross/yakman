@@ -11,7 +11,7 @@ use actix_web::{
     web::{self, Json},
     HttpRequest, HttpResponse,
 };
-use log::{error, info, warn};
+use log::{error, warn};
 use oauth2::TokenResponse;
 use yak_man_core::model::{OAuthExchangePayload, OAuthInitPayload};
 

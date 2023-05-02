@@ -41,6 +41,6 @@ pub enum OAuthEmailResolverError {
 
 /// This trait provides a method that will method that takes in an OAuth access token an returns the users email
 #[async_trait]
-trait OAuthEmailResolver {
+pub trait OAuthEmailResolver {
     async fn resolve_email(&self, access_token: &str) -> Result<String, OAuthEmailResolverError>;
 }

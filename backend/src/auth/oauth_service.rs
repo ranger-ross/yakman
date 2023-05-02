@@ -1,7 +1,7 @@
 use super::oauth_provider::OAuthProvider;
 use super::{LoginError, OAuthEmailResolverError, RefreshTokenError};
 use crate::services::StorageService;
-use log::{info, debug};
+use log::debug;
 use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -51,7 +51,7 @@ impl OauthService {
     }
 
     pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> String {
-        let (auth_url, csrf_token) = self
+        let (auth_url, _csrf_token) = self
             .client
             .authorize_url(CsrfToken::new_random)
             .add_scopes(self.scopes.clone())

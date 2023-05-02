@@ -52,6 +52,9 @@ impl StateManager {
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        api::oauth::oauth_init,
+        api::oauth::oauth_exchange,
+        api::oauth::oauth_refresh,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -70,6 +73,7 @@ impl StateManager {
         schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings)
     ),
     tags(
+        (name = "api::oauth", description = "OAuth endpoints"),
         (name = "api::configs", description = "Config management endpoints"),
         (name = "api::labels", description = "Label management endpoints"),
         (name = "api::instances", description = "Config Instance management endpoints"),
@@ -144,6 +148,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
+            // OAuth
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)
             .service(api::oauth::oauth_refresh)
