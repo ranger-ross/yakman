@@ -13,7 +13,6 @@ use oauth2::{
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::services::StorageService;
 
@@ -24,6 +23,7 @@ use super::LoginError;
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
     client: BasicClient,
+    scopes: Vec<Scope>,
 }
 
 impl OauthService {
@@ -41,9 +41,15 @@ impl OauthService {
                 .unwrap(),
         );
 
+        let scopes = get_oauth_scopes()
+            .into_iter()
+            .map(|s| Scope::new(s))
+            .collect();
+
         return OauthService {
             storage: storage,
             client: client,
+            scopes: scopes,
         };
     }
 
@@ -51,12 +57,7 @@ impl OauthService {
         let (auth_url, csrf_token) = self
             .client
             .authorize_url(CsrfToken::new_random)
-            // Set the desired scopes.
-            .add_scope(Scope::new("user".to_string()))
-            .add_scope(Scope::new("user:email".to_string()))
-            // .add_scope(Scope::new("profile".to_string()))
-            // .add_scope(Scope::new("openid".to_string()))
-            // Set the PKCE code challenge.
+            .add_scopes(self.scopes.clone())
             .set_pkce_challenge(challenge)
             .url();
 
@@ -171,4 +172,9 @@ fn get_client_secret() -> ClientSecret {
     ClientSecret::new(
         env::var("YAKMAN_OAUTH_CLIENT_SECRET").expect("$YAKMAN_OAUTH_CLIENT_SECRET is not set"),
     )
+}
+
+fn get_oauth_scopes() -> Vec<String> {
+    let scopes = env::var("YAKMAN_OAUTH_SCOPES").expect("$YAKMAN_OAUTH_SCOPES is not set");
+    return scopes.split(",").map(|s| s.to_string()).collect();
 }
