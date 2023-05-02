@@ -141,5 +141,5 @@ pub enum LoginError {
     #[error("Failed to check registered users")]
     FailedToCheckRegisteredUsers,
     #[error("Failed to get user data from OAuth provider")]
-    FailedToFetchUserData,
+    FailedToFetchUserData(Box<dyn std::error::Error>),
 }

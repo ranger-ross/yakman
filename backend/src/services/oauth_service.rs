@@ -11,6 +11,9 @@ use oauth2::{
     Scope, TokenResponse, TokenUrl,
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::errors::LoginError;
 use super::StorageService;
@@ -46,9 +49,10 @@ impl OauthService {
             .client
             .authorize_url(CsrfToken::new_random)
             // Set the desired scopes.
-            .add_scope(Scope::new("email".to_string()))
-            .add_scope(Scope::new("profile".to_string()))
-            .add_scope(Scope::new("openid".to_string()))
+            .add_scope(Scope::new("user".to_string()))
+            .add_scope(Scope::new("user:email".to_string()))
+            // .add_scope(Scope::new("profile".to_string()))
+            // .add_scope(Scope::new("openid".to_string()))
             // Set the PKCE code challenge.
             .set_pkce_challenge(challenge)
             .url();
@@ -73,9 +77,10 @@ impl OauthService {
             .map_err(|_| LoginError::FailedToExchangeCode)?;
 
         let token: String = data.access_token().secret().clone();
-        let username = get_google_email(&token)
+        let username = self
+            .get_username(&token)
             .await
-            .map_err(|_| LoginError::FailedToFetchUserData)?;
+            .map_err(|e| LoginError::FailedToFetchUserData(e))?;
 
         if let None = self
             .storage
@@ -93,7 +98,8 @@ impl OauthService {
         &self,
         access_token: &str,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        return get_google_email(access_token).await; // TODO: Support other providers in the future
+        return get_github_email(access_token).await; // TODO: Support other providers in the future
+                                                     // return get_google_email(access_token).await; // TODO: Support other providers in the future
     }
 }
 
@@ -107,6 +113,34 @@ async fn get_google_email(access_token: &str) -> Result<String, Box<dyn std::err
 
     let username = resp.get("email").unwrap().to_owned();
     Ok(username)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GitHubResponse {
+    email: String,
+    primary: bool,
+}
+
+async fn get_github_email(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
+    info!("Sending request to github {access_token}");
+    let resp = Client::builder()
+        .user_agent("YakMan Backend")
+        .build()?
+        .get("https://api.github.com/user/emails")
+        .bearer_auth(access_token)
+        .send()
+        .await?
+        .json::<Vec<GitHubResponse>>()
+        .await?;
+
+    info!("{resp:?}");
+
+    let email = resp
+        .into_iter()
+        .find(|e| e.primary)
+        .map(|e| e.email)
+        .expect("Not valid email found");
+    Ok(email)
 }
 
 fn get_auth_url() -> AuthUrl {

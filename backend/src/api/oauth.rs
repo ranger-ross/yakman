@@ -5,6 +5,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse,
 };
+use log::error;
 use oauth2::TokenResponse;
 use yak_man_core::model::{OAuthExchangePayload, OAuthInitPayload};
 
@@ -42,7 +43,10 @@ pub async fn oauth_exchange(
                 LoginError::UserNotRegistered => {
                     HttpResponse::Forbidden().body("User not registered")
                 }
-                _ => HttpResponse::InternalServerError().body("Failed to validate user"),
+                e => {
+                    error!("Login error {e:?}");
+                    HttpResponse::InternalServerError().body("Failed to validate user")
+                },
             }
         }
     };
