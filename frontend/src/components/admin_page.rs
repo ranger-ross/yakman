@@ -1,6 +1,5 @@
 use crate::api;
 use leptos::*;
-use leptos_router::*;
 use yak_man_core::model::{YakManRole, YakManUser};
 
 #[component]

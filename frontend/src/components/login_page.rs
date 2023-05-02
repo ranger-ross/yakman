@@ -1,18 +1,13 @@
-use std::collections::HashMap;
-
+use crate::api;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use leptos::*;
 use leptos_router::use_navigate;
-use leptos_router::{use_params_map, use_query_map};
+use leptos_router::use_query_map;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
-use serde::Serialize;
-
-use crate::api;
+use wasm_bindgen_futures::spawn_local;
 
 const LOCAL_STORAGE_OAUTH2_VERIFER_KEY: &str = "oauth2-verifier";
-
-use wasm_bindgen_futures::spawn_local;
 
 #[component]
 pub fn login_page(cx: Scope) -> impl IntoView {
@@ -36,7 +31,6 @@ pub fn login_page(cx: Scope) -> impl IntoView {
 
     let on_refresh_token = move |_| {
         spawn_local(async {
-            log!("async it");
             api::refresh_token().await.unwrap();
         })
     };
