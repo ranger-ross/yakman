@@ -3,8 +3,7 @@ use crate::api::RequestError;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use leptos::*;
-use leptos_router::use_navigate;
-use leptos_router::use_query_map;
+use leptos_router::*;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 use wasm_bindgen_futures::spawn_local;
 
@@ -73,7 +72,9 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
                     None
                 }
                 Err(e) => match e {
-                    RequestError::UnexpectedHttpStatus(e) => Some("Unauthorized User".to_string()),
+                    RequestError::UnexpectedHttpStatus(status) if status == 403 => {
+                        Some("Unauthorized User".to_string())
+                    }
                     _ => {
                         error!("Token exchange failed {e}");
                         Some("Failed to login".to_string())
@@ -92,7 +93,12 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
 
             {move || match error_message() {
                 Some(error) => view! { cx,
-                    {error}
+                    <>
+                        {error} <br />
+                        <A href="/login">
+                            "Back to Login"
+                        </A>
+                    </>
                 }.into_view(cx),
                 None => view! {cx,
                     <h1>{"Logging in..."}</h1>

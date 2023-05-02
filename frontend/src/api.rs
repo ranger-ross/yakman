@@ -228,7 +228,7 @@ impl fmt::Display for RequestError {
         match *self {
             RequestError::Reqwest(ref e) => e.fmt(f),
             RequestError::Json(ref e) => e.fmt(f),
-            RequestError::UnexpectedHttpStatus(ref e) => panic!("TODO: FIX THIS"),
+            RequestError::UnexpectedHttpStatus(ref e) => e.fmt(f),
         }
     }
 }
