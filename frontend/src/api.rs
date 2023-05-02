@@ -80,7 +80,13 @@ pub async fn exchange_oauth_code(
 }
 
 pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
-    return Ok(Request::get("/api/configs").send().await?.json().await?);
+    let response = Request::get("/api/configs").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.json().await?);
 }
 
 pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
@@ -207,12 +213,13 @@ pub async fn approve_instance_revision(
 }
 
 pub async fn refresh_token() -> Result<(), RequestError> {
-    Request::post("/api/oauth2/refresh")
-        // .header("content-type", "application/json")
-        .send()
-        .await?
-        .text()
-        .await?;
+    let response = Request::post("/api/oauth2/refresh").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    response.text().await?;
     return Ok(());
 }
 
