@@ -1,4 +1,4 @@
-use crate::{services::errors::LoginError, StateManager};
+use crate::{StateManager, auth::LoginError};
 use actix_web::{
     cookie::{time::Duration, Cookie},
     post,

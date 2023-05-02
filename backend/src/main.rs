@@ -1,11 +1,12 @@
 mod adapters;
 mod api;
 mod services;
+mod auth;
 
 extern crate dotenv;
 
 use crate::adapters::local_file_adapter::create_local_file_adapter;
-use crate::services::oauth_service::OauthService;
+use crate::auth::oauth_service::OauthService;
 use actix_middleware_etag::Etag;
 use actix_web::{
     dev::ServiceRequest, http::header::ContentType, middleware::Logger, web, App, Error,
