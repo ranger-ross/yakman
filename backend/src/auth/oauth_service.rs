@@ -1,3 +1,4 @@
+use super::google::GoogleEmailResolver;
 use super::{LoginError, OAuthEmailResolver, OAuthEmailResolverError};
 use super::github::GitHubEmailResolver;
 use crate::services::StorageService;
@@ -98,23 +99,11 @@ impl OauthService {
         &self,
         access_token: &str,
     ) -> Result<String, OAuthEmailResolverError> {
-        let resolver: Box<dyn OAuthEmailResolver> = Box::new(GitHubEmailResolver::new()); // TODO: Support other providers in the future
+        // let resolver: Box<dyn OAuthEmailResolver> = Box::new(GitHubEmailResolver::new()); // TODO: Support other providers in the future
+        let resolver: Box<dyn OAuthEmailResolver> = Box::new(GoogleEmailResolver::new()); // TODO: Support other providers in the future
         return resolver.resolve_email(access_token).await;
     }
 }
-
-async fn get_google_email(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let url = format!("https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access_token}");
-
-    let resp = reqwest::get(url)
-        .await?
-        .json::<HashMap<String, String>>()
-        .await?;
-
-    let username = resp.get("email").unwrap().to_owned();
-    Ok(username)
-}
-
 
 fn get_auth_url() -> AuthUrl {
     AuthUrl::new(env::var("YAKMAN_OAUTH_AUTH_URL").expect("$YAKMAN_OAUTH_AUTH_URL is not set"))

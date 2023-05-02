@@ -1,3 +1,4 @@
+mod google;
 mod github;
 pub mod oauth_service;
 
