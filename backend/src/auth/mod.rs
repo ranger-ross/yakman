@@ -1,5 +1,6 @@
 mod google;
 mod github;
+mod oauth_provider;
 pub mod oauth_service;
 
 use async_trait::async_trait;

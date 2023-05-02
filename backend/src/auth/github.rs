@@ -1,5 +1,6 @@
 use super::{OAuthEmailResolver, OAuthEmailResolverError};
 use async_trait::async_trait;
+use log::info;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 

@@ -39,15 +39,3 @@ impl OAuthEmailResolver for GoogleEmailResolver {
         }
     }
 }
-
-// async fn get_google_email(access_token: &str) -> Result<String, Box<dyn std::error::Error>> {
-//     let url = format!("https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access_token}");
-
-//     let resp = reqwest::get(url)
-//         .await?
-//         .json::<HashMap<String, String>>()
-//         .await?;
-
-//     let username = resp.get("email").unwrap().to_owned();
-//     Ok(username)
-// }

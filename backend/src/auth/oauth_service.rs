@@ -1,6 +1,7 @@
-use super::google::GoogleEmailResolver;
-use super::{LoginError, OAuthEmailResolver, OAuthEmailResolverError};
 use super::github::GitHubEmailResolver;
+use super::google::GoogleEmailResolver;
+use super::oauth_provider::OAuthProvider;
+use super::{LoginError, OAuthEmailResolver, OAuthEmailResolverError};
 use crate::services::StorageService;
 use log::info;
 use oauth2::basic::{BasicClient, BasicTokenType};
@@ -10,10 +11,7 @@ use oauth2::{
     Scope, TokenResponse, TokenUrl,
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
@@ -21,6 +19,7 @@ pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
     client: BasicClient,
     scopes: Vec<Scope>,
+    oauth_provider: OAuthProvider,
 }
 
 impl OauthService {
@@ -31,22 +30,21 @@ impl OauthService {
             get_auth_url(),
             Some(get_token_url()),
         )
-        // Set the URL the user will be redirected to after the authorization process.
-        .set_redirect_uri(get_redirect_url())
-        .set_introspection_uri(
-            IntrospectionUrl::new("https://www.googleapis.com/oauth2/v3/tokeninfo".to_string())
-                .unwrap(),
-        );
+        .set_redirect_uri(get_redirect_url());
+        // TODO: For custom oauth impls, allow introspection
 
         let scopes = get_oauth_scopes()
             .into_iter()
             .map(|s| Scope::new(s))
             .collect();
 
+        let oauth_provider = OAuthProvider::from_env().expect("Could not create oauth provider");
+
         return OauthService {
             storage: storage,
             client: client,
             scopes: scopes,
+            oauth_provider: oauth_provider,
         };
     }
 
@@ -95,13 +93,8 @@ impl OauthService {
         return Ok(data);
     }
 
-    pub async fn get_email(
-        &self,
-        access_token: &str,
-    ) -> Result<String, OAuthEmailResolverError> {
-        // let resolver: Box<dyn OAuthEmailResolver> = Box::new(GitHubEmailResolver::new()); // TODO: Support other providers in the future
-        let resolver: Box<dyn OAuthEmailResolver> = Box::new(GoogleEmailResolver::new()); // TODO: Support other providers in the future
-        return resolver.resolve_email(access_token).await;
+    pub async fn get_email(&self, access_token: &str) -> Result<String, OAuthEmailResolverError> {
+        return self.oauth_provider.get_email_resolver().resolve_email(access_token).await;
     }
 }
 
