@@ -1,17 +1,16 @@
-use std::{
-    fs::{self, File},
-    io::Write,
-};
-
 use crate::StateManager;
 use actix_web::{
     get, put,
     web::{self, Json},
     HttpResponse,
 };
-use actix_web_grants::proc_macro::{has_permissions, has_any_role};
+use actix_web_grants::proc_macro::has_any_role;
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::{YakManUser, YakManRole};
+use std::{
+    fs::{self, File},
+    io::Write,
+};
+use yak_man_core::model::{YakManRole, YakManUser};
 
 /// Gets users
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]

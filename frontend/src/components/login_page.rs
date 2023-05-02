@@ -48,14 +48,14 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
 
     let state = move || query.with(|params| params.get("state").cloned().unwrap());
     let code = move || query.with(|params| params.get("code").cloned().unwrap());
-    let scope = move || query.with(|params| params.get("scope").cloned().unwrap());
-    let authuser = move || query.with(|params| params.get("authuser").cloned().unwrap());
-    let prompt = move || query.with(|params| params.get("prompt").cloned().unwrap());
 
     create_resource(
         cx,
         move || (),
         move |()| async move {
+
+            log!("Call create_resource");
+
             let verifier = LocalStorage::raw()
                 .get(LOCAL_STORAGE_OAUTH2_VERIFER_KEY)
                 .unwrap()
@@ -63,9 +63,11 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
                 .unwrap()
                 .unwrap();
 
-            api::exchange_oauth_code(&code(), &state(), verifier)
+            let x = api::exchange_oauth_code(&code(), &state(), verifier)
                 .await
                 .unwrap();
+
+            log!("Exchange complete: d: {x} len: {}", x.len());
 
             let navigate = use_navigate(cx);
             navigate("/", Default::default()).unwrap();
@@ -78,10 +80,7 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
 
             {state} <br />
             {code} <br />
-            {scope} <br />
-            {authuser} <br />
-            {prompt} <br />
-
+      
         </div>
     }
 }

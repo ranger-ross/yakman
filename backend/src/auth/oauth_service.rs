@@ -1,14 +1,11 @@
-use super::github::GitHubEmailResolver;
-use super::google::GoogleEmailResolver;
 use super::oauth_provider::OAuthProvider;
-use super::{LoginError, OAuthEmailResolver, OAuthEmailResolverError};
+use super::{LoginError, OAuthEmailResolverError};
 use crate::services::StorageService;
-use log::info;
 use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AuthUrl, ClientId, ClientSecret, CsrfToken, IntrospectionUrl, PkceCodeChallenge, RedirectUrl,
-    Scope, TokenResponse, TokenUrl,
+    AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl, Scope,
+    TokenResponse, TokenUrl,
 };
 use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
 use std::borrow::Cow;
@@ -94,7 +91,11 @@ impl OauthService {
     }
 
     pub async fn get_email(&self, access_token: &str) -> Result<String, OAuthEmailResolverError> {
-        return self.oauth_provider.get_email_resolver().resolve_email(access_token).await;
+        return self
+            .oauth_provider
+            .get_email_resolver()
+            .resolve_email(access_token)
+            .await;
     }
 }
 

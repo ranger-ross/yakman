@@ -1,7 +1,7 @@
 mod adapters;
 mod api;
-mod services;
 mod auth;
+mod services;
 
 extern crate dotenv;
 
@@ -85,18 +85,19 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
         return Ok(vec![]);
     }
 
-    let username = state.get_oauth_service().get_email(token.unwrap().value()).await.unwrap();
-
-    info!("user: {}", username);
-
-    let user = state
-        .get_service()
-        .get_user(&username)
+    if let Ok(username) = state
+        .get_oauth_service()
+        .get_email(token.unwrap().value())
         .await
-        .unwrap()
-        .unwrap();
+    {
+        info!("user: {}", username);
 
-    Ok(vec![user.role])
+        if let Ok(Some(user)) = state.get_service().get_user(&username).await {
+            return Ok(vec![user.role]);
+        }
+    };
+
+    return Ok(vec![]);
 }
 
 #[actix_web::main]
