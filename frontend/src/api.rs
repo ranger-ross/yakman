@@ -41,13 +41,18 @@ pub async fn fetch_oauth_redirect_uri(
     let body = serde_json::to_string(&OAuthInitPayload {
         challenge: challenge,
     })?;
-    return Ok(Request::post("/api/oauth2/init")
+
+    let response = Request::post("/api/oauth2/init")
         .body(body)
         .header("content-type", "application/json")
         .send()
-        .await?
-        .text()
-        .await?);
+        .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.text().await?);
 }
 
 pub async fn exchange_oauth_code(
@@ -60,13 +65,18 @@ pub async fn exchange_oauth_code(
         state: String::from(state),
         verifier: verifier,
     })?;
-    return Ok(Request::post("/api/oauth2/exchange")
+
+    let response = Request::post("/api/oauth2/exchange")
         .body(body)
         .header("content-type", "application/json")
         .send()
-        .await?
-        .text()
-        .await?);
+        .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.text().await?);
 }
 
 pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {

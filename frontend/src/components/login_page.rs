@@ -1,4 +1,5 @@
 use crate::api;
+use crate::api::RequestError;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use leptos::*;
@@ -54,12 +55,10 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
     let state = move || query.with(|params| params.get("state").cloned().unwrap());
     let code = move || query.with(|params| params.get("code").cloned().unwrap());
 
-    create_resource(
+    let error_message = create_resource(
         cx,
         move || (),
         move |()| async move {
-            log!("Call create_resource");
-
             let verifier = LocalStorage::raw()
                 .get(LOCAL_STORAGE_OAUTH2_VERIFER_KEY)
                 .unwrap()
@@ -67,23 +66,38 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
                 .unwrap()
                 .unwrap();
 
-            let x = api::exchange_oauth_code(&code(), &state(), verifier)
-                .await
-                .unwrap();
+            let error = match api::exchange_oauth_code(&code(), &state(), verifier).await {
+                Ok(_) => {
+                    let navigate = use_navigate(cx);
+                    navigate("/", Default::default()).unwrap();
+                    None
+                }
+                Err(e) => match e {
+                    RequestError::UnexpectedHttpStatus(e) => Some("Unauthorized User".to_string()),
+                    _ => {
+                        error!("Token exchange failed {e}");
+                        Some("Failed to login".to_string())
+                    }
+                },
+            };
 
-            log!("Exchange complete: d: {x} len: {}", x.len());
-
-            let navigate = use_navigate(cx);
-            navigate("/", Default::default()).unwrap();
+            error
         },
     );
 
+    let error_message = move || error_message.read(cx).unwrap_or(None);
+
     view! { cx,
         <div>
-            <h1>{"Callback page (loading....)"}</h1>
 
-            {state} <br />
-            {code} <br />
+            {move || match error_message() {
+                Some(error) => view! { cx,
+                    {error}
+                }.into_view(cx),
+                None => view! {cx,
+                    <h1>{"Logging in..."}</h1>
+                }.into_view(cx)
+            }}
 
         </div>
     }
