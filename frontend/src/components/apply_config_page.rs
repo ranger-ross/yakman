@@ -51,14 +51,8 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
 
     let pending_revision = move || page_data.read(cx).unwrap().pending_revision.unwrap();
 
-    let on_approve = create_action(cx, move |_: &()| {
-        async move {
-            log!(
-                "clicked! {} {} {}",
-                config_name(),
-                instance(),
-                pending_revision()
-            );
+    let on_approve = move |_| {
+        spawn_local(async move {
             match api::approve_instance_revision(&config_name(), &instance(), &pending_revision())
                 .await
             {
@@ -67,12 +61,12 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
                     let _ = navigate(
                         &format!("/history/{}/{}", config_name(), instance()),
                         Default::default(),
-                    ); // TODO: Fix warning
+                    );
                 }
                 Err(e) => error!("Error while approving config: {}", e.to_string()),
             };
-        }
-    });
+        })
+    };
 
     view! { cx,
         <div>
@@ -86,7 +80,7 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
                                 <h3> {"Pending Revision"} </h3>
                                 <p> {pending_revision} </p>
                                 <p>{"TODO: Show diffs"}</p>
-                                <button on:click=move |_| on_approve.dispatch(())>{"Approve"}</button>
+                                <button on:click=on_approve>{"Approve"}</button>
                             </div>
                         }.into_view(cx),
                         None => view! {cx, "No pending revisions"}.into_view(cx)

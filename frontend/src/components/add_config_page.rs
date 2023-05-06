@@ -21,7 +21,7 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
             match api::create_config(&name, &project_uuid).await {
                 Ok(()) => {
                     let navigate = use_navigate(cx);
-                    let _ = navigate("/", Default::default()); // TODO: Fix warning
+                    let _ = navigate("/", Default::default());
                 }
                 Err(err) => error!("Error creating config: {}", err.to_string()),
             };

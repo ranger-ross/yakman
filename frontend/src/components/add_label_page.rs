@@ -10,10 +10,8 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
     let (description, set_description) = create_signal(cx, String::from(""));
     let (options, set_options) = create_signal(cx, String::from(""));
 
-    let on_create_label = create_action(cx, move |d: &(String, String, String, String)| {
-        let (name, description, prioity, options) = d;
-
-        let options = options
+    let on_create_label = move |_| {
+        let options = options()
             .split(",")
             .into_iter()
             .map(String::from)
@@ -21,22 +19,22 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
             .collect::<Vec<String>>();
 
         let label = LabelType {
-            name: name.clone(),
-            description: description.clone(),
-            priority: prioity.parse().unwrap(),
+            name: name(),
+            description: description(),
+            priority: prioity().parse().unwrap(),
             options: options,
         };
 
-        async move {
+        spawn_local(async move {
             match api::create_label(label).await {
                 Ok(()) => {
                     let navigate = use_navigate(cx);
-                    let _ = navigate("/", Default::default()); // TODO: Fix warning
-                },
+                    let _ = navigate("/", Default::default());
+                }
                 Err(err) => error!("Error creating config: {}", err.to_string()),
             };
-        }
-    });
+        });
+    };
 
     view! { cx,
         <div>
@@ -48,7 +46,7 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
 
             <br />
 
-            <button on:click=move |_| on_create_label.dispatch((name(), description(), prioity(), options()))>"Create"</button>
+            <button on:click=on_create_label>"Create"</button>
 
         </div>
     }

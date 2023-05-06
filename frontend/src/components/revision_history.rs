@@ -67,22 +67,20 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
             .unwrap_or(vec![])
     };
 
-    let on_select_revision = create_action(cx, move |revision: &String| {
-        let revision = revision.clone();
-        async move {
-            log!("click {}", revision);
+    let on_select_revision = move |revision: String| {
+        spawn_local(async move {
             match api::update_instance_revision(&config_name(), &instance(), &revision).await {
                 Ok(()) => {
                     let navigate = use_navigate(cx);
                     let _ = navigate(
                         &format!("/apply/{}/{}", config_name(), instance()),
                         Default::default(),
-                    ); // TODO: Fix warning
+                    );
                 }
                 Err(err) => error!("Error updating revision {}", err.to_string()),
             };
-        }
-    });
+        })
+    };
 
     view! { cx,
         <div>
@@ -102,7 +100,7 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
                             <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
                             <p
                                 style={format!("cursor: pointer; color: {color}")}
-                                on:click={move |_| on_select_revision.dispatch(rev.clone())}
+                                on:click={move |_| on_select_revision(rev.clone())}
                             >
                                 {&revision.revision}
                             </p>
