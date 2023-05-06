@@ -1,5 +1,6 @@
 use crate::api;
 use crate::api::RequestError;
+use crate::GlobalState;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use leptos::*;
@@ -50,6 +51,13 @@ pub fn login_page(cx: Scope) -> impl IntoView {
 #[component]
 pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
     let query = use_query_map(cx);
+    let state = use_context::<RwSignal<GlobalState>>(cx).expect("state to have been provided");
+    let (_, set_is_login_needed) = create_slice(
+        cx,
+        state,
+        |state| state.is_login_needed,
+        |state, n| state.is_login_needed = n,
+    );
 
     let state = move || query.with(|params| params.get("state").cloned().unwrap());
     let code = move || query.with(|params| params.get("code").cloned().unwrap());
@@ -67,6 +75,7 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
 
             let error = match api::exchange_oauth_code(&code(), &state(), verifier).await {
                 Ok(_) => {
+                    set_is_login_needed.set(false);
                     let navigate = use_navigate(cx);
                     navigate("/", Default::default()).unwrap();
                     None

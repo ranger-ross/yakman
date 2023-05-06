@@ -3,17 +3,21 @@ use crate::{
         oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
         LoginError,
     },
-    StateManager,
+    StateManager, YakManError,
 };
 use actix_web::{
     cookie::{time::Duration, Cookie},
-    post,
+    get, post,
     web::{self, Json},
-    HttpRequest, HttpResponse,
+    HttpRequest, HttpResponse, Responder,
 };
+use actix_web_grants::permissions::AuthDetails;
 use log::{error, warn};
 use oauth2::TokenResponse;
-use yak_man_core::model::{OAuthExchangePayload, OAuthInitPayload};
+use yak_man_core::model::{
+    oauth::{OAuthExchangePayload, OAuthInitPayload},
+    YakManRole,
+};
 
 /// Begins the oauth login flow
 #[utoipa::path(responses((status = 200, body = String)))]
@@ -155,4 +159,21 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
                 .finish(),
         )
         .body("")
+}
+
+/// Endpoint to check if a user is logged in and get user roles
+#[utoipa::path(responses((status = 200, body = Vec<YakManRole>)))]
+#[get("/oauth2/user-roles")]
+pub async fn get_user_roles(
+    details: AuthDetails<YakManRole>,
+) -> actix_web::Result<impl Responder, YakManError> {
+    let roles: Vec<YakManRole> = details
+        .permissions
+        .iter()
+        .map(|p| YakManRole::try_from(p.to_string()))
+        .filter(|r| r.is_ok())
+        .map(|r| r.unwrap())
+        .collect();
+
+    return Ok(web::Json(roles));
 }

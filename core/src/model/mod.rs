@@ -1,9 +1,8 @@
-use std::fmt;
+pub mod oauth;
 
-use oauth2::PkceCodeChallenge;
-use oauth2::PkceCodeVerifier;
 pub use serde::Deserialize;
 pub use serde::Serialize;
+use std::fmt;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
@@ -57,18 +56,6 @@ pub struct ConfigInstanceRevision {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct YakManSettings {
     pub version: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct OAuthInitPayload {
-    pub challenge: PkceCodeChallenge,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct OAuthExchangePayload {
-    pub state: String,
-    pub code: String,
-    pub verifier: PkceCodeVerifier,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]

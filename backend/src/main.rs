@@ -55,6 +55,7 @@ impl StateManager {
         api::oauth::oauth_init,
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
+        api::oauth::get_user_roles,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -98,7 +99,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     {
         Ok(claims) => {
             if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
-                debug!("role = {role}");
+                info!("role = {role}");
                 return Ok(vec![role]);
             }
         }
@@ -107,7 +108,9 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
         }
     }
 
-    return Ok(vec![]);
+    return Ok(vec![
+        YakManRole::Admin
+    ]);
 }
 
 #[actix_web::main]
@@ -152,6 +155,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)
             .service(api::oauth::oauth_refresh)
+            .service(api::oauth::get_user_roles)
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)

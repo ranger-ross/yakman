@@ -1,13 +1,13 @@
 use gloo_net::http::Request;
+use leptos::log;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 use std::collections::HashMap;
-use thiserror::Error;
-use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, OAuthExchangePayload,
-    OAuthInitPayload, YakManRole, YakManUser,
-};
-
 use std::fmt;
+use thiserror::Error;
+use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManRole, YakManUser,
+};
 
 pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
     let response = Request::get("/api/admin/v1/users").send().await?;
@@ -77,6 +77,25 @@ pub async fn exchange_oauth_code(
     }
 
     return Ok(response.text().await?);
+}
+
+pub async fn fetch_user_roles() -> Result<Vec<YakManRole>, RequestError> {
+    let response = Request::get("/api/oauth2/user-roles").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    let roles: Vec<String> = response.json().await?;
+
+    let roles: Vec<YakManRole> = roles
+        .into_iter()
+        .map(|r| YakManRole::try_from(r))
+        .filter(|r: &Result<YakManRole, &str>| r.is_ok())
+        .map(|r| r.unwrap())
+        .collect();
+
+    return Ok(roles);
 }
 
 pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {

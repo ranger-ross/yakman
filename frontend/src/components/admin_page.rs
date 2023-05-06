@@ -1,4 +1,4 @@
-use crate::api::{self, RequestError};
+use crate::api;
 use leptos::*;
 use yak_man_core::model::{YakManRole, YakManUser};
 
@@ -11,17 +11,6 @@ pub fn admin_page(cx: Scope) -> impl IntoView {
         move || (),
         |()| async move {
             let users = api::fetch_users().await;
-
-            match users {
-                Err(RequestError::UnexpectedHttpStatus(status)) => {
-                    if status == 403 {
-                        api::refresh_token().await.unwrap();
-                        let _ = window().location().reload();
-                    }
-                }
-                _ => {}
-            }
-
             users.expect("failed to get oauth redirect uri")
         },
     );
