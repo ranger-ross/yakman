@@ -34,22 +34,23 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
     };
 
     let page_data = create_resource(cx, selected_project, move |project| async move {
-        log!("{:?}", project);
-
         let mut configs_list: Vec<PageConfig> = vec![];
 
-        match api::fetch_configs(project.map(|p| p.uuid)).await {
-            Ok(configs) => {
-                for config in configs {
-                    let instances = api::fetch_config_metadata(&config.name).await;
-                    configs_list.push(PageConfig {
-                        config: config,
-                        instances: instances,
-                    });
+        if let Some(project_uuid) = project.map(|p| p.uuid) {
+            match api::fetch_configs(Some(project_uuid)).await {
+                Ok(configs) => {
+                    for config in configs {
+                        let instances = api::fetch_config_metadata(&config.name).await;
+                        configs_list.push(PageConfig {
+                            config: config,
+                            instances: instances,
+                        });
+                    }
                 }
+                Err(err) => error!("Error fetching configs {}", err.to_string()),
             }
-            Err(err) => error!("Error fetching configs {}", err.to_string()),
         }
+
         configs_list
     });
 
