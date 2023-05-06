@@ -4,7 +4,7 @@ use log::info;
 use uuid::Uuid;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-    YakManUser,
+    YakManUser, YakManProject,
 };
 
 use crate::{
@@ -26,6 +26,11 @@ pub struct FileBasedStorageService {
 
 #[async_trait]
 impl StorageService for FileBasedStorageService {
+
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
+        return Ok(self.adapter.get_projects().await?);
+    }
+
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
         return Ok(self.adapter.get_configs().await?);
     }

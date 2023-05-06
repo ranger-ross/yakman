@@ -6,8 +6,19 @@ use std::fmt;
 use thiserror::Error;
 use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
 use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManRole, YakManUser,
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManRole,
+    YakManUser,
 };
+
+pub async fn fetch_projects() -> Result<Vec<YakManProject>, RequestError> {
+    let response = Request::get("/api/v1/projects").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.json().await?);
+}
 
 pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
     let response = Request::get("/api/admin/v1/users").send().await?;

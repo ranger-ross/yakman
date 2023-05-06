@@ -1,7 +1,12 @@
 use crate::api;
 use leptos::*;
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::{Config, ConfigInstance};
+use yak_man_core::model::{Config, ConfigInstance, YakManProject};
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct PageData {
+    pub projects: Vec<YakManProject>,
+}
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct PageConfig {
@@ -11,10 +16,30 @@ pub struct PageConfig {
 
 #[component]
 pub fn config_list_page(cx: Scope) -> impl IntoView {
-    let page_data = create_resource(
+    let (selected_project_index, set_selected_project_index) = create_signal::<usize>(cx, 0);
+
+    let pd = create_resource(
         cx,
         || (),
         |_| async move {
+            let projects = api::fetch_projects().await.unwrap();
+
+            PageData { projects: projects }
+        },
+    );
+
+    let selected_project = move || {
+        pd.read(cx)
+            .map(|data| data.projects[selected_project_index()].clone())
+    };
+
+    let page_data = create_resource(
+        cx,
+        || (),
+        move |_| async move {
+            log!("{:?}", pd.read(cx));
+            log!("{:?}", selected_project());
+
             let mut configs_list: Vec<PageConfig> = vec![];
 
             match api::fetch_configs().await {
@@ -43,6 +68,25 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 <a href="/add-label">{"Add Label"}</a>
             </div>
 
+            {"Project "}
+            <select>
+                {move || match pd.read(cx) {
+                    Some(data) => {
+                        let projects = move || data.projects.clone();
+                        view! { cx,
+                            <For
+                                each=projects
+                                key=|p| p.uuid.clone()
+                                view=move |cx, project: YakManProject| view! {cx,
+                                    <option>{project.name}</option>
+                                }
+                            />
+                        }.into_view(cx)
+                    },
+                    None => view! { cx, }.into_view(cx)
+                }}
+            </select>
+
             <div style="display: flex; flex-direction: column; align-items: center">
                 <div>
                     <h1>{ "Configs" }</h1>
@@ -51,8 +95,8 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                         None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
                         Some(configs) => {
                             view! { cx,
-                                {configs.into_iter().map(|config| view! {cx, 
-                                    <ConfigRow config={config} /> 
+                                {configs.into_iter().map(|config| view! {cx,
+                                    <ConfigRow config={config} />
                                 }).collect::<Vec<_>>()}
                             }.into_view(cx)
                         }

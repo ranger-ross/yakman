@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManUser,
+    Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject, YakManUser,
 };
 
 use crate::adapters::errors::GenericStorageError;
@@ -16,6 +16,8 @@ mod service_utils;
 
 #[async_trait]
 pub trait StorageService: Sync + Send {
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
+
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;

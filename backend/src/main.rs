@@ -16,7 +16,7 @@ use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
 use auth::{oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, token::TokenService};
 use dotenv::dotenv;
-use log::{debug, info};
+use log::info;
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -26,7 +26,7 @@ use yak_man_core::{
     load_yak_man_settings,
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManRole, YakManSettings,
+        YakManProject, YakManRole, YakManSettings,
     },
 };
 
@@ -56,6 +56,7 @@ impl StateManager {
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
         api::oauth::get_user_roles,
+        api::projects::get_projects,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -71,10 +72,11 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings)
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject)
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),
+        (name = "api::projects", description = "Project management endpoints"),
         (name = "api::configs", description = "Config management endpoints"),
         (name = "api::labels", description = "Label management endpoints"),
         (name = "api::instances", description = "Config Instance management endpoints"),
@@ -156,6 +158,8 @@ async fn main() -> std::io::Result<()> {
             .service(api::oauth::oauth_exchange)
             .service(api::oauth::oauth_refresh)
             .service(api::oauth::get_user_roles)
+            // Projects
+            .service(api::projects::get_projects)
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)
