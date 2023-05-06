@@ -2,11 +2,15 @@ use crate::{
     api::is_alphanumeric_kebab_case, services::errors::CreateConfigError, StateManager, YakManError,
 };
 
-use actix_web::{get, put, web::{self, Json}, HttpResponse, Responder};
+use actix_web::{
+    get, put,
+    web::{self, Json},
+    HttpResponse, Responder,
+};
 use actix_web_grants::proc_macro::has_any_role;
 use log::{error, info};
 use serde::Deserialize;
-use yak_man_core::model::{YakManRole, request::CreateConfigPayload};
+use yak_man_core::model::{request::CreateConfigPayload, YakManRole};
 
 #[derive(Deserialize)]
 pub struct GetConfigsQuery {
@@ -37,10 +41,13 @@ pub async fn get_configs(
 }
 
 /// Create a new config
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(request_body = CreateConfigPayload, responses((status = 200, body = String)))]
 #[put("/configs")]
 #[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
-async fn create_config(payload: web::Json<CreateConfigPayload>, state: web::Data<StateManager>) -> HttpResponse {
+async fn create_config(
+    payload: web::Json<CreateConfigPayload>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
     let project_uuid = payload.project_uuid;
@@ -51,7 +58,8 @@ async fn create_config(payload: web::Json<CreateConfigPayload>, state: web::Data
     }
 
     let service = state.get_service();
-    let result: Result<(), CreateConfigError> = service.create_config(&config_name, &project_uuid).await;
+    let result: Result<(), CreateConfigError> =
+        service.create_config(&config_name, &project_uuid).await;
 
     return match result {
         Ok(()) => HttpResponse::Ok().body(""),

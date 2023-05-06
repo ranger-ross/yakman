@@ -16,7 +16,7 @@ use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
 use auth::{oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, token::TokenService};
 use dotenv::dotenv;
-use log::{info, debug};
+use log::{debug, info};
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -25,8 +25,8 @@ use utoipa_swagger_ui::SwaggerUi;
 use yak_man_core::{
     load_yak_man_settings,
     model::{
-        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManProject, YakManRole, YakManSettings,
+        request::CreateConfigPayload, Config, ConfigInstance, ConfigInstanceChange,
+        ConfigInstanceRevision, Label, LabelType, YakManProject, YakManRole, YakManSettings, YakManUser,
     },
 };
 
@@ -72,7 +72,7 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject)
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject, YakManRole, YakManUser, CreateConfigPayload)
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),
