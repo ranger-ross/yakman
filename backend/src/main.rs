@@ -1,14 +1,22 @@
 mod adapters;
 mod api;
+mod auth;
 mod services;
 
+extern crate dotenv;
+
 use crate::adapters::local_file_adapter::create_local_file_adapter;
+use crate::auth::oauth_service::OauthService;
 use actix_middleware_etag::Etag;
 use actix_web::{
-    http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
+    dev::ServiceRequest, http::header::ContentType, middleware::Logger, web, App, Error,
+    HttpResponse, HttpServer,
 };
+use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
-use log::info;
+use auth::{oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, token::TokenService};
+use dotenv::dotenv;
+use log::{debug, info};
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -18,24 +26,36 @@ use yak_man_core::{
     load_yak_man_settings,
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManSettings,
+        YakManRole, YakManSettings,
     },
 };
 
 #[derive(Clone)]
 pub struct StateManager {
     service: Arc<dyn StorageService>,
+    oauth_service: Arc<OauthService>,
+    jwt_service: Arc<TokenService>,
 }
 
 impl StateManager {
     fn get_service(&self) -> &dyn StorageService {
         return self.service.as_ref();
     }
+    fn get_oauth_service(&self) -> &OauthService {
+        return self.oauth_service.as_ref();
+    }
+    fn get_token_service(&self) -> &TokenService {
+        return self.jwt_service.as_ref();
+    }
 }
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        api::oauth::oauth_init,
+        api::oauth::oauth_exchange,
+        api::oauth::oauth_refresh,
+        api::oauth::get_user_roles,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -54,6 +74,7 @@ impl StateManager {
         schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings)
     ),
     tags(
+        (name = "api::oauth", description = "OAuth endpoints"),
         (name = "api::configs", description = "Config management endpoints"),
         (name = "api::labels", description = "Label management endpoints"),
         (name = "api::instances", description = "Config Instance management endpoints"),
@@ -63,8 +84,39 @@ impl StateManager {
 )]
 struct ApiDoc;
 
+async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
+    let state = req.app_data::<web::Data<StateManager>>().unwrap();
+    let cookies = req.cookies().unwrap();
+    let token = cookies
+        .iter()
+        .find(|c| c.name() == OAUTH_ACCESS_TOKEN_COOKIE_NAME);
+
+    if token.is_none() {
+        return Ok(vec![]);
+    }
+
+    match state
+        .get_token_service()
+        .validate_access_token(token.unwrap().value())
+    {
+        Ok(claims) => {
+            if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
+                info!("role = {role}");
+                return Ok(vec![role]);
+            }
+        }
+        Err(e) => {
+            info!("token invalid {e:?}");
+        }
+    }
+
+    return Ok(vec![]);
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     env_logger::init();
 
     let settings = load_yak_man_settings();
@@ -77,8 +129,15 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to initialize storage");
 
+    let arc = Arc::new(service);
+
+    let oauth_service = OauthService::new(arc.clone());
+    let jwt_service = TokenService::from_env().expect("Failed to create jwt service");
+
     let state = web::Data::new(StateManager {
-        service: Arc::new(service),
+        service: arc,
+        oauth_service: Arc::new(oauth_service),
+        jwt_service: Arc::new(jwt_service),
     });
 
     let openapi = ApiDoc::openapi();
@@ -88,9 +147,18 @@ async fn main() -> std::io::Result<()> {
             .app_data(state.clone())
             .wrap(Etag::default())
             .wrap(Logger::new("%s %r"))
+            .wrap(GrantsMiddleware::with_extractor(extract))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
+            // OAuth
+            .service(api::oauth::oauth_init)
+            .service(api::oauth::oauth_exchange)
+            .service(api::oauth::oauth_refresh)
+            .service(api::oauth::get_user_roles)
+            // Admin
+            .service(api::admin::get_yakman_users)
+            .service(api::admin::create_yakman_user)
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)

@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use yak_man_core::model::{LabelType, Config, ConfigInstance, ConfigInstanceRevision};
+use yak_man_core::model::{LabelType, Config, ConfigInstance, ConfigInstanceRevision, YakManUser};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LabelJson {
@@ -20,3 +20,10 @@ pub struct InstanceJson {
 pub struct RevisionJson {
     pub revision: ConfigInstanceRevision,
 }
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UsersJson {
+    pub users: Vec<YakManUser>,
+}
+

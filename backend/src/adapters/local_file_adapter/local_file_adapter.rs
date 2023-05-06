@@ -7,12 +7,12 @@ use std::{
 use async_trait::async_trait;
 
 use log::{error, info};
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManUser};
 
 use crate::adapters::local_file_adapter::storage_types::RevisionJson;
 
 use super::{
-    storage_types::{ConfigJson, InstanceJson, LabelJson},
+    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
     FileBasedStorageAdapter, GenericStorageError,
 };
 
@@ -213,6 +213,33 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         fs::create_dir(&revision_instance_path)?;
         return Ok(());
     }
+
+    async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
+        let path = self.get_user_file_path();
+        let data = fs::read_to_string(path)?;
+        let user_data: UsersJson = serde_json::from_str(&data)?;
+        return Ok(user_data.users);
+    }
+
+    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        let users = self.get_users().await?;
+
+        for user in users {
+            if user.email == id {
+                return Ok(Some(user));
+            }
+        }
+
+        return Ok(None);
+    }
+
+    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&UsersJson { users: users })?;
+        let data_file_path = self.get_user_file_path();
+        let mut data_file = File::create(&data_file_path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+        Ok(())
+    }
 }
 
 // Helper functions
@@ -231,6 +258,11 @@ impl LocalFileStorageAdapter {
     fn get_configs_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/configs.json");
+    }
+
+    fn get_user_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/users/users.json");
     }
 
     fn get_instance_revisions_path(&self) -> String {

@@ -37,6 +37,8 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
         <div>
             // Header
             <div style="display: flex; justify-content: end; gap: 10px">
+                <a href="/login">{"Login"}</a>
+                <a href="/admin">{"Admin"}</a>
                 <a href="/add-config">{"Add Config"}</a>
                 <a href="/add-label">{"Add Label"}</a>
             </div>

@@ -3,11 +3,20 @@ use crate::{
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web_grants::proc_macro::has_any_role;
 use log::error;
+use yak_man_core::model::YakManRole;
 
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
 #[get("/configs")]
+#[has_any_role(
+    "YakManRole::Admin",
+    "YakManRole::Approver",
+    "YakManRole::Operator",
+    "YakManRole::Viewer",
+    type = "YakManRole"
+)]
 pub async fn get_configs(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
@@ -21,10 +30,12 @@ pub async fn get_configs(
 /// Create a new config
 #[utoipa::path(responses((status = 200, body = String)))]
 #[put("/configs/{config_name}")]
+#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn create_config(path: web::Path<String>, state: web::Data<StateManager>) -> HttpResponse {
     let config_name = path.into_inner().to_lowercase();
     if !is_alphanumeric_kebab_case(&config_name) {
-        return HttpResponse::BadRequest().body("Invalid config name. Must be alphanumeric kebab case");
+        return HttpResponse::BadRequest()
+            .body("Invalid config name. Must be alphanumeric kebab case");
     }
 
     let service = state.get_service();

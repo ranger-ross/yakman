@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManUser,
+};
 
 use crate::adapters::errors::GenericStorageError;
 
@@ -40,7 +42,7 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<ConfigInstance>, GenericStorageError>;
-    
+
     async fn get_config_data(
         &self,
         config_name: &str,
@@ -87,6 +89,12 @@ pub trait StorageService: Sync + Send {
         instance: &str,
         revision: &str,
     ) -> Result<(), ApproveRevisionError>;
+
+    async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
+
+    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError>;
+
+    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError>;
 }

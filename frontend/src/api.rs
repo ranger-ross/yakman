@@ -1,12 +1,111 @@
-use std::{collections::HashMap, error::Error};
-
 use gloo_net::http::Request;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
-
+use leptos::log;
+use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
+use std::collections::HashMap;
 use std::fmt;
+use thiserror::Error;
+use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManRole, YakManUser,
+};
+
+pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
+    let response = Request::get("/api/admin/v1/users").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.json().await?);
+}
+
+pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError> {
+    let body = serde_json::to_string(&YakManUser {
+        email: String::from(username),
+        role: role.clone(),
+    })?;
+
+    Request::put("/api/admin/v1/users")
+        .body(body)
+        .header("content-type", "application/json")
+        .send()
+        .await?
+        .text()
+        .await?;
+    return Ok(());
+}
+
+pub async fn fetch_oauth_redirect_uri(
+    challenge: PkceCodeChallenge,
+) -> Result<String, RequestError> {
+    let body = serde_json::to_string(&OAuthInitPayload {
+        challenge: challenge,
+    })?;
+
+    let response = Request::post("/api/oauth2/init")
+        .body(body)
+        .header("content-type", "application/json")
+        .send()
+        .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.text().await?);
+}
+
+pub async fn exchange_oauth_code(
+    code: &str,
+    state: &str,
+    verifier: PkceCodeVerifier,
+) -> Result<String, RequestError> {
+    let body: String = serde_json::to_string(&OAuthExchangePayload {
+        code: String::from(code),
+        state: String::from(state),
+        verifier: verifier,
+    })?;
+
+    let response = Request::post("/api/oauth2/exchange")
+        .body(body)
+        .header("content-type", "application/json")
+        .send()
+        .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.text().await?);
+}
+
+pub async fn fetch_user_roles() -> Result<Vec<YakManRole>, RequestError> {
+    let response = Request::get("/api/oauth2/user-roles").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    let roles: Vec<String> = response.json().await?;
+
+    let roles: Vec<YakManRole> = roles
+        .into_iter()
+        .map(|r| YakManRole::try_from(r))
+        .filter(|r: &Result<YakManRole, &str>| r.is_ok())
+        .map(|r| r.unwrap())
+        .collect();
+
+    return Ok(roles);
+}
 
 pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
-    return Ok(Request::get("/api/configs").send().await?.json().await?);
+    let response = Request::get("/api/configs").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.json().await?);
 }
 
 pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
@@ -33,7 +132,6 @@ pub async fn fetch_instance_metadata(config_name: &str, instance: &str) -> Confi
         .expect("Failed to deserialize instance metadata JSON");
 }
 
-
 pub async fn create_config_instance(
     config_name: &str,
     data: &str,
@@ -59,7 +157,7 @@ pub async fn update_config_instance(
     instance: &str,
     data: &str,
     labels: HashMap<String, String>,
-    content_type: Option<&str>
+    content_type: Option<&str>,
 ) -> Result<(), RequestError> {
     let query_params: HashMap<&str, &str> = labels
         .iter()
@@ -133,8 +231,20 @@ pub async fn approve_instance_revision(
     return Ok(());
 }
 
-#[derive(Debug)]
+pub async fn refresh_token() -> Result<(), RequestError> {
+    let response = Request::post("/api/oauth2/refresh").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    response.text().await?;
+    return Ok(());
+}
+
+#[derive(Debug, Error)]
 pub enum RequestError {
+    UnexpectedHttpStatus(u16),
     Reqwest(gloo_net::Error),
     Json(serde_json::Error),
 }
@@ -144,15 +254,7 @@ impl fmt::Display for RequestError {
         match *self {
             RequestError::Reqwest(ref e) => e.fmt(f),
             RequestError::Json(ref e) => e.fmt(f),
-        }
-    }
-}
-
-impl Error for RequestError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match *self {
-            RequestError::Reqwest(ref e) => Some(e),
-            RequestError::Json(ref e) => Some(e),
+            RequestError::UnexpectedHttpStatus(ref e) => e.fmt(f),
         }
     }
 }

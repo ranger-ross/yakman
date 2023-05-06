@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType};
+use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManUser};
 
 use self::errors::GenericStorageError;
 
@@ -18,7 +18,10 @@ pub trait FileBasedStorageAdapter: Sync + Send {
 
     async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError>;
 
-    async fn get_instance_metadata(&self, config_name: &str) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
+    async fn get_instance_metadata(
+        &self,
+        config_name: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
     async fn get_instance_data(
         &self,
@@ -60,6 +63,12 @@ pub trait FileBasedStorageAdapter: Sync + Send {
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError>;
+
+    async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
+
+    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError>;
+
+    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
 
     async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError>;
 }

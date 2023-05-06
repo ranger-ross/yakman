@@ -1,10 +1,19 @@
 use crate::StateManager;
 
 use actix_web::{get, post, web, HttpResponse, put};
+use actix_web_grants::proc_macro::has_any_role;
+use yak_man_core::model::YakManRole;
 
 /// Get all of the revisions for a config
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
 #[get("/configs/{config_name}/instances/{instance}/revisions")]
+#[has_any_role(
+    "YakManRole::Admin",
+    "YakManRole::Approver",
+    "YakManRole::Operator",
+    "YakManRole::Viewer",
+    type = "YakManRole"
+)]
 async fn get_instance_revisions(
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
@@ -25,6 +34,12 @@ async fn get_instance_revisions(
 /// Submit a new revision for review
 #[utoipa::path(responses((status = 200, body = String)))]
 #[put("/configs/{config_name}/instances/{instance}/revisions/{revision}/submit")]
+#[has_any_role(
+    "YakManRole::Admin",
+    "YakManRole::Approver",
+    "YakManRole::Operator",
+    type = "YakManRole"
+)]
 async fn submit_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
@@ -44,6 +59,11 @@ async fn submit_instance_revision(
 /// Approves and applies a revision to a config instance
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/configs/{config_name}/instances/{instance}/revisions/{revision}/approve")]
+#[has_any_role(
+    "YakManRole::Admin",
+    "YakManRole::Approver",
+    type = "YakManRole"
+)]
 async fn approve_pending_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,

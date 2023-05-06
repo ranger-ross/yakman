@@ -53,7 +53,6 @@ impl From<GenericStorageError> for CreateLabelError {
     }
 }
 
-
 #[derive(Error, Debug)]
 pub enum CreateConfigInstanceError {
     #[error("No config found")]
