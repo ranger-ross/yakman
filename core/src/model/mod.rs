@@ -1,4 +1,5 @@
 pub mod oauth;
+pub mod request;
 
 pub use serde::Deserialize;
 pub use serde::Serialize;
@@ -14,6 +15,7 @@ pub struct YakManProject {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct Config {
     pub name: String, // Unique key
+    pub project_uuid: String,
     pub description: String,
 }
 

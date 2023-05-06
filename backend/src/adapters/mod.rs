@@ -16,6 +16,8 @@ pub trait FileBasedStorageAdapter: Sync + Send {
 
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
 
+    async fn get_configs_by_project_uuid(&self, project_uuid: String) -> Result<Vec<Config>, GenericStorageError>;
+
     async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;

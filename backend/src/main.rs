@@ -16,7 +16,7 @@ use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
 use auth::{oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, token::TokenService};
 use dotenv::dotenv;
-use log::info;
+use log::{info, debug};
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -103,7 +103,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     {
         Ok(claims) => {
             if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
-                info!("role = {role}");
+                debug!("role = {role}");
                 return Ok(vec![role]);
             }
         }

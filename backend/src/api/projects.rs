@@ -1,6 +1,6 @@
 use crate::StateManager;
 
-use actix_web::{get, post, put, web, HttpResponse};
+use actix_web::{get, web, HttpResponse};
 use actix_web_grants::proc_macro::has_any_role;
 use yak_man_core::model::{YakManProject, YakManRole};
 

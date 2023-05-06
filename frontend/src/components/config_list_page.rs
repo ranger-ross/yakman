@@ -33,30 +33,41 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
             .map(|data| data.projects[selected_project_index()].clone())
     };
 
-    let page_data = create_resource(
-        cx,
-        || (),
-        move |_| async move {
-            log!("{:?}", pd.read(cx));
-            log!("{:?}", selected_project());
+    let page_data = create_resource(cx, selected_project, move |project| async move {
+        log!("{:?}", project);
 
-            let mut configs_list: Vec<PageConfig> = vec![];
+        let mut configs_list: Vec<PageConfig> = vec![];
 
-            match api::fetch_configs().await {
-                Ok(configs) => {
-                    for config in configs {
-                        let instances = api::fetch_config_metadata(&config.name).await;
-                        configs_list.push(PageConfig {
-                            config: config,
-                            instances: instances,
-                        });
-                    }
+        match api::fetch_configs(project.map(|p| p.uuid)).await {
+            Ok(configs) => {
+                for config in configs {
+                    let instances = api::fetch_config_metadata(&config.name).await;
+                    configs_list.push(PageConfig {
+                        config: config,
+                        instances: instances,
+                    });
                 }
-                Err(err) => error!("Error fetching configs {}", err.to_string()),
             }
-            configs_list
-        },
-    );
+            Err(err) => error!("Error fetching configs {}", err.to_string()),
+        }
+        configs_list
+    });
+
+    let on_project_change = move |ev| {
+        let value = event_target_value(&ev);
+
+        let (index, _) = pd
+            .read(cx)
+            .expect("Page data should be loaded before user can change projects")
+            .projects
+            .iter()
+            .enumerate()
+            .find(|(_, project)| project.uuid == value)
+            .expect("The selected project should have been in the page data list");
+
+        log!("Project Changed! {index:?}");
+        set_selected_project_index.set(index);
+    };
 
     view! { cx,
         <div>
@@ -69,7 +80,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
             </div>
 
             {"Project "}
-            <select>
+            <select on:change=on_project_change>
                 {move || match pd.read(cx) {
                     Some(data) => {
                         let projects = move || data.projects.clone();
@@ -78,7 +89,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                                 each=projects
                                 key=|p| p.uuid.clone()
                                 view=move |cx, project: YakManProject| view! {cx,
-                                    <option>{project.name}</option>
+                                    <option value=project.uuid>{project.name}</option>
                                 }
                             />
                         }.into_view(cx)

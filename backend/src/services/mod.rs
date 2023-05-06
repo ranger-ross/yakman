@@ -18,13 +18,20 @@ mod service_utils;
 pub trait StorageService: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
+    async fn get_configs(
+        &self,
+        project_uuid: Option<String>,
+    ) -> Result<Vec<Config>, GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
 
-    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError>;
+    async fn create_config(
+        &self,
+        config_name: &str,
+        project_uuid: &str,
+    ) -> Result<(), CreateConfigError>;
 
     async fn create_config_instance(
         &self,

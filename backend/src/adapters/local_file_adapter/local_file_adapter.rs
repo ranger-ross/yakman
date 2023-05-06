@@ -40,6 +40,17 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(v.configs);
     }
 
+    async fn get_configs_by_project_uuid(
+        &self,
+        project_uuid: String,
+    ) -> Result<Vec<Config>, GenericStorageError> {
+        let configs = self.get_configs().await?;
+        Ok(configs
+            .into_iter()
+            .filter(|c| c.project_uuid == project_uuid)
+            .collect())
+    }
+
     async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
