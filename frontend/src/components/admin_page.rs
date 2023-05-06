@@ -14,18 +14,20 @@ pub fn admin_page(cx: Scope) -> impl IntoView {
 
     let users = move || users.read(cx).unwrap_or(vec![]);
 
-    let create_user = create_action(cx, move |_: &()| async move {
-        for user in users() {
-            if user.email == new_username() {
-                log!("user already added, skipping...");
-                return;
+    let create_user = move |_| {
+        spawn_local(async move {
+            for user in users() {
+                if user.email == new_username() {
+                    log!("user already added, skipping...");
+                    return;
+                }
             }
-        }
 
-        api::create_user(&new_username(), &YakManRole::Viewer)
-            .await
-            .unwrap();
-    });
+            api::create_user(&new_username(), &YakManRole::Viewer)
+                .await
+                .unwrap();
+        })
+    };
 
     view! { cx,
         <div>
@@ -45,7 +47,7 @@ pub fn admin_page(cx: Scope) -> impl IntoView {
             {"Username "}<input on:input=move |ev| set_new_username(event_target_value(&ev)) prop:value=new_username  />
             <br />
 
-            <button on:click=move |_| create_user.dispatch(())>
+            <button on:click=create_user>
                 {"Create user"}
             </button>
 
