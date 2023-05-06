@@ -7,7 +7,9 @@ use std::{
 use async_trait::async_trait;
 
 use log::{error, info};
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManUser};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+};
 
 use crate::adapters::local_file_adapter::storage_types::RevisionJson;
 
@@ -24,11 +26,29 @@ pub struct LocalFileStorageAdapter {
 
 #[async_trait]
 impl FileBasedStorageAdapter for LocalFileStorageAdapter {
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
+        let path = self.get_projects_file_path();
+        let content = fs::read_to_string(path)?;
+        let data: Vec<YakManProject> = serde_json::from_str(&content)?;
+        return Ok(data);
+    }
+
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = fs::read_to_string(path)?;
         let v: ConfigJson = serde_json::from_str(&content)?;
         return Ok(v.configs);
+    }
+
+    async fn get_configs_by_project_uuid(
+        &self,
+        project_uuid: String,
+    ) -> Result<Vec<Config>, GenericStorageError> {
+        let configs = self.get_configs().await?;
+        Ok(configs
+            .into_iter()
+            .filter(|c| c.project_uuid == project_uuid)
+            .collect())
     }
 
     async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
@@ -253,6 +273,11 @@ impl LocalFileStorageAdapter {
     fn get_labels_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/labels.json");
+    }
+
+    fn get_projects_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/projects.json");
     }
 
     fn get_configs_file_path(&self) -> String {

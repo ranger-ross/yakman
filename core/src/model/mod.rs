@@ -1,4 +1,5 @@
 pub mod oauth;
+pub mod request;
 
 pub use serde::Deserialize;
 pub use serde::Serialize;
@@ -6,8 +7,15 @@ use std::fmt;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct YakManProject {
+    pub uuid: String, // Unique key
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct Config {
     pub name: String, // Unique key
+    pub project_uuid: String,
     pub description: String,
 }
 

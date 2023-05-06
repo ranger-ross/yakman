@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use yak_man_core::model::{Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManUser};
+use yak_man_core::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+};
 
 use self::errors::GenericStorageError;
 
@@ -10,7 +12,11 @@ pub mod redis_adapter;
 
 #[async_trait]
 pub trait FileBasedStorageAdapter: Sync + Send {
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
+
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
+
+    async fn get_configs_by_project_uuid(&self, project_uuid: String) -> Result<Vec<Config>, GenericStorageError>;
 
     async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError>;
 

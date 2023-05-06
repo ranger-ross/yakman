@@ -1,13 +1,24 @@
 use gloo_net::http::Request;
-use leptos::log;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 use std::collections::HashMap;
 use std::fmt;
 use thiserror::Error;
 use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
+use yak_man_core::model::request::CreateConfigPayload;
 use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManRole, YakManUser,
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManRole,
+    YakManUser,
 };
+
+pub async fn fetch_projects() -> Result<Vec<YakManProject>, RequestError> {
+    let response = Request::get("/api/v1/projects").send().await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(response.json().await?);
+}
 
 pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
     let response = Request::get("/api/admin/v1/users").send().await?;
@@ -98,8 +109,13 @@ pub async fn fetch_user_roles() -> Result<Vec<YakManRole>, RequestError> {
     return Ok(roles);
 }
 
-pub async fn fetch_configs() -> Result<Vec<Config>, RequestError> {
-    let response = Request::get("/api/configs").send().await?;
+pub async fn fetch_configs(project_uuid: Option<String>) -> Result<Vec<Config>, RequestError> {
+    let mut request = Request::get("/api/configs");
+    if let Some(project_uuid) = project_uuid {
+        request = request.query([("project", project_uuid)]);
+    }
+
+    let response = request.send().await?;
 
     if !response.ok() {
         return Err(RequestError::UnexpectedHttpStatus(response.status()));
@@ -173,10 +189,21 @@ pub async fn update_config_instance(
     return Ok(());
 }
 
-pub async fn create_config(config_name: &str) -> Result<(), RequestError> {
-    Request::put(&format!("/api/configs/{config_name}"))
+pub async fn create_config(config_name: &str, project_uuid: &str) -> Result<(), RequestError> {
+    let payload = CreateConfigPayload {
+        config_name: config_name.to_string(),
+        project_uuid: project_uuid.to_string(),
+    };
+    let response = Request::put("/api/configs")
+        .body(serde_json::to_string(&payload).unwrap())
+        .header("content-type", "application/json")
         .send()
         .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
     return Ok(());
 }
 

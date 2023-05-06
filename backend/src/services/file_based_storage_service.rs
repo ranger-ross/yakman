@@ -4,7 +4,7 @@ use log::info;
 use uuid::Uuid;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-    YakManUser,
+    YakManProject, YakManUser,
 };
 
 use crate::{
@@ -26,7 +26,20 @@ pub struct FileBasedStorageService {
 
 #[async_trait]
 impl StorageService for FileBasedStorageService {
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
+        return Ok(self.adapter.get_projects().await?);
+    }
+
+    async fn get_configs(
+        &self,
+        project_uuid: Option<String>,
+    ) -> Result<Vec<Config>, GenericStorageError> {
+        if let Some(project_uuid) = project_uuid {
+            return Ok(self
+                .adapter
+                .get_configs_by_project_uuid(project_uuid)
+                .await?);
+        }
         return Ok(self.adapter.get_configs().await?);
     }
 
@@ -126,9 +139,13 @@ impl StorageService for FileBasedStorageService {
         return Err(CreateConfigInstanceError::NoConfigFound);
     }
 
-    async fn create_config(&self, config_name: &str) -> Result<(), CreateConfigError> {
+    async fn create_config(
+        &self,
+        config_name: &str,
+        project_uuid: &str,
+    ) -> Result<(), CreateConfigError> {
         let mut configs = self
-            .get_configs()
+            .get_configs(None)
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to load configs"))?;
 
@@ -143,6 +160,7 @@ impl StorageService for FileBasedStorageService {
         configs.push(Config {
             name: String::from(config_name),
             description: String::from(""), // TODO: support descriptions?
+            project_uuid: String::from(project_uuid),
         });
 
         // Create instance metadata file

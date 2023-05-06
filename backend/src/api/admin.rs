@@ -18,7 +18,7 @@ pub async fn get_yakman_users(state: web::Data<StateManager>) -> HttpResponse {
 }
 
 /// Create YakMan user
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(request_body = YakManUser, responses((status = 200, body = String)))]
 #[put("/admin/v1/users")]
 #[has_any_role("YakManRole::Admin", type = "YakManRole")]
 pub async fn create_yakman_user(

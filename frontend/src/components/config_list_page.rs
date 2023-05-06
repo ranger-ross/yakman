@@ -1,7 +1,12 @@
 use crate::api;
 use leptos::*;
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::{Config, ConfigInstance};
+use yak_man_core::model::{Config, ConfigInstance, YakManProject};
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct PageData {
+    pub projects: Vec<YakManProject>,
+}
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct PageConfig {
@@ -11,13 +16,28 @@ pub struct PageConfig {
 
 #[component]
 pub fn config_list_page(cx: Scope) -> impl IntoView {
-    let page_data = create_resource(
+    let (selected_project_index, set_selected_project_index) = create_signal::<usize>(cx, 0);
+
+    let pd = create_resource(
         cx,
         || (),
         |_| async move {
-            let mut configs_list: Vec<PageConfig> = vec![];
+            let projects = api::fetch_projects().await.unwrap();
 
-            match api::fetch_configs().await {
+            PageData { projects: projects }
+        },
+    );
+
+    let selected_project = move || {
+        pd.read(cx)
+            .map(|data| data.projects[selected_project_index()].clone())
+    };
+
+    let page_data = create_resource(cx, selected_project, move |project| async move {
+        let mut configs_list: Vec<PageConfig> = vec![];
+
+        if let Some(project_uuid) = project.map(|p| p.uuid) {
+            match api::fetch_configs(Some(project_uuid)).await {
                 Ok(configs) => {
                     for config in configs {
                         let instances = api::fetch_config_metadata(&config.name).await;
@@ -29,9 +49,26 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 }
                 Err(err) => error!("Error fetching configs {}", err.to_string()),
             }
-            configs_list
-        },
-    );
+        }
+
+        configs_list
+    });
+
+    let on_project_change = move |ev| {
+        let value = event_target_value(&ev);
+
+        let (index, _) = pd
+            .read(cx)
+            .expect("Page data should be loaded before user can change projects")
+            .projects
+            .iter()
+            .enumerate()
+            .find(|(_, project)| project.uuid == value)
+            .expect("The selected project should have been in the page data list");
+
+        log!("Project Changed! {index:?}");
+        set_selected_project_index.set(index);
+    };
 
     view! { cx,
         <div>
@@ -43,6 +80,25 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 <a href="/add-label">{"Add Label"}</a>
             </div>
 
+            {"Project "}
+            <select on:change=on_project_change>
+                {move || match pd.read(cx) {
+                    Some(data) => {
+                        let projects = move || data.projects.clone();
+                        view! { cx,
+                            <For
+                                each=projects
+                                key=|p| p.uuid.clone()
+                                view=move |cx, project: YakManProject| view! {cx,
+                                    <option value=project.uuid>{project.name}</option>
+                                }
+                            />
+                        }.into_view(cx)
+                    },
+                    None => view! { cx, }.into_view(cx)
+                }}
+            </select>
+
             <div style="display: flex; flex-direction: column; align-items: center">
                 <div>
                     <h1>{ "Configs" }</h1>
@@ -51,8 +107,8 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                         None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
                         Some(configs) => {
                             view! { cx,
-                                {configs.into_iter().map(|config| view! {cx, 
-                                    <ConfigRow config={config} /> 
+                                {configs.into_iter().map(|config| view! {cx,
+                                    <ConfigRow config={config} />
                                 }).collect::<Vec<_>>()}
                             }.into_view(cx)
                         }

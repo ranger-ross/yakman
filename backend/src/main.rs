@@ -25,8 +25,8 @@ use utoipa_swagger_ui::SwaggerUi;
 use yak_man_core::{
     load_yak_man_settings,
     model::{
-        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManRole, YakManSettings,
+        request::CreateConfigPayload, Config, ConfigInstance, ConfigInstanceChange,
+        ConfigInstanceRevision, Label, LabelType, YakManProject, YakManRole, YakManSettings, YakManUser,
     },
 };
 
@@ -56,6 +56,7 @@ impl StateManager {
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
         api::oauth::get_user_roles,
+        api::projects::get_projects,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -71,10 +72,11 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings)
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject, YakManRole, YakManUser, CreateConfigPayload)
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),
+        (name = "api::projects", description = "Project management endpoints"),
         (name = "api::configs", description = "Config management endpoints"),
         (name = "api::labels", description = "Label management endpoints"),
         (name = "api::instances", description = "Config Instance management endpoints"),
@@ -101,7 +103,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     {
         Ok(claims) => {
             if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
-                info!("role = {role}");
+                debug!("role = {role}");
                 return Ok(vec![role]);
             }
         }
@@ -156,6 +158,8 @@ async fn main() -> std::io::Result<()> {
             .service(api::oauth::oauth_exchange)
             .service(api::oauth::oauth_refresh)
             .service(api::oauth::get_user_roles)
+            // Projects
+            .service(api::projects::get_projects)
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)

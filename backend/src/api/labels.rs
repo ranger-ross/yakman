@@ -29,7 +29,7 @@ pub async fn get_labels(
 }
 
 /// Create a new label
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(request_body = LabelType, responses((status = 200, body = String)))]
 #[put("/labels")]
 #[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 pub async fn create_label(
