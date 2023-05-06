@@ -2,11 +2,7 @@ use crate::{
     api::is_alphanumeric_kebab_case, services::errors::CreateConfigError, StateManager, YakManError,
 };
 
-use actix_web::{
-    get, put,
-    web::{self, Json},
-    HttpResponse, Responder,
-};
+use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::proc_macro::has_any_role;
 use log::{error, info};
 use serde::Deserialize;

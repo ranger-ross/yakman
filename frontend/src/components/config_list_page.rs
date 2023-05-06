@@ -78,6 +78,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 <a href="/admin">{"Admin"}</a>
                 <a href="/add-config">{"Add Config"}</a>
                 <a href="/add-label">{"Add Label"}</a>
+                <a href="/add-project">{"Add Project"}</a>
             </div>
 
             {"Project "}

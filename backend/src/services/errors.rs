@@ -25,6 +25,20 @@ impl CreateConfigError {
 }
 
 #[derive(Error, Debug)]
+pub enum CreateProjectError {
+    #[error("Duplicate project name: `{name}`")]
+    DuplicateNameError { name: String },
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for CreateProjectError {
+    fn from(e: GenericStorageError) -> Self {
+        CreateProjectError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
 pub enum CreateLabelError {
     #[error("Duplicate label: `{name}`")]
     DuplicateLabelError { name: String },

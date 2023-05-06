@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt;
 use thiserror::Error;
 use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
-use yak_man_core::model::request::CreateConfigPayload;
+use yak_man_core::model::request::{CreateConfigPayload, CreateProjectPayload};
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManRole,
     YakManUser,
@@ -209,11 +209,33 @@ pub async fn create_config(config_name: &str, project_uuid: &str) -> Result<(), 
 
 pub async fn create_label(label: LabelType) -> Result<(), RequestError> {
     let body = serde_json::to_string(&label)?;
-    Request::put("/api/labels")
+    let response = Request::put("/api/labels")
         .body(body)
         .header("content-type", "application/json")
         .send()
         .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    return Ok(());
+}
+
+pub async fn create_project(project_name: &str) -> Result<(), RequestError> {
+    let body = serde_json::to_string(&CreateProjectPayload {
+        project_name: String::from(project_name),
+    })?;
+    let response = Request::put("/api/projects")
+        .body(body)
+        .header("content-type", "application/json")
+        .send()
+        .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
     return Ok(());
 }
 
