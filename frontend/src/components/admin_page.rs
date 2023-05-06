@@ -9,10 +9,7 @@ pub fn admin_page(cx: Scope) -> impl IntoView {
     let users = create_resource(
         cx,
         move || (),
-        |()| async move {
-            let users = api::fetch_users().await;
-            users.expect("failed to get oauth redirect uri")
-        },
+        |()| async move { api::fetch_users().await.unwrap() },
     );
 
     let users = move || users.read(cx).unwrap_or(vec![]);
