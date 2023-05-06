@@ -14,7 +14,7 @@ use actix_web::{
 };
 use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
-use auth::{token::TokenService, oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME};
+use auth::{oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, token::TokenService};
 use dotenv::dotenv;
 use log::{debug, info};
 use serde::Serialize;
@@ -87,7 +87,9 @@ struct ApiDoc;
 async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
     let state = req.app_data::<web::Data<StateManager>>().unwrap();
     let cookies = req.cookies().unwrap();
-    let token = cookies.iter().find(|c| c.name() == OAUTH_ACCESS_TOKEN_COOKIE_NAME);
+    let token = cookies
+        .iter()
+        .find(|c| c.name() == OAUTH_ACCESS_TOKEN_COOKIE_NAME);
 
     if token.is_none() {
         return Ok(vec![]);
@@ -104,13 +106,11 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
             }
         }
         Err(e) => {
-            debug!("token invalid {e:?}");
+            info!("token invalid {e:?}");
         }
     }
 
-    return Ok(vec![
-        YakManRole::Admin
-    ]);
+    return Ok(vec![]);
 }
 
 #[actix_web::main]

@@ -5,6 +5,7 @@ use jwt::SignWithKey;
 use jwt::Token;
 use jwt::VerifyWithKey;
 use log::debug;
+use log::info;
 use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
@@ -85,7 +86,10 @@ impl TokenService {
             .verify_with_key(&key)
             .map_err(|e| JwtValidationError::InvalidToken(Box::new(e)))?;
 
-        // TODO: throw if expired
+        // If expired, return an error
+        if claims.exp < (Utc::now().timestamp_millis() / 1000) {
+            return Err(JwtValidationError::TokenExpired);
+        }
 
         return Ok(claims);
     }
@@ -111,4 +115,6 @@ pub enum JwtValidationError {
     InvalidSecret(Box<dyn std::error::Error>),
     #[error("Invalid token")]
     InvalidToken(Box<dyn std::error::Error>),
+    #[error("Token expired")]
+    TokenExpired,
 }
