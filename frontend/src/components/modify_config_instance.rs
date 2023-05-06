@@ -18,20 +18,29 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
     let (selected_labels, set_selected_labels) =
         create_signal::<HashMap<String, Option<String>>>(cx, HashMap::new());
 
-    let on_create = create_action(cx, move |_: &()| async move {
-        let selected_labels: HashMap<String, String> = selected_labels()
-            .into_iter()
-            .filter_map(|(key, v)| v.map(|value| (key, value)))
-            .collect();
+    let on_create = move |_| {
+        spawn_local(async move {
+            let selected_labels: HashMap<String, String> = selected_labels()
+                .into_iter()
+                .filter_map(|(key, v)| v.map(|value| (key, value)))
+                .collect();
 
-        match api::create_config_instance(&config_name(), &input(), selected_labels, Some(&content_type())).await {
-            Ok(()) => {
-                let navigate = use_navigate(cx);
-                _ = navigate("/", Default::default()); // TODO: Fix warnings (Question in Discord: https://discordapp.com/channels/1031524867910148188/1049869221636620300/1101740642478084156)
-            }
-            Err(err) => error!("Error creating config instance {}", err.to_string()),
-        };
-    });
+            match api::create_config_instance(
+                &config_name(),
+                &input(),
+                selected_labels,
+                Some(&content_type()),
+            )
+            .await
+            {
+                Ok(()) => {
+                    let navigate = use_navigate(cx);
+                    _ = navigate("/", Default::default());
+                }
+                Err(err) => error!("Error creating config instance {}", err.to_string()),
+            };
+        })
+    };
 
     let page_data = create_resource(
         cx,
@@ -80,7 +89,7 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
 
             <br />
 
-            <button on:click=move |_| on_create.dispatch(())>{"Add"}</button>
+            <button on:click=on_create>{"Add"}</button>
         </div>
     }
 }
@@ -98,22 +107,30 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
     let (selected_labels, set_selected_labels) =
         create_signal::<HashMap<String, Option<String>>>(cx, HashMap::new());
 
-    let on_edit = create_action(cx, move |_: &()| async move {
-        let selected_labels: HashMap<String, String> = selected_labels()
-            .into_iter()
-            .filter_map(|(key, v)| v.map(|value| (key, value)))
-            .collect();
+    let on_edit = move |_| {
+        spawn_local(async move {
+            let selected_labels: HashMap<String, String> = selected_labels()
+                .into_iter()
+                .filter_map(|(key, v)| v.map(|value| (key, value)))
+                .collect();
 
-        match api::update_config_instance(&config_name(), &instance(), &input(), selected_labels, Some(&content_type()))
+            match api::update_config_instance(
+                &config_name(),
+                &instance(),
+                &input(),
+                selected_labels,
+                Some(&content_type()),
+            )
             .await
-        {
-            Ok(()) => {
-                let navigate = use_navigate(cx);
-                _ = navigate("/", Default::default()); // TODO: Fix warnings (Question in Discord: https://discordapp.com/channels/1031524867910148188/1049869221636620300/1101740642478084156)
-            }
-            Err(err) => error!("Error updating config instance {}", err.to_string()),
-        };
-    });
+            {
+                Ok(()) => {
+                    let navigate = use_navigate(cx);
+                    _ = navigate("/", Default::default());
+                }
+                Err(err) => error!("Error updating config instance {}", err.to_string()),
+            };
+        })
+    };
 
     let page_data = create_resource(
         cx,
@@ -162,7 +179,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
 
             <br />
 
-            <button on:click=move |_| on_edit.dispatch(())>{"Update"}</button>
+            <button on:click=on_edit>{"Update"}</button>
         </div>
     }
 }
