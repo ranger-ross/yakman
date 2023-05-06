@@ -7,7 +7,7 @@ use crate::adapters::errors::GenericStorageError;
 
 use self::errors::{
     ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-    SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+    CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
 };
 
 pub mod errors;
@@ -17,6 +17,8 @@ mod service_utils;
 #[async_trait]
 pub trait StorageService: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
+
+    async fn create_project(&self, project_name: &str) -> Result<(), CreateProjectError>;
 
     async fn get_configs(
         &self,

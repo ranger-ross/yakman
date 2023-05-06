@@ -15,7 +15,7 @@ use crate::{
 use super::{
     errors::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-        SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
     },
     StorageService,
 };
@@ -28,6 +28,28 @@ pub struct FileBasedStorageService {
 impl StorageService for FileBasedStorageService {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
         return Ok(self.adapter.get_projects().await?);
+    }
+
+    async fn create_project(&self, project_name: &str) -> Result<(), CreateProjectError> {
+        let mut projects = self.adapter.get_projects().await?;
+
+        // Prevent duplicates
+        for prj in &projects {
+            if &prj.name == &project_name {
+                return Err(CreateProjectError::DuplicateNameError {
+                    name: String::from(project_name),
+                });
+            }
+        }
+
+        projects.push(YakManProject {
+            name: String::from(project_name),
+            uuid: Uuid::new_v4().to_string(),
+        });
+
+        self.adapter.save_projects(projects).await?;
+
+        return Ok(());
     }
 
     async fn get_configs(

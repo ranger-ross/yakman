@@ -25,8 +25,9 @@ use utoipa_swagger_ui::SwaggerUi;
 use yak_man_core::{
     load_yak_man_settings,
     model::{
-        request::CreateConfigPayload, Config, ConfigInstance, ConfigInstanceChange,
-        ConfigInstanceRevision, Label, LabelType, YakManProject, YakManRole, YakManSettings, YakManUser,
+        request::{CreateConfigPayload, CreateProjectPayload},
+        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+        YakManProject, YakManRole, YakManSettings, YakManUser,
     },
 };
 
@@ -57,6 +58,7 @@ impl StateManager {
         api::oauth::oauth_refresh,
         api::oauth::get_user_roles,
         api::projects::get_projects,
+        api::projects::create_project,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -72,7 +74,7 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject, YakManRole, YakManUser, CreateConfigPayload)
+        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload)
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),
@@ -160,6 +162,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::oauth::get_user_roles)
             // Projects
             .service(api::projects::get_projects)
+            .service(api::projects::create_project)
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)

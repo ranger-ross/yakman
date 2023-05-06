@@ -33,6 +33,14 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(data);
     }
 
+    async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&projects)?;
+        let path = self.get_projects_file_path();
+        let mut file = File::create(&path)?;
+        Write::write_all(&mut file, data.as_bytes())?;
+        return Ok(());
+    }
+
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = fs::read_to_string(path)?;

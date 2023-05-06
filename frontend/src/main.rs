@@ -9,6 +9,7 @@ use components::config_list_page::*;
 use components::login_page::*;
 use components::modify_config_instance::*;
 use components::revision_history::*;
+use components::add_project_page::*;
 use leptos::*;
 use leptos_router::*;
 
@@ -84,6 +85,12 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         redirect_path="/login"
                         path="/"
                         view=move |cx| view! { cx, <ConfigListPage /> }
+                    />
+                    <ProtectedRoute
+                        condition=move |_| !is_login_needed()
+                        redirect_path="/login"
+                        path="/add-project"
+                        view=move |cx| view! { cx, <AddProjectPage /> }
                     />
                     <ProtectedRoute
                         condition=move |_| !is_login_needed()
