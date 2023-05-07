@@ -1,18 +1,11 @@
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, web, HttpResponse};
-use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
+use actix_web_grants::permissions::AuthDetails;
 use yak_man_core::model::YakManRole;
 
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
 #[get("/configs/{config_name}/instances/{instance}/data")]
-#[has_any_role(
-    "YakManRole::Admin",
-    "YakManRole::Approver",
-    "YakManRole::Operator",
-    "YakManRole::Viewer",
-    type = "YakManRole"
-)]
 async fn get_instance_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
