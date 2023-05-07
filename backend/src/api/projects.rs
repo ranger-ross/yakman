@@ -1,36 +1,87 @@
-use crate::{api::is_alphanumeric_kebab_case, services::errors::CreateProjectError, StateManager};
+use std::collections::HashSet;
+
+use crate::{
+    api::is_alphanumeric_kebab_case, middleware::roles::YakManRoleBinding,
+    services::errors::CreateProjectError, StateManager,
+};
 
 use actix_web::{get, put, web, HttpResponse};
-use actix_web_grants::proc_macro::has_any_role;
+use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use yak_man_core::model::{request::CreateProjectPayload, YakManProject, YakManRole};
 
 /// Get all of the projects
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
 #[get("/v1/projects")]
-#[has_any_role(
-    "YakManRole::Admin",
-    "YakManRole::Approver",
-    "YakManRole::Operator",
-    "YakManRole::Viewer",
-    type = "YakManRole"
-)]
-pub async fn get_projects(state: web::Data<StateManager>) -> HttpResponse {
+pub async fn get_projects(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    if auth_details.permissions.len() == 0 {
+        return HttpResponse::Forbidden().finish();
+    }
+
+    let user_has_global_role = auth_details
+        .permissions
+        .iter()
+        .map(|p| match p {
+            YakManRoleBinding::GlobalRoleBinding(_) => true,
+            YakManRoleBinding::ProjectRoleBinding(_) => false,
+        })
+        .filter(|p| p.clone())
+        .collect::<Vec<bool>>()
+        .len()
+        > 0; // TODO: Smarter global role checking
+
+    let allowed_projects: HashSet<String> = auth_details
+        .permissions
+        .into_iter()
+        .map(|p| match p {
+            YakManRoleBinding::GlobalRoleBinding(_) => None,
+            YakManRoleBinding::ProjectRoleBinding(r) => Some(r.project_uuid),
+        })
+        .filter(|p| p.is_some())
+        .map(|p| p.unwrap())
+        .collect();
+
     let service = state.get_service();
-    let projects: Vec<YakManProject> = service.get_projects().await.unwrap();
+    let projects: Vec<YakManProject> = service
+        .get_projects()
+        .await
+        .unwrap()
+        .into_iter()
+        .filter(|p| user_has_global_role || allowed_projects.contains(&p.uuid))
+        .collect();
+
     return HttpResponse::Ok().body(serde_json::to_string(&projects).unwrap());
 }
 
 /// Create a new project
 #[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = String)))]
 #[put("/projects")]
-#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn create_project(
+    auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateProjectPayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
+
+    let is_user_global_admin_or_approver = auth_details
+        .permissions
+        .into_iter()
+        .filter_map(|p| match p {
+            YakManRoleBinding::GlobalRoleBinding(role) => Some(role),
+            YakManRoleBinding::ProjectRoleBinding(_) => None,
+        })
+        .filter(|role| vec![YakManRole::Admin, YakManRole::Approver].contains(role))
+        .collect::<Vec<_>>()
+        .len()
+        > 0;
+
+    if !is_user_global_admin_or_approver {
+        return HttpResponse::Forbidden().finish();
+    }
 
     if !is_alphanumeric_kebab_case(&project_name) {
         return HttpResponse::BadRequest()

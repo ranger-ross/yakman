@@ -3,13 +3,13 @@ mod components;
 
 use components::add_config_page::*;
 use components::add_label_page::*;
+use components::add_project_page::*;
 use components::admin_page::*;
 use components::apply_config_page::*;
 use components::config_list_page::*;
 use components::login_page::*;
 use components::modify_config_instance::*;
 use components::revision_history::*;
-use components::add_project_page::*;
 use leptos::*;
 use leptos_router::*;
 
@@ -50,8 +50,8 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
 
     spawn_local(async move {
         match api::fetch_user_roles().await {
-            Ok(roles) => {
-                if roles.len() == 0 {
+            Ok(role_data) => {
+                if role_data.roles.len() == 0 && role_data.global_roles.len() == 0 {
                     attempt_to_refresh_token();
                 }
             }

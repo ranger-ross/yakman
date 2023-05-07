@@ -1,11 +1,12 @@
 use crate::{
-    api::is_alphanumeric_kebab_case, services::errors::CreateConfigError, StateManager, YakManError,
+    api::is_alphanumeric_kebab_case, middleware::roles::YakManRoleBinding,
+    services::errors::CreateConfigError, StateManager, YakManError,
 };
-
 use actix_web::{get, put, web, HttpResponse, Responder};
-use actix_web_grants::proc_macro::has_any_role;
-use log::{error, info};
+use actix_web_grants::permissions::AuthDetails;
+use log::error;
 use serde::Deserialize;
+use std::collections::HashSet;
 use yak_man_core::model::{request::CreateConfigPayload, YakManRole};
 
 #[derive(Deserialize)]
@@ -16,22 +17,62 @@ pub struct GetConfigsQuery {
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
 #[get("/configs")]
-#[has_any_role(
-    "YakManRole::Admin",
-    "YakManRole::Approver",
-    "YakManRole::Operator",
-    "YakManRole::Viewer",
-    type = "YakManRole"
-)]
 pub async fn get_configs(
+    auth_details: AuthDetails<YakManRoleBinding>,
     query: web::Query<GetConfigsQuery>,
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
-    let project = query.project.to_owned();
-    info!("PROJECT: {project:?}");
+    let project_uuid = query.project.to_owned();
+    let has_global_role = YakManRoleBinding::has_any_global_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+            YakManRole::Viewer,
+        ],
+        &auth_details.permissions,
+    );
+
+    if let Some(project_uuid) = &project_uuid {
+        if !has_global_role
+            && !YakManRoleBinding::has_any_role(
+                vec![
+                    YakManRole::Admin,
+                    YakManRole::Approver,
+                    YakManRole::Operator,
+                    YakManRole::Viewer,
+                ],
+                project_uuid,
+                &auth_details.permissions,
+            )
+        {
+            return Err(YakManError::new("invalid permissions"));
+        }
+    }
+
+    let allowed_projects: HashSet<String> = auth_details
+        .permissions
+        .into_iter()
+        .filter_map(|p| match p {
+            YakManRoleBinding::ProjectRoleBinding(role) => Some(role.project_uuid),
+            _ => None,
+        })
+        .collect();
+
     let service = state.get_service();
-    return match service.get_configs(project).await {
-        Ok(data) => Ok(web::Json(data)),
+    return match service.get_configs(project_uuid).await {
+        Ok(data) => {
+            if has_global_role {
+                return Ok(web::Json(data));
+            }
+
+            let filtered_data = data
+                .into_iter()
+                .filter(|c| allowed_projects.contains(&c.project_uuid))
+                .collect();
+
+            return Ok(web::Json(filtered_data));
+        }
         Err(err) => Err(YakManError::from(err)),
     };
 }
@@ -39,14 +80,22 @@ pub async fn get_configs(
 /// Create a new config
 #[utoipa::path(request_body = CreateConfigPayload, responses((status = 200, body = String)))]
 #[put("/configs")]
-#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn create_config(
+    auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateConfigPayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
     let project_uuid = payload.project_uuid;
+
+    if !YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        &project_uuid,
+        &auth_details.permissions,
+    ) {
+        return HttpResponse::Forbidden().finish();
+    }
 
     if !is_alphanumeric_kebab_case(&config_name) {
         return HttpResponse::BadRequest()

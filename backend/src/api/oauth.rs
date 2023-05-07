@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use crate::{
     auth::{
         oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
         LoginError,
     },
+    middleware::roles::YakManRoleBinding,
     StateManager, YakManError,
 };
 use actix_web::{
@@ -16,6 +19,7 @@ use log::{error, warn};
 use oauth2::TokenResponse;
 use yak_man_core::model::{
     oauth::{OAuthExchangePayload, OAuthInitPayload},
+    response::GetUserRolesResponse,
     YakManRole,
 };
 
@@ -41,7 +45,7 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, role, token_result) = match service
+    let (username, user, token_result) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -65,7 +69,7 @@ pub async fn oauth_exchange(
     println!("{:?}", token_result);
 
     let (access_token_jwt, expire_timestamp) =
-        match token_service.create_acess_token_jwt(&username, &role) {
+        match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
             Err(e) => {
                 error!("Failed to create token {e}");
@@ -142,7 +146,7 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
     };
 
     let (access_token_jwt, expire_timestamp) =
-        match token_service.create_acess_token_jwt(&username, &user.role) {
+        match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
             Err(e) => {
                 error!("Failed to create token {e}");
@@ -162,18 +166,32 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
 }
 
 /// Endpoint to check if a user is logged in and get user roles
-#[utoipa::path(responses((status = 200, body = Vec<YakManRole>)))]
+#[utoipa::path(responses((status = 200, body = GetUserRolesResponse)))]
 #[get("/oauth2/user-roles")]
 pub async fn get_user_roles(
-    details: AuthDetails<YakManRole>,
+    details: AuthDetails<YakManRoleBinding>,
 ) -> actix_web::Result<impl Responder, YakManError> {
-    let roles: Vec<YakManRole> = details
+
+    let global_roles: Vec<YakManRole> = details
         .permissions
         .iter()
-        .map(|p| YakManRole::try_from(p.to_string()))
-        .filter(|r| r.is_ok())
-        .map(|r| r.unwrap())
+        .filter_map(|p| match p {
+            YakManRoleBinding::GlobalRoleBinding(role) => Some(role.to_owned()),
+            _ => None,
+        })
         .collect();
 
-    return Ok(web::Json(roles));
+    let roles: HashMap<String, YakManRole> = details
+        .permissions
+        .into_iter()
+        .filter_map(|p| match p {
+            YakManRoleBinding::ProjectRoleBinding(role) => Some((role.project_uuid, role.role)),
+            _ => None,
+        })
+        .collect();
+
+    return Ok(web::Json(GetUserRolesResponse {
+        global_roles: global_roles,
+        roles: roles,
+    }));
 }

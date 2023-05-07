@@ -1,10 +1,13 @@
 use gloo_net::http::Request;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
+use yak_man_core::model::response::GetUserRolesResponse;
 use std::collections::HashMap;
 use std::fmt;
 use thiserror::Error;
 use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
-use yak_man_core::model::request::{CreateConfigPayload, CreateProjectPayload};
+use yak_man_core::model::request::{
+    CreateConfigPayload, CreateProjectPayload, CreateYakManUserPayload,
+};
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManRole,
     YakManUser,
@@ -31,9 +34,9 @@ pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
 }
 
 pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError> {
-    let body = serde_json::to_string(&YakManUser {
+    let body = serde_json::to_string(&CreateYakManUserPayload {
         email: String::from(username),
-        role: role.clone(),
+        role: Some(role.clone()),
     })?;
 
     Request::put("/api/admin/v1/users")
@@ -90,23 +93,16 @@ pub async fn exchange_oauth_code(
     return Ok(response.text().await?);
 }
 
-pub async fn fetch_user_roles() -> Result<Vec<YakManRole>, RequestError> {
+pub async fn fetch_user_roles() -> Result<GetUserRolesResponse, RequestError> {
     let response = Request::get("/api/oauth2/user-roles").send().await?;
 
     if !response.ok() {
         return Err(RequestError::UnexpectedHttpStatus(response.status()));
     }
 
-    let roles: Vec<String> = response.json().await?;
+    let data: GetUserRolesResponse = response.json().await?;
 
-    let roles: Vec<YakManRole> = roles
-        .into_iter()
-        .map(|r| YakManRole::try_from(r))
-        .filter(|r: &Result<YakManRole, &str>| r.is_ok())
-        .map(|r| r.unwrap())
-        .collect();
-
-    return Ok(roles);
+    return Ok(data);
 }
 
 pub async fn fetch_configs(project_uuid: Option<String>) -> Result<Vec<Config>, RequestError> {
