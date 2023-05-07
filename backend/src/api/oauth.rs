@@ -88,7 +88,7 @@ pub async fn oauth_exchange(
         let encrypted_refresh_token = token_service.encrypt_refresh_token(refresh_token);
         response.cookie(
             Cookie::build(OAUTH_REFRESH_TOKEN_COOKIE_NAME, encrypted_refresh_token)
-                .path("/")
+                .path("/api/oauth2/refresh") // TODO: This is currently a bug and will only work running locally with Trunk. (/api is not a path in release build)
                 .http_only(true)
                 .max_age(Duration::days(365 * 10)) // TODO: make this dynamic
                 .finish(),
