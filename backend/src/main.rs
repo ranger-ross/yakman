@@ -58,7 +58,7 @@ impl StateManager {
         api::oauth::oauth_init,
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
-        api::oauth::get_user_roles,
+        // api::oauth::get_user_roles,
         // api::projects::get_projects,
         // api::projects::create_project,
         api::configs::get_configs,

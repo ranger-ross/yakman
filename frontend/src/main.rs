@@ -3,13 +3,13 @@ mod components;
 
 use components::add_config_page::*;
 use components::add_label_page::*;
+use components::add_project_page::*;
 use components::admin_page::*;
 use components::apply_config_page::*;
 use components::config_list_page::*;
 use components::login_page::*;
 use components::modify_config_instance::*;
 use components::revision_history::*;
-use components::add_project_page::*;
 use leptos::*;
 use leptos_router::*;
 
@@ -37,34 +37,34 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
     );
     provide_context(cx, state);
 
-    // let attempt_to_refresh_token = move || {
-    //     spawn_local(async move {
-    //         match api::refresh_token().await {
-    //             Ok(_) => {
-    //                 let _ = window().location().reload();
-    //             }
-    //             Err(_) => state.update(|state| state.is_login_needed = true),
-    //         };
-    //     });
-    // };
+    let attempt_to_refresh_token = move || {
+        spawn_local(async move {
+            match api::refresh_token().await {
+                Ok(_) => {
+                    let _ = window().location().reload();
+                }
+                Err(_) => state.update(|state| state.is_login_needed = true),
+            };
+        });
+    };
 
-    // spawn_local(async move {
-    //     match api::fetch_user_roles().await {
-    //         Ok(roles) => {
-    //             if roles.len() == 0 {
-    //                 attempt_to_refresh_token();
-    //             }
-    //         }
-    //         Err(e) => match e {
-    //             api::RequestError::UnexpectedHttpStatus(status) => {
-    //                 if status >= 400 && status < 500 {
-    //                     attempt_to_refresh_token();
-    //                 }
-    //             }
-    //             e => error!("failed to fetch user roles {e:?}"),
-    //         },
-    //     }
-    // });
+    spawn_local(async move {
+        match api::fetch_user_roles().await {
+            Ok(role_data) => {
+                if role_data.roles.len() == 0 && role_data.global_roles.len() == 0 {
+                    attempt_to_refresh_token();
+                }
+            }
+            Err(e) => match e {
+                api::RequestError::UnexpectedHttpStatus(status) => {
+                    if status >= 400 && status < 500 {
+                        attempt_to_refresh_token();
+                    }
+                }
+                e => error!("failed to fetch user roles {e:?}"),
+            },
+        }
+    });
 
     let is_login_needed = move || state().is_login_needed;
 
