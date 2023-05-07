@@ -1,17 +1,21 @@
 mod api;
 mod components;
 
+use std::collections::HashMap;
+
 use components::add_config_page::*;
 use components::add_label_page::*;
 use components::add_project_page::*;
 use components::admin_page::*;
 use components::apply_config_page::*;
 use components::config_list_page::*;
+use components::header::*;
 use components::login_page::*;
 use components::modify_config_instance::*;
 use components::revision_history::*;
 use leptos::*;
 use leptos_router::*;
+use yak_man_core::model::YakManRole;
 
 use crate::components::AdminPage;
 use crate::components::LoginPage;
@@ -25,21 +29,8 @@ pub fn main() {
 #[derive(Clone, Debug)]
 struct GlobalState {
     is_login_needed: bool,
-}
-
-#[component]
-pub fn header(cx: Scope) -> impl IntoView {
-    view! { cx,
-        <div style="display: flex; justify-content: end; gap: 10px; margin-bottom: 0.5rem">
-            <a href="/">{"YakMan"}</a>
-            <div style="flex-grow: 1" />
-            <a href="/login">{"Login"}</a>
-            <a href="/admin">{"Admin"}</a>
-            <a href="/add-config">{"Add Config"}</a>
-            <a href="/add-label">{"Add Label"}</a>
-            <a href="/add-project">{"Add Project"}</a>
-        </div>
-    }
+    global_roles: Vec<YakManRole>,
+    project_roles: HashMap<String, YakManRole>,
 }
 
 #[component]
@@ -48,6 +39,8 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
         cx,
         GlobalState {
             is_login_needed: false,
+            global_roles: vec![],
+            project_roles: HashMap::new(),
         },
     );
     provide_context(cx, state);
@@ -69,6 +62,10 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                 if role_data.roles.len() == 0 && role_data.global_roles.len() == 0 {
                     attempt_to_refresh_token();
                 }
+                state.update(|s| { // TODO: Find a way to silence the warning this causes
+                    s.global_roles = role_data.global_roles.clone();
+                    s.project_roles = role_data.roles.clone();
+                });
             }
             Err(e) => match e {
                 api::RequestError::UnexpectedHttpStatus(status) => {
