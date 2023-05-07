@@ -84,15 +84,6 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div>
-            // Header
-            <div style="display: flex; justify-content: end; gap: 10px">
-                <a href="/login">{"Login"}</a>
-                <a href="/admin">{"Admin"}</a>
-                <a href="/add-config">{"Add Config"}</a>
-                <a href="/add-label">{"Add Label"}</a>
-                <a href="/add-project">{"Add Project"}</a>
-            </div>
-
             {"Project "}
             <select on:change=on_project_change>
                 {move || match pd.read(cx) {
