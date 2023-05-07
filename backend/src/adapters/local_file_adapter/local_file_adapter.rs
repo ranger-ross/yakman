@@ -140,7 +140,7 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         let revisions_path = self.get_instance_revisions_path();
         let revision_key = &revision.revision;
         let revision_data = serde_json::to_string(&RevisionJson {
-            revision: revision.clone(), // TODO: This does not need to be cloned if we use lifetime annotations
+            revision: revision.clone(),
         })?;
         let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
         let mut revision_file = File::create(&revision_file_path)?;

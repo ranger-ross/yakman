@@ -1,3 +1,11 @@
+use super::{
+    errors::{
+        ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
+        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+    },
+    StorageService,
+};
+use crate::adapters::{errors::GenericStorageError, FileBasedStorageAdapter};
 use async_trait::async_trait;
 use chrono::Utc;
 use log::info;
@@ -5,19 +13,6 @@ use uuid::Uuid;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
     YakManProject, YakManUser, YakManUserDetails,
-};
-
-use crate::{
-    adapters::{errors::GenericStorageError, FileBasedStorageAdapter},
-    services::service_utils::select_instance,
-};
-
-use super::{
-    errors::{
-        ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
-    },
-    StorageService,
 };
 
 pub struct FileBasedStorageService {
@@ -250,27 +245,6 @@ impl StorageService for FileBasedStorageService {
 
             info!("Search for instance ID {}", instance);
             let selected_instance = instances.iter().find(|i| i.instance == instance);
-
-            if let Some(instance) = selected_instance {
-                return self
-                    .get_data_by_revision(config_name, &instance.current_revision)
-                    .await;
-            }
-            info!("No selected instance found");
-            return Ok(None);
-        }
-        return Ok(None);
-    }
-
-    async fn get_config_data_by_labels(
-        &self,
-        config_name: &str,
-        labels: Vec<Label>,
-    ) -> Result<Option<(String, String)>, GenericStorageError> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
-            info!("Found {} instances", instances.len());
-            let label_types = self.get_labels().await?;
-            let selected_instance = select_instance(instances, labels, label_types);
 
             if let Some(instance) = selected_instance {
                 return self

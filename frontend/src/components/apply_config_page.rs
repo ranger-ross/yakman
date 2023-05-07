@@ -8,7 +8,6 @@ use crate::api;
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 struct ApplyConfigPageData {
     revisions: Vec<ConfigInstanceRevision>,
-    current_revision: String,
     pending_revision: Option<String>,
 }
 
@@ -25,7 +24,6 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
         move || (config_name(), instance()),
         |(config_name, instance)| async move {
             let mut revsions: Vec<ConfigInstanceRevision> = vec![];
-            let mut current_revision: Option<String> = None;
             let mut pending_revision: Option<String> = None;
 
             if let Ok(data) = api::fetch_instance_revisions(&config_name, &instance).await {
@@ -36,14 +34,12 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
 
             for inst in metadata {
                 if inst.instance == instance {
-                    current_revision = Some(inst.current_revision);
                     pending_revision = inst.pending_revision;
                 }
             }
 
             ApplyConfigPageData {
                 revisions: revsions,
-                current_revision: current_revision.unwrap_or_default(), // TODO: handle better
                 pending_revision: pending_revision,
             }
         },

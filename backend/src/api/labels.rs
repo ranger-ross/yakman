@@ -46,7 +46,7 @@ pub async fn create_label(
     }
 
     return match service.create_label(label_type).await {
-        Ok(()) => HttpResponse::Ok().body(""),
+        Ok(()) => HttpResponse::Ok().finish(),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {
                 HttpResponse::BadRequest().body("Duplicate label")

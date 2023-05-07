@@ -13,7 +13,6 @@ use self::errors::{
 
 pub mod errors;
 pub mod file_based_storage_service;
-mod service_utils;
 
 #[async_trait]
 pub trait StorageService: Sync + Send {
@@ -61,12 +60,6 @@ pub trait StorageService: Sync + Send {
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<Option<(String, String)>, GenericStorageError>;
-
-    async fn get_config_data_by_labels(
-        &self,
-        config_name: &str,
-        labels: Vec<Label>,
     ) -> Result<Option<(String, String)>, GenericStorageError>;
 
     async fn get_data_by_revision(
