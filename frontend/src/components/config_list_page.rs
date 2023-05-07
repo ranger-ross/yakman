@@ -1,5 +1,6 @@
 use crate::api;
 use leptos::*;
+use leptos_router::{use_navigate, use_query_map};
 use serde::{Deserialize, Serialize};
 use yak_man_core::model::{Config, ConfigInstance, YakManProject};
 
@@ -16,21 +17,32 @@ pub struct PageConfig {
 
 #[component]
 pub fn config_list_page(cx: Scope) -> impl IntoView {
-    let (selected_project_index, set_selected_project_index) = create_signal::<usize>(cx, 0);
+    let query = use_query_map(cx);
+    let selected_project_uuid = move || query.with(|params| params.get("project").cloned());
+
+    let update_navigation_url = move |project_uuid: &str| {
+        let navigate = use_navigate(cx);
+        navigate(&format!("?project={project_uuid}"), Default::default()).unwrap()
+    };
 
     let pd = create_resource(
         cx,
         || (),
-        |_| async move {
+        move |_| async move {
             let projects = api::fetch_projects().await.unwrap();
-
             PageData { projects: projects }
         },
     );
 
     let selected_project = move || {
-        pd.read(cx)
-            .map(|data| data.projects[selected_project_index()].clone())
+        return pd.read(cx).map(|data| {
+            let first = &data.projects[0];
+            data.projects
+                .iter()
+                .find(|p| p.uuid == selected_project_uuid().unwrap_or(String::from("not-found")))
+                .unwrap_or(first)
+                .clone()
+        });
     };
 
     let page_data = create_resource(cx, selected_project, move |project| async move {
@@ -67,7 +79,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
             .expect("The selected project should have been in the page data list");
 
         log!("Project Changed! {index:?}");
-        set_selected_project_index.set(index);
+        update_navigation_url(&value);
     };
 
     view! { cx,
@@ -91,7 +103,11 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                                 each=projects
                                 key=|p| p.uuid.clone()
                                 view=move |cx, project: YakManProject| view! {cx,
-                                    <option value=project.uuid>{project.name}</option>
+                                    <option
+                                        value=&project.uuid selected={project.uuid == selected_project_uuid().unwrap_or("other".to_string())}
+                                    >
+                                        {project.name}
+                                    </option>
                                 }
                             />
                         }.into_view(cx)
