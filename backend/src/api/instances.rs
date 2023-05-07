@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     middleware::roles::YakManRoleBinding, services::errors::CreateConfigInstanceError, StateManager,
 };
-use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
+use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Result};
 use actix_web_grants::permissions::AuthDetails;
 use yak_man_core::model::{Label, YakManRole};
 
@@ -18,7 +18,13 @@ async fn get_instances_by_config_name(
     let config_name = path.into_inner();
     let service = state.get_service();
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+    let config = match service.get_config(&config_name).await {
+        Ok(config) => match config {
+            Some(config) => config,
+            None => return HttpResponse::NotFound().body("Config not found"),
+        },
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+    };
 
     let has_role = YakManRoleBinding::has_any_role(
         vec![
@@ -58,7 +64,13 @@ async fn get_instance(
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+    let config = match service.get_config(&config_name).await {
+        Ok(config) => match config {
+            Some(config) => config,
+            None => return HttpResponse::NotFound().body("Config not found"),
+        },
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+    };
 
     let has_role = YakManRoleBinding::has_any_role(
         vec![
@@ -104,7 +116,13 @@ async fn create_new_instance(
     let labels: Vec<Label> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+    let config = match service.get_config(&config_name).await {
+        Ok(config) => match config {
+            Some(config) => config,
+            None => return HttpResponse::NotFound().body("Config not found"),
+        },
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+    };
 
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
@@ -151,7 +169,13 @@ async fn update_new_instance(
     let labels: Vec<Label> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+    let config = match service.get_config(&config_name).await {
+        Ok(config) => match config {
+            Some(config) => config,
+            None => return HttpResponse::NotFound().body("Config not found"),
+        },
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+    };
 
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
