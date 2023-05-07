@@ -28,6 +28,21 @@ struct GlobalState {
 }
 
 #[component]
+pub fn header(cx: Scope) -> impl IntoView {
+    view! { cx,
+        <div style="display: flex; justify-content: end; gap: 10px; margin-bottom: 0.5rem">
+            <a href="/">{"YakMan"}</a>
+            <div style="flex-grow: 1" />
+            <a href="/login">{"Login"}</a>
+            <a href="/admin">{"Admin"}</a>
+            <a href="/add-config">{"Add Config"}</a>
+            <a href="/add-label">{"Add Label"}</a>
+            <a href="/add-project">{"Add Project"}</a>
+        </div>
+    }
+}
+
+#[component]
 pub fn AppRouter(cx: Scope) -> impl IntoView {
     let state = create_rw_signal(
         cx,
@@ -70,6 +85,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <Router>
+            <Header />
             <main>
                 <Routes>
                     <Route
