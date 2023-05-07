@@ -47,19 +47,27 @@ async fn get_instances_by_config_name(
 /// Get config instance by instance ID
 #[utoipa::path(responses((status = 200, body = ConfigInstance)))]
 #[get("/configs/{config_name}/instances/{instance}")]
-#[has_any_role(
-    "YakManRole::Admin",
-    "YakManRole::Approver",
-    "YakManRole::Operator",
-    "YakManRole::Viewer",
-    type = "YakManRole"
-)]
 async fn get_instance(
+    auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
+
+    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+
+    YakManRoleBinding::has_any_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+            YakManRole::Viewer,
+        ],
+        &config.project_uuid,
+        auth_details.permissions,
+    );
+
     return match service.get_config_instance(&config_name, &instance).await {
         Ok(data) => match data {
             Some(data) => HttpResponse::Ok().body(
@@ -75,8 +83,8 @@ async fn get_instance(
 /// Create a new config instance
 #[utoipa::path(responses((status = 200, body = String)))]
 #[put("/configs/{config_name}/instances")]
-#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn create_new_instance(
+    auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
     data: String,
@@ -89,6 +97,14 @@ async fn create_new_instance(
     let labels: Vec<Label> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
+    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+
+    YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        &config.project_uuid,
+        auth_details.permissions,
+    );
+
     // TODO: do validation
     // - labels are valid
     // - not a duplicate?
@@ -97,7 +113,7 @@ async fn create_new_instance(
         .create_config_instance(&config_name, labels, &data, content_type)
         .await
     {
-        Ok(_) => HttpResponse::Ok().body(""),
+        Ok(_) => HttpResponse::Ok().finish(),
         Err(CreateConfigInstanceError::NoConfigFound) => {
             HttpResponse::BadRequest().body("Invalid config name")
         }
@@ -110,8 +126,8 @@ async fn create_new_instance(
 /// Create a update config instance
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/configs/{config_name}/instances/{instance}")]
-#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn update_new_instance(
+    auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     query: web::Query<HashMap<String, String>>,
     data: String,
@@ -124,6 +140,14 @@ async fn update_new_instance(
     let labels: Vec<Label> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
+    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+
+    YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        &config.project_uuid,
+        auth_details.permissions,
+    );
+
     // TODO: do validation
     // - config exists
     // - labels are valid
@@ -133,7 +157,7 @@ async fn update_new_instance(
         .save_config_instance(&config_name, &instance, labels, &data, content_type)
         .await
     {
-        Ok(_) => HttpResponse::Ok().body(""),
+        Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().body("failed to create instance"),
     };
 }

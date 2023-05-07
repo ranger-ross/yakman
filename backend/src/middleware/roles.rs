@@ -53,6 +53,32 @@ impl YakManRoleBinding {
     ) -> bool {
         return YakManRoleBinding::has_any_role(vec![role_to_match], project_uuid, roles);
     }
+
+    pub fn has_global_role(role_to_match: YakManRole, roles: Vec<YakManRoleBinding>) -> bool {
+        return YakManRoleBinding::has_any_global_role(vec![role_to_match], roles);
+    }
+
+    pub fn has_any_global_role(
+        roles_to_match: Vec<YakManRole>,
+        roles: Vec<YakManRoleBinding>,
+    ) -> bool {
+        for role in roles {
+            match role {
+                YakManRoleBinding::GlobalRoleBinding(r) => {
+                    if r == YakManRole::Admin {
+                        return true;
+                    }
+
+                    if roles_to_match.contains(&r) {
+                        return true;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        return false;
+    }
 }
 
 pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {

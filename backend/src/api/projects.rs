@@ -8,7 +8,7 @@ use crate::{
 use actix_web::{get, put, web, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
-use yak_man_core::model::{request::CreateProjectPayload, YakManProject};
+use yak_man_core::model::{request::CreateProjectPayload, YakManProject, YakManRole};
 
 /// Get all of the projects
 #[get("/v1/projects")]
@@ -58,13 +58,29 @@ pub async fn get_projects(
 /// Create a new project
 #[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = String)))]
 #[put("/projects")]
-// #[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn create_project(
+    auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateProjectPayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
+
+    let is_user_global_admin_or_approver = auth_details
+        .permissions
+        .into_iter()
+        .filter_map(|p| match p {
+            YakManRoleBinding::GlobalRoleBinding(role) => Some(role),
+            YakManRoleBinding::ProjectRoleBinding(_) => None,
+        })
+        .filter(|role| vec![YakManRole::Admin, YakManRole::Approver].contains(role))
+        .collect::<Vec<_>>()
+        .len()
+        > 0;
+
+    if !is_user_global_admin_or_approver {
+        return HttpResponse::Forbidden().finish();
+    }
 
     if !is_alphanumeric_kebab_case(&project_name) {
         return HttpResponse::BadRequest()

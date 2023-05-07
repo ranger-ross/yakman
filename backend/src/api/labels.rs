@@ -10,13 +10,6 @@ use yak_man_core::model::{LabelType, YakManRole};
 /// List of all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
 #[get("/labels")]
-#[has_any_role(
-    "YakManRole::Admin",
-    "YakManRole::Approver",
-    "YakManRole::Operator",
-    "YakManRole::Viewer",
-    type = "YakManRole"
-)]
 pub async fn get_labels(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
