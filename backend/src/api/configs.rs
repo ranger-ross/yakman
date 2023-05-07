@@ -4,8 +4,9 @@ use crate::{
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
-use log::{error, warn};
+use log::error;
 use serde::Deserialize;
+use std::collections::HashSet;
 use yak_man_core::model::{request::CreateConfigPayload, YakManRole};
 
 #[derive(Deserialize)]
@@ -22,27 +23,55 @@ pub async fn get_configs(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
     let project_uuid = query.project.to_owned();
+    let has_global_role = YakManRoleBinding::has_any_global_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+            YakManRole::Viewer,
+        ],
+        &auth_details.permissions,
+    );
+
     if let Some(project_uuid) = &project_uuid {
-        if !YakManRoleBinding::has_any_role(
-            vec![
-                YakManRole::Admin,
-                YakManRole::Approver,
-                YakManRole::Operator,
-                YakManRole::Viewer,
-            ],
-            project_uuid,
-            auth_details.permissions,
-        ) {
-            panic!("invalid permission"); // TODO: Handle better permission
+        if !has_global_role
+            && !YakManRoleBinding::has_any_role(
+                vec![
+                    YakManRole::Admin,
+                    YakManRole::Approver,
+                    YakManRole::Operator,
+                    YakManRole::Viewer,
+                ],
+                project_uuid,
+                &auth_details.permissions,
+            )
+        {
+            return Err(YakManError::new("invalid permissions"));
         }
     }
+
+    let allowed_projects: HashSet<String> = auth_details
+        .permissions
+        .into_iter()
+        .filter_map(|p| match p {
+            YakManRoleBinding::ProjectRoleBinding(role) => Some(role.project_uuid),
+            _ => None,
+        })
+        .collect();
 
     let service = state.get_service();
     return match service.get_configs(project_uuid).await {
         Ok(data) => {
-            warn!("TODO: filter out configs that user does not have access to");
+            if has_global_role {
+                return Ok(web::Json(data));
+            }
 
-            Ok(web::Json(data))
+            let filtered_data = data
+                .into_iter()
+                .filter(|c| allowed_projects.contains(&c.project_uuid))
+                .collect();
+
+            return Ok(web::Json(filtered_data));
         }
         Err(err) => Err(YakManError::from(err)),
     };
@@ -63,7 +92,7 @@ async fn create_config(
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     ) {
         return HttpResponse::Forbidden().finish();
     }

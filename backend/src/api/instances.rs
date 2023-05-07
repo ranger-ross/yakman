@@ -28,7 +28,7 @@ async fn get_instances_by_config_name(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     );
 
     if !has_role {
@@ -68,7 +68,7 @@ async fn get_instance(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     );
 
     if !has_role {
@@ -109,7 +109,7 @@ async fn create_new_instance(
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     );
 
     if !has_role {
@@ -156,7 +156,7 @@ async fn update_new_instance(
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     );
 
     if !has_role {

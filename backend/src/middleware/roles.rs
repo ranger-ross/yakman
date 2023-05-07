@@ -16,12 +16,12 @@ impl YakManRoleBinding {
     pub fn has_any_role(
         roles_to_match: Vec<YakManRole>,
         project_uuid: &str,
-        roles: Vec<YakManRoleBinding>,
+        roles: &Vec<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
             match role {
                 YakManRoleBinding::GlobalRoleBinding(r) => {
-                    if r == YakManRole::Admin {
+                    if r == &YakManRole::Admin {
                         return true;
                     }
 
@@ -49,23 +49,23 @@ impl YakManRoleBinding {
     pub fn has_role(
         role_to_match: YakManRole,
         project_uuid: &str,
-        roles: Vec<YakManRoleBinding>,
+        roles: &Vec<YakManRoleBinding>,
     ) -> bool {
         return YakManRoleBinding::has_any_role(vec![role_to_match], project_uuid, roles);
     }
 
-    pub fn has_global_role(role_to_match: YakManRole, roles: Vec<YakManRoleBinding>) -> bool {
+    pub fn has_global_role(role_to_match: YakManRole, roles: &Vec<YakManRoleBinding>) -> bool {
         return YakManRoleBinding::has_any_global_role(vec![role_to_match], roles);
     }
 
     pub fn has_any_global_role(
         roles_to_match: Vec<YakManRole>,
-        roles: Vec<YakManRoleBinding>,
+        roles: &Vec<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
             match role {
                 YakManRoleBinding::GlobalRoleBinding(r) => {
-                    if r == YakManRole::Admin {
+                    if r == &YakManRole::Admin {
                         return true;
                     }
 

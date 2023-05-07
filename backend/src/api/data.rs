@@ -24,7 +24,7 @@ async fn get_instance_data(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     );
 
     if !has_role {

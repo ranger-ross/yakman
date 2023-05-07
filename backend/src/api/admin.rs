@@ -15,7 +15,7 @@ pub async fn get_yakman_users(
     auth_details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
     if !is_admin {
         return HttpResponse::Forbidden().finish();
@@ -34,7 +34,7 @@ pub async fn create_yakman_user(
     payload: Json<CreateYakManUserPayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
     if !is_admin {
         return HttpResponse::Forbidden().finish();

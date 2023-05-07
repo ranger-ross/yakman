@@ -35,7 +35,7 @@ pub async fn create_label(
 
     if !YakManRoleBinding::has_any_global_role(
         vec![YakManRole::Admin, YakManRole::Approver],
-        auth_details.permissions,
+        &auth_details.permissions,
     ) {
         return HttpResponse::Forbidden().finish();
     }

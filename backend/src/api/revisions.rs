@@ -25,7 +25,7 @@ async fn get_instance_revisions(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     ) {
         return HttpResponse::Forbidden().finish();
     }
@@ -60,7 +60,7 @@ async fn submit_instance_revision(
             YakManRole::Operator,
         ],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     ) {
         return HttpResponse::Forbidden().finish();
     }
@@ -90,7 +90,7 @@ async fn approve_pending_instance_revision(
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
-        auth_details.permissions,
+        &auth_details.permissions,
     ) {
         return HttpResponse::Forbidden().finish();
     }
