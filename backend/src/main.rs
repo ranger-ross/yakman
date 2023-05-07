@@ -1,22 +1,24 @@
 mod adapters;
 mod api;
 mod auth;
+mod middleware;
 mod services;
 
 extern crate dotenv;
 
-use crate::adapters::local_file_adapter::create_local_file_adapter;
 use crate::auth::oauth_service::OauthService;
+use crate::{
+    adapters::local_file_adapter::create_local_file_adapter, middleware::roles::extract_roles,
+};
 use actix_middleware_etag::Etag;
 use actix_web::{
-    dev::ServiceRequest, http::header::ContentType, middleware::Logger, web, App, Error,
-    HttpResponse, HttpServer,
+    http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
 };
 use actix_web_grants::GrantsMiddleware;
 use adapters::errors::GenericStorageError;
-use auth::{oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, token::TokenService};
+use auth::token::TokenService;
 use dotenv::dotenv;
-use log::{debug, info};
+use log::info;
 use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -57,8 +59,8 @@ impl StateManager {
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
         api::oauth::get_user_roles,
-        api::projects::get_projects,
-        api::projects::create_project,
+        // api::projects::get_projects,
+        // api::projects::create_project,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -87,35 +89,6 @@ impl StateManager {
     )
 )]
 struct ApiDoc;
-
-async fn extract(req: &ServiceRequest) -> Result<Vec<YakManRole>, Error> {
-    let state = req.app_data::<web::Data<StateManager>>().unwrap();
-    let cookies = req.cookies().unwrap();
-    let token = cookies
-        .iter()
-        .find(|c| c.name() == OAUTH_ACCESS_TOKEN_COOKIE_NAME);
-
-    if token.is_none() {
-        return Ok(vec![]);
-    }
-
-    match state
-        .get_token_service()
-        .validate_access_token(token.unwrap().value())
-    {
-        Ok(claims) => {
-            if let Ok(role) = YakManRole::try_from(claims.yakman_role) {
-                debug!("role = {role}");
-                return Ok(vec![role]);
-            }
-        }
-        Err(e) => {
-            info!("token invalid {e:?}");
-        }
-    }
-
-    return Ok(vec![]);
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -151,7 +124,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(state.clone())
             .wrap(Etag::default())
             .wrap(Logger::new("%s %r"))
-            .wrap(GrantsMiddleware::with_extractor(extract))
+            .wrap(GrantsMiddleware::with_extractor(extract_roles))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

@@ -41,7 +41,7 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, role, token_result) = match service
+    let (username, user, token_result) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -65,7 +65,7 @@ pub async fn oauth_exchange(
     println!("{:?}", token_result);
 
     let (access_token_jwt, expire_timestamp) =
-        match token_service.create_acess_token_jwt(&username, &role) {
+        match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
             Err(e) => {
                 error!("Failed to create token {e}");
@@ -142,7 +142,7 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
     };
 
     let (access_token_jwt, expire_timestamp) =
-        match token_service.create_acess_token_jwt(&username, &user.role) {
+        match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
             Err(e) => {
                 error!("Failed to create token {e}");

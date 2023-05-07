@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use std::fmt;
 use thiserror::Error;
 use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
-use yak_man_core::model::request::{CreateConfigPayload, CreateProjectPayload};
+use yak_man_core::model::request::{
+    CreateConfigPayload, CreateProjectPayload, CreateYakManUserPayload,
+};
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManRole,
     YakManUser,
@@ -31,7 +33,7 @@ pub async fn fetch_users() -> Result<Vec<YakManUser>, RequestError> {
 }
 
 pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), RequestError> {
-    let body = serde_json::to_string(&YakManUser {
+    let body = serde_json::to_string(&CreateYakManUserPayload {
         email: String::from(username),
         role: role.clone(),
     })?;

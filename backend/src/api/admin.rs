@@ -5,7 +5,8 @@ use actix_web::{
     HttpResponse,
 };
 use actix_web_grants::proc_macro::has_any_role;
-use yak_man_core::model::{YakManRole, YakManUser};
+use uuid::Uuid;
+use yak_man_core::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 
 /// Gets users
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
@@ -22,12 +23,17 @@ pub async fn get_yakman_users(state: web::Data<StateManager>) -> HttpResponse {
 #[put("/admin/v1/users")]
 #[has_any_role("YakManRole::Admin", type = "YakManRole")]
 pub async fn create_yakman_user(
-    user: Json<YakManUser>,
+    payload: Json<CreateYakManUserPayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let mut users = state.get_service().get_users().await.unwrap();
+    let user = payload.into_inner();
 
-    users.push(user.into_inner());
+    users.push(YakManUser {
+        email: user.email,
+        uuid: Uuid::new_v4().to_string(),
+        role: user.role,
+    });
 
     state.get_service().save_users(users).await.unwrap();
 

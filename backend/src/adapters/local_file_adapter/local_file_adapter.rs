@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use log::{error, info};
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManUserDetails,
 };
 
 use crate::adapters::local_file_adapter::storage_types::RevisionJson;
@@ -261,6 +262,23 @@ impl FileBasedStorageAdapter for LocalFileStorageAdapter {
         return Ok(None);
     }
 
+    async fn get_user_details(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
+        let dir = self.get_user_dir();
+        let path = format!("{dir}/{uuid}.json");
+
+        if let Ok(content) = fs::read_to_string(&path) {
+            let data: YakManUserDetails = serde_json::from_str(&content)?;
+            return Ok(Some(data));
+        } else {
+            error!("Failed to load user file: {uuid}");
+        }
+
+        return Ok(None);
+    }
+
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&UsersJson { users: users })?;
         let data_file_path = self.get_user_file_path();
@@ -295,7 +313,7 @@ impl LocalFileStorageAdapter {
 
     fn get_user_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/users/users.json");
+        return format!("{yakman_dir}/users.json");
     }
 
     fn get_instance_revisions_path(&self) -> String {
@@ -306,6 +324,11 @@ impl LocalFileStorageAdapter {
     fn get_config_instance_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instances");
+    }
+
+    fn get_user_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/users");
     }
 
     fn get_config_instance_metadata_dir(&self) -> String {

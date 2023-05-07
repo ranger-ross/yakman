@@ -5,14 +5,13 @@ use jwt::SignWithKey;
 use jwt::Token;
 use jwt::VerifyWithKey;
 use log::debug;
-use log::info;
 use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Sha256;
 use std::env::{self, VarError};
 use thiserror::Error;
-use yak_man_core::model::YakManRole;
+use yak_man_core::model::YakManUser;
 
 pub struct TokenService {
     secret: String,
@@ -24,7 +23,7 @@ pub struct YakManJwtClaims {
     pub sub: String,
     pub iat: i64,
     pub exp: i64,
-    pub yakman_role: String,
+    pub uuid: String,
 }
 
 impl TokenService {
@@ -40,8 +39,8 @@ impl TokenService {
     /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
     pub fn create_acess_token_jwt(
         &self,
-        user: &str,
-        role: &YakManRole,
+        username: &str,
+        user: &YakManUser,
     ) -> Result<(String, i64), JwtCreateError> {
         let key: Hmac<Sha256> = Hmac::new_from_slice(self.secret.as_bytes())
             .map_err(|e| JwtCreateError::InvalidSecret(Box::new(e)))?;
@@ -52,10 +51,10 @@ impl TokenService {
         let header: Header = Default::default();
         let claims = YakManJwtClaims {
             iat: now,
-            sub: user.into(),
+            sub: username.into(),
             exp: now + (token_time_to_live_seconds),
             iss: "YakMan Backend".into(),
-            yakman_role: role.to_string(),
+            uuid: user.uuid.to_string(),
         };
         let unsigned_token = Token::new(header, claims);
 

@@ -1,27 +1,37 @@
 use std::collections::HashMap;
 
-use crate::{services::errors::CreateConfigInstanceError, StateManager};
+use crate::{
+    middleware::roles::YakManRoleBinding, services::errors::CreateConfigInstanceError, StateManager,
+};
 
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
-use actix_web_grants::proc_macro::has_any_role;
+use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
 use yak_man_core::model::{Label, YakManRole};
 
 /// Get config instances by config_name
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstance>)))]
 #[get("/configs/{config_name}/instances")]
-#[has_any_role(
-    "YakManRole::Admin",
-    "YakManRole::Approver",
-    "YakManRole::Operator",
-    "YakManRole::Viewer",
-    type = "YakManRole"
-)]
 async fn get_instances_by_config_name(
+    auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let config_name = path.into_inner();
     let service = state.get_service();
+
+    let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
+
+    YakManRoleBinding::has_any_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+            YakManRole::Viewer,
+        ],
+        &config.project_uuid,
+        auth_details.permissions,
+    );
+
     return match service.get_config_instance_metadata(&config_name).await {
         Ok(data) => match data {
             Some(data) => HttpResponse::Ok().body(

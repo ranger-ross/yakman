@@ -37,34 +37,34 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
     );
     provide_context(cx, state);
 
-    let attempt_to_refresh_token = move || {
-        spawn_local(async move {
-            match api::refresh_token().await {
-                Ok(_) => {
-                    let _ = window().location().reload();
-                }
-                Err(_) => state.update(|state| state.is_login_needed = true),
-            };
-        });
-    };
+    // let attempt_to_refresh_token = move || {
+    //     spawn_local(async move {
+    //         match api::refresh_token().await {
+    //             Ok(_) => {
+    //                 let _ = window().location().reload();
+    //             }
+    //             Err(_) => state.update(|state| state.is_login_needed = true),
+    //         };
+    //     });
+    // };
 
-    spawn_local(async move {
-        match api::fetch_user_roles().await {
-            Ok(roles) => {
-                if roles.len() == 0 {
-                    attempt_to_refresh_token();
-                }
-            }
-            Err(e) => match e {
-                api::RequestError::UnexpectedHttpStatus(status) => {
-                    if status >= 400 && status < 500 {
-                        attempt_to_refresh_token();
-                    }
-                }
-                e => error!("failed to fetch user roles {e:?}"),
-            },
-        }
-    });
+    // spawn_local(async move {
+    //     match api::fetch_user_roles().await {
+    //         Ok(roles) => {
+    //             if roles.len() == 0 {
+    //                 attempt_to_refresh_token();
+    //             }
+    //         }
+    //         Err(e) => match e {
+    //             api::RequestError::UnexpectedHttpStatus(status) => {
+    //                 if status >= 400 && status < 500 {
+    //                     attempt_to_refresh_token();
+    //                 }
+    //             }
+    //             e => error!("failed to fetch user roles {e:?}"),
+    //         },
+    //     }
+    // });
 
     let is_login_needed = move || state().is_login_needed;
 

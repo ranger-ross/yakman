@@ -12,7 +12,7 @@ use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, Standar
 use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
-use yak_man_core::model::YakManRole;
+use yak_man_core::model::{YakManRole, YakManUser};
 
 pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
 pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";
@@ -68,7 +68,7 @@ impl OauthService {
     ) -> Result<
         (
             String,
-            YakManRole,
+            YakManUser,
             StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>,
         ),
         LoginError,
@@ -96,7 +96,7 @@ impl OauthService {
             .await
             .map_err(|_| LoginError::FailedToCheckRegisteredUsers)?
         {
-            return Ok((username, yakman_user.role, data));
+            return Ok((username, yakman_user, data));
         }
 
         return Err(LoginError::UserNotRegistered);

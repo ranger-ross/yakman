@@ -85,6 +85,17 @@ impl fmt::Display for YakManRole {
     }
 }
 
+impl TryFrom<Option<String>> for YakManRole {
+    type Error = &'static str;
+
+    fn try_from(value: Option<String>) -> Result<Self, Self::Error> {
+        if let Some(value) = value {
+            return YakManRole::try_from(value);
+        }
+        Err("Invalid role")
+    }
+}
+
 impl TryFrom<String> for YakManRole {
     type Error = &'static str;
 
@@ -102,5 +113,18 @@ impl TryFrom<String> for YakManRole {
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct YakManUser {
     pub email: String,
+    pub uuid: String,
+    pub role: Option<YakManRole>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]
+pub struct YakManUserProjectRole {
+    pub project_uuid: String,
     pub role: YakManRole,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+pub struct YakManUserDetails {
+    pub global_roles: Vec<YakManRole>,
+    pub roles: Vec<YakManUserProjectRole>,
 }
