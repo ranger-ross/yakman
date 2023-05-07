@@ -26,12 +26,12 @@ pub async fn get_projects(
         .iter()
         .map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(_) => true,
-            YakManRoleBinding::ProjectRoleBinding(_) => false,
+            _ => false,
         })
         .filter(|p| p.clone())
         .collect::<Vec<bool>>()
         .len()
-        > 0; // TODO: Smarter global role checking
+        > 0;
 
     let allowed_projects: HashSet<String> = auth_details
         .permissions

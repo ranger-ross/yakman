@@ -188,7 +188,6 @@ async fn update_new_instance(
     }
 
     // TODO: do validation
-    // - config exists
     // - labels are valid
     // - not a duplicate?
 

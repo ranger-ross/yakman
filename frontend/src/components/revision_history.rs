@@ -11,8 +11,6 @@ use yak_man_core::model::{ConfigInstance, ConfigInstanceChange, ConfigInstanceRe
 struct PageData {
     revisions: Vec<ConfigInstanceRevision>,
     instance: ConfigInstance,
-    // current_revision: String,
-    // pending_revision: Option<String>,
 }
 
 #[component]
