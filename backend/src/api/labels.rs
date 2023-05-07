@@ -1,9 +1,10 @@
 use crate::{
-    api::is_alphanumeric_kebab_case, services::errors::CreateLabelError, StateManager, YakManError,
+    api::is_alphanumeric_kebab_case, middleware::roles::YakManRoleBinding,
+    services::errors::CreateLabelError, StateManager, YakManError,
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
-use actix_web_grants::proc_macro::has_any_role;
+use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
 use log::error;
 use yak_man_core::model::{LabelType, YakManRole};
 
@@ -24,14 +25,21 @@ pub async fn get_labels(
 /// Create a new label
 #[utoipa::path(request_body = LabelType, responses((status = 200, body = String)))]
 #[put("/labels")]
-#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 pub async fn create_label(
+    auth_details: AuthDetails<YakManRoleBinding>,
     label_type: web::Json<LabelType>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_service();
     let mut label_type = label_type.into_inner();
     label_type.name = label_type.name.to_lowercase();
+
+    if !YakManRoleBinding::has_any_global_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        auth_details.permissions,
+    ) {
+        return HttpResponse::Forbidden().finish();
+    }
 
     if !is_alphanumeric_kebab_case(&label_type.name) {
         return HttpResponse::BadRequest()

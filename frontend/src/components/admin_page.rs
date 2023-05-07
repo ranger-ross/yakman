@@ -39,7 +39,7 @@ pub fn admin_page(cx: Scope) -> impl IntoView {
                 each=users
                 key=|user| user.email.clone()
                 view=move |cx, user: YakManUser| view! { cx,
-                    <p>{user.email} " => " {user.role.unwrap().to_string()} </p>
+                    <p>{user.email}</p>
                 }
             />
 

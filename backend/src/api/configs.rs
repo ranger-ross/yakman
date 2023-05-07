@@ -52,14 +52,22 @@ pub async fn get_configs(
 /// Create a new config
 #[utoipa::path(request_body = CreateConfigPayload, responses((status = 200, body = String)))]
 #[put("/configs")]
-#[has_any_role("YakManRole::Admin", "YakManRole::Approver", type = "YakManRole")]
 async fn create_config(
+    auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateConfigPayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
     let project_uuid = payload.project_uuid;
+
+    if !YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        &project_uuid,
+        auth_details.permissions,
+    ) {
+        return HttpResponse::Forbidden().finish();
+    }
 
     if !is_alphanumeric_kebab_case(&config_name) {
         return HttpResponse::BadRequest()
