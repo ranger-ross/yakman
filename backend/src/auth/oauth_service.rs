@@ -12,7 +12,7 @@ use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, Standar
 use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
-use yak_man_core::model::{YakManRole, YakManUser};
+use yak_man_core::model::YakManUser;
 
 pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
 pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";

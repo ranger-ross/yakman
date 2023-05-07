@@ -4,7 +4,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse,
 };
-use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
+use actix_web_grants::{permissions::AuthDetails};
 use uuid::Uuid;
 use yak_man_core::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 

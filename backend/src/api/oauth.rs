@@ -166,18 +166,11 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
 }
 
 /// Endpoint to check if a user is logged in and get user roles
-
+#[utoipa::path(responses((status = 200, body = GetUserRolesResponse)))]
 #[get("/oauth2/user-roles")]
 pub async fn get_user_roles(
     details: AuthDetails<YakManRoleBinding>,
 ) -> actix_web::Result<impl Responder, YakManError> {
-    // let roles: Vec<YakManRole> = details
-    //     .permissions
-    //     .iter()
-    //     .map(|p| YakManRole::try_from(p.to_string()))
-    //     .filter(|r| r.is_ok())
-    //     .map(|r| r.unwrap())
-    //     .collect();
 
     let global_roles: Vec<YakManRole> = details
         .permissions

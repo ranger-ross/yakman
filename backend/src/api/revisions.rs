@@ -1,7 +1,7 @@
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
 
 use actix_web::{get, post, put, web, HttpResponse};
-use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
+use actix_web_grants::permissions::AuthDetails;
 use yak_man_core::model::YakManRole;
 
 /// Get all of the revisions for a config

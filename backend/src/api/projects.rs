@@ -11,6 +11,7 @@ use log::error;
 use yak_man_core::model::{request::CreateProjectPayload, YakManProject, YakManRole};
 
 /// Get all of the projects
+#[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
 #[get("/v1/projects")]
 pub async fn get_projects(
     auth_details: AuthDetails<YakManRoleBinding>,

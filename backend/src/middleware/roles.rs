@@ -3,7 +3,7 @@ extern crate dotenv;
 use crate::auth::oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME;
 use crate::StateManager;
 use actix_web::{dev::ServiceRequest, web, Error};
-use log::{debug, info};
+use log::info;
 use yak_man_core::model::{YakManRole, YakManUserProjectRole};
 
 #[derive(Debug, PartialEq, Clone)]

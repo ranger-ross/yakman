@@ -2,9 +2,8 @@ use crate::{
     api::is_alphanumeric_kebab_case, middleware::roles::YakManRoleBinding,
     services::errors::CreateLabelError, StateManager, YakManError,
 };
-
 use actix_web::{get, put, web, HttpResponse, Responder};
-use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
+use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use yak_man_core::model::{LabelType, YakManRole};
 

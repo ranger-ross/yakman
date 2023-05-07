@@ -58,9 +58,9 @@ impl StateManager {
         api::oauth::oauth_init,
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
-        // api::oauth::get_user_roles,
-        // api::projects::get_projects,
-        // api::projects::create_project,
+        api::oauth::get_user_roles,
+        api::projects::get_projects,
+        api::projects::create_project,
         api::configs::get_configs,
         api::configs::create_config,
         api::labels::get_labels,
@@ -69,7 +69,6 @@ impl StateManager {
         api::instances::get_instance,
         api::instances::create_new_instance,
         api::instances::update_new_instance,
-        api::data::get_data_by_labels,
         api::data::get_instance_data,
         api::revisions::get_instance_revisions,
         api::revisions::submit_instance_revision,
@@ -151,7 +150,6 @@ async fn main() -> std::io::Result<()> {
             .service(api::instances::create_new_instance)
             .service(api::instances::update_new_instance)
             // Data
-            .service(api::data::get_data_by_labels)
             .service(api::data::get_instance_data)
             // Revisions
             .service(api::revisions::get_instance_revisions)

@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use crate::{
     middleware::roles::YakManRoleBinding, services::errors::CreateConfigInstanceError, StateManager,
 };
-
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
-use actix_web_grants::{permissions::AuthDetails, proc_macro::has_any_role};
+use actix_web_grants::permissions::AuthDetails;
 use yak_man_core::model::{Label, YakManRole};
 
 /// Get config instances by config_name
@@ -21,7 +20,7 @@ async fn get_instances_by_config_name(
 
     let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
 
-    YakManRoleBinding::has_any_role(
+    let has_role = YakManRoleBinding::has_any_role(
         vec![
             YakManRole::Admin,
             YakManRole::Approver,
@@ -31,6 +30,10 @@ async fn get_instances_by_config_name(
         &config.project_uuid,
         auth_details.permissions,
     );
+
+    if !has_role {
+        return HttpResponse::Forbidden().finish();
+    }
 
     return match service.get_config_instance_metadata(&config_name).await {
         Ok(data) => match data {
@@ -57,7 +60,7 @@ async fn get_instance(
 
     let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
 
-    YakManRoleBinding::has_any_role(
+    let has_role = YakManRoleBinding::has_any_role(
         vec![
             YakManRole::Admin,
             YakManRole::Approver,
@@ -67,6 +70,10 @@ async fn get_instance(
         &config.project_uuid,
         auth_details.permissions,
     );
+
+    if !has_role {
+        return HttpResponse::Forbidden().finish();
+    }
 
     return match service.get_config_instance(&config_name, &instance).await {
         Ok(data) => match data {
@@ -99,11 +106,15 @@ async fn create_new_instance(
 
     let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
 
-    YakManRoleBinding::has_any_role(
+    let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
         auth_details.permissions,
     );
+
+    if !has_role {
+        return HttpResponse::Forbidden().finish();
+    }
 
     // TODO: do validation
     // - labels are valid
@@ -142,11 +153,15 @@ async fn update_new_instance(
 
     let config = service.get_config(&config_name).await.unwrap().unwrap(); // TODO: better error handling
 
-    YakManRoleBinding::has_any_role(
+    let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
         auth_details.permissions,
     );
+
+    if !has_role {
+        return HttpResponse::Forbidden().finish();
+    }
 
     // TODO: do validation
     // - config exists
