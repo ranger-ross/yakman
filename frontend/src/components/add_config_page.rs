@@ -42,36 +42,36 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
             <h1>{"Add Config"}</h1>
+
             <div>{"Name: "} <input type="text" on:input=move |ev| set_name(event_target_value(&ev)) prop:value=name /></div>
 
+            <div>
+                {"Project: "}
+                <select on:change=on_project_change>
+                    <option value="">""</option>
+                    {move || match projects.read(cx) {
+                        Some(data) => {
+                            let projects = move || data.clone();
+                            view! { cx,
+                                <For
+                                    each=projects
+                                    key=|p| p.uuid.clone()
+                                    view=move |cx, project: YakManProject| view! {cx,
+                                        <option value=project.uuid>{project.name}</option>
+                                    }
+                                />
+                            }.into_view(cx)
+                        },
+                        None => view! { cx, }.into_view(cx)
+                    }}
+                </select>
+            </div>
 
-            {"Project: "}
-            <select on:change=on_project_change>
-                <option value="">""</option>
-                {move || match projects.read(cx) {
-                    Some(data) => {
-                        let projects = move || data.clone();
-                        view! { cx,
-                            <For
-                                each=projects
-                                key=|p| p.uuid.clone()
-                                view=move |cx, project: YakManProject| view! {cx,
-                                    <option value=project.uuid>{project.name}</option>
-                                }
-                            />
-                        }.into_view(cx)
-                    },
-                    None => view! { cx, }.into_view(cx)
-                }}
-            </select>
-
-            <br />
-
-            <button on:click=on_create_config>"Create"</button>
-
-            {project_uuid}
+            <div>
+                <button on:click=on_create_config>"Create"</button>
+            </div>
 
         </div>
     }

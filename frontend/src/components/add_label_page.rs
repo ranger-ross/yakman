@@ -37,16 +37,16 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
             <h1>{"Add Label"}</h1>
             <div>{"Name: "} <input type="text" on:input=move |ev| set_name(event_target_value(&ev)) prop:value=name /></div>
             <div>{"Prioity: "} <input  type="text" on:input=move |ev| set_prioity(event_target_value(&ev)) prop:value=prioity/></div>
             <div>{"Description: "} <input  type="text" on:input=move |ev| set_description(event_target_value(&ev)) prop:value=description /></div>
             <div>{"Options: "} <input  type="text" on:input=move |ev| set_options(event_target_value(&ev)) prop:value=options /></div>
 
-            <br />
-
-            <button on:click=on_create_label>"Create"</button>
+            <div>
+                <button on:click=on_create_label>"Create"</button>
+            </div>
 
         </div>
     }
