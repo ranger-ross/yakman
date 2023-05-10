@@ -5,7 +5,7 @@ use yak_man_core::model::YakManRole;
 
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/configs/{config_name}/instances/{instance}/data")]
+#[get("/v1/configs/{config_name}/instances/{instance}/data")]
 async fn get_instance_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,

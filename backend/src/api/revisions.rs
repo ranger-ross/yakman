@@ -6,7 +6,7 @@ use yak_man_core::model::YakManRole;
 
 /// Get all of the revisions for a config
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
-#[get("/configs/{config_name}/instances/{instance}/revisions")]
+#[get("/v1/configs/{config_name}/instances/{instance}/revisions")]
 async fn get_instance_revisions(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
@@ -42,7 +42,7 @@ async fn get_instance_revisions(
 
 /// Submit a new revision for review
 #[utoipa::path(responses((status = 200, body = String)))]
-#[put("/configs/{config_name}/instances/{instance}/revisions/{revision}/submit")]
+#[put("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/submit")]
 async fn submit_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
@@ -76,7 +76,7 @@ async fn submit_instance_revision(
 
 /// Approves and applies a revision to a config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/configs/{config_name}/instances/{instance}/revisions/{revision}/approve")]
+#[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/approve")]
 async fn approve_pending_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
