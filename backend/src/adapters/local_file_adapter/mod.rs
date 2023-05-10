@@ -2,7 +2,7 @@ pub mod local_file_adapter;
 mod storage_types;
 
 pub use self::local_file_adapter::LocalFileStorageAdapter;
-use super::{FileBasedStorageAdapter, GenericStorageError};
+use super::{KeyValuePairStorageAdapter, GenericStorageError};
 
 pub fn create_local_file_adapter() -> LocalFileStorageAdapter {
     return LocalFileStorageAdapter {

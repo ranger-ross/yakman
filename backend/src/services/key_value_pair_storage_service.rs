@@ -1,6 +1,6 @@
 use super::StorageService;
 use crate::{
-    adapters::{errors::GenericStorageError, FileBasedStorageAdapter},
+    adapters::{errors::GenericStorageError, KeyValuePairStorageAdapter},
     error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
@@ -15,12 +15,12 @@ use yak_man_core::model::{
     YakManProject, YakManUser, YakManUserDetails,
 };
 
-pub struct FileBasedStorageService {
-    pub adapter: Box<dyn FileBasedStorageAdapter>,
+pub struct KeyValuePairStorageService {
+    pub adapter: Box<dyn KeyValuePairStorageAdapter>,
 }
 
 #[async_trait]
-impl StorageService for FileBasedStorageService {
+impl StorageService for KeyValuePairStorageService {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
         return Ok(self.adapter.get_projects().await?);
     }

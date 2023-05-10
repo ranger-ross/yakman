@@ -16,7 +16,7 @@ use crate::adapters::local_file_adapter::storage_types::RevisionJson;
 
 use super::{
     storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
-    FileBasedStorageAdapter, GenericStorageError,
+    KeyValuePairStorageAdapter, GenericStorageError,
 };
 
 #[derive(Clone)]
@@ -26,7 +26,7 @@ pub struct LocalFileStorageAdapter {
 }
 
 #[async_trait]
-impl FileBasedStorageAdapter for LocalFileStorageAdapter {
+impl KeyValuePairStorageAdapter for LocalFileStorageAdapter {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
         let path = self.get_projects_file_path();
         let content = fs::read_to_string(path)?;
