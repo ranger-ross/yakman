@@ -1,18 +1,17 @@
+pub mod file_based_storage_service;
+
+use crate::{
+    adapters::errors::GenericStorageError,
+    error::{
+        ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
+        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+    },
+};
 use async_trait::async_trait;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
-
-use crate::adapters::errors::GenericStorageError;
-
-use self::errors::{
-    ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-    CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
-};
-
-pub mod errors;
-pub mod file_based_storage_service;
 
 #[async_trait]
 pub trait StorageService: Sync + Send {

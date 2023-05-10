@@ -1,11 +1,11 @@
-use super::{
-    errors::{
+use super::StorageService;
+use crate::{
+    adapters::{errors::GenericStorageError, FileBasedStorageAdapter},
+    error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
     },
-    StorageService,
 };
-use crate::adapters::{errors::GenericStorageError, FileBasedStorageAdapter};
 use async_trait::async_trait;
 use chrono::Utc;
 use log::info;
