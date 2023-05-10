@@ -17,7 +17,7 @@ use actix_web_grants::GrantsMiddleware;
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
-use services::{key_value_pair_storage_service::KeyValuePairStorageService, StorageService};
+use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -171,7 +171,7 @@ fn create_service() -> impl StorageService {
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(create_local_file_adapter());
-            KeyValuePairStorageService { adapter: adapter }
+            KVStorageService { adapter: adapter }
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
     };

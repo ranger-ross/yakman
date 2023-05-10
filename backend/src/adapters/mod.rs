@@ -12,7 +12,7 @@ pub mod postgres_adapter;
 pub mod redis_adapter;
 
 #[async_trait]
-pub trait KeyValuePairStorageAdapter: Sync + Send {
+pub trait KVStorageAdapter: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
     async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError>;

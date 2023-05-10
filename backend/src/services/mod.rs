@@ -1,4 +1,4 @@
-pub mod key_value_pair_storage_service;
+pub mod kv_storage_service;
 
 use crate::{
     adapters::errors::GenericStorageError,
