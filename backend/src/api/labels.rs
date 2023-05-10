@@ -1,6 +1,6 @@
 use crate::{
-    api::is_alphanumeric_kebab_case, middleware::roles::YakManRoleBinding,
-    services::errors::CreateLabelError, StateManager, YakManError,
+    api::is_alphanumeric_kebab_case, error::YakManError, middleware::roles::YakManRoleBinding,
+    services::errors::CreateLabelError, StateManager,
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;

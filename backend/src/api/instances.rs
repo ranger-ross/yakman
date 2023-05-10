@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     middleware::roles::YakManRoleBinding, services::errors::CreateConfigInstanceError, StateManager,
 };
-use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Result};
+use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
 use yak_man_core::model::{Label, YakManRole};
 
