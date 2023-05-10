@@ -21,6 +21,7 @@ use services::{file_based_storage_service::FileBasedStorageService, StorageServi
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use yak_man_core::model::response::GetUserRolesResponse;
 use yak_man_core::{
     load_yak_man_settings,
     model::{
@@ -72,7 +73,10 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload)
+        schemas(
+            Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
+            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse
+        )
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),

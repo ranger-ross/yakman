@@ -106,7 +106,7 @@ pub async fn fetch_user_roles() -> Result<GetUserRolesResponse, RequestError> {
 }
 
 pub async fn fetch_configs(project_uuid: Option<String>) -> Result<Vec<Config>, RequestError> {
-    let mut request = Request::get("/api/configs");
+    let mut request = Request::get("/api/v1/configs");
     if let Some(project_uuid) = project_uuid {
         request = request.query([("project", project_uuid)]);
     }
@@ -121,7 +121,7 @@ pub async fn fetch_configs(project_uuid: Option<String>) -> Result<Vec<Config>, 
 }
 
 pub async fn fetch_labels() -> Result<Vec<LabelType>, RequestError> {
-    return Ok(Request::get("/api/labels").send().await?.json().await?);
+    return Ok(Request::get("/api/v1/labels").send().await?.json().await?);
 }
 
 pub async fn fetch_config_metadata(config_name: &str) -> Vec<ConfigInstance> {
@@ -190,7 +190,7 @@ pub async fn create_config(config_name: &str, project_uuid: &str) -> Result<(), 
         config_name: config_name.to_string(),
         project_uuid: project_uuid.to_string(),
     };
-    let response = Request::put("/api/configs")
+    let response = Request::put("/api/v1/configs")
         .body(serde_json::to_string(&payload).unwrap())
         .header("content-type", "application/json")
         .send()
@@ -222,7 +222,7 @@ pub async fn create_project(project_name: &str) -> Result<(), RequestError> {
     let body = serde_json::to_string(&CreateProjectPayload {
         project_name: String::from(project_name),
     })?;
-    let response = Request::put("/api/projects")
+    let response = Request::put("/api/v1/projects")
         .body(body)
         .header("content-type", "application/json")
         .send()

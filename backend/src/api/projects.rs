@@ -58,7 +58,7 @@ pub async fn get_projects(
 
 /// Create a new project
 #[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = String)))]
-#[put("/projects")]
+#[put("/v1/projects")]
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateProjectPayload>,
@@ -91,7 +91,7 @@ async fn create_project(
     let service = state.get_service();
 
     return match service.create_project(&project_name).await {
-        Ok(()) => HttpResponse::Ok().body(""),
+        Ok(()) => HttpResponse::Ok().finish(),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
                 error!("Failed to create config {project_name}, error: {message}");

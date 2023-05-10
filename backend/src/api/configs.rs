@@ -16,7 +16,7 @@ pub struct GetConfigsQuery {
 
 /// List of all configs
 #[utoipa::path(responses((status = 200, body = Vec<Config>)))]
-#[get("/configs")]
+#[get("/v1/configs")]
 pub async fn get_configs(
     auth_details: AuthDetails<YakManRoleBinding>,
     query: web::Query<GetConfigsQuery>,
@@ -79,7 +79,7 @@ pub async fn get_configs(
 
 /// Create a new config
 #[utoipa::path(request_body = CreateConfigPayload, responses((status = 200, body = String)))]
-#[put("/configs")]
+#[put("/v1/configs")]
 async fn create_config(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateConfigPayload>,
@@ -107,7 +107,7 @@ async fn create_config(
         service.create_config(&config_name, &project_uuid).await;
 
     return match result {
-        Ok(()) => HttpResponse::Ok().body(""),
+        Ok(()) => HttpResponse::Ok().finish(),
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");

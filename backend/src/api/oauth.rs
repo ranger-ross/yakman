@@ -100,7 +100,7 @@ pub async fn oauth_exchange(
         warn!("No refresh token found, skipping refresh token cookie")
     }
 
-    response.body("")
+    response.finish()
 }
 
 /// Use refresh_token cookie to generate new access token
@@ -161,7 +161,7 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
                 .max_age(Duration::milliseconds(expire_timestamp))
                 .finish(),
         )
-        .body("")
+        .finish()
 }
 
 /// Endpoint to check if a user is logged in and get user roles
