@@ -14,7 +14,7 @@ pub struct YakManProject {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct Config {
+pub struct Config { // TODO: Rename to YakManConfig
     pub name: String, // Unique key
     pub project_uuid: String,
     pub description: String,

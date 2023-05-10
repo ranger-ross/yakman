@@ -14,10 +14,11 @@ use crate::{
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
+use adapters::redis_adapter::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
-use services::{file_based_storage_service::FileBasedStorageService, StorageService};
+use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -167,11 +168,14 @@ fn create_service() -> impl StorageService {
 
     // TODO: handle non file storage
     return match adapter_name.as_str() {
-        // "REDIS" => Box::new(create_redis_adapter()),
+        "REDIS" => {
+            let adapter = Box::new(create_redis_adapter());
+            KVStorageService { adapter: adapter }
+        },
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(create_local_file_adapter());
-            FileBasedStorageService { adapter: adapter }
+            KVStorageService { adapter: adapter }
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
     };

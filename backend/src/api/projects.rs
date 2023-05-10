@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use crate::{
-    api::is_alphanumeric_kebab_case, middleware::roles::YakManRoleBinding,
-    services::errors::CreateProjectError, StateManager,
+    api::is_alphanumeric_kebab_case, error::CreateProjectError,
+    middleware::roles::YakManRoleBinding, StateManager,
 };
 
 use actix_web::{get, put, web, HttpResponse};

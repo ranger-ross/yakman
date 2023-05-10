@@ -1,11 +1,11 @@
-use super::{
-    errors::{
+use super::StorageService;
+use crate::{
+    adapters::{errors::GenericStorageError, KVStorageAdapter},
+    error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
     },
-    StorageService,
 };
-use crate::adapters::{errors::GenericStorageError, FileBasedStorageAdapter};
 use async_trait::async_trait;
 use chrono::Utc;
 use log::info;
@@ -15,12 +15,12 @@ use yak_man_core::model::{
     YakManProject, YakManUser, YakManUserDetails,
 };
 
-pub struct FileBasedStorageService {
-    pub adapter: Box<dyn FileBasedStorageAdapter>,
+pub struct KVStorageService {
+    pub adapter: Box<dyn KVStorageAdapter>,
 }
 
 #[async_trait]
-impl StorageService for FileBasedStorageService {
+impl StorageService for KVStorageService {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
         return Ok(self.adapter.get_projects().await?);
     }

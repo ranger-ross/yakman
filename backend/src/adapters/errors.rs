@@ -8,7 +8,7 @@ pub struct GenericStorageError {
 }
 
 impl GenericStorageError {
-    fn new(message: String, raw_message: String) -> GenericStorageError {
+    pub fn new(message: String, raw_message: String) -> GenericStorageError {
         GenericStorageError {
             message: message,
             raw_message: raw_message,
