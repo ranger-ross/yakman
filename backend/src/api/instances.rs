@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use crate::{
     middleware::roles::YakManRoleBinding, services::errors::CreateConfigInstanceError, StateManager,
 };
-use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Result};
+use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
 use yak_man_core::model::{Label, YakManRole};
 
 /// Get config instances by config_name
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstance>)))]
-#[get("/configs/{config_name}/instances")]
+#[get("/v1/configs/{config_name}/instances")]
 async fn get_instances_by_config_name(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
@@ -55,7 +55,7 @@ async fn get_instances_by_config_name(
 
 /// Get config instance by instance ID
 #[utoipa::path(responses((status = 200, body = ConfigInstance)))]
-#[get("/configs/{config_name}/instances/{instance}")]
+#[get("/v1/configs/{config_name}/instances/{instance}")]
 async fn get_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
@@ -101,7 +101,7 @@ async fn get_instance(
 
 /// Create a new config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[put("/configs/{config_name}/instances")]
+#[put("/v1/configs/{config_name}/instances")]
 async fn create_new_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
@@ -154,7 +154,7 @@ async fn create_new_instance(
 
 /// Create a update config instance
 #[utoipa::path(responses((status = 200, body = String)))]
-#[post("/configs/{config_name}/instances/{instance}")]
+#[post("/v1/configs/{config_name}/instances/{instance}")]
 async fn update_new_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,

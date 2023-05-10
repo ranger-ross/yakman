@@ -5,8 +5,9 @@ use crate::{
         oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
         LoginError,
     },
+    error::YakManError,
     middleware::roles::YakManRoleBinding,
-    StateManager, YakManError,
+    StateManager,
 };
 use actix_web::{
     cookie::{time::Duration, Cookie},
@@ -66,8 +67,6 @@ pub async fn oauth_exchange(
         }
     };
 
-    println!("{:?}", token_result);
-
     let (access_token_jwt, expire_timestamp) =
         match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
@@ -101,7 +100,7 @@ pub async fn oauth_exchange(
         warn!("No refresh token found, skipping refresh token cookie")
     }
 
-    response.body("")
+    response.finish()
 }
 
 /// Use refresh_token cookie to generate new access token
@@ -162,7 +161,7 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
                 .max_age(Duration::milliseconds(expire_timestamp))
                 .finish(),
         )
-        .body("")
+        .finish()
 }
 
 /// Endpoint to check if a user is logged in and get user roles
@@ -171,7 +170,6 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
 pub async fn get_user_roles(
     details: AuthDetails<YakManRoleBinding>,
 ) -> actix_web::Result<impl Responder, YakManError> {
-
     let global_roles: Vec<YakManRole> = details
         .permissions
         .iter()

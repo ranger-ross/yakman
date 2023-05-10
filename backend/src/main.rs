@@ -1,6 +1,7 @@
 mod adapters;
 mod api;
 mod auth;
+mod error;
 mod middleware;
 mod services;
 
@@ -11,19 +12,16 @@ use crate::{
     adapters::local_file_adapter::create_local_file_adapter, middleware::roles::extract_roles,
 };
 use actix_middleware_etag::Etag;
-use actix_web::{
-    http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
-};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
-use adapters::errors::GenericStorageError;
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
-use serde::Serialize;
 use services::{file_based_storage_service::FileBasedStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use yak_man_core::model::response::GetUserRolesResponse;
 use yak_man_core::{
     load_yak_man_settings,
     model::{
@@ -75,7 +73,10 @@ impl StateManager {
         api::revisions::approve_pending_instance_revision,
     ),
     components(
-        schemas(Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload)
+        schemas(
+            Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
+            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse
+        )
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),
@@ -159,38 +160,6 @@ async fn main() -> std::io::Result<()> {
     .bind(("127.0.0.1", 8000))?
     .run()
     .await
-}
-
-use actix_web::error;
-use derive_more::{Display, Error};
-
-#[derive(Debug, Display, Error, Serialize)]
-pub struct YakManError {
-    error: String,
-}
-
-impl YakManError {
-    fn new(error: &str) -> YakManError {
-        YakManError {
-            error: String::from(error),
-        }
-    }
-}
-
-impl error::ResponseError for YakManError {
-    fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code())
-            .insert_header(ContentType::json())
-            .body(serde_json::to_string(self).unwrap_or(String::from("{}"))) // TODO: add internal server error message
-    }
-}
-
-impl From<GenericStorageError> for YakManError {
-    fn from(err: GenericStorageError) -> Self {
-        YakManError {
-            error: err.to_string(),
-        }
-    }
 }
 
 fn create_service() -> impl StorageService {
