@@ -14,6 +14,7 @@ use crate::{
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
+use adapters::redis_adapter::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
@@ -167,7 +168,10 @@ fn create_service() -> impl StorageService {
 
     // TODO: handle non file storage
     return match adapter_name.as_str() {
-        // "REDIS" => Box::new(create_redis_adapter()),
+        "REDIS" => {
+            let adapter = Box::new(create_redis_adapter());
+            KVStorageService { adapter: adapter }
+        },
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(create_local_file_adapter());

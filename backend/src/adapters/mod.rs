@@ -87,5 +87,5 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
 
-    async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError>;
+    async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError>; // TODO: Rename this method (this is no longer limited to file based storage systems so it be dealing with non-file storage)
 }
