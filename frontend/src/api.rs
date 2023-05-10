@@ -205,7 +205,7 @@ pub async fn create_config(config_name: &str, project_uuid: &str) -> Result<(), 
 
 pub async fn create_label(label: LabelType) -> Result<(), RequestError> {
     let body = serde_json::to_string(&label)?;
-    let response = Request::put("/api/labels")
+    let response = Request::put("/api/v1/labels")
         .body(body)
         .header("content-type", "application/json")
         .send()

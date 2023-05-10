@@ -9,7 +9,7 @@ use yak_man_core::model::{LabelType, YakManRole};
 
 /// List of all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
-#[get("/labels")]
+#[get("/v1/labels")]
 pub async fn get_labels(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManError> {
@@ -23,7 +23,7 @@ pub async fn get_labels(
 
 /// Create a new label
 #[utoipa::path(request_body = LabelType, responses((status = 200, body = String)))]
-#[put("/labels")]
+#[put("/v1/labels")]
 pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
     label_type: web::Json<LabelType>,
