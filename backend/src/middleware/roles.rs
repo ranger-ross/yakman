@@ -106,7 +106,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
                 .get_user_details(&uuid)
                 .await
                 .unwrap()
-                .unwrap();
+                .unwrap(); // TODO: handle these unwraps
 
             let mut global_roles: Vec<YakManRoleBinding> = details
                 .global_roles
