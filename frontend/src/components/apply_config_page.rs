@@ -14,6 +14,12 @@ struct ApplyConfigPageData {
     pending_revision: Option<String>,
 }
 
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+struct DiffData {
+    original: (String, String),
+    new: (String, String),
+}
+
 #[component]
 pub fn apply_config_page(cx: Scope) -> impl IntoView {
     let params = use_params_map(cx);
@@ -67,9 +73,29 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
         })
     };
 
+    let diffs_data = create_resource(
+        cx,
+        move || (config_name(), instance()),
+        |(config_name, instance)| async move {
+            let (data, content_type) = api::fetch_config_data(&config_name, &instance)
+                .await
+                .unwrap();
+
+            DiffData {
+                original: (data, content_type),
+                new: (String::from("This is a placeholder diff"), String::from("text/plain")), // TODO: Actually fetch some data
+            }
+        },
+    );
+
+    let original_text = move || diffs_data.read(cx).map(|d| d.original.0);
+    let new_text = move || diffs_data.read(cx).map(|d| d.new.0);
+
     view! { cx,
         <div>
             <h1>{"Apply Config "} {config_name} {" -> "} {instance}</h1>
+
+            {original_text}
 
             {move || match page_data.read(cx) {
                 Some(data) => view! { cx,
@@ -78,14 +104,8 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
                             <div>
                                 <h3> {"Pending Revision => "} {pending_revision} </h3>
                                 <ConfigDiffs
-                                    original="Roses are red, violets are blue,\n\
-                                    I wrote this library here,\n\
-                                    just for you.\n\
-                                    (It's true).".to_string()
-                                    new="Roses are red, violets are blue,\n\
-                                    I wrote this documentation here,\n\
-                                    just for you.\n\
-                                    (It's quite true).".to_string()
+                                    original=original_text().unwrap_or("Loading".to_string())
+                                    new=new_text().unwrap_or("Loading".to_string())
                                 />
                                 <button on:click=on_approve>{"Approve"}</button>
                             </div>
