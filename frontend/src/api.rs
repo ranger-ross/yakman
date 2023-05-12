@@ -1,6 +1,6 @@
 use gloo_net::http::Request;
+use leptos::log;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
-use yak_man_core::model::response::GetUserRolesResponse;
 use std::collections::HashMap;
 use std::fmt;
 use thiserror::Error;
@@ -8,6 +8,7 @@ use yak_man_core::model::oauth::{OAuthExchangePayload, OAuthInitPayload};
 use yak_man_core::model::request::{
     CreateConfigPayload, CreateProjectPayload, CreateYakManUserPayload,
 };
+use yak_man_core::model::response::GetUserRolesResponse;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManRole,
     YakManUser,
@@ -135,13 +136,15 @@ pub async fn fetch_config_metadata(config_name: &str) -> Vec<ConfigInstance> {
 }
 
 pub async fn fetch_instance_metadata(config_name: &str, instance: &str) -> ConfigInstance {
-    return Request::get(&format!("/api/v1/configs/{config_name}/instances/{instance}"))
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .expect("Failed to deserialize instance metadata JSON");
+    return Request::get(&format!(
+        "/api/v1/configs/{config_name}/instances/{instance}"
+    ))
+    .send()
+    .await
+    .unwrap()
+    .json()
+    .await
+    .expect("Failed to deserialize instance metadata JSON");
 }
 
 pub async fn create_config_instance(
@@ -176,12 +179,14 @@ pub async fn update_config_instance(
         .map(|(key, value)| (&key[..], &value[..]))
         .collect();
 
-    Request::post(&format!("/api/v1/configs/{config_name}/instances/{instance}"))
-        .query(query_params)
-        .header("content-type", content_type.unwrap_or("text/plain"))
-        .body(data)
-        .send()
-        .await?;
+    Request::post(&format!(
+        "/api/v1/configs/{config_name}/instances/{instance}"
+    ))
+    .query(query_params)
+    .header("content-type", content_type.unwrap_or("text/plain"))
+    .body(data)
+    .send()
+    .await?;
     return Ok(());
 }
 
@@ -285,6 +290,32 @@ pub async fn refresh_token() -> Result<(), RequestError> {
 
     response.text().await?;
     return Ok(());
+}
+
+/// Returns the data and its content type as a tuple of strings
+pub async fn fetch_config_data(
+    config_name: &str,
+    instance: &str,
+) -> Result<(String, String), RequestError> {
+    let response = Request::get(&format!(
+        "/api/v1/configs/{config_name}/instances/{instance}/data"
+    ))
+    .send()
+    .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .unwrap_or(String::from("text/plain"));
+    let data = response.text().await?;
+
+    // log!("{data} {content_type}");
+
+    Ok((data, content_type))
 }
 
 #[derive(Debug, Error)]

@@ -132,11 +132,10 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
         })
     };
 
-    let page_data = create_resource(
+    let label_data = create_resource(
         cx,
         || (),
         |_| async move {
-            log!("fetching");
             let mut label_data = vec![];
 
             match api::fetch_labels().await {
@@ -148,8 +147,21 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
         },
     );
 
+    // Load previous data and pre-populate textbox/content_type with data
+    spawn_local(async move {
+        match api::fetch_config_data(&config_name(), &instance()).await {
+            Ok((data, content_type)) => {
+                set_input.set(data);
+                set_content_type.set(content_type);
+            },
+            Err(err) => {
+                error!("Error loading previous data: {}", err.to_string());
+            }
+        }
+    });
+
     create_effect(cx, move |_| {
-        if let Some(labels) = page_data.read(cx) {
+        if let Some(labels) = label_data.read(cx) {
             let mut m: HashMap<String, Option<String>> = HashMap::new();
             for label in &labels {
                 m.insert(String::from(&label.name), None);
@@ -158,7 +170,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
         }
     });
 
-    let labels = move || page_data.read(cx).unwrap_or(vec![]);
+    let labels = move || label_data.read(cx).unwrap_or(vec![]);
 
     view! { cx,
         <div>
@@ -178,6 +190,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
             {"Content Type "} <input on:input=move |ev| set_content_type(event_target_value(&ev)) prop:value=content_type />
 
             <br />
+
 
             <button on:click=on_edit>{"Update"}</button>
         </div>
