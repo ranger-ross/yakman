@@ -15,6 +15,9 @@ pub struct PageConfig {
     pub instances: Vec<ConfigInstance>,
 }
 
+use difference::{Difference, Changeset};
+
+
 #[component]
 pub fn config_list_page(cx: Scope) -> impl IntoView {
     let query = use_query_map(cx);
@@ -59,12 +62,15 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                         });
                     }
                 }
-                Err(err) => error!("Error fetching configs {}", err.to_string()),
+                Err(err) => {
+                    error!("Error fetching configs {}", err.to_string());
+
+                },
             }
         }
 
         configs_list
-    });
+    });    
 
     let on_project_change = move |ev| {
         let value = event_target_value(&ev);
