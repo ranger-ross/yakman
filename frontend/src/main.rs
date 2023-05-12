@@ -62,7 +62,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                 if role_data.roles.len() == 0 && role_data.global_roles.len() == 0 {
                     attempt_to_refresh_token();
                 }
-                state.update(|s| { // TODO: Find a way to silence the warning this causes
+                state.update(|s| {
                     s.global_roles = role_data.global_roles.clone();
                     s.project_roles = role_data.roles.clone();
                 });
@@ -78,7 +78,12 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
         }
     });
 
-    let is_login_needed = move || state().is_login_needed;
+    let (is_login_needed, _) = create_slice(
+        cx,
+        state,
+        |state| state.is_login_needed.clone(),
+        |state, n| state.is_login_needed = n,
+    );
 
     view! { cx,
         <Router>
