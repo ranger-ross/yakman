@@ -1,10 +1,8 @@
-use std::os::raw;
-
 use difference::{Changeset, Difference};
 use leptos::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::ConfigInstanceRevision;
+use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
 
 use crate::api;
 
@@ -12,6 +10,8 @@ use crate::api;
 struct ApplyConfigPageData {
     revisions: Vec<ConfigInstanceRevision>,
     pending_revision: Option<String>,
+    pending_revision_data: Option<(String, String)>,
+    current_revision_data: Option<(String, String)>,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -34,6 +34,9 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
         |(config_name, instance)| async move {
             let mut revsions: Vec<ConfigInstanceRevision> = vec![];
             let mut pending_revision: Option<String> = None;
+            let mut instance_metadata: Option<ConfigInstance> = None;
+            let mut current_data: Option<(String, String)> = None;
+            let mut pending_data: Option<(String, String)> = None;
 
             if let Ok(data) = api::fetch_instance_revisions(&config_name, &instance).await {
                 revsions = data;
@@ -43,13 +46,29 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
 
             for inst in metadata {
                 if inst.instance == instance {
-                    pending_revision = inst.pending_revision;
+                    pending_revision = inst.pending_revision.clone();
+                    instance_metadata = Some(inst);
                 }
+            }
+
+            if let Some(instance_metadata) = instance_metadata {
+                let current_rev = instance_metadata.current_revision;
+                let pending_rev = instance_metadata.pending_revision.unwrap();
+
+                current_data = api::fetch_revision_data(&config_name, &instance, &current_rev)
+                    .await
+                    .ok();
+
+                pending_data = api::fetch_revision_data(&config_name, &instance, &pending_rev)
+                    .await
+                    .ok();
             }
 
             ApplyConfigPageData {
                 revisions: revsions,
                 pending_revision: pending_revision,
+                pending_revision_data: pending_data,
+                current_revision_data: current_data,
             }
         },
     );
@@ -73,29 +92,25 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
         })
     };
 
-    let diffs_data = create_resource(
-        cx,
-        move || (config_name(), instance()),
-        |(config_name, instance)| async move {
-            let (data, content_type) = api::fetch_config_data(&config_name, &instance)
-                .await
-                .unwrap();
+    let original_text = move || {
+        page_data.read(cx).map(|d| {
+            d.current_revision_data
+                .map(|d| d.0)
+                .unwrap_or("".to_string())
+        })
+    };
 
-            DiffData {
-                original: (data, content_type),
-                new: (String::from("This is a placeholder diff"), String::from("text/plain")), // TODO: Actually fetch some data
-            }
-        },
-    );
-
-    let original_text = move || diffs_data.read(cx).map(|d| d.original.0);
-    let new_text = move || diffs_data.read(cx).map(|d| d.new.0);
+    let new_text = move || {
+        page_data.read(cx).map(|d| {
+            d.pending_revision_data
+                .map(|d| d.0)
+                .unwrap_or("".to_string())
+        })
+    };
 
     view! { cx,
         <div>
             <h1>{"Apply Config "} {config_name} {" -> "} {instance}</h1>
-
-            {original_text}
 
             {move || match page_data.read(cx) {
                 Some(data) => view! { cx,
