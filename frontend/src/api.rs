@@ -313,7 +313,30 @@ pub async fn fetch_config_data(
         .unwrap_or(String::from("text/plain"));
     let data = response.text().await?;
 
-    // log!("{data} {content_type}");
+    Ok((data, content_type))
+}
+
+/// Returns the data and its content type as a tuple of strings
+pub async fn fetch_revision_data(
+    config_name: &str,
+    instance: &str,
+    revision: &str,
+) -> Result<(String, String), RequestError> {
+    let response = Request::get(&format!(
+        "/api/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/data"
+    ))
+    .send()
+    .await?;
+
+    if !response.ok() {
+        return Err(RequestError::UnexpectedHttpStatus(response.status()));
+    }
+
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .unwrap_or(String::from("text/plain"));
+    let data = response.text().await?;
 
     Ok((data, content_type))
 }
