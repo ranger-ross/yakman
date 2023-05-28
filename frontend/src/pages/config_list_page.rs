@@ -1,4 +1,4 @@
-use crate::api;
+use crate::{api, components::{LinkWithChrevon, StatusPill}};
 use chrono::{TimeZone, Utc};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
@@ -225,26 +225,3 @@ fn get_last_updated_timestamp(instance: &ConfigInstance) -> Option<i64> {
     return instance.changelog.iter().last().map(|c| c.timestamp_ms);
 }
 
-#[component]
-pub fn link_with_chrevon(cx: Scope, #[prop()] href: String, children: Children) -> impl IntoView {
-    view! { cx,
-        <a
-            class="text-indigo-600 flex items-center text-lg"
-            href={href}
-        >
-            {children(cx)}
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-        </a>
-    }
-}
-
-#[component]
-pub fn status_pill(cx: Scope, children: Children) -> impl IntoView {
-    view! { cx,
-        <div class="bg-yellow-100 text-yellow-900 text-md rounded-full pl-2 pr-2 pt-1 pb-1">
-            {children(cx)}
-        </div>
-    }
-}
