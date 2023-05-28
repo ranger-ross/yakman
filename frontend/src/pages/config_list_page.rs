@@ -1,4 +1,10 @@
-use crate::{api, components::{LinkWithChrevon, StatusPill, YakManSelect}};
+use crate::{
+    api,
+    components::{
+        popover_menu::PopoverMenuOption, KebabMenuIcon, LinkWithChrevon, PopoverMenu, StatusPill,
+        YakManSelect,
+    },
+};
 use chrono::{TimeZone, Utc};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
@@ -88,7 +94,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
     view! { cx,
         <div class="container mx-auto">
 
-            <YakManSelect 
+            <YakManSelect
                 label="Project".to_string()
                 on:change=on_project_change
             >
@@ -111,7 +117,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                     },
                     None => view! { cx, }.into_view(cx)
                 }}
-            </YakManSelect> 
+            </YakManSelect>
 
             {move || match page_data.read(cx) {
                 None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
@@ -136,7 +142,11 @@ pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
         <div class="bg-white border-2 border-gray-200 m-2 p-4">
             <div class="flex justify-between">
                 <h3 class="text-gray-900 font-bold text-lg">{move || config.config.name.clone()}</h3>
-                <LinkWithChrevon href={create_config_instance_link}>"Add Instance"</LinkWithChrevon>
+                <PopoverMenu
+                    options=vec![
+                        PopoverMenuOption::new(&create_config_instance_link, "Add Instance")
+                    ]
+                />
             </div>
 
             <Show
@@ -226,4 +236,3 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
 fn get_last_updated_timestamp(instance: &ConfigInstance) -> Option<i64> {
     return instance.changelog.iter().last().map(|c| c.timestamp_ms);
 }
-
