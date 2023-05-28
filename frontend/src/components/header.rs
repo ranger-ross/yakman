@@ -17,7 +17,7 @@ pub fn header(cx: Scope) -> impl IntoView {
     let is_admin = move || global_roles().contains(&YakManRole::Admin);
 
     view! { cx,
-        <div style="display: flex; justify-content: end; gap: 10px; margin-bottom: 0.5rem; padding: 8px; border-bottom: solid 1px darkgray">
+        <div class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2">
             <a href="/">{"YakMan"}</a>
             <div style="flex-grow: 1" />
 
