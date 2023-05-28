@@ -181,6 +181,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
     let history_link = format!("/history/{config_name}/{instance_id}");
     let approval_link = format!("/apply/{config_name}/{instance_id}");
+    let has_pending_revision = instance.pending_revision.is_some();
 
     view! { cx,
         <>
@@ -192,17 +193,28 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
                     <div class="text-gray-500">"Last Updated: "{last_updated}</div>
                 </div>
 
-                <div class="flex flex-col items-end">
-                    <LinkWithChrevon href={edit_link}>"Edit"</LinkWithChrevon>
-                    <LinkWithChrevon href={history_link}>"History"</LinkWithChrevon>
-
+                <div class="flex items-center gap-5">
                     <Show
-                        when=move || instance.pending_revision.is_some()
+                        when=move || has_pending_revision
                         fallback=|_| view! { cx, }
                     >
-                        <LinkWithChrevon href={approval_link.clone()}>"Review Changes"</LinkWithChrevon>
+                        <div>
+                            <StatusPill>"Pending Changes"</StatusPill>
+                        </div>
                     </Show>
 
+                    <div class="flex flex-col items-end">
+                        <LinkWithChrevon href={edit_link}>"Edit"</LinkWithChrevon>
+                        <LinkWithChrevon href={history_link}>"History"</LinkWithChrevon>
+
+                        <Show
+                            when=move || has_pending_revision
+                            fallback=|_| view! { cx, }
+                        >
+                            <LinkWithChrevon href={approval_link.clone()}>"Review Changes"</LinkWithChrevon>
+                        </Show>
+
+                    </div>
                 </div>
             </div>
         </>
@@ -225,5 +237,14 @@ pub fn link_with_chrevon(cx: Scope, #[prop()] href: String, children: Children) 
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
         </a>
+    }
+}
+
+#[component]
+pub fn status_pill(cx: Scope, children: Children) -> impl IntoView {
+    view! { cx,
+        <div class="bg-yellow-100 text-yellow-900 text-md rounded-full pl-2 pr-2 pt-1 pb-1">
+            {children(cx)}
+        </div>
     }
 }
