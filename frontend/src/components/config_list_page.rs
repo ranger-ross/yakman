@@ -1,4 +1,5 @@
 use crate::api;
+use chrono::{TimeZone, Utc};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
 use serde::{Deserialize, Serialize};
@@ -14,9 +15,6 @@ pub struct PageConfig {
     pub config: Config,
     pub instances: Vec<ConfigInstance>,
 }
-
-use difference::{Difference, Changeset};
-
 
 #[component]
 pub fn config_list_page(cx: Scope) -> impl IntoView {
@@ -64,13 +62,12 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 }
                 Err(err) => {
                     error!("Error fetching configs {}", err.to_string());
-
-                },
+                }
             }
         }
 
         configs_list
-    });    
+    });
 
     let on_project_change = move |ev| {
         let value = event_target_value(&ev);
@@ -113,23 +110,17 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 }}
             </select>
 
-            <div style="display: flex; flex-direction: column; align-items: center">
-                <div>
-                    <h1>{ "Configs" }</h1>
 
-                    {move || match page_data.read(cx) {
-                        None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
-                        Some(configs) => {
-                            view! { cx,
-                                {configs.into_iter().map(|config| view! {cx,
-                                    <ConfigRow config={config} />
-                                }).collect::<Vec<_>>()}
-                            }.into_view(cx)
-                        }
-                    }}
-
-                </div>
-            </div>
+            {move || match page_data.read(cx) {
+                None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
+                Some(configs) => {
+                    view! { cx,
+                        {configs.into_iter().map(|config| view! {cx,
+                            <ConfigRow config={config} />
+                        }).collect::<Vec<_>>()}
+                    }.into_view(cx)
+                }
+            }}
 
         </div>
     }
@@ -138,12 +129,11 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
 #[component]
 pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
     let create_config_instance_link = format!("/create-instance/{}", config.config.name);
-
     view! { cx,
-        <div style="border: solid; border-radius: 6px; padding: 0px 20px; margin: 8px; min-width: 50vw">
-            <div style="border-bottom: solid 2px; display: flex; justify-content: space-between; align-items: center">
-                <h2>{&config.config.name}</h2>
-                <a href={create_config_instance_link}>{"+"}</a> // TODO: use button instead
+        <div class="bg-white border-2 border-gray-200 m-2 p-4">
+            <div class="flex justify-between">
+                <h3 class="text-gray-900 font-bold text-lg">{move || config.config.name.clone()}</h3>
+                <LinkWithChrevon href={create_config_instance_link}>"Add Instance"</LinkWithChrevon>
             </div>
 
             {config.instances.iter().map(|instance| {
@@ -153,21 +143,20 @@ pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
                     />
                 }
             }).collect::<Vec<_>>()}
+
         </div>
     }
 }
 
 #[component]
 pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> impl IntoView {
-    let labels_text = instance
-        .labels
-        .iter()
-        .map(|label| format!("{}={}", label.label_type, label.value))
-        .collect::<Vec<String>>()
-        .join(", ");
-
     let config_name = &instance.config_name;
     let instance_id = &instance.instance;
+
+    let last_updated = get_last_updated_timestamp(&instance).map(|last_updated| {
+        let datetime = Utc.timestamp_millis_opt(last_updated).unwrap();
+        datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+    });
 
     let view_link = format!("/api/v1/configs/{config_name}/instances/{instance_id}/data");
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
@@ -175,45 +164,47 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
     let approval_link = format!("/apply/{config_name}/{instance_id}");
 
     view! { cx,
-        <div
-            key={instance.instance.clone()}
-            style="display: flex; gap: 10px; justify-content: space-between"
-        >
-            <p>
-                <a href={view_link} target="_blank">
-                    { &instance.instance }
-                </a>
+        <>
+            <div class="shadow-sm w-full h-1 mb-3"/>
 
-            </p>
-            <p>
-                <a href={edit_link}>
-                    { "Edit" }
-                </a>
-            </p>
+            <div class="flex justify-between">
+                <div>
+                    <a href={view_link} target="_blank" class="font-bold">{instance_id}</a>
+                    <div class="text-gray-500">"Last Updated: "{last_updated}</div>
+                </div>
 
-            <p>
-                <a href={history_link}>
-                    { "History" }
-                </a>
-            </p>
+                <div class="flex flex-col items-end">
+                    <LinkWithChrevon href={edit_link}>"Edit"</LinkWithChrevon>
+                    <LinkWithChrevon href={history_link}>"History"</LinkWithChrevon>
 
-            <div>
-                {move || match &instance.pending_revision {
-                    Some(_) => view! {cx,
-                        <p>
-                            <a href={&approval_link}>
-                                { "Pending Change" }
-                            </a>
-                        </p>
-                }.into_any(),
-                    None => view! {cx,
-                        <div />
-                    }.into_any()
-                }}
+                    <Show
+                        when=move || instance.pending_revision.is_some()
+                        fallback=|_| view! { cx, }
+                    >
+                        <LinkWithChrevon href={approval_link.clone()}>"Review Changes"</LinkWithChrevon>
+                    </Show>
 
+                </div>
             </div>
+        </>
+    }
+}
 
-            <p>{format!("{}", labels_text)}</p>
-        </div>
+fn get_last_updated_timestamp(instance: &ConfigInstance) -> Option<i64> {
+    return instance.changelog.iter().last().map(|c| c.timestamp_ms);
+}
+
+#[component]
+pub fn link_with_chrevon(cx: Scope, #[prop()] href: String, children: Children) -> impl IntoView {
+    view! { cx,
+        <a
+            class="text-indigo-600 flex items-center text-lg"
+            href={href}
+        >
+            {children(cx)}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        </a>
     }
 }

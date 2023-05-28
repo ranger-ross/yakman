@@ -18,7 +18,7 @@ pub fn header(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2">
-            <a href="/">{"YakMan"}</a>
+            <a class="text-2xl font-bold" href="/">{"YakMan"}</a>
             <div style="flex-grow: 1" />
 
             <a href="/login">{"Login"}</a>
