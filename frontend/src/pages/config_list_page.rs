@@ -1,4 +1,4 @@
-use crate::{api, components::{LinkWithChrevon, StatusPill}};
+use crate::{api, components::{LinkWithChrevon, StatusPill, YakManSelect}};
 use chrono::{TimeZone, Utc};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
@@ -87,8 +87,11 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div class="container mx-auto">
-            {"Project "}
-            <select on:change=on_project_change>
+
+            <YakManSelect 
+                label="Project".to_string()
+                on:change=on_project_change
+            >
                 {move || match pd.read(cx) {
                     Some(data) => {
                         let projects = move || data.projects.clone();
@@ -108,8 +111,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                     },
                     None => view! { cx, }.into_view(cx)
                 }}
-            </select>
-
+            </YakManSelect> 
 
             {move || match page_data.read(cx) {
                 None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
