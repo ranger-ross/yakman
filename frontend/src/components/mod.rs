@@ -1,22 +1,3 @@
-pub mod modify_config_instance;
-pub mod revision_history;
-pub mod config_list_page;
-pub mod add_config_page;
-pub mod add_label_page;
-pub mod apply_config_page;
-pub mod login_page;
-pub mod admin_page;
-pub mod add_project_page;
 pub mod header;
 
-pub use modify_config_instance::CreateConfigInstancePage;
-pub use modify_config_instance::EditConfigInstancePage;
-pub use revision_history::RevisionHistoryPage;
-pub use config_list_page::ConfigListPage;
-pub use add_config_page::AddConfigPage;
-pub use add_label_page::AddLabelPage;
-pub use apply_config_page::ApplyConfigPage;
-pub use login_page::LoginPage;
-pub use admin_page::AdminPage;
-pub use add_project_page::AddProjectPage;
 pub use header::Header;
