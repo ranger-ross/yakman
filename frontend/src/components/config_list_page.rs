@@ -129,6 +129,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
 #[component]
 pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
     let create_config_instance_link = format!("/create-instance/{}", config.config.name);
+    let has_at_least_one_instance = config.instances.len() > 0;
     view! { cx,
         <div class="bg-white border-2 border-gray-200 m-2 p-4">
             <div class="flex justify-between">
@@ -136,15 +137,33 @@ pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
                 <LinkWithChrevon href={create_config_instance_link}>"Add Instance"</LinkWithChrevon>
             </div>
 
-            {config.instances.iter().map(|instance| {
-                view! { cx,
-                    <ConfigInstanceRow
-                        instance={instance.clone()}
-                    />
+            <Show
+                when=move || has_at_least_one_instance
+                fallback=move |_| view! {cx,
+                    <EmptyConfigRow />
                 }
-            }).collect::<Vec<_>>()}
-
+            >
+                {config.instances.iter().map(|instance| {
+                    view! { cx,
+                        <ConfigInstanceRow
+                            instance={instance.clone()}
+                        />
+                    }
+                }).collect::<Vec<_>>()}
+            </Show>
         </div>
+    }
+}
+
+#[component]
+pub fn empty_config_row(cx: Scope) -> impl IntoView {
+    view! { cx,
+        <>
+            <div class="shadow-sm w-full h-1 mb-3"/>
+            <div class="flex justify-center">
+                <span class="text-gray-700">"No config instances"</span>
+            </div>
+        </>
     }
 }
 
