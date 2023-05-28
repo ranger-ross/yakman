@@ -86,7 +86,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div>
+        <div class="container mx-auto">
             {"Project "}
             <select on:change=on_project_change>
                 {move || match pd.read(cx) {
