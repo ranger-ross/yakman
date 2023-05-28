@@ -12,3 +12,6 @@ postgres-connect: ## Connect to Postgres Docker container with psql
 
 leptos: ## Starts the YakMan frontend with trunk
 	cd frontend; trunk serve --open
+
+watch-tailwind: ## Runs Tailwind to update css
+	cd frontend; npx tailwind -o style/output.css -w
