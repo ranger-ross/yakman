@@ -5,6 +5,7 @@ use crate::{
     },
 };
 use chrono::{TimeZone, Utc};
+use chrono_humanize::{Accuracy, Tense};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
 use serde::{Deserialize, Serialize};
@@ -185,7 +186,8 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
 
     let last_updated = get_last_updated_timestamp(&instance).map(|last_updated| {
         let datetime = Utc.timestamp_millis_opt(last_updated).unwrap();
-        datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+        let ht = chrono_humanize::HumanTime::from(datetime);
+        ht.to_text_en(Accuracy::Rough, Tense::Past)
     });
 
     let view_link = format!("/api/v1/configs/{config_name}/instances/{instance_id}/data");
