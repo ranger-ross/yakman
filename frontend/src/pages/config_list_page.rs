@@ -1,15 +1,14 @@
 use crate::{
     api,
     components::{
-        popover_menu::PopoverMenuOption, KebabMenuIcon, LinkWithChrevon, PopoverMenu, StatusPill,
-        YakManSelect,
+        popover_menu::PopoverMenuOption, LinkWithChrevon, PopoverMenu, StatusPill, YakManSelect, LabelPill,
     },
 };
 use chrono::{TimeZone, Utc};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::{Config, ConfigInstance, YakManProject};
+use yak_man_core::model::{Config, ConfigInstance, YakManProject, Label};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct PageData {
@@ -200,9 +199,16 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
             <div class="shadow-sm w-full h-1 mb-3"/>
 
             <div class="flex justify-between">
-                <div>
-                    <a href={view_link} target="_blank" class="font-bold">{instance_id}</a>
-                    <div class="text-gray-500">"Last Updated: "{last_updated}</div>
+                <div class="flex items-center gap-2">
+                    <div>
+                        <a href={view_link} target="_blank" class="font-bold">{instance_id}</a>
+                      <div class="text-gray-500">"Last Updated: "{last_updated}</div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        {instance.labels.iter().map(|label| view! { cx,
+                            <LabelPill text={format!("{}={}", &label.label_type, &label.value)} />
+                        }).collect::<Vec<_>>()}
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-5">

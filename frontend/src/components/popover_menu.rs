@@ -18,11 +18,7 @@ impl PopoverMenuOption {
 }
 
 #[component]
-pub fn popover_menu(
-    cx: Scope,
-    #[prop()] options: Vec<PopoverMenuOption>,
-) -> impl IntoView
-{
+pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> impl IntoView {
     let (open, set_open) = create_signal(cx, false);
 
     view! { cx,
@@ -35,7 +31,7 @@ pub fn popover_menu(
             // TODO: impl this animation
             // <!--
             //   Dropdown menu, show/hide based on menu state.
-            // 
+            //
             //   Entering: "transition ease-out duration-100"
             //     From: "transform opacity-0 scale-95"
             //     To: "transform opacity-100 scale-100"
