@@ -1,24 +1,23 @@
 mod api;
 mod components;
+mod pages;
 
-use std::collections::HashMap;
-
-use components::add_config_page::*;
-use components::add_label_page::*;
-use components::add_project_page::*;
-use components::admin_page::*;
-use components::apply_config_page::*;
-use components::config_list_page::*;
 use components::header::*;
-use components::login_page::*;
-use components::modify_config_instance::*;
-use components::revision_history::*;
 use leptos::*;
 use leptos_router::*;
+use pages::add_config_page::*;
+use pages::add_label_page::*;
+use pages::add_project_page::*;
+use pages::admin_page::*;
+use pages::apply_config_page::*;
+use pages::config_list_page::*;
+use pages::login_page::*;
+use pages::modify_config_instance::*;
+use pages::revision_history::*;
+use pages::AdminPage;
+use pages::LoginPage;
+use std::collections::HashMap;
 use yak_man_core::model::YakManRole;
-
-use crate::components::AdminPage;
-use crate::components::LoginPage;
 
 pub fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
