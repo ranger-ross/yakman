@@ -14,6 +14,7 @@ use crate::{
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
+use adapters::aws_s3::create_aws_s3_adapter;
 use adapters::redis_adapter::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
@@ -101,7 +102,7 @@ async fn main() -> std::io::Result<()> {
     let settings = load_yak_man_settings();
     info!("Settings {settings:?}");
 
-    let service = create_service();
+    let service = create_service().await;
 
     service
         .initialize_storage()
@@ -165,7 +166,7 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-fn create_service() -> impl StorageService {
+async fn create_service() -> impl StorageService {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
 
     // TODO: handle non file storage
@@ -177,6 +178,10 @@ fn create_service() -> impl StorageService {
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(create_local_file_adapter());
+            KVStorageService { adapter: adapter }
+        },
+        "S3" => {
+            let adapter = Box::new(create_aws_s3_adapter().await);
             KVStorageService { adapter: adapter }
         }
         _ => panic!("Unsupported adapter {adapter_name}"),

@@ -8,6 +8,7 @@ use self::errors::GenericStorageError;
 
 pub mod errors;
 pub mod local_file_adapter;
+pub mod aws_s3;
 pub mod postgres_adapter;
 pub mod redis_adapter;
 
