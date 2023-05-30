@@ -163,6 +163,14 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     }
 
     async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
+        let project_file = self.get_projects_file_path();
+        // TODO: check S3 not local files system
+        if !Path::new(&project_file).is_file() {
+            self.save_projects(vec![])
+                .await
+                .expect("Failed to create project file");
+        }
+
         let config_file = self.get_configs_file_path();
         // TODO: check S3 not local files system
         if !Path::new(&config_file).is_file() {
@@ -241,8 +249,6 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 // Helper functions
 impl AwsS3StorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        // SdkError
-
         let default_dir = String::from(".yakman");
         return self.yakman_dir.as_ref().unwrap_or(&default_dir).to_string();
     }

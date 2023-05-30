@@ -213,6 +213,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             ));
         }
 
+        let project_file = self.get_projects_file_path();
+        if !Path::new(&project_file).is_file() {
+            self.save_projects(vec![])
+                .await
+                .expect("Failed to create project file");
+        }
+
         let config_file = self.get_configs_file_path();
         if !Path::new(&config_file).is_file() {
             self.save_configs(vec![])
