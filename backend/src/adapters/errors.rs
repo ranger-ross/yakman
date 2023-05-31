@@ -1,3 +1,4 @@
+use aws_sdk_s3::error::SdkError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -25,5 +26,11 @@ impl From<std::io::Error> for GenericStorageError {
 impl From<serde_json::Error> for GenericStorageError {
     fn from(e: serde_json::Error) -> Self {
         GenericStorageError::new(String::from("JSON Error"), e.to_string())
+    }
+}
+
+impl<E, R> From<SdkError<E, R>> for GenericStorageError {
+    fn from(e: SdkError<E, R>) -> Self {
+        GenericStorageError::new(String::from("AWS S3 Error"), e.to_string())
     }
 }

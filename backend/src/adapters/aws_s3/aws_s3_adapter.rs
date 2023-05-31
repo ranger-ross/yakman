@@ -1,35 +1,30 @@
-use std::{
-    fs::{self, File},
-    io::Write,
-    path::Path,
+use super::{
+    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
+    GenericStorageError, KVStorageAdapter,
 };
-
+use crate::adapters::aws_s3::storage_types::RevisionJson;
 use async_trait::async_trait;
-
-use log::{error, info};
+use aws_sdk_s3 as s3;
+use log::error;
+use s3::primitives::ByteStream;
+use tokio::io::AsyncReadExt;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
 
-use crate::adapters::local_file_adapter::storage_types::RevisionJson;
-
-use super::{
-    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
-    GenericStorageError, KVStorageAdapter,
-};
-
 #[derive(Clone)]
-pub struct LocalFileStorageAdapter {
-    pub path: String,
+pub struct AwsS3StorageAdapter {
     pub yakman_dir: Option<String>,
+    pub client: s3::Client,
+    pub bucket: String,
 }
 
 #[async_trait]
-impl KVStorageAdapter for LocalFileStorageAdapter {
+impl KVStorageAdapter for AwsS3StorageAdapter {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
         let path = self.get_projects_file_path();
-        let content = fs::read_to_string(path)?;
+        let content = self.get_object(&path).await?;
         let data: Vec<YakManProject> = serde_json::from_str(&content)?;
         return Ok(data);
     }
@@ -37,14 +32,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&projects)?;
         let path = self.get_projects_file_path();
-        let mut file = File::create(&path)?;
-        Write::write_all(&mut file, data.as_bytes())?;
+        self.put_object(&path, data).await?;
         return Ok(());
     }
 
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
         let path = self.get_configs_file_path();
-        let content = fs::read_to_string(path)?;
+        let content = self.get_object(&path).await?;
         let v: ConfigJson = serde_json::from_str(&content)?;
         return Ok(v.configs);
     }
@@ -64,14 +58,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
         let path: String = self.get_configs_file_path();
-        let mut file = File::create(&path)?;
-        Write::write_all(&mut file, data.as_bytes())?;
+        self.put_object(&path, data).await?;
         Ok(())
     }
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
         let path = self.get_labels_file_path();
-        let content = fs::read_to_string(path)?;
+        let content = self.get_object(&path).await?;
         let v: LabelJson = serde_json::from_str(&content)?;
         return Ok(v.labels);
     }
@@ -79,8 +72,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError> {
         let label_file = self.get_labels_file_path();
         let data = serde_json::to_string(&LabelJson { labels: labels })?;
-        let mut file = File::create(&label_file)?;
-        Write::write_all(&mut file, data.as_bytes())?;
+        self.put_object(&label_file, data).await?;
         return Ok(());
     }
 
@@ -90,7 +82,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_dir}/{config_name}.json");
-        if let Some(content) = fs::read_to_string(instance_file).ok() {
+        if let Some(content) = self.get_object(&instance_file).await.ok() {
             let v: InstanceJson = serde_json::from_str(&content)?;
             return Ok(Some(v.instances));
         }
@@ -108,8 +100,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             instances: instances,
         })?;
 
-        let mut file = File::create(&instance_file)?;
-        Write::write_all(&mut file, data.as_bytes())?;
+        self.put_object(&instance_file, data).await?;
 
         Ok(())
     }
@@ -122,7 +113,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_instance_revisions_path();
         let path = format!("{dir}/{config_name}/{revision}");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = self.get_object(&path).await {
             let data: RevisionJson = serde_json::from_str(&content)?;
             return Ok(Some(data.revision));
         } else {
@@ -143,8 +134,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             revision: revision.clone(),
         })?;
         let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
-        let mut revision_file = File::create(&revision_file_path)?;
-        Write::write_all(&mut revision_file, revision_data.as_bytes())?;
+        self.put_object(&revision_file_path, revision_data).await?;
         return Ok(());
     }
 
@@ -155,7 +145,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<String, GenericStorageError> {
         let instance_dir = self.get_config_instance_dir();
         let instance_path = format!("{instance_dir}/{config_name}/{data_key}");
-        return Ok(fs::read_to_string(instance_path)?);
+        return Ok(self.get_object(&instance_path).await?);
     }
 
     async fn save_instance_data(
@@ -167,75 +157,34 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let instance_dir = self.get_config_instance_dir();
         // Create new file with data
         let data_file_path = format!("{instance_dir}/{config_name}/{data_key}");
-        let mut data_file = File::create(&data_file_path)?;
-        Write::write_all(&mut data_file, data.as_bytes())?;
-
+        self.put_object(&data_file_path, data.to_string()).await?;
         return Ok(());
     }
 
     async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
-        let yakman_dir = self.get_yakman_dir();
-        if !Path::new(&yakman_dir).is_dir() {
-            info!("Creating {}", yakman_dir);
-            fs::create_dir(&yakman_dir)
-                .expect(&format!("Failed to create base dir: {}", yakman_dir));
-        }
-
-        let instance_dir = self.get_config_instance_dir();
-        if !Path::new(&instance_dir).is_dir() {
-            info!("Creating {}", instance_dir);
-            fs::create_dir(&instance_dir)
-                .expect(&format!("Failed to create instance dir: {}", instance_dir));
-        }
-
-        let revision_dir = self.get_instance_revisions_path();
-        if !Path::new(&revision_dir).is_dir() {
-            info!("Creating {}", revision_dir);
-            fs::create_dir(&revision_dir)
-                .expect(&format!("Failed to create revision dir: {}", instance_dir));
-        }
-
-        let instance_metadata_dir = self.get_config_instance_metadata_dir();
-        if !Path::new(&instance_metadata_dir).is_dir() {
-            info!("Creating {}", instance_metadata_dir);
-            fs::create_dir(&instance_metadata_dir).expect(&format!(
-                "Failed to create instance metadata dir: {}",
-                instance_metadata_dir
-            ));
-        }
-
-        let user_dir = self.get_user_dir();
-        if !Path::new(&user_dir).is_dir() {
-            info!("Creating {}", user_dir);
-            fs::create_dir(&user_dir).expect(&format!(
-                "Failed to create users metadata dir: {}",
-                user_dir
-            ));
-        }
-
         let project_file = self.get_projects_file_path();
-        if !Path::new(&project_file).is_file() {
+        if !self.object_exists(&project_file).await {
             self.save_projects(vec![])
                 .await
                 .expect("Failed to create project file");
         }
 
         let config_file = self.get_configs_file_path();
-        if !Path::new(&config_file).is_file() {
+        if !self.object_exists(&config_file).await {
             self.save_configs(vec![])
                 .await
                 .expect("Failed to create config file");
         }
 
         let label_file = self.get_labels_file_path();
-        if !Path::new(&label_file).is_file() {
+        if !self.object_exists(&label_file).await {
             self.save_labels(vec![])
                 .await
                 .expect("Failed to create labels file");
         }
 
         let user_file = self.get_user_file_path();
-        if !Path::new(&user_file).is_file() {
+        if !self.object_exists(&user_file).await {
             self.save_users(vec![])
                 .await
                 .expect("Failed to create users file");
@@ -246,29 +195,19 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     // Directory modification funcs
 
-    async fn create_config_instance_dir(
-        &self,
-        config_name: &str,
-    ) -> Result<(), GenericStorageError> {
-        let config_instance_dir = self.get_config_instance_dir();
-        let config_instance_path = format!("{config_instance_dir}/{config_name}");
-        fs::create_dir(&config_instance_path)?;
+    async fn create_config_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+        // NOP
         return Ok(());
     }
 
-    async fn create_revision_instance_dir(
-        &self,
-        config_name: &str,
-    ) -> Result<(), GenericStorageError> {
-        let revision_instance_dir = self.get_instance_revisions_path();
-        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-        fs::create_dir(&revision_instance_path)?;
+    async fn create_revision_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+        // NOP
         return Ok(());
     }
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
         let path = self.get_user_file_path();
-        let data = fs::read_to_string(path)?;
+        let data = self.get_object(&path).await?;
         let user_data: UsersJson = serde_json::from_str(&data)?;
         return Ok(user_data.users);
     }
@@ -292,7 +231,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_user_dir();
         let path = format!("{dir}/{uuid}.json");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = self.get_object(&path).await {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
         } else {
@@ -305,18 +244,16 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&UsersJson { users: users })?;
         let data_file_path = self.get_user_file_path();
-        let mut data_file = File::create(&data_file_path)?;
-        Write::write_all(&mut data_file, data.as_bytes())?;
+        self.put_object(&data_file_path, data).await?;
         Ok(())
     }
 }
 
 // Helper functions
-impl LocalFileStorageAdapter {
+impl AwsS3StorageAdapter {
     fn get_yakman_dir(&self) -> String {
         let default_dir = String::from(".yakman");
-        let yakman_dir = self.yakman_dir.as_ref().unwrap_or(&default_dir);
-        return format!("{}/{yakman_dir}", self.path.as_str());
+        return self.yakman_dir.as_ref().unwrap_or(&default_dir).to_string();
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -357,5 +294,69 @@ impl LocalFileStorageAdapter {
     fn get_config_instance_metadata_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instance-metadata");
+    }
+
+    async fn put_object(&self, path: &str, data: String) -> Result<(), GenericStorageError> {
+        self.client
+            .put_object()
+            .bucket(&self.bucket)
+            .key(path)
+            .body(ByteStream::from(bytes::Bytes::from(data)))
+            .send()
+            .await?;
+        return Ok(());
+    }
+
+    /// Checks if a file exists in S3, if an unexpected error occurs, the file is assumped to exist.
+    /// This is because we use this function to check files exist at start up.
+    /// To avoid accidently overriding a file on an unexpected error, we assume a file exists on an unexpected error.
+    async fn object_exists(&self, key: &str) -> bool {
+        let x = self
+            .client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .send()
+            .await;
+
+        return match x {
+            Ok(_) => true,
+            Err(e) => match e {
+                s3::error::SdkError::ServiceError(e) => match e.err() {
+                    s3::operation::get_object::GetObjectError::NoSuchKey(_) => false,
+                    _ => true,
+                },
+                _ => true,
+            },
+        };
+    }
+
+    async fn get_object(&self, path: &str) -> Result<String, GenericStorageError> {
+        let response = self
+            .client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(path)
+            .send()
+            .await?;
+
+        let mut body = response.body.into_async_read();
+        let mut string = String::new();
+        body.read_to_string(&mut string).await?;
+
+        return Ok(string);
+    }
+
+    pub async fn from_env() -> AwsS3StorageAdapter {
+        let config = ::aws_config::load_from_env().await;
+        let client = s3::Client::new(&config);
+
+        let bucket = std::env::var("YAKMAN_AWS_S3_BUCKET")
+            .expect("YAKMAN_AWS_S3_BUCKET was not set and is required for AWS S3 adapter");
+        AwsS3StorageAdapter {
+            yakman_dir: None,
+            client: client,
+            bucket: bucket,
+        }
     }
 }
