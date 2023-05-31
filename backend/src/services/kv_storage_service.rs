@@ -115,8 +115,8 @@ impl StorageService for KVStorageService {
         content_type: Option<String>,
     ) -> Result<(), CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
-            let instance = Uuid::new_v4().to_string();
-            let revision_key = Uuid::new_v4().to_string();
+            let instance = short_sha(&Uuid::new_v4().to_string());
+            let revision_key = short_sha(&Uuid::new_v4().to_string());
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
@@ -453,4 +453,10 @@ impl StorageService for KVStorageService {
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         return self.adapter.save_users(users).await;
     }
+}
+
+/// Returns a 12 character string representation of a SHA256
+fn short_sha(input: &str) -> String {
+    let sha: String = sha256::digest(input);
+    return sha[0..12].to_string();
 }
