@@ -14,7 +14,7 @@ use crate::{
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
-use adapters::aws_s3::create_aws_s3_adapter;
+use adapters::aws_s3::AwsS3StorageAdapter;
 use adapters::redis_adapter::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
@@ -181,7 +181,7 @@ async fn create_service() -> impl StorageService {
             KVStorageService { adapter: adapter }
         },
         "S3" => {
-            let adapter = Box::new(create_aws_s3_adapter().await);
+            let adapter = Box::new(AwsS3StorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
         }
         _ => panic!("Unsupported adapter {adapter_name}"),

@@ -5,9 +5,8 @@ use super::{
 use crate::adapters::aws_s3::storage_types::RevisionJson;
 use async_trait::async_trait;
 use aws_sdk_s3 as s3;
-use log::{error, info};
+use log::error;
 use s3::primitives::ByteStream;
-use std::path::Path;
 use tokio::io::AsyncReadExt;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
@@ -309,7 +308,7 @@ impl AwsS3StorageAdapter {
     }
 
     /// Checks if a file exists in S3, if an unexpected error occurs, the file is assumped to exist.
-    /// This is because we use this function to check files exist at start up. 
+    /// This is because we use this function to check files exist at start up.
     /// To avoid accidently overriding a file on an unexpected error, we assume a file exists on an unexpected error.
     async fn object_exists(&self, key: &str) -> bool {
         let x = self
@@ -329,7 +328,7 @@ impl AwsS3StorageAdapter {
                 },
                 _ => true,
             },
-        }
+        };
     }
 
     async fn get_object(&self, path: &str) -> Result<String, GenericStorageError> {
@@ -346,5 +345,18 @@ impl AwsS3StorageAdapter {
         body.read_to_string(&mut string).await?;
 
         return Ok(string);
+    }
+
+    pub async fn from_env() -> AwsS3StorageAdapter {
+        let config = ::aws_config::load_from_env().await;
+        let client = s3::Client::new(&config);
+
+        let bucket = std::env::var("YAKMAN_AWS_S3_BUCKET")
+            .expect("YAKMAN_AWS_S3_BUCKET was not set and is required for AWS S3 adapter");
+        AwsS3StorageAdapter {
+            yakman_dir: None,
+            client: client,
+            bucket: bucket,
+        }
     }
 }
