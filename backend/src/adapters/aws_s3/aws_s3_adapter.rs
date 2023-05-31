@@ -164,27 +164,31 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
         let project_file = self.get_projects_file_path();
-        // TODO: check S3 not local files system
-        if !Path::new(&project_file).is_file() {
+        if !self.object_exists(&project_file).await {
             self.save_projects(vec![])
                 .await
                 .expect("Failed to create project file");
         }
 
         let config_file = self.get_configs_file_path();
-        // TODO: check S3 not local files system
-        if !Path::new(&config_file).is_file() {
+        if !self.object_exists(&config_file).await {
             self.save_configs(vec![])
                 .await
                 .expect("Failed to create config file");
         }
 
         let label_file = self.get_labels_file_path();
-        // TODO: check S3 not local files system
-        if !Path::new(&label_file).is_file() {
+        if !self.object_exists(&label_file).await {
             self.save_labels(vec![])
                 .await
                 .expect("Failed to create labels file");
+        }
+
+        let user_file = self.get_user_file_path();
+        if !self.object_exists(&user_file).await {
+            self.save_users(vec![])
+                .await
+                .expect("Failed to create users file");
         }
 
         Ok(())
@@ -302,6 +306,30 @@ impl AwsS3StorageAdapter {
             .send()
             .await?;
         return Ok(());
+    }
+
+    /// Checks if a file exists in S3, if an unexpected error occurs, the file is assumped to exist.
+    /// This is because we use this function to check files exist at start up. 
+    /// To avoid accidently overriding a file on an unexpected error, we assume a file exists on an unexpected error.
+    async fn object_exists(&self, key: &str) -> bool {
+        let x = self
+            .client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .send()
+            .await;
+
+        return match x {
+            Ok(_) => true,
+            Err(e) => match e {
+                s3::error::SdkError::ServiceError(e) => match e.err() {
+                    s3::operation::get_object::GetObjectError::NoSuchKey(_) => false,
+                    _ => true,
+                },
+                _ => true,
+            },
+        }
     }
 
     async fn get_object(&self, path: &str) -> Result<String, GenericStorageError> {
