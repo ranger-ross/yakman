@@ -3,12 +3,13 @@ use leptos::*;
 #[component]
 pub fn yak_man_input(
     cx: Scope,
+    #[prop(into)] label: MaybeSignal<&'static str>,
     #[prop(into)] value: MaybeSignal<String>,
     #[prop(optional, into)] placeholder: MaybeSignal<&'static str>,
 ) -> impl IntoView {
     view! { cx,
         <div class="w-64">
-            <label class="block text-gray-700 text-sm font-bold mb-2">"Name"</label>
+            <label class="block text-gray-700 text-sm font-bold mb-2">{label}</label>
             <div class="relative">
                 <input
                     type="text"

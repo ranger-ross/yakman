@@ -60,6 +60,7 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
 
                 <div class="mb-3">
                     <YakManInput
+                        label="Name"
                         on:input=move |ev| set_name(event_target_value(&ev))
                         value=name
                         placeholder="my-config-name"
