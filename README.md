@@ -1,10 +1,41 @@
-## YakMan
+# YakMan
 
 Basic storage egnostic config manager.
 
-This project is still in a very early alpha stage so if you come across this repo, I would recommend against using it in any production systems.
+### ⚠️ This project is still in a very early alpha stage so if you come across this repo, I would recommend against using it in any production systems.
 
-## Run the project(s)
+## Features
+
+- OAuth support
+- Role based access control (RBAC)
+- Approval system
+- History with easy rollbacks
+- Config/Project organization tools
+
+
+## About this project
+
+My goal with this project is to provide an Open Source storage egnostic config manager for backend systems. The primary audience for this project are software teams that have reached a scale where they need a way to manage application configs across multiple applications/projects.
+
+### Motivations / Goals
+
+- Update application configs quickly without restarting applications
+- Language/framework egonistic
+- Simple to setup with sane defaults
+- Storage engine egonistic, meaning you can use whatever storage system you already have (Blob storage, SQL, KV, ect)
+- Low cost effective
+- Avoid vendor lock in
+- Kubernetes first (however I would like to support Serverless projects/teams too)
+
+### What this project is not
+
+- A place to store application secrets. 
+- Trying to handle Meta/Google/Amazon level scale. (However, this project is also not slow by any means 😉)
+
+
+## Contributing
+
+### Run the project(s)
 
 The local setup is a bit lack luster due to the immaturity of this project as well as Leptos.
 Hopefully this will get better with time.
@@ -15,6 +46,7 @@ Hopefully this will get better with time.
     YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
     RUST_LOG=info
     YAKMAN_TOKEN_SECRET=12345
+    YAKMAN_DEFAULT_ADMIN_USER_EMAIL=<your-email>
 
     # Google OAuth
     YAKMAN_OAUTH_PROVIDER=GOOGLE
