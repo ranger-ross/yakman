@@ -173,7 +173,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
+    async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let yakman_dir = self.get_yakman_dir();
         if !Path::new(&yakman_dir).is_dir() {
             info!("Creating {}", yakman_dir);
@@ -300,6 +300,22 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         }
 
         return Ok(None);
+    }
+
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_user_dir();
+        let path = format!("{dir}/{uuid}.json");
+
+        let data: String = serde_json::to_string(&details)?;
+
+        let mut data_file = File::create(&path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+
+        return Ok(());
     }
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {

@@ -132,7 +132,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn create_config_instance_dir(
         &self,
-        config_name: &str,
+        _: &str,
     ) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())
@@ -140,7 +140,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn create_revision_instance_dir(
         &self,
-        config_name: &str,
+        _: &str,
     ) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())
@@ -171,13 +171,24 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(self.get_optional_data(&self.get_user_key(uuid)).await?);
     }
 
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails,
+    ) -> Result<(), GenericStorageError> {
+        let key = self.get_user_key(uuid);
+        let mut connection = self.open_connection()?;
+        let _: () = connection.set(key, serde_json::to_string(&details)?)?;
+        return Ok(());
+    }
+
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         let mut connection = self.open_connection()?;
         let _: () = connection.set(self.get_users_key(), serde_json::to_string(&users)?)?;
         Ok(())
     }
 
-    async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
+    async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         warn!("Redis adapter not yet setting up");
 
         let mut connection = self.open_connection()?;

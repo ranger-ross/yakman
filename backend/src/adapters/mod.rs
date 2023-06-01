@@ -6,9 +6,9 @@ use yak_man_core::model::{
 
 use self::errors::GenericStorageError;
 
+pub mod aws_s3;
 pub mod errors;
 pub mod local_file_adapter;
-pub mod aws_s3;
 pub mod postgres_adapter;
 pub mod redis_adapter;
 
@@ -67,7 +67,8 @@ pub trait KVStorageAdapter: Sync + Send {
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError>;
 
-    async fn create_config_instance_dir(  // TODO: Rename to "prepare" or something better?
+    async fn create_config_instance_dir(
+        // TODO: Rename to "prepare" or something better?
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError>;
@@ -86,7 +87,13 @@ pub trait KVStorageAdapter: Sync + Send {
         uuid: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError>;
 
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails,
+    ) -> Result<(), GenericStorageError>;
+
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
 
-    async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError>; // TODO: Rename this method (this is no longer limited to file based storage systems so it be dealing with non-file storage)
+    async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError>;
 }
