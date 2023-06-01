@@ -1,4 +1,4 @@
-use crate::api;
+use crate::{api, components::{YakManCard, YakManButton, YakManInput}};
 use leptos::*;
 use leptos_router::use_navigate;
 use yak_man_core::model::LabelType;
@@ -37,17 +37,49 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <h1>{"Add Label"}</h1>
-            <div>{"Name: "} <input type="text" on:input=move |ev| set_name(event_target_value(&ev)) prop:value=name /></div>
-            <div>{"Prioity: "} <input  type="text" on:input=move |ev| set_prioity(event_target_value(&ev)) prop:value=prioity/></div>
-            <div>{"Description: "} <input  type="text" on:input=move |ev| set_description(event_target_value(&ev)) prop:value=description /></div>
-            <div>{"Options: "} <input  type="text" on:input=move |ev| set_options(event_target_value(&ev)) prop:value=options /></div>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-lg font-bold mb-4">{"Add Label"}</h1>
 
-            <div>
-                <button on:click=on_create_label>"Create"</button>
-            </div>
 
+                <div class="mb-3">
+                    <YakManInput
+                        label="Name"
+                        on:input=move |ev| set_name(event_target_value(&ev))
+                        value=name
+                        placeholder="my-label-name"
+                    />
+                </div>
+
+                <div class="mb-3">
+                    <YakManInput
+                        label="Prioity"
+                        on:input=move |ev| set_prioity(event_target_value(&ev))
+                        value=prioity
+                        placeholder="1"
+                    />
+                </div>
+
+                <div class="mb-3">
+                    <YakManInput
+                        label="Description"
+                        on:input=move |ev| set_description(event_target_value(&ev))
+                        value=description
+                        placeholder="My cool label description "
+                    />
+                </div>
+
+                <div class="mb-3">
+                    <YakManInput
+                        label="Options"
+                        on:input=move |ev| set_options(event_target_value(&ev))
+                        value=options
+                        placeholder="dev,prod"
+                    />
+                </div>
+
+                <YakManButton on:click=on_create_label>"Create"</YakManButton>
+            </YakManCard>
         </div>
     }
 }
