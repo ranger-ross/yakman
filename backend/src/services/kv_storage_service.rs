@@ -12,7 +12,7 @@ use log::info;
 use uuid::Uuid;
 use yak_man_core::model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-    YakManProject, YakManUser, YakManUserDetails,
+    YakManProject, YakManRole, YakManUser, YakManUserDetails,
 };
 
 pub struct KVStorageService {
@@ -430,7 +430,30 @@ impl StorageService for KVStorageService {
     async fn initialize_storage(&self) -> Result<(), GenericStorageError> {
         info!("initializing local storage adapter");
 
-        self.adapter.create_yakman_required_files().await?;
+        self.adapter.initialize_yakman_storage().await?;
+
+        let users = self.adapter.get_users().await?;
+
+        // During first time launch, add the default email as a global admin
+        if users.is_empty() {
+            let admin_user = YakManUser {
+                email: std::env::var("YAKMAN_DEFAULT_ADMIN_USER_EMAIL")
+                    .expect("No users found and 'YAKMAN_DEFAULT_ADMIN_USER_EMAIL' is not set"),
+                role: Some(YakManRole::Admin),
+                uuid: Uuid::new_v4().to_string(),
+            };
+
+            let admin_user_details = YakManUserDetails {
+                global_roles: vec![YakManRole::Admin],
+                roles: vec![],
+            };
+
+            self.adapter
+                .save_user_details(&admin_user.uuid, admin_user_details)
+                .await?;
+
+            self.adapter.save_users(vec![admin_user]).await?;
+        }
 
         Ok(())
     }

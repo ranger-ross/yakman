@@ -161,7 +161,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(());
     }
 
-    async fn create_yakman_required_files(&self) -> Result<(), GenericStorageError> {
+    async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let project_file = self.get_projects_file_path();
         if !self.object_exists(&project_file).await {
             self.save_projects(vec![])
@@ -239,6 +239,20 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         }
 
         return Ok(None);
+    }
+
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_user_dir();
+        let path: String = format!("{dir}/{uuid}.json");
+
+        let data: String = serde_json::to_string(&details)?;
+
+        self.put_object(&path, data).await?;
+        return Ok(());
     }
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
