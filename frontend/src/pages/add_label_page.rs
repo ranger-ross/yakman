@@ -1,4 +1,4 @@
-use crate::{api, components::{YakManCard, YakManButton, YakManInput}};
+use crate::{api, components::{YakManCard, YakManButton, YakManInput}, utils::input_mask::{mask_lower_kebab_case, mask_numbers}};
 use leptos::*;
 use leptos_router::use_navigate;
 use yak_man_core::model::LabelType;
@@ -44,6 +44,7 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
+                        on:keypress=mask_lower_kebab_case
                         on:input=move |ev| set_name(event_target_value(&ev))
                         value=name
                         placeholder="my-label-name"
@@ -53,6 +54,7 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
                 <div class="mb-3">
                     <YakManInput
                         label="Prioity"
+                        on:keypress=mask_numbers
                         on:input=move |ev| set_prioity(event_target_value(&ev))
                         value=prioity
                         placeholder="1"

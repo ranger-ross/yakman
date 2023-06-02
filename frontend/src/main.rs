@@ -1,6 +1,7 @@
 mod api;
 mod components;
 mod pages;
+mod utils;
 
 use components::header::*;
 use leptos::*;
