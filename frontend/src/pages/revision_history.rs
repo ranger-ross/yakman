@@ -1,4 +1,4 @@
-use crate::api;
+use crate::{api, components::YakManCard};
 use chrono::prelude::DateTime;
 use chrono::Utc;
 use leptos::*;
@@ -81,55 +81,58 @@ pub fn revision_history_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div>
-            <h1>{format!("History {} -> {}", config_name(), instance())}</h1>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-lx font-bold">{format!("History {} -> {}", config_name(), instance())}</h1>
 
-            <h3>{"Revisions"}</h3>
+                <h3 class="text-lg font-bold text-gray-800 mt-4">{"Revisions"}</h3>
 
-            <For
-                each=sorted_revisions
-                key=|revision| revision.revision.bytes().len()
-                view=move |cx, revision: ConfigInstanceRevision| {
-                    let is_current_instance = current_revision() == revision.revision;
-                    let color = if is_current_instance { "yellow" } else { "cyan" };
-                    let rev = String::from(&revision.revision);
-                    view! {cx,
-                        <div style="display: flex; gap: 10px">
-                            <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
-                            <p
-                                style={format!("cursor: pointer; color: {color}")}
-                                on:click={move |_| on_select_revision(rev.clone())}
-                            >
-                                {&revision.revision}
-                            </p>
+                <For
+                    each=sorted_revisions
+                    key=|revision| revision.revision.bytes().len()
+                    view=move |cx, revision: ConfigInstanceRevision| {
+                        let is_current_instance = current_revision() == revision.revision;
+                        let rev = String::from(&revision.revision);
+                        view! {cx,
+                            <div class="flex gap-2">
+                                <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
+                                <p
+                                    class=move || if is_current_instance {
+                                        "text-yellow-400"
+                                    } else {
+                                        "text-blue-600 cursor-pointer"
+                                    }
+                                    on:click={move |_| on_select_revision(rev.clone())}
+                                >
+                                    {&revision.revision}
+                                </p>
 
-                            <p>
-                                {move || match pending_revision() {
-                                    Some(rev) if rev == revision.revision => "(pending)",
-                                    _ => "",
-                                }}
-                            </p>
+                                <p>
+                                    {move || match pending_revision() {
+                                        Some(rev) if rev == revision.revision => "(pending)",
+                                        _ => "",
+                                    }}
+                                </p>
+                            </div>
+                        }
+                    }
+                />
+
+                <h3 class="text-lg font-bold text-gray-800 mt-4">{"Changelog"}</h3>
+
+                <For
+                    each=changelog
+                    key=|change| change.timestamp_ms
+                    view=move |cx, change: ConfigInstanceChange| view! { cx,
+                        <div class="flex gap-2">
+                            <p>{format_date(change.timestamp_ms)}{" =>"}</p>
+                            <p>"Previous: "{change.previous_revision}{" =>"}</p>
+                            <p>"New: "{change.new_revision}</p>
                         </div>
                     }
-                }
-            />
+                />
 
-            <h3>{"Changelog"}</h3>
-
-            <For
-                each=changelog
-                key=|change| change.timestamp_ms
-                view=move |cx, change: ConfigInstanceChange| view! { cx,
-                    <div style="display: flex; gap: 10px">
-                        <p>{format_date(change.timestamp_ms)}{" =>"}</p>
-                        <p>"Previous: "{change.previous_revision}{" =>"}</p>
-                        <p>"New: "{change.new_revision}</p>
-                    </div>
-                }
-            />
-
-            <br />
-
+            </YakManCard>
         </div>
     }
 }
