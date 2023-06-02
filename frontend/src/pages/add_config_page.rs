@@ -2,10 +2,11 @@ use std::borrow::Cow;
 
 use crate::{
     api,
-    components::{YakManButton, YakManCard, YakManInput, YakManSelect},
+    components::{YakManButton, YakManCard, YakManInput, YakManSelect}, utils::input_mask::mask_lower_kebab_case,
 };
 use leptos::*;
 use leptos_router::*;
+use web_sys::KeyboardEvent;
 use yak_man_core::model::YakManProject;
 
 #[component]
@@ -63,6 +64,7 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
+                        on:keypress=mask_lower_kebab_case
                         on:input=move |ev| set_name(event_target_value(&ev))
                         value=name
                         placeholder="my-config-name"

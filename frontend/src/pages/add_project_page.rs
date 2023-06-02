@@ -1,4 +1,4 @@
-use crate::{api, components::{YakManCard, YakManInput, YakManButton}};
+use crate::{api, components::{YakManCard, YakManInput, YakManButton}, utils::input_mask::mask_lower_kebab_case};
 use leptos::*;
 use leptos_router::*;
 
@@ -27,6 +27,7 @@ pub fn add_project_page(cx: Scope) -> impl IntoView {
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
+                        on:keypress=mask_lower_kebab_case
                         placeholder="my-project"
                         on:input=move |ev| set_name(event_target_value(&ev))
                         value=name
