@@ -103,6 +103,23 @@ async fn create_config(
     }
 
     let service = state.get_service();
+
+    let projects = match service.get_projects().await {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to load projects, error: {e:?}");
+            return HttpResponse::InternalServerError().body("Failed to create config");
+        }
+    };
+
+    if projects
+        .into_iter()
+        .find(|p| p.uuid == project_uuid)
+        .is_none()
+    {
+        return HttpResponse::BadRequest().body("Project does not exist");
+    }
+
     let result: Result<(), CreateConfigError> =
         service.create_config(&config_name, &project_uuid).await;
 
