@@ -41,7 +41,6 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Add Label"}</h1>
 
-
                 <div class="mb-3">
                     <YakManInput
                         label="Name"

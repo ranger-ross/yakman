@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     api,
     components::{YakManButton, YakManCard, YakManInput, YakManSelect},
@@ -69,7 +71,7 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
 
                 <div class="mb-3">
                     <YakManSelect
-                        label="Project".to_string()
+                        label=Cow::Borrowed("Project")
                         on:change=on_project_change
                     >
                         {move || match projects.read(cx) {

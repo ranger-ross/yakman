@@ -1,10 +1,13 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use leptos::*;
 use leptos_router::*;
 use yak_man_core::model::LabelType;
 
-use crate::api;
+use crate::{
+    api,
+    components::{YakManButton, YakManCard, YakManInput, YakManSelect, YakManTextArea},
+};
 
 #[component]
 pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
@@ -71,25 +74,34 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
     let labels = move || page_data.read(cx).unwrap_or(vec![]);
 
     view! { cx,
-        <div>
-            <h1>"Create Config Instance "{config_name}</h1>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-lg font-bold mb-4">{"Create Config Instance"}</h1>
 
-            <h3>{"Data"}</h3>
-            <textarea on:input=move |ev| set_input(event_target_value(&ev)) prop:value=input />
+                <YakManTextArea
+                    label="Data"
+                    value=input
+                    placeholder="My really cool config"
+                    on:input=move |ev| set_input(event_target_value(&ev))
+                />
 
-            <LabelSelection
-                labels={Signal::derive(cx, labels)}
-                selected_labels={selected_labels.into()}
-                set_selected_labels={set_selected_labels}
-             />
+                <div class="my-3">
+                    <YakManInput
+                        label="Content Type"
+                        on:input=move |ev| set_content_type(event_target_value(&ev))
+                        value=content_type
+                        placeholder="my-config-name"
+                    />
+                </div>
 
-            <br />
+                <LabelSelection
+                    labels={Signal::derive(cx, labels)}
+                    selected_labels={selected_labels.into()}
+                    set_selected_labels={set_selected_labels}
+                />
 
-            {"Content Type "} <input on:input=move |ev| set_content_type(event_target_value(&ev)) prop:value=content_type />
-
-            <br />
-
-            <button on:click=on_create>{"Add"}</button>
+                <YakManButton on:click=on_create>{"Add"}</YakManButton>
+            </YakManCard>
         </div>
     }
 }
@@ -153,7 +165,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
             Ok((data, content_type)) => {
                 set_input.set(data);
                 set_content_type.set(content_type);
-            },
+            }
             Err(err) => {
                 error!("Error loading previous data: {}", err.to_string());
             }
@@ -217,21 +229,36 @@ pub fn label_selection(
     };
 
     view! { cx,
-        <>
-        {move || labels().iter().map(|label| view! { cx,
-            <>
-                <br />
-                {&label.name}
-                <select name={String::from(&label.name)} on:change=on_select_change>
-                    <option value="none" selected={true}>{"None"}</option>
-                    {label.options.iter().map(|option| view! { cx,
-                        <option value={option}>
-                            {option}
-                        </option>
-                    }).collect::<Vec<_>>()}
-                </select>
-            </>
-        }).collect::<Vec<_>>()}
-    </>
+        <div class="my-4">
+            <h1 class="text-lg font-bold mb-1">{"Labels"}</h1>
+            <div class="flex flex-col gap-2">
+                <For
+                    each=labels
+                    key=|l| l.name.clone()
+                    view=move |cx, label: LabelType| view! {cx,
+                        <YakManSelect
+                            label={Cow::Owned(label.name)}
+                            on:change=on_select_change
+                        >
+                            <option value="none" selected={true}>{"None"}</option>
+                            {label.options.iter().map(|option| view! { cx,
+                                <option value={option}>
+                                    {option}
+                                </option>
+                            }).collect::<Vec<_>>()}
+                        </YakManSelect>
+                    }
+                />
+            </div>
+        </div>
+    }
+}
+
+#[component]
+pub fn ross(cx: Scope, #[prop(into)] label: MaybeSignal<Cow<'static, str>>) -> impl IntoView {
+    view! { cx,
+        <div class="w-64">
+          {label}
+        </div>
     }
 }

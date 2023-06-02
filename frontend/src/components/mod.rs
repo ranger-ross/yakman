@@ -7,6 +7,7 @@ pub mod popover_menu;
 pub mod button;
 pub mod card;
 pub mod input;
+pub mod textarea;
 
 pub use header::Header;
 pub use links::LinkWithChrevon;
@@ -21,3 +22,4 @@ pub use popover_menu::PopoverMenu;
 pub use button::YakManButton;
 pub use card::YakManCard;
 pub use input::YakManInput;
+pub use textarea::YakManTextArea;

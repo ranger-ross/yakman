@@ -8,7 +8,6 @@ use leptos_router::*;
 use pages::add_config_page::*;
 use pages::add_label_page::*;
 use pages::add_project_page::*;
-use pages::admin_page::*;
 use pages::apply_config_page::*;
 use pages::config_list_page::*;
 use pages::login_page::*;

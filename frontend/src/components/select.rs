@@ -1,8 +1,14 @@
+use std::borrow::Cow;
+
 use crate::components::ArrowDownIcon;
 use leptos::*;
 
 #[component]
-pub fn yak_man_select(cx: Scope, #[prop()] label: String, children: Children) -> impl IntoView {
+pub fn yak_man_select(
+    cx: Scope,
+    #[prop(into)] label: MaybeSignal<Cow<'static, str>>,
+    children: Children,
+) -> impl IntoView {
     view! { cx,
         <div class="w-64">
             <label class="block text-gray-700 text-sm font-bold mb-2">{label}</label>
