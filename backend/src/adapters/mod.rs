@@ -8,9 +8,9 @@ use self::errors::GenericStorageError;
 
 pub mod aws_s3;
 pub mod errors;
-pub mod local_file_adapter;
-pub mod postgres_adapter;
-pub mod redis_adapter;
+pub mod local_file;
+pub mod postgres;
+pub mod redis;
 
 #[async_trait]
 pub trait KVStorageAdapter: Sync + Send {

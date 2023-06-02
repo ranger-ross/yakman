@@ -12,7 +12,7 @@ use yak_man_core::model::{
     YakManUserDetails,
 };
 
-use crate::adapters::local_file_adapter::storage_types::RevisionJson;
+use crate::adapters::local_file::storage_types::RevisionJson;
 
 use super::{
     storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},

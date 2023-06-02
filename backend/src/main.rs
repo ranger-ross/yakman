@@ -9,13 +9,13 @@ extern crate dotenv;
 
 use crate::auth::oauth_service::OauthService;
 use crate::{
-    adapters::local_file_adapter::create_local_file_adapter, middleware::roles::extract_roles,
+    adapters::local_file::create_local_file_adapter, middleware::roles::extract_roles,
 };
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
 use adapters::aws_s3::AwsS3StorageAdapter;
-use adapters::redis_adapter::create_redis_adapter;
+use adapters::redis::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
