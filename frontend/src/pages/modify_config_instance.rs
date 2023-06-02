@@ -185,26 +185,34 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
     let labels = move || label_data.read(cx).unwrap_or(vec![]);
 
     view! { cx,
-        <div>
-            <h1>{format!("Edit Config Instance {} -> {}", config_name(), instance())}</h1>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-lg font-bold mb-4">{format!("Edit Config Instance {} -> {}", config_name(), instance())}</h1>
 
-            <h3>{"Data"}</h3>
-            <textarea on:input=move |ev| set_input(event_target_value(&ev)) prop:value=input />
+                <YakManTextArea
+                    label="Data"
+                    value=input
+                    placeholder="My really cool config"
+                    on:input=move |ev| set_input(event_target_value(&ev))
+                />
 
-            <LabelSelection
-                labels={Signal::derive(cx, labels)}
-                selected_labels={selected_labels.into()}
-                set_selected_labels={set_selected_labels}
-             />
+                <div class="my-3">
+                    <YakManInput
+                        label="Content Type"
+                        on:input=move |ev| set_content_type(event_target_value(&ev))
+                        value=content_type
+                        placeholder="my-config-name"
+                    />
+                </div>
 
-            <br />
+                <LabelSelection
+                    labels={Signal::derive(cx, labels)}
+                    selected_labels={selected_labels.into()}
+                    set_selected_labels={set_selected_labels}
+                />
 
-            {"Content Type "} <input on:input=move |ev| set_content_type(event_target_value(&ev)) prop:value=content_type />
-
-            <br />
-
-
-            <button on:click=on_edit>{"Update"}</button>
+                <YakManButton on:click=on_edit>{"Update"}</YakManButton>
+            </YakManCard>
         </div>
     }
 }
