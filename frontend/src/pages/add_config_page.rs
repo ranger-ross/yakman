@@ -1,4 +1,9 @@
-use crate::api;
+use std::borrow::Cow;
+
+use crate::{
+    api,
+    components::{YakManButton, YakManCard, YakManInput, YakManSelect},
+};
 use leptos::*;
 use leptos_router::*;
 use yak_man_core::model::YakManProject;
@@ -13,6 +18,15 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
         || (),
         move |_| async move { api::fetch_projects().await.unwrap() },
     );
+
+    // when we first load projects, the the selected project to the first one
+    create_effect(cx, move |_| {
+        if let Some(p) = projects.read(cx) {
+            if project_uuid().is_empty() && !p.is_empty() {
+                set_project_uuid.set(p[0].uuid.clone());
+            }
+        }
+    });
 
     let on_create_config = move |_| {
         let name = name();
@@ -42,37 +56,45 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <h1>{"Add Config"}</h1>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-lg font-bold mb-4">{"Add Config"}</h1>
 
-            <div>{"Name: "} <input type="text" on:input=move |ev| set_name(event_target_value(&ev)) prop:value=name /></div>
+                <div class="mb-3">
+                    <YakManInput
+                        label="Name"
+                        on:input=move |ev| set_name(event_target_value(&ev))
+                        value=name
+                        placeholder="my-config-name"
+                    />
+                </div>
 
-            <div>
-                {"Project: "}
-                <select on:change=on_project_change>
-                    <option value="">""</option>
-                    {move || match projects.read(cx) {
-                        Some(data) => {
-                            let projects = move || data.clone();
-                            view! { cx,
-                                <For
-                                    each=projects
-                                    key=|p| p.uuid.clone()
-                                    view=move |cx, project: YakManProject| view! {cx,
-                                        <option value=project.uuid>{project.name}</option>
-                                    }
-                                />
-                            }.into_view(cx)
-                        },
-                        None => view! { cx, }.into_view(cx)
-                    }}
-                </select>
-            </div>
+                <div class="mb-3">
+                    <YakManSelect
+                        label=Cow::Borrowed("Project")
+                        on:change=on_project_change
+                    >
+                        {move || match projects.read(cx) {
+                            Some(data) => {
+                                let projects = move || data.clone();
+                                view! { cx,
+                                    <For
+                                        each=projects
+                                        key=|p| p.uuid.clone()
+                                        view=move |cx, project: YakManProject| view! {cx,
+                                            <option value=project.uuid>{project.name}</option>
+                                        }
+                                    />
+                                }.into_view(cx)
+                            },
+                            None => view! { cx, }.into_view(cx)
+                        }}
+                    </YakManSelect>
+                </div>
 
-            <div>
-                <button on:click=on_create_config>"Create"</button>
-            </div>
+                <YakManButton on:click=on_create_config>"Create"</YakManButton>
 
+            </YakManCard>
         </div>
     }
 }

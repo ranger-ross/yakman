@@ -1,4 +1,4 @@
-use crate::api;
+use crate::{api, components::{YakManCard, YakManInput, YakManButton}};
 use leptos::*;
 use leptos_router::*;
 
@@ -20,14 +20,22 @@ pub fn add_project_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div>
-            <h1>{"Add Project"}</h1>
-            <div>{"Name: "} <input type="text" on:input=move |ev| set_name(event_target_value(&ev)) prop:value=name /></div>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-lg font-bold mb-4">{"Add Project"}</h1>
 
-            <br />
+                <div class="mb-3">
+                    <YakManInput
+                        label="Name"
+                        placeholder="my-project"
+                        on:input=move |ev| set_name(event_target_value(&ev))
+                        value=name
+                    />
+                </div>
 
-            <button on:click=on_create_project>"Create"</button>
+                <YakManButton on:click=on_create_project>"Create"</YakManButton>
 
+            </YakManCard>
         </div>
     }
 }

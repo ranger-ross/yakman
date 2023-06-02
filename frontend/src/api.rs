@@ -1,5 +1,4 @@
 use gloo_net::http::Request;
-use leptos::log;
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 use std::collections::HashMap;
 use std::fmt;

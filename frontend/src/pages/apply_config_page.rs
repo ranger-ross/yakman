@@ -4,7 +4,7 @@ use leptos_router::*;
 use serde::{Deserialize, Serialize};
 use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
 
-use crate::api;
+use crate::{api, components::{YakManCard, YakManButton}};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 struct ApplyConfigPageData {
@@ -109,28 +109,29 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div>
-            <h1>{"Apply Config "} {config_name} {" -> "} {instance}</h1>
+        <div class="container mx-auto">
+            <YakManCard>
+                <h1 class="text-xl font-bold mb-3">{"Apply Config "} {config_name} {" -> "} {instance}</h1>
 
-            {move || match page_data.read(cx) {
-                Some(data) => view! { cx,
-                    {move || match &data.pending_revision {
-                        Some(pending_revision) => view! {cx,
-                            <div>
-                                <h3> {"Pending Revision => "} {pending_revision} </h3>
-                                <ConfigDiffs
-                                    original=original_text().unwrap_or("Loading".to_string())
-                                    new=new_text().unwrap_or("Loading".to_string())
-                                />
-                                <button on:click=on_approve>{"Approve"}</button>
-                            </div>
-                        }.into_view(cx),
-                        None => view! {cx, "No pending revisions"}.into_view(cx)
-                    }}
-                }.into_view(cx),
-                None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
-            }}
-
+                {move || match page_data.read(cx) {
+                    Some(data) => view! { cx,
+                        {move || match &data.pending_revision {
+                            Some(pending_revision) => view! {cx,
+                                <div>
+                                    <h3 class="text-md font-bold text-gray-600"> {"Pending Revision => "} {pending_revision} </h3>
+                                    <ConfigDiffs
+                                        original=original_text().unwrap_or("Loading".to_string())
+                                        new=new_text().unwrap_or("Loading".to_string())
+                                    />
+                                    <YakManButton on:click=on_approve>{"Approve"}</YakManButton>
+                                </div>
+                            }.into_view(cx),
+                            None => view! {cx, "No pending revisions"}.into_view(cx)
+                        }}
+                    }.into_view(cx),
+                    None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
+                }}
+            </YakManCard>
         </div>
     }
 }
@@ -200,7 +201,9 @@ fn config_diffs(cx: Scope, #[prop()] original: String, #[prop()] new: String) ->
     };
 
     view! { cx,
-     <div>
+     <div class="my-3">
+        <span class="mb-2 font-bold">"Changes"</span>
+
         {move || grouped_by_lines().into_iter().map(|line| {
             view! { cx,
                 <p>

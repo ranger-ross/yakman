@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     api,
     components::{
@@ -9,7 +11,7 @@ use chrono_humanize::{Accuracy, Tense};
 use leptos::*;
 use leptos_router::{use_navigate, use_query_map};
 use serde::{Deserialize, Serialize};
-use yak_man_core::model::{Config, ConfigInstance, YakManProject, Label};
+use yak_man_core::model::{Config, ConfigInstance, YakManProject};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct PageData {
@@ -95,7 +97,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
 
             <YakManSelect
-                label="Project".to_string()
+                label=Cow::Borrowed("Project")
                 on:change=on_project_change
             >
                 {move || match pd.read(cx) {
