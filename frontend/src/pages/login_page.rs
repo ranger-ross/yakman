@@ -1,5 +1,7 @@
 use crate::api;
 use crate::api::RequestError;
+use crate::components::YakManButton;
+use crate::components::YakManCard;
 use crate::GlobalState;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
@@ -30,12 +32,18 @@ pub fn login_page(cx: Scope) -> impl IntoView {
     let redirect_uri = move || data.read(cx).unwrap_or(String::new());
 
     view! { cx,
-        <div style="display: flex; justify-content: center">
-            <div>
-                <h1>{"Login"}</h1>
-
-                <a href=redirect_uri>"Click to login"</a>
-            </div>
+        <div class="container mx-auto">
+            <YakManCard>
+                <div class="flex flex-col items-center gap-4">
+                    <h1 class="text-xl font-bold">{"Login"}</h1>
+                
+                    <a href=redirect_uri>
+                        <YakManButton>
+                            "Click to login"
+                        </YakManButton>
+                    </a>
+                </div>
+            </YakManCard>
         </div>
     }
 }
