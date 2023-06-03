@@ -32,6 +32,7 @@ pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> imp
             <KebabMenuIcon
                 class="cursor-pointer"
                 on:click=move |_| set_open(!open())
+                on:blur=move |_| set_open(false)
             />
 
             <div class=move || format!("origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black bg-white ring-opacity-5 transition ease-out duration-100 {}", animation_classes())>
