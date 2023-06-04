@@ -24,7 +24,7 @@ pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> imp
     let animation_classes = move || if open() {
         "transform opacity-100 scale-100"
     } else {
-        "transform opacity-0 scale-95"
+        "transform opacity-0 scale-95 invisible"
     };
 
     view! { cx,
