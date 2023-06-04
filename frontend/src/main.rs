@@ -19,6 +19,8 @@ use pages::LoginPage;
 use std::collections::HashMap;
 use yak_man_core::model::YakManRole;
 
+use crate::pages::view_config_page::ViewConfigInstancePage;
+
 pub fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();
@@ -144,6 +146,12 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         redirect_path="/login"
                         path="/edit-instance/:config_name/:instance"
                         view=move |cx| view! { cx, <EditConfigInstancePage /> }
+                    />
+                    <ProtectedRoute
+                        condition=move |_| !is_login_needed()
+                        redirect_path="/login"
+                        path="/view-instance/:config_name/:instance"
+                        view=move |cx| view! { cx, <ViewConfigInstancePage /> }
                     />
                     <ProtectedRoute
                         condition=move |_| !is_login_needed()

@@ -7,6 +7,7 @@ pub mod apply_config_page;
 pub mod login_page;
 pub mod admin_page;
 pub mod add_project_page;
+pub mod view_config_page;
 
 pub use modify_config_instance::CreateConfigInstancePage;
 pub use modify_config_instance::EditConfigInstancePage;

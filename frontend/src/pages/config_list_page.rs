@@ -192,7 +192,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
         ht.to_text_en(Accuracy::Rough, Tense::Past)
     });
 
-    let view_link = format!("/api/v1/configs/{config_name}/instances/{instance_id}/data");
+    let view_link = format!("/view-instance/{config_name}/{instance_id}");
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
     let history_link = format!("/history/{config_name}/{instance_id}");
     let approval_link = format!("/apply/{config_name}/{instance_id}");
@@ -205,7 +205,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
             <div class="flex justify-between">
                 <div class="flex items-center gap-2">
                     <div>
-                        <a href={view_link} target="_blank" class="font-bold">{instance_id}</a>
+                        <a href={view_link} class="font-bold">{instance_id}</a>
                       <div class="text-gray-500">"Last Updated: "{last_updated}</div>
                     </div>
                     <div class="flex flex-wrap gap-2">
