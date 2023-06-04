@@ -83,7 +83,7 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
                 Ok(()) => {
                     let navigate = use_navigate(cx);
                     let _ = navigate(
-                        &format!("/history/{}/{}", config_name(), instance()),
+                        &format!("/view-instance/{}/{}", config_name(), instance()),
                         Default::default(),
                     );
                 }
