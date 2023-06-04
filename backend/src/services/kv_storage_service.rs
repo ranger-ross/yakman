@@ -266,7 +266,7 @@ impl StorageService for KVStorageService {
         content_type: Option<String>,
     ) -> Result<(), SaveConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
-            let revision_key = Uuid::new_v4().to_string();
+            let revision_key = short_sha(&Uuid::new_v4().to_string());
             let data_key = Uuid::new_v4().to_string();
 
             // Create new file with data
