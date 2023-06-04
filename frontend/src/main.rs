@@ -13,7 +13,6 @@ use pages::apply_config_page::*;
 use pages::config_list_page::*;
 use pages::login_page::*;
 use pages::modify_config_instance::*;
-use pages::revision_history::*;
 use pages::AdminPage;
 use pages::LoginPage;
 use std::collections::HashMap;
@@ -152,12 +151,6 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         redirect_path="/login"
                         path="/view-instance/:config_name/:instance"
                         view=move |cx| view! { cx, <ViewConfigInstancePage /> }
-                    />
-                    <ProtectedRoute
-                        condition=move |_| !is_login_needed()
-                        redirect_path="/login"
-                        path="/history/:config_name/:instance"
-                        view=move |cx| view! { cx, <RevisionHistoryPage /> }
                     />
                 </Routes>
             </main>

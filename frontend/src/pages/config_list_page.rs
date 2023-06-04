@@ -194,7 +194,6 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
 
     let view_link = format!("/view-instance/{config_name}/{instance_id}");
     let edit_link = format!("/edit-instance/{config_name}/{instance_id}");
-    let history_link = format!("/history/{config_name}/{instance_id}");
     let approval_link = format!("/apply/{config_name}/{instance_id}");
     let has_pending_revision = instance.pending_revision.is_some();
 
@@ -205,7 +204,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
             <div class="flex justify-between">
                 <div class="flex items-center gap-2">
                     <div>
-                        <a href={view_link} class="font-bold">{instance_id}</a>
+                        <span class="font-bold">{instance_id}</span>
                       <div class="text-gray-500">"Last Updated: "{last_updated}</div>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -227,7 +226,7 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
 
                     <div class="flex flex-col items-end">
                         <LinkWithChrevon href={edit_link}>"Edit"</LinkWithChrevon>
-                        <LinkWithChrevon href={history_link}>"History"</LinkWithChrevon>
+                        <LinkWithChrevon href={view_link}>"View"</LinkWithChrevon>
 
                         <Show
                             when=move || has_pending_revision
