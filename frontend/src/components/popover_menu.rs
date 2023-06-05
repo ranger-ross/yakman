@@ -58,33 +58,41 @@ pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> imp
                 on:click=move |_| on_change(!open())
                 on:blur=move |_| on_change(false)
             />
-
             <Show
                 when=open
-                fallback=|_| view! { cx, }
+                fallback=|_| {
+                    view! { cx,  }
+                }
             >
-                <div class=move || format!("origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black bg-white ring-opacity-5 transition ease-out duration-100 {}", extra_class())>
+                <div class=move || {
+                    format!(
+                        "origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black bg-white ring-opacity-5 transition ease-out duration-100 {}",
+                        extra_class()
+                    )
+                }>
                     <div
                         class="py-1"
                         role="menu"
                         aria-orientation="vertical"
                         aria-labelledby="options-menu"
                     >
-                        {options.iter().map(|option| {
-                            view! { cx,
-                                <a
-                                    href={&option.href}
-                                    class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                >
-                                    {&option.text}
-                                </a>
-                            }
-                        }).collect::<Vec<_>>()}
+                        {options
+                            .iter()
+                            .map(|option| {
+                                view! { cx,
+                                    <a
+                                        href=&option.href
+                                        class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        role="menuitem"
+                                    >
+                                        {&option.text}
+                                    </a>
+                                }
+                            })
+                            .collect::<Vec<_>>()}
                     </div>
                 </div>
             </Show>
-
-          </div>
+        </div>
     }
 }

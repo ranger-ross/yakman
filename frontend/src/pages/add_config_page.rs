@@ -60,7 +60,6 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Add Config"}</h1>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
@@ -70,12 +69,8 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
                         placeholder="my-config-name"
                     />
                 </div>
-
                 <div class="mb-3">
-                    <YakManSelect
-                        label=Cow::Borrowed("Project")
-                        on:change=on_project_change
-                    >
+                    <YakManSelect label=Cow::Borrowed("Project") on:change=on_project_change>
                         {move || match projects.read(cx) {
                             Some(data) => {
                                 let projects = move || data.clone();
@@ -83,19 +78,21 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
                                     <For
                                         each=projects
                                         key=|p| p.uuid.clone()
-                                        view=move |cx, project: YakManProject| view! {cx,
-                                            <option value=project.uuid>{project.name}</option>
+                                        view=move |cx, project: YakManProject| {
+                                            view! { cx, <option value=project.uuid>{project.name}</option> }
                                         }
                                     />
-                                }.into_view(cx)
-                            },
-                            None => view! { cx, }.into_view(cx)
+                                }
+                                    .into_view(cx)
+                            }
+                            None => {
+                                view! { cx,  }
+                                    .into_view(cx)
+                            }
                         }}
                     </YakManSelect>
                 </div>
-
                 <YakManButton on:click=on_create_config>"Create"</YakManButton>
-
             </YakManCard>
         </div>
     }

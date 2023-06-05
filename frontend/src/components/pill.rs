@@ -32,7 +32,7 @@ fn color_from_str(input: &str) -> (String, String) {
 pub fn label_pill(cx: Scope, #[prop()] text: String) -> impl IntoView {
     let (background, text_color) = color_from_str(&text);
     view! { cx,
-        <div class={format!("{background} {text_color} text-sm rounded-full pl-2 pr-2 pt-1 pb-1 w-fit")}>
+        <div class=format!("{background} {text_color} text-sm rounded-full pl-2 pr-2 pt-1 pb-1 w-fit")>
             {text}
         </div>
     }

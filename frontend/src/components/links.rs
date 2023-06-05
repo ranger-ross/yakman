@@ -6,10 +6,10 @@ pub fn link_with_chrevon(cx: Scope, #[prop()] href: String, children: Children) 
     view! { cx,
         <a
             class="text-indigo-600 hover:text-indigo-800 flex items-center text-lg transition-colors duration-200"
-            href={href}
+            href=href
         >
             {children(cx)}
-            <ArrowRightIcon />
+            <ArrowRightIcon/>
         </a>
     }
 }

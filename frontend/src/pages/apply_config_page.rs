@@ -111,25 +111,40 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
     view! { cx,
         <div class="container mx-auto">
             <YakManCard>
-                <h1 class="text-xl font-bold mb-3">{"Apply Config "} {config_name} {" -> "} {instance}</h1>
-
+                <h1 class="text-xl font-bold mb-3">
+                    {"Apply Config "} {config_name} {" -> "} {instance}
+                </h1>
                 {move || match page_data.read(cx) {
-                    Some(data) => view! { cx,
-                        {move || match &data.pending_revision {
-                            Some(pending_revision) => view! {cx,
-                                <div>
-                                    <h3 class="text-md font-bold text-gray-600"> {"Pending Revision => "} {pending_revision} </h3>
-                                    <ConfigDiffs
-                                        original=original_text().unwrap_or("Loading".to_string())
-                                        new=new_text().unwrap_or("Loading".to_string())
-                                    />
-                                    <YakManButton on:click=on_approve>{"Approve"}</YakManButton>
-                                </div>
-                            }.into_view(cx),
-                            None => view! {cx, "No pending revisions"}.into_view(cx)
-                        }}
-                    }.into_view(cx),
-                    None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
+                    Some(data) => {
+                        view! { cx,
+                            {move || match &data.pending_revision {
+                                Some(pending_revision) => {
+                                    view! { cx,
+                                        <div>
+                                            <h3 class="text-md font-bold text-gray-600">
+                                                {"Pending Revision => "} {pending_revision}
+                                            </h3>
+                                            <ConfigDiffs
+                                                original=original_text().unwrap_or("Loading".to_string())
+                                                new=new_text().unwrap_or("Loading".to_string())
+                                            />
+                                            <YakManButton on:click=on_approve>{"Approve"}</YakManButton>
+                                        </div>
+                                    }
+                                        .into_view(cx)
+                                }
+                                None => {
+                                    view! { cx, "No pending revisions" }
+                                        .into_view(cx)
+                                }
+                            }}
+                        }
+                            .into_view(cx)
+                    }
+                    None => {
+                        view! { cx, <p>"Loading..."</p> }
+                            .into_view(cx)
+                    }
                 }}
             </YakManCard>
         </div>
@@ -201,23 +216,27 @@ fn config_diffs(cx: Scope, #[prop()] original: String, #[prop()] new: String) ->
     };
 
     view! { cx,
-     <div class="my-3">
-        <span class="mb-2 font-bold">"Changes"</span>
-
-        {move || grouped_by_lines().into_iter().map(|line| {
-            view! { cx,
-                <p>
-                    {move || line.iter().map(|(text, color)| {
+        <div class="my-3">
+            <span class="mb-2 font-bold">"Changes"</span>
+            {move || {
+                grouped_by_lines()
+                    .into_iter()
+                    .map(|line| {
                         view! { cx,
-                            <span style={color.styles()}>{text}</span> // TODO: Handle white space better
+                            <p>
+                                {move || {
+                                    line
+                                        .iter()
+                                        .map(|(text, color)| {
+                                            view! { cx, <span style=color.styles()>{text}</span> }
+                                        })
+                                        .collect::<Vec<_>>()
+                                }}
+                            </p>
                         }
                     })
-                    .collect::<Vec<_>>()}
-                </p>
-            }
-        })
-        .collect::<Vec<_>>()}
-
-     </div>
+                    .collect::<Vec<_>>()
+            }}
+        </div>
     }
 }
