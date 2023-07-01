@@ -1,4 +1,4 @@
-FROM rust:latest
+FROM rust:latest as builder
 
 # create a new empty shell project
 RUN USER=root cargo new --bin app
@@ -7,7 +7,7 @@ RUN USER=root cargo new --bin backend
 RUN USER=root cargo new --bin core
 RUN USER=root cargo new --bin frontend
 
-# copy over manifests
+# Copy Cargo files
 COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./backend/Cargo.toml ./backend/Cargo.toml
@@ -29,4 +29,6 @@ RUN rm ./target/release/yak-man-backend*
 RUN cargo build --release
 
 
-CMD ["./target/release/yak-man-backend"]
+FROM debian:bullseye-slim
+COPY --from=builder /app/target/release/yak-man-backend /usr/local/bin/yak-man-backend
+CMD ["yak-man-backend"]
