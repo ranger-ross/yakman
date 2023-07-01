@@ -292,6 +292,9 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_user_dir();
         let path = format!("{dir}/{uuid}.json");
 
+        info!("{path}");
+        
+
         if let Ok(content) = fs::read_to_string(&path) {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));

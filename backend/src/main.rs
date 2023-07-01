@@ -122,6 +122,9 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
+    let (host, port) = yakman_host_port_from_env();
+    info!("Launching YakMan Backend on {host}:{port}");
+
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
@@ -162,9 +165,18 @@ async fn main() -> std::io::Result<()> {
             .service(api::revisions::submit_instance_revision)
             .service(api::revisions::approve_pending_instance_revision)
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind((host, port))?
     .run()
     .await
+}
+
+fn yakman_host_port_from_env() -> (String, u16) {
+    let host = std::env::var("YAKMAN_HOST").unwrap_or("0.0.0.0".to_string());
+    let port = std::env::var("YAKMAN_PORT")
+        .ok()
+        .and_then(|v| v.parse::<u16>().ok())
+        .unwrap_or(8000);
+    (host, port)
 }
 
 async fn create_service() -> impl StorageService {

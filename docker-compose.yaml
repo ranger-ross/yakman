@@ -2,9 +2,13 @@ services:
   backend:
     image: local/yakman-backend
     ports:
-      - 8000:8000
+      - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - "./testing-directory:/yakman"
     environment:
       - YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
-      - LOCAL_FILE_SYSTEM_DIRECTORY=/app
+      - LOCAL_FILE_SYSTEM_DIRECTORY=/yakman
+      - YAKMAN_HOST=0.0.0.0
+      - YAKMAN_PORT=8000
