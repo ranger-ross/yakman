@@ -8,6 +8,7 @@ pub mod button;
 pub mod card;
 pub mod input;
 pub mod textarea;
+pub mod modal;
 
 pub use header::Header;
 pub use links::LinkWithChrevon;

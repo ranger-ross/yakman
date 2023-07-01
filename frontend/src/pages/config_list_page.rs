@@ -3,7 +3,8 @@ use std::borrow::Cow;
 use crate::{
     api,
     components::{
-        popover_menu::PopoverMenuOption, LinkWithChrevon, PopoverMenu, StatusPill, YakManSelect, LabelPill,
+        popover_menu::PopoverMenuOption, LabelPill, LinkWithChrevon, PopoverMenu, StatusPill,
+        YakManSelect,
     },
 };
 use chrono::{TimeZone, Utc};

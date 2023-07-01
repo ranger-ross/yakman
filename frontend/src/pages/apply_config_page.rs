@@ -4,7 +4,10 @@ use leptos_router::*;
 use serde::{Deserialize, Serialize};
 use yak_man_core::model::{ConfigInstance, ConfigInstanceRevision};
 
-use crate::{api, components::{YakManCard, YakManButton}};
+use crate::{
+    api,
+    components::{YakManButton, YakManCard},
+};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 struct ApplyConfigPageData {
@@ -225,8 +228,7 @@ fn config_diffs(cx: Scope, #[prop()] original: String, #[prop()] new: String) ->
                         view! { cx,
                             <p>
                                 {move || {
-                                    line
-                                        .iter()
+                                    line.iter()
                                         .map(|(text, color)| {
                                             view! { cx, <span style=color.styles()>{text}</span> }
                                         })
