@@ -96,13 +96,33 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
         update_navigation_url(&value);
     };
 
+    let delete_config = move |config_name: String| {
+        spawn_local(async move {
+            let project = selected_project().expect(
+                "The project should be set (loaded) if the user is attempting to delete a config",
+            );
+
+            log!("{config_name} {:?}", project);
+
+            match api::delete_config(&config_name, &project.uuid).await {
+                Ok(_) => {
+                    page_data.refetch();
+                }
+                Err(_) => {
+                    error!("failed to delete config");
+                }
+            };
+        });
+    };
+
     view! { cx,
         <div class="container mx-auto">
             <YakManModal
                 title="Delete Config"
                 open=delete_modal_open
                 on_confirm=move |_| {
-                    log!("TODO: Delete the config");
+                    let config_name = config_to_delete();
+                    delete_config(config_name);
                     delete_modal_open.set(false);
                 }
             >
