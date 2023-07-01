@@ -1,9 +1,11 @@
 use super::StorageService;
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
+    api::configs::get_configs,
     error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+        CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
+        UpdateConfigInstanceCurrentRevisionError,
     },
 };
 use async_trait::async_trait;
@@ -27,7 +29,7 @@ impl StorageService for KVStorageService {
 
     async fn get_config(&self, config_name: &str) -> Result<Option<Config>, GenericStorageError> {
         let c = self.adapter.get_configs().await?;
-        return Ok(c.into_iter().find(|c| c.name == config_name));
+        return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
     }
 
     async fn create_project(&self, project_name: &str) -> Result<(), CreateProjectError> {
@@ -52,17 +54,12 @@ impl StorageService for KVStorageService {
         return Ok(());
     }
 
-    async fn get_configs(
+    async fn get_visible_configs(
         &self,
         project_uuid: Option<String>,
     ) -> Result<Vec<Config>, GenericStorageError> {
-        if let Some(project_uuid) = project_uuid {
-            return Ok(self
-                .adapter
-                .get_configs_by_project_uuid(project_uuid)
-                .await?);
-        }
-        return Ok(self.adapter.get_configs().await?);
+        let configs = self.get_all_configs(project_uuid).await?;
+        return Ok(configs.into_iter().filter(|c| !c.hidden).collect());
     }
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
@@ -167,7 +164,7 @@ impl StorageService for KVStorageService {
         project_uuid: &str,
     ) -> Result<(), CreateConfigError> {
         let mut configs = self
-            .get_configs(None)
+            .get_all_configs(None)
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to load configs"))?;
 
@@ -183,6 +180,7 @@ impl StorageService for KVStorageService {
             name: String::from(config_name),
             description: String::from(""), // TODO: support descriptions?
             project_uuid: String::from(project_uuid),
+            hidden: false,
         });
 
         // Create instance metadata file
@@ -214,6 +212,21 @@ impl StorageService for KVStorageService {
             .map_err(|_| CreateConfigError::storage_error("Failed to update configs file"))?;
 
         Ok(())
+    }
+
+    async fn delete_config(&self, config_name: &str) -> Result<(), DeleteConfigError> {
+        let mut configs = self.get_visible_configs(None).await?;
+
+        if let Some(config) = configs
+            .iter_mut()
+            .find(|config| config.name == config_name && !config.hidden)
+        {
+            config.hidden = true;
+            self.adapter.save_configs(configs).await?;
+            return Ok(());
+        }
+
+        return Err(DeleteConfigError::ConfigDoesNotExistError);
     }
 
     async fn get_config_instance_metadata(
@@ -475,6 +488,24 @@ impl StorageService for KVStorageService {
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         return self.adapter.save_users(users).await;
+    }
+}
+
+impl KVStorageService {
+    /// Gets all configs including hidden configs
+    async fn get_all_configs(
+        &self,
+        project_uuid: Option<String>,
+    ) -> Result<Vec<Config>, GenericStorageError> {
+        let configs = match project_uuid {
+            Some(project_uuid) => {
+                self.adapter
+                    .get_configs_by_project_uuid(project_uuid)
+                    .await?
+            }
+            None => self.adapter.get_configs().await?,
+        };
+        return Ok(configs);
     }
 }
 

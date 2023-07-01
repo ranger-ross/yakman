@@ -18,7 +18,11 @@ impl YakManRoleBinding {
         project_uuid: &str,
         roles: &Vec<YakManRoleBinding>,
     ) -> bool {
+        info!("checking roles {roles_to_match:?}, has roles {roles:?}");
+
         for role in roles {
+            info!("checking role {role:?}");
+
             match role {
                 YakManRoleBinding::GlobalRoleBinding(r) => {
                     if r == &YakManRole::Admin {

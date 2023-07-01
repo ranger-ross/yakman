@@ -63,6 +63,7 @@ impl StateManager {
         api::projects::create_project,
         api::configs::get_configs,
         api::configs::create_config,
+        api::configs::delete_config,
         api::labels::get_labels,
         api::labels::create_label,
         api::instances::get_instances_by_config_name,
@@ -145,6 +146,7 @@ async fn main() -> std::io::Result<()> {
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)
+            .service(api::configs::delete_config)
             // Labels
             .service(api::labels::get_labels)
             .service(api::labels::create_label)
