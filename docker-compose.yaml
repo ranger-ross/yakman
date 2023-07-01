@@ -1,0 +1,10 @@
+services:
+  backend:
+    image: local/yakman-backend
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    environment:
+      - YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
+      - LOCAL_FILE_SYSTEM_DIRECTORY=/app

@@ -8,13 +8,12 @@ mod services;
 extern crate dotenv;
 
 use crate::auth::oauth_service::OauthService;
-use crate::{
-    adapters::local_file::create_local_file_adapter, middleware::roles::extract_roles,
-};
+use crate::middleware::roles::extract_roles;
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
 use adapters::aws_s3::AwsS3StorageAdapter;
+use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
@@ -179,7 +178,7 @@ async fn create_service() -> impl StorageService {
         },
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
-            let adapter = Box::new(create_local_file_adapter());
+            let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
         },
         "S3" => {
