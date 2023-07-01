@@ -40,7 +40,6 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Add Label"}</h1>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
@@ -50,7 +49,6 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
                         placeholder="my-label-name"
                     />
                 </div>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Prioity"
@@ -60,7 +58,6 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
                         placeholder="1"
                     />
                 </div>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Description"
@@ -69,7 +66,6 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
                         placeholder="My cool label description "
                     />
                 </div>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Options"
@@ -78,7 +74,6 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
                         placeholder="dev,prod"
                     />
                 </div>
-
                 <YakManButton on:click=on_create_label>"Create"</YakManButton>
             </YakManCard>
         </div>

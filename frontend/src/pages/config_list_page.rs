@@ -3,7 +3,8 @@ use std::borrow::Cow;
 use crate::{
     api,
     components::{
-        popover_menu::PopoverMenuOption, LinkWithChrevon, PopoverMenu, StatusPill, YakManSelect, LabelPill,
+        popover_menu::PopoverMenuOption, LabelPill, LinkWithChrevon, PopoverMenu, StatusPill,
+        YakManSelect,
     },
 };
 use chrono::{TimeZone, Utc};
@@ -95,11 +96,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div class="container mx-auto">
-
-            <YakManSelect
-                label=Cow::Borrowed("Project")
-                on:change=on_project_change
-            >
+            <YakManSelect label=Cow::Borrowed("Project") on:change=on_project_change>
                 {move || match pd.read(cx) {
                     Some(data) => {
                         let projects = move || data.projects.clone();
@@ -107,31 +104,43 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                             <For
                                 each=projects
                                 key=|p| p.uuid.clone()
-                                view=move |cx, project: YakManProject| view! {cx,
-                                    <option
-                                        value=&project.uuid selected={project.uuid == selected_project_uuid().unwrap_or("other".to_string())}
-                                    >
-                                        {project.name}
-                                    </option>
+                                view=move |cx, project: YakManProject| {
+                                    view! { cx,
+                                        <option
+                                            value=&project.uuid
+                                            selected=project.uuid == selected_project_uuid().unwrap_or("other".to_string())
+                                        >
+                                            {project.name}
+                                        </option>
+                                    }
                                 }
                             />
-                        }.into_view(cx)
-                    },
-                    None => view! { cx, }.into_view(cx)
+                        }
+                            .into_view(cx)
+                    }
+                    None => {
+                        view! { cx,  }
+                            .into_view(cx)
+                    }
                 }}
             </YakManSelect>
-
             {move || match page_data.read(cx) {
-                None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
+                None => {
+                    view! { cx, <p>"Loading..."</p> }
+                        .into_view(cx)
+                }
                 Some(configs) => {
                     view! { cx,
-                        {configs.into_iter().map(|config| view! {cx,
-                            <ConfigRow config={config} />
-                        }).collect::<Vec<_>>()}
-                    }.into_view(cx)
+                        {configs
+                            .into_iter()
+                            .map(|config| {
+                                view! { cx, <ConfigRow config=config/> }
+                            })
+                            .collect::<Vec<_>>()}
+                    }
+                        .into_view(cx)
                 }
             }}
-
         </div>
     }
 }
@@ -143,27 +152,24 @@ pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
     view! { cx,
         <div class="bg-white border-2 border-gray-200 m-2 p-4">
             <div class="flex justify-between">
-                <h3 class="text-gray-900 font-bold text-lg">{move || config.config.name.clone()}</h3>
-                <PopoverMenu
-                    options=vec![
-                        PopoverMenuOption::new(&create_config_instance_link, "Add Instance")
-                    ]
-                />
+                <h3 class="text-gray-900 font-bold text-lg">
+                    {move || config.config.name.clone()}
+                </h3>
+                <PopoverMenu options=vec![PopoverMenuOption::new(& create_config_instance_link, "Add Instance")]/>
             </div>
-
             <Show
                 when=move || has_at_least_one_instance
-                fallback=move |_| view! {cx,
-                    <EmptyConfigRow />
+                fallback=move |_| {
+                    view! { cx, <EmptyConfigRow/> }
                 }
             >
-                {config.instances.iter().map(|instance| {
-                    view! { cx,
-                        <ConfigInstanceRow
-                            instance={instance.clone()}
-                        />
-                    }
-                }).collect::<Vec<_>>()}
+                {config
+                    .instances
+                    .iter()
+                    .map(|instance| {
+                        view! { cx, <ConfigInstanceRow instance=instance.clone()/> }
+                    })
+                    .collect::<Vec<_>>()}
             </Show>
         </div>
     }
@@ -173,7 +179,7 @@ pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
 pub fn empty_config_row(cx: Scope) -> impl IntoView {
     view! { cx,
         <>
-            <div class="shadow-sm w-full h-1 mb-3"/>
+            <div class="shadow-sm w-full h-1 mb-3"></div>
             <div class="flex justify-center">
                 <span class="text-gray-700">"No config instances"</span>
             </div>
@@ -199,42 +205,47 @@ pub fn config_instance_row(cx: Scope, #[prop()] instance: ConfigInstance) -> imp
 
     view! { cx,
         <>
-            <div class="shadow-sm w-full h-1 mb-3"/>
-
+            <div class="shadow-sm w-full h-1 mb-3"></div>
             <div class="flex justify-between">
                 <div class="flex items-center gap-2">
                     <div>
                         <span class="font-bold">{instance_id}</span>
-                      <div class="text-gray-500">"Last Updated: "{last_updated}</div>
+                        <div class="text-gray-500">"Last Updated: " {last_updated}</div>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        {instance.labels.iter().map(|label| view! { cx,
-                            <LabelPill text={format!("{}={}", &label.label_type, &label.value)} />
-                        }).collect::<Vec<_>>()}
+                        {instance
+                            .labels
+                            .iter()
+                            .map(|label| {
+                                view! { cx, <LabelPill text=format!("{}={}", & label.label_type, & label.value)/> }
+                            })
+                            .collect::<Vec<_>>()}
                     </div>
                 </div>
-
                 <div class="flex items-center gap-5">
                     <Show
                         when=move || has_pending_revision
-                        fallback=|_| view! { cx, }
+                        fallback=|_| {
+                            view! { cx,  }
+                        }
                     >
                         <div>
                             <StatusPill>"Pending Changes"</StatusPill>
                         </div>
                     </Show>
-
                     <div class="flex flex-col items-end">
-                        <LinkWithChrevon href={edit_link}>"Edit"</LinkWithChrevon>
-                        <LinkWithChrevon href={view_link}>"View"</LinkWithChrevon>
-
+                        <LinkWithChrevon href=edit_link>"Edit"</LinkWithChrevon>
+                        <LinkWithChrevon href=view_link>"View"</LinkWithChrevon>
                         <Show
                             when=move || has_pending_revision
-                            fallback=|_| view! { cx, }
+                            fallback=|_| {
+                                view! { cx,  }
+                            }
                         >
-                            <LinkWithChrevon href={approval_link.clone()}>"Review Changes"</LinkWithChrevon>
+                            <LinkWithChrevon href=approval_link.clone()>
+                                "Review Changes"
+                            </LinkWithChrevon>
                         </Show>
-
                     </div>
                 </div>
             </div>

@@ -23,7 +23,6 @@ pub fn add_project_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Add Project"}</h1>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
@@ -33,9 +32,7 @@ pub fn add_project_page(cx: Scope) -> impl IntoView {
                         value=name
                     />
                 </div>
-
                 <YakManButton on:click=on_create_project>"Create"</YakManButton>
-
             </YakManCard>
         </div>
     }

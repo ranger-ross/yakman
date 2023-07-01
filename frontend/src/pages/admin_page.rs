@@ -32,26 +32,22 @@ pub fn admin_page(cx: Scope) -> impl IntoView {
     view! { cx,
         <div>
             <h1>{"Admin"}</h1>
-
             <h2>{"Users"}</h2>
-
             <For
                 each=users
                 key=|user| user.email.clone()
-                view=move |cx, user: YakManUser| view! { cx,
-                    <p>{user.email}</p>
+                view=move |cx, user: YakManUser| {
+                    view! { cx, <p>{user.email}</p> }
                 }
             />
-
             <h2>{"Add User"}</h2>
-            {"Username "}<input on:input=move |ev| set_new_username(event_target_value(&ev)) prop:value=new_username  />
-            <br />
-
-            <button on:click=create_user>
-                {"Create user"}
-            </button>
-
-
+            {"Username "}
+            <input
+                on:input=move |ev| set_new_username(event_target_value(&ev))
+                prop:value=new_username
+            />
+            <br/>
+            <button on:click=create_user>{"Create user"}</button>
         </div>
     }
 }
