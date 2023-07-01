@@ -102,8 +102,6 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 "The project should be set (loaded) if the user is attempting to delete a config",
             );
 
-            log!("{config_name} {:?}", project);
-
             match api::delete_config(&config_name, &project.uuid).await {
                 Ok(_) => {
                     page_data.refetch();
