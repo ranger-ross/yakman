@@ -6,7 +6,6 @@ use crate::{
 };
 use leptos::*;
 use leptos_router::*;
-use web_sys::KeyboardEvent;
 use yak_man_core::model::YakManProject;
 
 #[component]

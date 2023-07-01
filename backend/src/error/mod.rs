@@ -35,9 +35,6 @@ impl From<GenericStorageError> for YakManError {
     }
 }
 
-
-
-
 #[derive(Error, Debug)]
 pub enum CreateConfigError {
     #[error("Duplicate config: `{name}`")]
@@ -56,6 +53,20 @@ impl CreateConfigError {
         CreateConfigError::StorageError {
             message: String::from(message),
         }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum DeleteConfigError {
+    #[error("Config does not exist")]
+    ConfigDoesNotExistError,
+    #[error("Error storing config: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for DeleteConfigError {
+    fn from(e: GenericStorageError) -> Self {
+        DeleteConfigError::StorageError { message: e.message }
     }
 }
 
@@ -180,5 +191,3 @@ impl std::error::Error for LabelAlreadyExistsError {
         &self.description
     }
 }
-
-

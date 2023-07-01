@@ -1,20 +1,18 @@
+use crate::components::KebabMenuIcon;
+use leptos::*;
 use std::time::Duration;
 
-use leptos::*;
-
-use crate::components::KebabMenuIcon;
-
 #[derive(Debug, PartialEq, Clone)]
-pub struct PopoverMenuOption {
-    pub href: String,
+pub struct PopoverMenuOption<T> {
+    pub value: T,
     pub text: String,
 }
 
-impl PopoverMenuOption {
-    pub fn new(href: &str, text: &str) -> PopoverMenuOption {
+impl<T> PopoverMenuOption<T> {
+    pub fn new(value: T, text: &str) -> PopoverMenuOption<T> {
         PopoverMenuOption {
+            value: value,
             text: String::from(text),
-            href: String::from(href),
         }
     }
 }
@@ -23,7 +21,15 @@ const OPENED_CLASSES: &str = "transform opacity-100 scale-100";
 const CLOSED_CLASSES: &str = "transform opacity-0 scale-95";
 
 #[component]
-pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> impl IntoView {
+pub fn popover_menu<F, T>(
+    cx: Scope,
+    #[prop()] options: Vec<PopoverMenuOption<T>>,
+    #[prop()] on_select: F,
+) -> impl IntoView
+where
+    T: Clone + 'static,
+    F: Fn(&T) + 'static + Clone,
+{
     let (open, set_open) = create_signal(cx, false);
     let (extra_class, set_extra_class) = create_signal(cx, CLOSED_CLASSES);
 
@@ -31,7 +37,7 @@ pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> imp
         if is_open {
             set_open(is_open);
 
-            // Add a slight delay to wait for the elements to be added to the DOM 
+            // Add a slight delay to wait for the elements to be added to the DOM
             // so that when the classes are added the animation plays properly
             set_timeout(
                 move || {
@@ -76,20 +82,25 @@ pub fn popover_menu(cx: Scope, #[prop()] options: Vec<PopoverMenuOption>) -> imp
                         aria-orientation="vertical"
                         aria-labelledby="options-menu"
                     >
-                        {options
-                            .iter()
-                            .map(|option| {
-                                view! { cx,
-                                    <a
-                                        href=&option.href
-                                        class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                        role="menuitem"
-                                    >
-                                        {&option.text}
-                                    </a>
-                                }
-                            })
-                            .collect::<Vec<_>>()}
+
+
+                    {options
+                        .clone()
+                        .into_iter()
+                        .map(|option| {
+                            let on_select = on_select.clone();
+                            let value = option.value.clone();
+                            view! { cx,
+                                <a
+                                    class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                    on:click=move |_| on_select(&value)
+                                >
+                                    {option.text}
+                                </a>
+                            }
+                        })
+                        .collect::<Vec<_>>()}
                     </div>
                 </div>
             </Show>
