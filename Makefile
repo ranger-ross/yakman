@@ -20,6 +20,4 @@ fmt: ## Runs leptosfmt to format the frontend view macros (this may cause Trunk 
 	leptosfmt frontend
 
 build-backend: ## Builds the backend dockerfile with tag local/yakman-backend
-	# TODO: Handle platform target
-	# cargo build --release
 	docker build . -f backend.Dockerfile -t local/yakman-backend
