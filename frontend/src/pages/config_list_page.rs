@@ -164,7 +164,15 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                         .into_view(cx)
                 }
                 Some(configs) => {
+                    let is_empty = configs.len() == 0;
                     view! { cx,
+                        <Show
+                            when=move || is_empty
+                            fallback=|_| view! { cx,  }
+                        >
+                            <EmptyProjectRow />
+                        </Show>
+
                         {configs
                             .into_iter()
                             .map(|config| {
@@ -240,6 +248,17 @@ where
                     })
                     .collect::<Vec<_>>()}
             </Show>
+        </div>
+    }
+}
+
+#[component]
+pub fn empty_project_row(cx: Scope) -> impl IntoView {
+    view! { cx,
+        <div class="bg-white border-2 border-gray-200 m-2 p-4">
+            <div class="flex justify-center">
+                <span class="text-gray-700">"This project does not have any configs"</span>
+            </div>
         </div>
     }
 }
