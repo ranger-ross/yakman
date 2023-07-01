@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use crate::{
     api,
     components::{
-        popover_menu::PopoverMenuOption, LabelPill, LinkWithChrevon, PopoverMenu, StatusPill,
-        YakManSelect,
+        modal::YakManModal, popover_menu::PopoverMenuOption, LabelPill, LinkWithChrevon,
+        PopoverMenu, StatusPill, YakManSelect,
     },
 };
 use chrono::{TimeZone, Utc};
@@ -29,6 +29,8 @@ pub struct PageConfig {
 pub fn config_list_page(cx: Scope) -> impl IntoView {
     let query = use_query_map(cx);
     let selected_project_uuid = move || query.with(|params| params.get("project").cloned());
+    let delete_modal_open = create_rw_signal(cx, false);
+    let config_to_delete = create_rw_signal(cx, String::from(""));
 
     let update_navigation_url = move |project_uuid: &str| {
         let navigate = use_navigate(cx);
@@ -96,6 +98,18 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div class="container mx-auto">
+            <YakManModal
+                title="Delete Config"
+                open=delete_modal_open
+                on_confirm=move |_| {
+                    log!("TODO: Delete the config");
+                    delete_modal_open.set(false);
+                }
+            >
+                <p class="text-gray-800">"Config Name: "{config_to_delete}</p>
+                <p class="text-gray-800">"Are you sure want to delete this config?"</p>
+            </YakManModal>
+
             <YakManSelect label=Cow::Borrowed("Project") on:change=on_project_change>
                 {move || match pd.read(cx) {
                     Some(data) => {
@@ -134,7 +148,12 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                         {configs
                             .into_iter()
                             .map(|config| {
-                                view! { cx, <ConfigRow config=config/> }
+                                view! { cx, <ConfigRow config=config
+                                    on_config_delete=move |config_name| {
+                                        delete_modal_open.set(true);
+                                        config_to_delete.set(config_name);
+                                    }
+                                /> }
                             })
                             .collect::<Vec<_>>()}
                     }
@@ -145,17 +164,47 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
     }
 }
 
+#[derive(Debug, Clone)]
+enum ConfigRowPopoverMenuItems {
+    AddInstance,
+    DeleteConfig,
+}
+
 #[component]
-pub fn config_row(cx: Scope, #[prop()] config: PageConfig) -> impl IntoView {
+pub fn config_row<F>(
+    cx: Scope,
+    #[prop()] config: PageConfig,
+    #[prop()] on_config_delete: F,
+) -> impl IntoView
+where
+    F: Fn(String) + Clone + 'static,
+{
     let create_config_instance_link = format!("/create-instance/{}", config.config.name);
     let has_at_least_one_instance = config.instances.len() > 0;
+    let config_name = move || config.config.name.clone();
+    let config_name_for_delete = config_name.clone();
     view! { cx,
         <div class="bg-white border-2 border-gray-200 m-2 p-4">
             <div class="flex justify-between">
                 <h3 class="text-gray-900 font-bold text-lg">
-                    {move || config.config.name.clone()}
+                    {config_name}
                 </h3>
-                <PopoverMenu options=vec![PopoverMenuOption::new(& create_config_instance_link, "Add Instance")]/>
+                <PopoverMenu
+                    on_select=move |option| match option {
+                        ConfigRowPopoverMenuItems::AddInstance => {
+                            let navigate = use_navigate(cx);
+                            navigate(&create_config_instance_link, Default::default()).unwrap()
+                        },
+                        ConfigRowPopoverMenuItems::DeleteConfig => {
+                            let config_name = config_name_for_delete();
+                            on_config_delete(config_name);
+                        },
+                    }
+                    options=vec![
+                        PopoverMenuOption::new(ConfigRowPopoverMenuItems::AddInstance, "Add Instance"),
+                        PopoverMenuOption::new(ConfigRowPopoverMenuItems::DeleteConfig, "Delete Config"),
+                    ]
+                />
             </div>
             <Show
                 when=move || has_at_least_one_instance
