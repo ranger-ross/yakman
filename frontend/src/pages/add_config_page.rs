@@ -22,15 +22,15 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
     // when we first load projects, the the selected project to the first one
     create_effect(cx, move |_| {
         if let Some(p) = projects.read(cx) {
-            if project_uuid().is_empty() && !p.is_empty() {
+            if project_uuid.get().is_empty() && !p.is_empty() {
                 set_project_uuid.set(p[0].uuid.clone());
             }
         }
     });
 
     let on_create_config = move |_| {
-        let name = name();
-        let project_uuid = project_uuid();
+        let name = name.get();
+        let project_uuid = project_uuid.get();
         spawn_local(async move {
             match api::create_config(&name, &project_uuid).await {
                 Ok(()) => {
@@ -63,7 +63,7 @@ pub fn add_config_page(cx: Scope) -> impl IntoView {
                     <YakManInput
                         label="Name"
                         on:keypress=mask_lower_kebab_case
-                        on:input=move |ev| set_name(event_target_value(&ev))
+                        on:input=move |ev| set_name.set(event_target_value(&ev))
                         value=name
                         placeholder="my-config-name"
                     />

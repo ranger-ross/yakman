@@ -143,7 +143,7 @@ pub fn view_config_instance_page(cx: Scope) -> impl IntoView {
                     <h1 class="text-lg font-bold mb-1">"Labels"</h1>
                     <div class="flex flex-wrap gap-2">
                         {move || {
-                            selected_labels()
+                            selected_labels.get()
                                 .iter()
                                 .map(|label| {
                                     view! { cx, <LabelPill text=format!("{}={}", & label.label_type, & label.value)/> }
