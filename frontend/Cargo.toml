@@ -11,7 +11,7 @@ leptos_router = { version = "0.4.0", features = ["csr"] }
 console_log = "1.0"
 log = "0.4"
 console_error_panic_hook = "0.1.7"
-gloo-net = "0.2.6"
+gloo-net = "0.3.0"
 serde = {version = "1.0", features = ["derive"]}
 wasm-bindgen-futures = "0.4.34"
 yak-man-core = {path = "../core"}
