@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
-use log::{error, info};
+use log::error;
 use serde::Deserialize;
 use std::collections::HashSet;
 use yak_man_core::model::{
