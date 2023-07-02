@@ -46,6 +46,7 @@ impl YakManRoleBinding {
         return false;
     }
 
+    #[allow(dead_code)]
     pub fn has_role(
         role_to_match: YakManRole,
         project_uuid: &str,

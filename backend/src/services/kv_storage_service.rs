@@ -1,7 +1,6 @@
 use super::StorageService;
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
-    api::configs::get_configs,
     error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
