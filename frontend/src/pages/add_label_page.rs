@@ -5,13 +5,13 @@ use yak_man_core::model::LabelType;
 
 #[component]
 pub fn add_label_page(cx: Scope) -> impl IntoView {
-    let (name, set_name) = create_signal(cx, String::from(""));
-    let (prioity, set_prioity) = create_signal(cx, String::from(""));
-    let (description, set_description) = create_signal(cx, String::from(""));
-    let (options, set_options) = create_signal(cx, String::from(""));
+    let name = create_rw_signal(cx, String::from(""));
+    let prioity = create_rw_signal(cx, String::from(""));
+    let description = create_rw_signal(cx, String::from(""));
+    let options = create_rw_signal(cx, String::from(""));
 
     let on_create_label = move |_| {
-        let options = options()
+        let options = options.get()
             .split(",")
             .into_iter()
             .map(String::from)
@@ -19,9 +19,9 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
             .collect::<Vec<String>>();
 
         let label = LabelType {
-            name: name(),
-            description: description(),
-            priority: prioity().parse().unwrap(),
+            name: name.get(),
+            description: description.get(),
+            priority: prioity.get().parse().unwrap(),
             options: options,
         };
 
@@ -40,45 +40,40 @@ pub fn add_label_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Add Label"}</h1>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
                         on:keypress=mask_lower_kebab_case
-                        on:input=move |ev| set_name(event_target_value(&ev))
+                        on:input=move |ev| name.set(event_target_value(&ev))
                         value=name
                         placeholder="my-label-name"
                     />
                 </div>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Prioity"
                         on:keypress=mask_numbers
-                        on:input=move |ev| set_prioity(event_target_value(&ev))
+                        on:input=move |ev| prioity.set(event_target_value(&ev))
                         value=prioity
                         placeholder="1"
                     />
                 </div>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Description"
-                        on:input=move |ev| set_description(event_target_value(&ev))
+                        on:input=move |ev| description.set(event_target_value(&ev))
                         value=description
                         placeholder="My cool label description "
                     />
                 </div>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Options"
-                        on:input=move |ev| set_options(event_target_value(&ev))
+                        on:input=move |ev| options.set(event_target_value(&ev))
                         value=options
                         placeholder="dev,prod"
                     />
                 </div>
-
                 <YakManButton on:click=on_create_label>"Create"</YakManButton>
             </YakManCard>
         </div>

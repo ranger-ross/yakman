@@ -87,70 +87,92 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <Router>
-            <Header />
+            <Header/>
             <main>
                 <Routes>
                     <Route
                         path="/login"
-                        view=move |cx| view! { cx, <LoginPage /> }
+                        view=move |cx| {
+                            view! { cx, <LoginPage/> }
+                        }
                     />
                     <Route
                         path="/oauth-callback"
-                        view=move |cx| view! { cx, <OauthCallbackPage /> }
+                        view=move |cx| {
+                            view! { cx, <OauthCallbackPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/"
-                        view=move |cx| view! { cx, <ConfigListPage /> }
+                        view=move |cx| {
+                            view! { cx, <ConfigListPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/add-project"
-                        view=move |cx| view! { cx, <AddProjectPage /> }
+                        view=move |cx| {
+                            view! { cx, <AddProjectPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/admin"
-                        view=move |cx| view! { cx, <AdminPage /> }
+                        view=move |cx| {
+                            view! { cx, <AdminPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/add-config"
-                        view=move |cx| view! { cx, <AddConfigPage /> }
+                        view=move |cx| {
+                            view! { cx, <AddConfigPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/add-label"
-                        view=move |cx| view! { cx, <AddLabelPage /> }
+                        view=move |cx| {
+                            view! { cx, <AddLabelPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/apply/:config_name/:instance"
-                        view=move |cx| view! { cx, <ApplyConfigPage /> }
+                        view=move |cx| {
+                            view! { cx, <ApplyConfigPage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/create-instance/:config_name"
-                        view=move |cx| view! { cx, <CreateConfigInstancePage /> }
+                        view=move |cx| {
+                            view! { cx, <CreateConfigInstancePage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/edit-instance/:config_name/:instance"
-                        view=move |cx| view! { cx, <EditConfigInstancePage /> }
+                        view=move |cx| {
+                            view! { cx, <EditConfigInstancePage/> }
+                        }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/view-instance/:config_name/:instance"
-                        view=move |cx| view! { cx, <ViewConfigInstancePage /> }
+                        view=move |cx| {
+                            view! { cx, <ViewConfigInstancePage/> }
+                        }
                     />
                 </Routes>
             </main>

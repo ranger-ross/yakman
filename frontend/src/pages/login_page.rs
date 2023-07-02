@@ -36,11 +36,8 @@ pub fn login_page(cx: Scope) -> impl IntoView {
             <YakManCard>
                 <div class="flex flex-col items-center gap-4">
                     <h1 class="text-xl font-bold">{"Login"}</h1>
-                
                     <a href=redirect_uri>
-                        <YakManButton>
-                            "Click to login"
-                        </YakManButton>
+                        <YakManButton>"Click to login"</YakManButton>
                     </a>
                 </div>
             </YakManCard>
@@ -101,17 +98,14 @@ pub fn oauth_callback_page(cx: Scope) -> impl IntoView {
         <div style="display: flex; justify-content: center">
             <div>
                 {move || match error_message() {
-                    Some(error) => view! { cx,
-                        <>
-                            {error} <br />
-                            <A href="/login">
-                                "Back to Login"
-                            </A>
-                        </>
-                    }.into_view(cx),
-                    None => view! {cx,
-                        <h1>{"Logging in..."}</h1>
-                    }.into_view(cx)
+                    Some(error) => {
+                        view! { cx, <>{error} <br/> <A href="/login">"Back to Login"</A></> }
+                            .into_view(cx)
+                    }
+                    None => {
+                        view! { cx, <h1>{"Logging in..."}</h1> }
+                            .into_view(cx)
+                    }
                 }}
             </div>
         </div>

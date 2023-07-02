@@ -122,10 +122,8 @@ pub fn view_config_instance_page(cx: Scope) -> impl IntoView {
                             </a>
                         </div>
                     </div>
-
                 </YakManCard>
             </div>
-
             <div class="mb-2">
                 <YakManCard>
                     <h1 class="text-lg font-bold mb-1">"Content"</h1>
@@ -140,43 +138,41 @@ pub fn view_config_instance_page(cx: Scope) -> impl IntoView {
                     </div>
                 </YakManCard>
             </div>
-
             <div class="mb-2">
                 <YakManCard>
                     <h1 class="text-lg font-bold mb-1">"Labels"</h1>
                     <div class="flex flex-wrap gap-2">
-                        {move || selected_labels().iter().map(|label| view! { cx,
-                            <LabelPill text={format!("{}={}", &label.label_type, &label.value)} />
-                        }).collect::<Vec<_>>()}
+                        {move || {
+                            selected_labels.get()
+                                .iter()
+                                .map(|label| {
+                                    view! { cx, <LabelPill text=format!("{}={}", & label.label_type, & label.value)/> }
+                                })
+                                .collect::<Vec<_>>()
+                        }}
                     </div>
                 </YakManCard>
             </div>
-
             <YakManCard>
                 <h1 class="text-lg font-bold mb-1">"History"</h1>
-
                 <h3 class="text-lg font-bold text-gray-800 mt-4">{"Revisions"}</h3>
-
                 <For
                     each=sorted_revisions
                     key=|revision| revision.revision.bytes().len()
                     view=move |cx, revision: ConfigInstanceRevision| {
                         let is_current_instance = current_revision() == revision.revision;
                         let rev = String::from(&revision.revision);
-                        view! {cx,
+                        view! { cx,
                             <div class="flex gap-2">
-                                <p>{format_date(revision.timestamp_ms)}{" =>"}</p>
+                                <p>{format_date(revision.timestamp_ms)} {" =>"}</p>
                                 <p
-                                    class=move || if is_current_instance {
-                                        "text-yellow-400"
-                                    } else {
-                                        "text-blue-600 cursor-pointer"
+                                    class=move || {
+                                        if is_current_instance { "text-yellow-400" } else { "text-blue-600 cursor-pointer" }
                                     }
-                                    on:click={move |_| on_select_revision(rev.clone())}
+                                    on:click=move |_| on_select_revision(rev.clone())
                                 >
                                     {&revision.revision}
                                 </p>
-
                                 <p>
                                     {move || match pending_revision() {
                                         Some(rev) if rev == revision.revision => "(pending)",
@@ -187,24 +183,21 @@ pub fn view_config_instance_page(cx: Scope) -> impl IntoView {
                         }
                     }
                 />
-
                 <h3 class="text-lg font-bold text-gray-800 mt-4">{"Changelog"}</h3>
-
                 <For
                     each=changelog
                     key=|change| change.timestamp_ms
-                    view=move |cx, change: ConfigInstanceChange| view! { cx,
-                        <div class="flex gap-2">
-                            <p>{format_date(change.timestamp_ms)}{" =>"}</p>
-                            <p>"Previous: "{change.previous_revision}{" =>"}</p>
-                            <p>"New: "{change.new_revision}</p>
-                        </div>
+                    view=move |cx, change: ConfigInstanceChange| {
+                        view! { cx,
+                            <div class="flex gap-2">
+                                <p>{format_date(change.timestamp_ms)} {" =>"}</p>
+                                <p>"Previous: " {change.previous_revision} {" =>"}</p>
+                                <p>"New: " {change.new_revision}</p>
+                            </div>
+                        }
                     }
                 />
-
             </YakManCard>
-
-
         </div>
     }
 }

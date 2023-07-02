@@ -8,13 +8,12 @@ mod services;
 extern crate dotenv;
 
 use crate::auth::oauth_service::OauthService;
-use crate::{
-    adapters::local_file::create_local_file_adapter, middleware::roles::extract_roles,
-};
+use crate::middleware::roles::extract_roles;
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
 use adapters::aws_s3::AwsS3StorageAdapter;
+use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::create_redis_adapter;
 use auth::token::TokenService;
 use dotenv::dotenv;
@@ -63,6 +62,7 @@ impl StateManager {
         api::projects::create_project,
         api::configs::get_configs,
         api::configs::create_config,
+        api::configs::delete_config,
         api::labels::get_labels,
         api::labels::create_label,
         api::instances::get_instances_by_config_name,
@@ -122,6 +122,9 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
+    let (host, port) = yakman_host_port_from_env();
+    info!("Launching YakMan Backend on {host}:{port}");
+
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
@@ -145,6 +148,7 @@ async fn main() -> std::io::Result<()> {
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)
+            .service(api::configs::delete_config)
             // Labels
             .service(api::labels::get_labels)
             .service(api::labels::create_label)
@@ -161,9 +165,18 @@ async fn main() -> std::io::Result<()> {
             .service(api::revisions::submit_instance_revision)
             .service(api::revisions::approve_pending_instance_revision)
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind((host, port))?
     .run()
     .await
+}
+
+fn yakman_host_port_from_env() -> (String, u16) {
+    let host = std::env::var("YAKMAN_HOST").unwrap_or("0.0.0.0".to_string());
+    let port = std::env::var("YAKMAN_PORT")
+        .ok()
+        .and_then(|v| v.parse::<u16>().ok())
+        .unwrap_or(8000);
+    (host, port)
 }
 
 async fn create_service() -> impl StorageService {
@@ -177,7 +190,7 @@ async fn create_service() -> impl StorageService {
         },
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
-            let adapter = Box::new(create_local_file_adapter());
+            let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
         },
         "S3" => {

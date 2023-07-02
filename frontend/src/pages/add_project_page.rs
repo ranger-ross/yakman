@@ -1,13 +1,17 @@
-use crate::{api, components::{YakManCard, YakManInput, YakManButton}, utils::input_mask::mask_lower_kebab_case};
+use crate::{
+    api,
+    components::{YakManButton, YakManCard, YakManInput},
+    utils::input_mask::mask_lower_kebab_case,
+};
 use leptos::*;
 use leptos_router::*;
 
 #[component]
 pub fn add_project_page(cx: Scope) -> impl IntoView {
-    let (name, set_name) = create_signal(cx, String::from(""));
+    let name = create_rw_signal(cx, String::from(""));
 
     let on_create_project = move |_| {
-        let name = name();
+        let name = name.get();
         spawn_local(async move {
             match api::create_project(&name).await {
                 Ok(()) => {
@@ -23,19 +27,16 @@ pub fn add_project_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Add Project"}</h1>
-
                 <div class="mb-3">
                     <YakManInput
                         label="Name"
                         on:keypress=mask_lower_kebab_case
                         placeholder="my-project"
-                        on:input=move |ev| set_name(event_target_value(&ev))
+                        on:input=move |ev| name.set(event_target_value(&ev))
                         value=name
                     />
                 </div>
-
                 <YakManButton on:click=on_create_project>"Create"</YakManButton>
-
             </YakManCard>
         </div>
     }

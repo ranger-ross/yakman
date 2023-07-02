@@ -23,16 +23,16 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
 
     let on_create = move |_| {
         spawn_local(async move {
-            let selected_labels: HashMap<String, String> = selected_labels()
+            let selected_labels: HashMap<String, String> = selected_labels.get()
                 .into_iter()
                 .filter_map(|(key, v)| v.map(|value| (key, value)))
                 .collect();
 
             match api::create_config_instance(
                 &config_name(),
-                &input(),
+                &input.get(),
                 selected_labels,
-                Some(&content_type()),
+                Some(&content_type.get()),
             )
             .await
             {
@@ -67,7 +67,7 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
             for label in &labels {
                 m.insert(String::from(&label.name), None);
             }
-            set_selected_labels(m);
+            set_selected_labels.set(m);
         }
     });
 
@@ -77,29 +77,25 @@ pub fn create_config_instance_page(cx: Scope) -> impl IntoView {
         <div class="container mx-auto">
             <YakManCard>
                 <h1 class="text-lg font-bold mb-4">{"Create Config Instance"}</h1>
-
                 <YakManTextArea
                     label="Data"
                     value=input
                     placeholder="My really cool config"
-                    on:input=move |ev| set_input(event_target_value(&ev))
+                    on:input=move |ev| set_input.set(event_target_value(&ev))
                 />
-
                 <div class="my-3">
                     <YakManInput
                         label="Content Type"
-                        on:input=move |ev| set_content_type(event_target_value(&ev))
+                        on:input=move |ev| set_content_type.set(event_target_value(&ev))
                         value=content_type
                         placeholder="my-config-name"
                     />
                 </div>
-
                 <LabelSelection
-                    labels={Signal::derive(cx, labels)}
-                    selected_labels={selected_labels.into()}
-                    set_selected_labels={set_selected_labels}
+                    labels=Signal::derive(cx, labels)
+                    selected_labels=selected_labels.into()
+                    set_selected_labels=set_selected_labels
                 />
-
                 <YakManButton on:click=on_create>{"Add"}</YakManButton>
             </YakManCard>
         </div>
@@ -121,7 +117,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
 
     let on_edit = move |_| {
         spawn_local(async move {
-            let selected_labels: HashMap<String, String> = selected_labels()
+            let selected_labels: HashMap<String, String> = selected_labels.get()
                 .into_iter()
                 .filter_map(|(key, v)| v.map(|value| (key, value)))
                 .collect();
@@ -129,9 +125,9 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
             match api::update_config_instance(
                 &config_name(),
                 &instance(),
-                &input(),
+                &input.get(),
                 selected_labels,
-                Some(&content_type()),
+                Some(&content_type.get()),
             )
             .await
             {
@@ -178,7 +174,7 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
             for label in &labels {
                 m.insert(String::from(&label.name), None);
             }
-            set_selected_labels(m);
+            set_selected_labels.set(m);
         }
     });
 
@@ -187,30 +183,28 @@ pub fn edit_config_instance_page(cx: Scope) -> impl IntoView {
     view! { cx,
         <div class="container mx-auto">
             <YakManCard>
-                <h1 class="text-lg font-bold mb-4">{format!("Edit Config Instance {} -> {}", config_name(), instance())}</h1>
-
+                <h1 class="text-lg font-bold mb-4">
+                    {format!("Edit Config Instance {} -> {}", config_name(), instance())}
+                </h1>
                 <YakManTextArea
                     label="Data"
                     value=input
                     placeholder="My really cool config"
-                    on:input=move |ev| set_input(event_target_value(&ev))
+                    on:input=move |ev| set_input.set(event_target_value(&ev))
                 />
-
                 <div class="my-3">
                     <YakManInput
                         label="Content Type"
-                        on:input=move |ev| set_content_type(event_target_value(&ev))
+                        on:input=move |ev| set_content_type.set(event_target_value(&ev))
                         value=content_type
                         placeholder="my-config-name"
                     />
                 </div>
-
                 <LabelSelection
-                    labels={Signal::derive(cx, labels)}
-                    selected_labels={selected_labels.into()}
-                    set_selected_labels={set_selected_labels}
+                    labels=Signal::derive(cx, labels)
+                    selected_labels=selected_labels.into()
+                    set_selected_labels=set_selected_labels
                 />
-
                 <YakManButton on:click=on_edit>{"Update"}</YakManButton>
             </YakManCard>
         </div>
@@ -229,34 +223,37 @@ pub fn label_selection(
         let name = el.name();
         let value = event_target_value(&ev);
 
-        let mut selected = selected_labels();
+        let mut selected = selected_labels.get();
         let old_value = selected.get_mut(&name).unwrap();
         *old_value = Some(value);
 
-        set_selected_labels(selected);
+        set_selected_labels.set(selected);
     };
 
     view! { cx,
         <div class="my-4">
             <h1 class="text-lg font-bold mb-1">{"Labels"}</h1>
             <div class="flex flex-col gap-2">
-                <For
-                    each=labels
-                    key=|l| l.name.clone()
-                    view=move |cx, label: LabelType| view! {cx,
-                        <YakManSelect
-                            label={Cow::Owned(label.name)}
-                            on:change=on_select_change
-                        >
-                            <option value="none" selected={true}>{"None"}</option>
-                            {label.options.iter().map(|option| view! { cx,
-                                <option value={option}>
-                                    {option}
-                                </option>
-                            }).collect::<Vec<_>>()}
-                        </YakManSelect>
-                    }
-                />
+                // <For
+                //     each=labels
+                //     key=|l| l.name.clone()
+                //     view=move |cx, label: LabelType| {
+                //         view! { cx,
+                //             <YakManSelect label=Cow::Owned(label.name) on:change=on_select_change>
+                //                 <option value="none" selected=true>
+                //                     {"None"}
+                //                 </option>
+                //                 {label
+                //                     .options
+                //                     .iter()
+                //                     .map(|option| {
+                //                         view! { cx, <option value=option>{option}</option> }
+                //                     })
+                //                     .collect::<Vec<_>>()}
+                //             </YakManSelect>
+                //         }
+                //     }
+                // />
             </div>
         </div>
     }
@@ -264,9 +261,5 @@ pub fn label_selection(
 
 #[component]
 pub fn ross(cx: Scope, #[prop(into)] label: MaybeSignal<Cow<'static, str>>) -> impl IntoView {
-    view! { cx,
-        <div class="w-64">
-          {label}
-        </div>
-    }
+    view! { cx, <div class="w-64">{label}</div> }
 }

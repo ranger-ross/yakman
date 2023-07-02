@@ -1,13 +1,19 @@
 use crate::{
-    api::is_alphanumeric_kebab_case, error::CreateConfigError, error::YakManError,
-    middleware::roles::YakManRoleBinding, StateManager,
+    api::is_alphanumeric_kebab_case,
+    error::YakManError,
+    error::{CreateConfigError, DeleteConfigError},
+    middleware::roles::YakManRoleBinding,
+    StateManager,
 };
-use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use serde::Deserialize;
 use std::collections::HashSet;
-use yak_man_core::model::{request::CreateConfigPayload, YakManRole};
+use yak_man_core::model::{
+    request::{CreateConfigPayload, DeleteConfigPayload},
+    YakManRole,
+};
 
 #[derive(Deserialize)]
 pub struct GetConfigsQuery {
@@ -60,7 +66,7 @@ pub async fn get_configs(
         .collect();
 
     let service = state.get_service();
-    return match service.get_configs(project_uuid).await {
+    return match service.get_visible_configs(project_uuid).await {
         Ok(data) => {
             if has_global_role {
                 return Ok(web::Json(data));
@@ -132,6 +138,49 @@ async fn create_config(
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
                 HttpResponse::BadRequest().body("duplicate config")
+            }
+        },
+    };
+}
+
+/// Create hide a config instance from the UI and API (data not deleted)
+#[utoipa::path(request_body = DeleteConfigPayload, responses((status = 200, body = String)))]
+#[delete("/v1/configs")]
+async fn delete_config(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    payload: web::Json<DeleteConfigPayload>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
+    let payload = payload.into_inner();
+    let config_name = payload.config_name.to_lowercase();
+    let project_uuid = payload.project_uuid;
+
+    if !YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin],
+        &project_uuid,
+        &auth_details.permissions,
+    ) {
+        return HttpResponse::Forbidden().finish();
+    }
+
+    if !is_alphanumeric_kebab_case(&config_name) {
+        return HttpResponse::BadRequest()
+            .body("Invalid config name. Must be alphanumeric kebab case");
+    }
+
+    let service = state.get_service();
+
+    let result: Result<(), DeleteConfigError> = service.delete_config(&config_name).await;
+
+    return match result {
+        Ok(()) => HttpResponse::Ok().finish(),
+        Err(e) => match e {
+            DeleteConfigError::StorageError { message } => {
+                error!("Failed to create config {config_name}, error: {message}");
+                HttpResponse::InternalServerError().body("Failed to delete config")
+            }
+            DeleteConfigError::ConfigDoesNotExistError => {
+                HttpResponse::BadRequest().body("config does not exist")
             }
         },
     };

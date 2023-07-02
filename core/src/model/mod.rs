@@ -18,6 +18,8 @@ pub struct Config { // TODO: Rename to YakManConfig
     pub name: String, // Unique key
     pub project_uuid: String,
     pub description: String,
+    #[serde(default)]
+    pub hidden: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

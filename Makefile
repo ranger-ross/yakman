@@ -15,3 +15,9 @@ leptos: ## Starts the YakMan frontend with trunk
 
 watch-tailwind: ## Runs Tailwind to update css
 	cd frontend; npx tailwind -o style/output.css -w
+
+fmt: ## Runs leptosfmt to format the frontend view macros (this may cause Trunk to bug out for 30 seconds)
+	leptosfmt frontend
+
+build-backend: ## Builds the backend dockerfile with tag local/yakman-backend
+	docker build . -f backend.Dockerfile -t local/yakman-backend

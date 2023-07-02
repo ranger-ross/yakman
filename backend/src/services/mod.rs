@@ -4,7 +4,7 @@ use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError,
+        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError, DeleteConfigError,
     },
 };
 use async_trait::async_trait;
@@ -19,7 +19,7 @@ pub trait StorageService: Sync + Send {
 
     async fn create_project(&self, project_name: &str) -> Result<(), CreateProjectError>;
 
-    async fn get_configs(
+    async fn get_visible_configs(
         &self,
         project_uuid: Option<String>,
     ) -> Result<Vec<Config>, GenericStorageError>;
@@ -35,6 +35,11 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         project_uuid: &str,
     ) -> Result<(), CreateConfigError>;
+
+    async fn delete_config(
+        &self,
+        config_name: &str,
+    ) -> Result<(), DeleteConfigError>;
 
     async fn create_config_instance(
         &self,

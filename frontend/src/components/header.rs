@@ -13,25 +13,26 @@ pub fn header(cx: Scope) -> impl IntoView {
         |state, n| state.global_roles = n,
     );
 
-    let is_admin = move || global_roles().contains(&YakManRole::Admin);
+    let is_admin = move || global_roles.get().contains(&YakManRole::Admin);
 
     view! { cx,
         <div class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2">
-            <a class="text-2xl font-bold" href="/">{"YakMan"}</a>
-            <div style="flex-grow: 1" />
-
+            <a class="text-2xl font-bold" href="/">
+                {"YakMan"}
+            </a>
+            <div style="flex-grow: 1"></div>
             <a href="/login">{"Login"}</a>
             <a href="/add-config">{"Add Config"}</a>
             <a href="/add-label">{"Add Label"}</a>
-            
             <Show
                 when=is_admin
-                fallback=|_| view! { cx,  }
+                fallback=|_| {
+                    view! { cx,  }
+                }
             >
                 <a href="/add-project">{"Add Project"}</a>
                 <a href="/admin">{"Admin"}</a>
             </Show>
-  
         </div>
     }
 }

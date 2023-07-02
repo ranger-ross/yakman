@@ -305,7 +305,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn save_user_details(
         &self,
         uuid: &str,
-        details: YakManUserDetails
+        details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_user_dir();
         let path = format!("{dir}/{uuid}.json");
@@ -373,5 +373,15 @@ impl LocalFileStorageAdapter {
     fn get_config_instance_metadata_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instance-metadata");
+    }
+
+    pub async fn from_env() -> LocalFileStorageAdapter {
+        let directory = std::env::var("LOCAL_FILE_SYSTEM_DIRECTORY")
+            .expect("LOCAL_FILE_SYSTEM_DIRECTORY was not set and is required for the LOCAL_FILE_SYSTEM adapter");
+
+        return LocalFileStorageAdapter {
+            path: directory,
+            yakman_dir: None,
+        };
     }
 }
