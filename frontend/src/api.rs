@@ -40,8 +40,8 @@ pub async fn create_user(username: &str, role: &YakManRole) -> Result<(), Reques
     })?;
 
     Request::put("/api/admin/v1/users")
-        .body(body)
         .header("content-type", "application/json")
+        .body(body)?
         .send()
         .await?
         .text()
@@ -57,8 +57,8 @@ pub async fn fetch_oauth_redirect_uri(
     })?;
 
     let response = Request::post("/api/oauth2/init")
-        .body(body)
         .header("content-type", "application/json")
+        .body(body)?
         .send()
         .await?;
 
@@ -81,8 +81,8 @@ pub async fn exchange_oauth_code(
     })?;
 
     let response = Request::post("/api/oauth2/exchange")
-        .body(body)
         .header("content-type", "application/json")
+        .body(body)?
         .send()
         .await?;
 
@@ -160,7 +160,7 @@ pub async fn create_config_instance(
     Request::put(&format!("/api/v1/configs/{config_name}/instances"))
         .query(query_params)
         .header("content-type", content_type.unwrap_or("text/plain"))
-        .body(data)
+        .body(data)?
         .send()
         .await?;
     return Ok(());
@@ -183,7 +183,7 @@ pub async fn update_config_instance(
     ))
     .query(query_params)
     .header("content-type", content_type.unwrap_or("text/plain"))
-    .body(data)
+    .body(data)?
     .send()
     .await?;
     return Ok(());
@@ -195,8 +195,8 @@ pub async fn create_config(config_name: &str, project_uuid: &str) -> Result<(), 
         project_uuid: project_uuid.to_string(),
     };
     let response = Request::put("/api/v1/configs")
-        .body(serde_json::to_string(&payload).unwrap())
         .header("content-type", "application/json")
+        .body(serde_json::to_string(&payload).unwrap())?
         .send()
         .await?;
 
@@ -213,8 +213,8 @@ pub async fn delete_config(config_name: &str, project_uuid: &str) -> Result<(), 
         project_uuid: project_uuid.to_string(),
     };
     let response = Request::delete("/api/v1/configs")
-        .body(serde_json::to_string(&payload).unwrap())
         .header("content-type", "application/json")
+        .body(serde_json::to_string(&payload).unwrap())?
         .send()
         .await?;
 
@@ -228,8 +228,8 @@ pub async fn delete_config(config_name: &str, project_uuid: &str) -> Result<(), 
 pub async fn create_label(label: LabelType) -> Result<(), RequestError> {
     let body = serde_json::to_string(&label)?;
     let response = Request::put("/api/v1/labels")
-        .body(body)
         .header("content-type", "application/json")
+        .body(body)?
         .send()
         .await?;
 
@@ -245,8 +245,8 @@ pub async fn create_project(project_name: &str) -> Result<(), RequestError> {
         project_name: String::from(project_name),
     })?;
     let response = Request::put("/api/v1/projects")
-        .body(body)
         .header("content-type", "application/json")
+        .body(body)?
         .send()
         .await?;
 

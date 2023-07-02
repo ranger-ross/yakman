@@ -234,26 +234,26 @@ pub fn label_selection(
         <div class="my-4">
             <h1 class="text-lg font-bold mb-1">{"Labels"}</h1>
             <div class="flex flex-col gap-2">
-                // <For
-                //     each=labels
-                //     key=|l| l.name.clone()
-                //     view=move |cx, label: LabelType| {
-                //         view! { cx,
-                //             <YakManSelect label=Cow::Owned(label.name) on:change=on_select_change>
-                //                 <option value="none" selected=true>
-                //                     {"None"}
-                //                 </option>
-                //                 {label
-                //                     .options
-                //                     .iter()
-                //                     .map(|option| {
-                //                         view! { cx, <option value=option>{option}</option> }
-                //                     })
-                //                     .collect::<Vec<_>>()}
-                //             </YakManSelect>
-                //         }
-                //     }
-                // />
+                <For
+                    each=move || labels.get()
+                    key=|l| l.name.clone()
+                    view=move |cx, label: LabelType| {
+                        view! { cx,
+                            <YakManSelect label=Cow::Owned(label.name) on:change=on_select_change>
+                                <option value="none" selected=true>
+                                    {"None"}
+                                </option>
+                                {label
+                                    .options
+                                    .iter()
+                                    .map(|option| {
+                                        view! { cx, <option value=option>{option}</option> }
+                                    })
+                                    .collect::<Vec<_>>()}
+                            </YakManSelect>
+                        }
+                    }
+                />
             </div>
         </div>
     }
