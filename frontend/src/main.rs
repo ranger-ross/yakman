@@ -103,7 +103,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/"
                         view=move |cx| {
@@ -111,7 +111,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/add-project"
                         view=move |cx| {
@@ -119,7 +119,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/admin"
                         view=move |cx| {
@@ -127,7 +127,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/add-config"
                         view=move |cx| {
@@ -135,7 +135,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/add-label"
                         view=move |cx| {
@@ -143,7 +143,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/apply/:config_name/:instance"
                         view=move |cx| {
@@ -151,7 +151,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/create-instance/:config_name"
                         view=move |cx| {
@@ -159,7 +159,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/edit-instance/:config_name/:instance"
                         view=move |cx| {
@@ -167,7 +167,7 @@ pub fn AppRouter(cx: Scope) -> impl IntoView {
                         }
                     />
                     <ProtectedRoute
-                        condition=move |_| !is_login_needed()
+                        condition=move |_| !is_login_needed.get()
                         redirect_path="/login"
                         path="/view-instance/:config_name/:instance"
                         view=move |cx| {

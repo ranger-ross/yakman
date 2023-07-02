@@ -35,21 +35,21 @@ where
 
     let on_change = move |is_open: bool| {
         if is_open {
-            set_open(is_open);
+            set_open.set(is_open);
 
             // Add a slight delay to wait for the elements to be added to the DOM
             // so that when the classes are added the animation plays properly
             set_timeout(
                 move || {
-                    set_extra_class(OPENED_CLASSES);
+                    set_extra_class.set(OPENED_CLASSES);
                 },
                 Duration::from_millis(1),
             );
         } else {
-            set_extra_class(CLOSED_CLASSES);
+            set_extra_class.set(CLOSED_CLASSES);
             set_timeout(
                 move || {
-                    set_open(is_open);
+                    set_open.set(is_open);
                 },
                 // This duration should match the duration Tailwind class below
                 Duration::from_millis(100),
@@ -61,11 +61,11 @@ where
         <div class="relative inline-block text-left">
             <KebabMenuIcon
                 class="cursor-pointer"
-                on:click=move |_| on_change(!open())
+                on:click=move |_| on_change(!open.get())
                 on:blur=move |_| on_change(false)
             />
             <Show
-                when=open
+                when=move || open.get()
                 fallback=|_| {
                     view! { cx,  }
                 }
@@ -73,7 +73,7 @@ where
                 <div class=move || {
                     format!(
                         "origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black bg-white ring-opacity-5 transition ease-out duration-100 {}",
-                        extra_class()
+                        extra_class.get()
                     )
                 }>
                     <div

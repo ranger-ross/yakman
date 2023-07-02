@@ -13,7 +13,7 @@ pub fn header(cx: Scope) -> impl IntoView {
         |state, n| state.global_roles = n,
     );
 
-    let is_admin = move || global_roles().contains(&YakManRole::Admin);
+    let is_admin = move || global_roles.get().contains(&YakManRole::Admin);
 
     view! { cx,
         <div class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2">

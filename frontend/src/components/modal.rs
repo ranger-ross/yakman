@@ -18,21 +18,22 @@ pub fn yak_man_modal<F>(
 where
     F: Fn(MouseEvent) + 'static,
 {
-    let container_class = move || match open() {
+    let container_class = move || match open.get() {
         true => "opacity-100",
         false => "opacity-0 pointer-events-none",
     };
 
-    let modal_class = move || match open() {
+    let modal_class = move || match open.get() {
         true => "scale-100",
         false => "scale-95",
     };
+
 
     view! { cx,
         <div class=move || format!("absolute top-0 left-0 h-full w-full z-40 transition-opacity {}", container_class())>
             <div
                 class="fixed z-10 inset-0 overflow-y-auto"
-                aria-labelledby=title
+                aria-labelledby=move || title.get()
                 role="dialog"
                 aria-modal="true"
             >

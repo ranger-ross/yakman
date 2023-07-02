@@ -119,7 +119,7 @@ pub fn config_list_page(cx: Scope) -> impl IntoView {
                 title="Delete Config"
                 open=delete_modal_open
                 on_confirm=move |_| {
-                    let config_name = config_to_delete();
+                    let config_name = config_to_delete.get();
                     delete_config(config_name);
                     delete_modal_open.set(false);
                 }
