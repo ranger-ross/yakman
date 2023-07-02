@@ -17,7 +17,7 @@ wasm-bindgen-futures = "0.4.34"
 yak-man-core = {path = "../core"}
 web-sys = "0.3.61"
 serde_json = "1.0"
-chrono = "0.4.24"
+chrono = "0.4.26"
 oauth2 = "4.4.1"
 gloo-storage = "0.2.2"
 thiserror = "1.0.40"
