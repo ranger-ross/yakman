@@ -1,16 +1,20 @@
 <script lang="ts">
-	import type { YakManConfigInstance, YakManProject } from "$lib/api";
+	import { type YakManConfigInstance, type YakManProject } from "$lib/api";
 	import LabelPill from "$lib/components/LabelPill.svelte";
 	import StatusPill from "$lib/components/StatusPill.svelte";
 	import YakManLink from "$lib/components/YakManLink.svelte";
 	import YakManPopoverMenu from "$lib/components/YakManPopoverMenu.svelte";
 	import YakManSelect from "$lib/components/YakManSelect.svelte";
 	import type { PageData } from "./$types";
-	import ConfigList from "./ConfigList.svelte";
+	import { invalidate, goto } from "$app/navigation";
+	import { page } from "$app/stores";
 
 	export let data: PageData;
 
 	const projects: YakManProject[] = data.projects;
+
+	let projectUuidFromQuery = $page.url.searchParams.get("project");
+	let selectedProjectUuid = projectUuidFromQuery ?? projects[0].uuid;
 
 	let selectedProject = projects[0] as YakManProject | undefined;
 
@@ -19,6 +23,7 @@
 		const projectUuid = target?.value;
 		selectedProject = projects.find((p) => p.uuid === projectUuid);
 		console.log(selectedProject);
+		goto(`?project=${selectedProject?.uuid}`);
 	}
 
 	function timeAgo(timestamp: number, locale = "en") {
@@ -74,11 +79,25 @@
 			<p class="text-gray-800">"Are you sure want to delete this config?"</p>
 		</YakManModal> -->
 
-		<YakManSelect label="Project" on:change={onProjectChange}>
+		<YakManSelect
+			bind:value={selectedProjectUuid}
+			label="Project"
+			on:change={onProjectChange}
+		>
 			{#each projects as project}
 				<option value={project.uuid}>{project.name}</option>
 			{/each}
 		</YakManSelect>
+
+		{#if data.configs.length == 0}
+			<div class="bg-white border-2 border-gray-200 m-2 p-4">
+				<div class="flex justify-center">
+					<span class="text-gray-700"
+						>This project does not have any configs</span
+					>
+				</div>
+			</div>
+		{/if}
 
 		{#each data.configs as config}
 			<div class="bg-white border-2 border-gray-200 m-2 p-4">
