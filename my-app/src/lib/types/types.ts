@@ -1,39 +1,55 @@
-export type YakManProject = {
-    uuid: string,
-    name: string,
-};
+import { z } from "zod";
 
-export type YakManConfig = {
-    name: string,
-    project_uuid: string,
-    description: string,
-    hidden: boolean,
-};
+export const YakManProjectSchema = z.object({
+    uuid: z.string(),
+    name: z.string(),
+});
 
-export type YakManLabelType = {
-    name: string,
-    description: string,
-    priority: number,
-    options: string[],
-};
+export type YakManProject = z.infer<typeof YakManProjectSchema>;
 
-export type YakManLabel = {
-    label_type: string,
-    value: string,
-};
+export const YakManConfigSchema = z.object({
+    name: z.string(),
+    project_uuid: z.string(),
+    description: z.string(),
+    hidden: z.boolean(),
+});
 
-export type YakManConfigInstance = {
-    config_name: string,
-    instance: string,
-    labels: YakManLabel[], // These should match the labels in the current revision
-    current_revision: string,
-    pending_revision: string | null,
-    revisions: string[],
-    changelog: ConfigInstanceChange[],
-};
+export type YakManConfig = z.infer<typeof YakManConfigSchema>;
 
-export type ConfigInstanceChange = {
-    timestamp_ms: number,
-    previous_revision: string | null,
-    new_revision: string,
-};
+export const YakManLabelTypeSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    priority: z.number().int(),
+    options: z.array(z.string()),
+});
+
+export type YakManLabelType = z.infer<typeof YakManLabelTypeSchema>;
+
+export const YakManLabelSchema = z.object({
+    label_type: z.string(),
+    value: z.string(),
+});
+
+export type YakManLabel = z.infer<typeof YakManLabelSchema>;
+
+export const ConfigInstanceChangeSchema = z.object({
+    timestamp_ms: z.number(),
+    previous_revision: z.string().nullable(),
+    new_revision: z.string(),
+});
+
+export type ConfigInstanceChange = z.infer<typeof ConfigInstanceChangeSchema>;
+
+export const YakManConfigInstanceSchema = z.object({
+    config_name: z.string(),
+    instance: z.string(),
+    labels: z.array(YakManLabelSchema),
+    current_revision: z.string(),
+    pending_revision: z.string().nullable(),
+    revisions: z.array(z.string()),
+    changelog: z.array(ConfigInstanceChangeSchema),
+});
+
+export type YakManConfigInstance = z.infer<typeof YakManConfigInstanceSchema>;
+
+

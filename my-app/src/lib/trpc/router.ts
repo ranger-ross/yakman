@@ -5,12 +5,14 @@ import { createContext } from './context';
 import type { RequestEvent } from '@sveltejs/kit';
 import { fetchConfigs } from './routes/fetch-configs';
 import { fetchConfigMetadata } from './routes/fetch-config-metadata';
+import { createLabel } from './routes/create-label';
 
 export const router = t.router({
     createProject: createProject,
     getProjects: fetchProjects,
     fetchConfigs: fetchConfigs,
     fetchConfigMetadata: fetchConfigMetadata,
+    createLabel: createLabel,
 });
 
 export type Router = typeof router;
