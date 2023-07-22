@@ -1,4 +1,3 @@
-import { fetchConfigs, fetchConfigMetadata } from "$lib/api";
 import { createRouterCaller } from "$lib/trpc/router";
 import type { PageServerLoad } from "./$types";
 
@@ -11,12 +10,12 @@ export const load: PageServerLoad = async (event) => {
 
     const selectedProject = !!projectUuidQueryParam ? projects.find(p => p.uuid === projectUuidQueryParam) : projects[0];
 
-    const configs = await fetchConfigs(event.fetch, selectedProject?.uuid);
+    const configs = await trpc.fetchConfigs(selectedProject?.uuid);
 
     const formattedConfigs = [];
 
     for (const config of configs) {
-        const metadata = await fetchConfigMetadata(event.fetch, config.name);
+        const metadata = await trpc.fetchConfigMetadata(config.name);
         formattedConfigs.push({
             config: config,
             metadata: metadata
