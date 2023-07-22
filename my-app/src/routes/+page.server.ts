@@ -4,7 +4,7 @@ import type { PageServerLoad } from "./$types";
 export const load: PageServerLoad = async (event) => {
     const trpc = await createRouterCaller(event);
 
-    const projects = await trpc.getProjects();
+    const projects = await trpc.fetchProjects();
 
     const projectUuidQueryParam = event.url.searchParams.get('project');
 
