@@ -178,8 +178,10 @@
 						</div>
 					{/each}
 				{:else}
-					EMPTY
-					<!-- <EmptyConfigRow/> -->
+					<div class="shadow-sm w-full h-1 mb-3" />
+					<div class="flex justify-center">
+						<span class="text-gray-700">No config instances</span>
+					</div>
 				{/if}
 			</div>
 		{/each}
