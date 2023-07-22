@@ -1,12 +1,13 @@
-
-<div class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2">
-    <a class="text-2xl font-bold" href="/">
-        {"YakMan"}
-    </a>
-    <div style="flex-grow: 1"></div>
-    <!-- <a href="/login">{"Login"}</a>
-    <a href="/add-config">{"Add Config"}</a>
-    <a href="/add-label">{"Add Label"}</a> -->
+<div
+    class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2"
+>
+    <a class="text-2xl font-bold" href="/">YakMan</a>
+    <div style="flex-grow: 1" />
+    <a href="/login">Login</a>
+    <a href="/add-config">Add Config</a>
+    <a href="/add-label">Add Label</a>
+    <a href="/add-project">Add Project</a>
+    <a href="/admin">Admin</a>
     <!-- TODO: Handle is Admin -->
     <!-- <Show
         when=is_admin
@@ -18,7 +19,6 @@
         <a href="/admin">{"Admin"}</a>
     </Show> -->
 </div>
-
 
 <!-- use leptos::*;
 use yak_man_core::model::YakManRole;
