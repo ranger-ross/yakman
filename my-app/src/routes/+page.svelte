@@ -3,7 +3,7 @@
 		YakManConfig,
 		YakManConfigInstance,
 		YakManProject,
-	} from "$lib/api";
+	} from "$lib/types/types";
 	import LabelPill from "$lib/components/LabelPill.svelte";
 	import StatusPill from "$lib/components/StatusPill.svelte";
 	import YakManLink from "$lib/components/YakManLink.svelte";
