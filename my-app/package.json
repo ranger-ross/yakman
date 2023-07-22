@@ -23,5 +23,11 @@
 		"typescript": "^5.0.0",
 		"vite": "^4.3.6"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@trpc/client": "^10.35.0",
+		"@trpc/server": "^10.35.0",
+		"trpc-sveltekit": "^3.5.17",
+		"zod": "^3.21.4"
+	}
 }
