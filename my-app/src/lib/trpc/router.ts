@@ -1,13 +1,10 @@
 import { t } from './t';
-import { createProject } from './routes/create-project';
-import { fetchProjects } from './routes/fetch-projects';
+import { createProject, fetchProjects } from './routes/projects';
 import { createContext } from './context';
 import type { RequestEvent } from '@sveltejs/kit';
-import { fetchConfigs } from './routes/fetch-configs';
-import { fetchConfigMetadata } from './routes/fetch-config-metadata';
-import { createLabel } from './routes/create-label';
-import { fetchLabels } from './routes/fetch-labels';
-import { createConfig } from './routes/create-config';
+import { createConfig, fetchConfigs } from './routes/configs';
+import { fetchConfigMetadata } from './routes/instances';
+import { fetchLabels, createLabel } from './routes/labels';
 import { generateOauthRedirectUri } from './routes/oauth';
 
 export const router = t.router({
