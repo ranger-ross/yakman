@@ -8,6 +8,7 @@ import { fetchConfigMetadata } from './routes/fetch-config-metadata';
 import { createLabel } from './routes/create-label';
 import { fetchLabels } from './routes/fetch-labels';
 import { createConfig } from './routes/create-config';
+import { generateOauthRedirectUri } from './routes/oauth';
 
 export const router = t.router({
     createProject: createProject,
@@ -17,6 +18,7 @@ export const router = t.router({
     fetchLabels: fetchLabels,
     createLabel: createLabel,
     createConfig: createConfig,
+    generateOauthRedirectUri: generateOauthRedirectUri,
 });
 
 export type Router = typeof router;

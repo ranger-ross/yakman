@@ -4,7 +4,8 @@ import type { inferAsyncReturnType } from '@trpc/server';
 export async function createContext(event: RequestEvent) {
     const accessToken = event.cookies.get('access_token');
     return {
-        accessToken: accessToken
+        accessToken: accessToken,
+        request: event.request,
     };
 }
 
