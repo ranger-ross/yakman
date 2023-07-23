@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { t } from "../t";
-import { getYakManBaseApiUrl } from "../helper";
+import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 
 const BASE_URL = getYakManBaseApiUrl();
+
+type GetUserRolesResponse = {
+    global_roles: string[],
+    roles: { [key: string]: string },
+};
 
 export const oauth = t.router({
     generateOauthRedirectUri: t.procedure
@@ -28,6 +33,18 @@ export const oauth = t.router({
                 throw new Error(await response.text())
             }
             return await response.text();
+        }),
+    fetchUserRoles: t.procedure
+        .query(async ({ ctx }) => {
+            const response = await fetch(`${BASE_URL}/oauth2/user-roles`, {
+                headers: {
+                    ...createYakManAuthHeaders(ctx.accessToken),
+                }
+            });
+            if (response.status != 200) {
+                throw new Error(await response.text())
+            }
+            return await response.json() as GetUserRolesResponse;
         })
 })
 
