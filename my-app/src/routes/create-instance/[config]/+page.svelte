@@ -6,5 +6,5 @@
 <div>
     create instance
     <br />
-    Project: {$page.params.project}
+    Config: {$page.params.config}
 </div>

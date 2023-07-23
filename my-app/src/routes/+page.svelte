@@ -122,9 +122,7 @@
 						on:select={(value) => {
 							const selection = value.detail;
 							if (selection === "AddInstance") {
-								console.warn(
-									"TODO: navigate to create config instance page"
-								);
+								goto(`/create-instance/${config.config.name}`);
 							} else if (selection === "DeleteConfig") {
 								console.warn("TODO: open delete config modal");
 								configToDelete = config.config;
