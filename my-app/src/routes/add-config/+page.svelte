@@ -15,7 +15,7 @@
 
     async function onCreateConfig() {
         try {
-            await trpc($page).createConfig.mutate({
+            await trpc($page).configs.createConfig.mutate({
                 name: name,
                 projectUuid: selectedProjectUuid,
             });

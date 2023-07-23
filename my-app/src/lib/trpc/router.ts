@@ -1,21 +1,18 @@
 import { t } from './t';
-import { createProject, fetchProjects } from './routes/projects';
 import { createContext } from './context';
 import type { RequestEvent } from '@sveltejs/kit';
-import { createConfig, fetchConfigs } from './routes/configs';
-import { fetchConfigMetadata } from './routes/instances';
-import { fetchLabels, createLabel } from './routes/labels';
-import { generateOauthRedirectUri } from './routes/oauth';
+import { configs } from './routes/configs';
+import { instances } from './routes/instances';
+import { labels } from './routes/labels';
+import { oauth } from './routes/oauth';
+import { projects } from './routes/projects';
 
 export const router = t.router({
-    createProject: createProject,
-    fetchProjects: fetchProjects,
-    fetchConfigs: fetchConfigs,
-    fetchConfigMetadata: fetchConfigMetadata,
-    fetchLabels: fetchLabels,
-    createLabel: createLabel,
-    createConfig: createConfig,
-    generateOauthRedirectUri: generateOauthRedirectUri,
+    oauth: oauth,
+    configs: configs,
+    projects: projects,
+    labels: labels,
+    instances: instances
 });
 
 export type Router = typeof router;

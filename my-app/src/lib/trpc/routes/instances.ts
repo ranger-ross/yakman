@@ -5,12 +5,14 @@ import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 
 const BASE_URL = getYakManBaseApiUrl();
 
-export const fetchConfigMetadata = t.procedure
+export const instances = t.router({
+    fetchConfigMetadata: t.procedure
     .input(z.string())
     .query(async ({ input, ctx }): Promise<YakManConfigInstance[]> => {
         const response = await fetch(`${BASE_URL}/v1/configs/${input}/instances`, {
             headers: createYakManAuthHeaders(ctx.accessToken)
         });
         return await response.json();
-    });
+    })
+});
 

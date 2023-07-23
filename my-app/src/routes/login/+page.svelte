@@ -51,7 +51,7 @@
 
         localStorage.setItem(LOCAL_STORAGE_OAUTH2_VERIFER_KEY, verifier);
 
-        redirectUri = await trpc($page).generateOauthRedirectUri.mutate({
+        redirectUri = await trpc($page).oauth.generateOauthRedirectUri.mutate({
             challenge: challenge,
             challengeMethod: "S256",
         });

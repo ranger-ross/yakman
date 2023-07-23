@@ -5,7 +5,7 @@ export const load: PageServerLoad = async (event) => {
     const trpc = await createRouterCaller(event);
 
     return {
-        projects: await trpc.fetchProjects()
+        projects: await trpc.projects.fetchProjects()
     };
 }
 
