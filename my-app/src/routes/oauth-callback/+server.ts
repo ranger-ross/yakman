@@ -27,11 +27,19 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
 
 
     for (const cookie of parse(response as any)) {
-        cookies.set(cookie.name, cookie.value, {
-            httpOnly: cookie.httpOnly,
-            path: cookie.path,
-            maxAge: cookie.maxAge,
-        });
+        if (cookie.name === 'refresh_token') {
+            cookies.set(cookie.name, cookie.value, {
+                httpOnly: cookie.httpOnly,
+                path: '/refresh-token',
+                maxAge: cookie.maxAge,
+            });
+        } else {
+            cookies.set(cookie.name, cookie.value, {
+                httpOnly: cookie.httpOnly,
+                path: cookie.path,
+                maxAge: cookie.maxAge,
+            });
+        }
     }
 
 
