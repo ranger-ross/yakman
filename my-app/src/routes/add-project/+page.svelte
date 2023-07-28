@@ -10,7 +10,7 @@
 
     async function onCreateProject() {
         try {
-            await trpc($page).createProject.mutate(name);
+            await trpc($page).projects.createProject.mutate(name);
             goto("/");
         } catch (e) {
             console.error("Error creating project", e);

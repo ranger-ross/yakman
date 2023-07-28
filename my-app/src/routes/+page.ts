@@ -1,21 +1,19 @@
-import { createRouterCaller } from "$lib/trpc/router";
-import type { PageServerLoad } from "./$types";
+import { trpc } from "$lib/trpc/client";
+import type { PageLoad } from "./$types";
 
-export const load: PageServerLoad = async (event) => {
-    const trpc = await createRouterCaller(event);
-
-    const projects = await trpc.projects.fetchProjects();
+export const load: PageLoad = async (event) => {
+    const projects = await trpc(event).projects.fetchProjects.query();
 
     const projectUuidQueryParam = event.url.searchParams.get('project');
 
     const selectedProject = !!projectUuidQueryParam ? projects.find(p => p.uuid === projectUuidQueryParam) : projects[0];
 
-    const configs = await trpc.configs.fetchConfigs(selectedProject?.uuid);
+    const configs = await trpc(event).configs.fetchConfigs.query(selectedProject?.uuid);
 
     const formattedConfigs = [];
 
     for (const config of configs) {
-        const metadata = await trpc.instances.fetchConfigMetadata(config.name);
+        const metadata = await trpc(event).instances.fetchConfigMetadata.query(config.name);
         formattedConfigs.push({
             config: config,
             metadata: metadata

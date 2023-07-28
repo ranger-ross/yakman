@@ -21,7 +21,7 @@
                 options: options.split(",").filter((o) => !!o || o.length == 0),
             };
 
-            await trpc($page).createLabel.mutate(label);
+            await trpc($page).labels.createLabel.mutate(label);
             goto("/");
         } catch (e) {
             console.error("Error creating config:", e);
