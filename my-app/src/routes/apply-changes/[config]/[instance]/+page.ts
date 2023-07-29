@@ -25,20 +25,19 @@ export const load: PageLoad = async (event) => {
     }
 
     if (instanceMetadata) {
-        currentData = await trpc(event).revisions.fetchRevisionData.query({
+        currentData = await trpc(event).data.fetchRevisionData.query({
             configName: config,
             instance: instance,
             revision: instanceMetadata.current_revision
         });
 
         if (instanceMetadata.pending_revision) {
-            pendingData = await trpc(event).revisions.fetchRevisionData.query({
+            pendingData = await trpc(event).data.fetchRevisionData.query({
                 configName: config,
                 instance: instance,
                 revision: instanceMetadata.pending_revision
             });
         }
-
     }
 
     return {

@@ -160,14 +160,20 @@
 									</div>
 								{/if}
 								<div class="flex flex-col items-end">
-									<YakManLink href={`/modify-instance/${instance.config_name}/${instance.instance}`}
-										>Edit</YakManLink
+									<YakManLink
+										href={`/modify-instance/${instance.config_name}/${instance.instance}`}
 									>
-									<YakManLink href="view_link"
-										>View</YakManLink
+										Edit
+									</YakManLink>
+									<YakManLink
+										href={`/view-instance/${instance.config_name}/${instance.instance}`}
 									>
+										View
+									</YakManLink>
 									{#if !!instance.pending_revision}
-										<YakManLink href="approval_link">
+										<YakManLink
+											href={`/apply-changes/${instance.config_name}/${instance.instance}`}
+										>
 											Review Changes
 										</YakManLink>
 									{/if}

@@ -1,14 +1,27 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
+    import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
 
     export let data: PageData;
 
     let { config, instance } = $page.params;
 
-    async function onApprove() {}
+    async function onApprove() {
+        try {
+            await trpc($page).revisions.approveInstanceRevision.mutate({
+                configName: config,
+                instance: instance,
+                revision: data.pendingRevision,
+            });
+            goto(`/view-instance/${config}/${instance}`);
+        } catch (e) {
+            console.error("Error while approving config: ", e);
+        }
+    }
 </script>
 
 <div class="container mx-auto">
@@ -23,17 +36,21 @@
                 </h3>
 
                 <div class="w-full flex justify-evenly gap-6">
-                    <div class="m-2 p-2 bg-gray-100 rounded-md w-80" >
+                    <div class="m-2 p-2 bg-gray-100 rounded-md w-80">
                         <div class="text-lg font-bold mb-3">Current</div>
                         <div class="text-md font-bold mb-1">Content Type</div>
-                        <div class="text-md mb-2">{data.currentData?.contentType}</div>
+                        <div class="text-md mb-2">
+                            {data.currentData?.contentType}
+                        </div>
                         <div class="text-md font-bold mb-1">Text</div>
                         <div>{data.currentData?.data}</div>
                     </div>
-                    <div class="m-2 p-2 bg-gray-100 rounded-md w-80" >
+                    <div class="m-2 p-2 bg-gray-100 rounded-md w-80">
                         <div class="text-lg font-bold mb-3">New</div>
                         <div class="text-md font-bold mb-1">Content Type</div>
-                        <div class="text-md mb-2">{data.pendingData?.contentType}</div>
+                        <div class="text-md mb-2">
+                            {data.pendingData?.contentType}
+                        </div>
                         <div class="text-md font-bold mb-1">Text</div>
                         <div>{data.pendingData?.data}</div>
                     </div>
@@ -194,91 +211,4 @@ pub fn apply_config_page(cx: Scope) -> impl IntoView {
     }
 }
 
-#[derive(Debug, Clone)]
-enum TextColor {
-    Regular,
-    Green,
-    StrongGreen,
-    Red,
-}
-
-impl TextColor {
-    fn styles(&self) -> String {
-        match self {
-            TextColor::Regular => String::from(""),
-            TextColor::Green => String::from("color: darkgreen"),
-            TextColor::StrongGreen => String::from("color: lime"),
-            TextColor::Red => String::from("color: red"),
-        }
-    }
-}
-
-#[component]
-fn config_diffs(cx: Scope, #[prop()] original: String, #[prop()] new: String) -> impl IntoView {
-    let grouped_by_lines = move || {
-        let Changeset { diffs, .. } = Changeset::new(&original, &new, "\n");
-
-        let mut grouped_by_lines: Vec<Vec<(String, TextColor)>> = vec![];
-
-        for i in 0..diffs.len() {
-            match diffs[i] {
-                Difference::Same(ref x) => {
-                    grouped_by_lines.push(vec![(x.clone(), TextColor::Regular)]);
-                }
-                Difference::Add(ref x) => {
-                    let mut changes = vec![];
-
-                    match diffs[i - 1] {
-                        Difference::Rem(ref y) => {
-                            let Changeset { diffs, .. } = Changeset::new(y, x, " ");
-                            for c in diffs {
-                                match c {
-                                    Difference::Same(ref z) => {
-                                        changes.push((z.clone(), TextColor::Green));
-                                    }
-                                    Difference::Add(ref z) => {
-                                        changes.push((z.clone(), TextColor::StrongGreen));
-                                    }
-                                    _ => (),
-                                }
-                            }
-                        }
-                        _ => {
-                            changes.push((x.clone(), TextColor::Green));
-                        }
-                    };
-                    grouped_by_lines.push(changes);
-                }
-                Difference::Rem(ref x) => {
-                    grouped_by_lines.push(vec![(x.clone(), TextColor::Red)]);
-                }
-            }
-        }
-
-        grouped_by_lines
-    };
-
-    view! { cx,
-        <div class="my-3">
-            <span class="mb-2 font-bold">"Changes"</span>
-            {move || {
-                grouped_by_lines()
-                    .into_iter()
-                    .map(|line| {
-                        view! { cx,
-                            <p>
-                                {move || {
-                                    line.iter()
-                                        .map(|(text, color)| {
-                                            view! { cx, <span style=color.styles()>{text}</span> }
-                                        })
-                                    .collect::<Vec<_>>()
-                                }}
-                            </p>
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            }}
-        </div>
-    }
 } -->
