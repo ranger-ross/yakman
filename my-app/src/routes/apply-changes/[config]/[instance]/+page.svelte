@@ -26,16 +26,16 @@
                     <div class="m-2 p-2 bg-gray-100 rounded-md w-80" >
                         <div class="text-lg font-bold mb-3">Current</div>
                         <div class="text-md font-bold mb-1">Content Type</div>
-                        <div class="text-md mb-2">{data.currentData.contentType}</div>
+                        <div class="text-md mb-2">{data.currentData?.contentType}</div>
                         <div class="text-md font-bold mb-1">Text</div>
-                        <div>{data.currentData.data}</div>
+                        <div>{data.currentData?.data}</div>
                     </div>
                     <div class="m-2 p-2 bg-gray-100 rounded-md w-80" >
                         <div class="text-lg font-bold mb-3">New</div>
                         <div class="text-md font-bold mb-1">Content Type</div>
-                        <div class="text-md mb-2">{data.pendingData.contentType}</div>
+                        <div class="text-md mb-2">{data.pendingData?.contentType}</div>
                         <div class="text-md font-bold mb-1">Text</div>
-                        <div>{data.pendingData.data}</div>
+                        <div>{data.pendingData?.data}</div>
                     </div>
                 </div>
 
