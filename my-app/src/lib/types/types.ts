@@ -52,4 +52,15 @@ export const YakManConfigInstanceSchema = z.object({
 
 export type YakManConfigInstance = z.infer<typeof YakManConfigInstanceSchema>;
 
+export const YakManInstanceRevisionSchema = z.object({
+    revision: z.string(), // Unique key
+    data_key: z.string(), // Key to fetch data
+    labels: z.array(YakManLabelSchema),
+    timestamp_ms: z.number().int(),
+    approved: z.boolean(),
+    content_type: z.string(),
+});
+
+export type YakManInstanceRevision = z.infer<typeof YakManInstanceRevisionSchema>;
+
 
