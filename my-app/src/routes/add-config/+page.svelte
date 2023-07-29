@@ -30,11 +30,11 @@
     <YakManCard>
         <h1 class="text-lg font-bold mb-4">{"Add Config"}</h1>
         <div class="mb-3">
-            <!-- TODO: Handle Masking -->
             <YakManInput
                 label="Name"
                 bind:value={name}
                 placeholder="my-config-name"
+                mask="kebab-case"
             />
         </div>
         <div class="mb-3">

@@ -32,12 +32,12 @@
 <div class="container mx-auto">
     <YakManCard>
         <h1 class="text-lg font-bold mb-4">{"Add Label"}</h1>
-        <!-- TODO: HANDLE Text masking -->
         <div class="mb-3">
             <YakManInput
                 label="Name"
                 bind:value={name}
                 placeholder="my-label-name"
+                mask="kebab-case"
             />
         </div>
         <div class="mb-3">

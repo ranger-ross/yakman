@@ -22,11 +22,11 @@
     <YakManCard>
         <h1 class="text-lg font-bold mb-4">Add Project</h1>
         <div class="mb-3">
-            <!-- TODO: Handle text masking -->
             <YakManInput
                 label="Name"
                 placeholder="my-project"
                 bind:value={name}
+                mask="kebab-case"
             />
         </div>
         <YakManButton on:click={onCreateProject} type="submit">
