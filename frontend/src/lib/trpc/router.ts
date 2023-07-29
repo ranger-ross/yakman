@@ -8,6 +8,7 @@ import { oauth } from './routes/oauth';
 import { projects } from './routes/projects';
 import { revisions } from './routes/revisions';
 import { data } from './routes/data';
+import { admin } from './routes/admin';
 
 export const router = t.router({
     oauth: oauth,
@@ -17,6 +18,7 @@ export const router = t.router({
     instances: instances,
     revisions: revisions,
     data: data,
+    admin: admin,
 });
 
 export type Router = typeof router;

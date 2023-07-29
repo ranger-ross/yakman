@@ -63,4 +63,10 @@ export const YakManInstanceRevisionSchema = z.object({
 
 export type YakManInstanceRevision = z.infer<typeof YakManInstanceRevisionSchema>;
 
+export const YakManUserSchema = z.object({
+    email: z.string(),
+    uuid: z.string(),
+});
+
+export type YakManUser = z.infer<typeof YakManUserSchema>;
 
