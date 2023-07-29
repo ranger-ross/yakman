@@ -34,7 +34,6 @@
 
     export let text: string = "";
 
-    // TODO: Make sure this works reactively
     let { bgColorClass, textColorClass } = colorFromString(text);
 </script>
 
