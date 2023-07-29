@@ -21,7 +21,7 @@
 	let projectUuidFromQuery = $page.url.searchParams.get("project");
 	let selectedProjectUuid = projectUuidFromQuery ?? projects[0].uuid;
 
-	let selectedProject = projects.find(p => p.uuid === selectedProjectUuid);
+	let selectedProject = projects.find((p) => p.uuid === selectedProjectUuid);
 
 	let configToDelete: YakManConfig | null = null;
 
@@ -122,7 +122,7 @@
 						on:select={(value) => {
 							const selection = value.detail;
 							if (selection === "AddInstance") {
-								goto(`/create-instance/${config.config.name}`);
+								goto(`/modify-instance/${config.config.name}`);
 							} else if (selection === "DeleteConfig") {
 								console.warn("TODO: open delete config modal");
 								configToDelete = config.config;
@@ -160,7 +160,7 @@
 									</div>
 								{/if}
 								<div class="flex flex-col items-end">
-									<YakManLink href="edit_link"
+									<YakManLink href={`/modify-instance/${instance.config_name}/${instance.instance}`}
 										>Edit</YakManLink
 									>
 									<YakManLink href="view_link"

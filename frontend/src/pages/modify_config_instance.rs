@@ -6,7 +6,7 @@ use yak_man_core::model::LabelType;
 
 use crate::{
     api,
-    components::{YakManButton, YakManCard, YakManInput, YakManSelect, YakManTextArea},
+    components::{YakManButton, YakManCard, YakManInput, YakManSelect, YakManTextArea, select},
 };
 
 #[component]
@@ -257,9 +257,4 @@ pub fn label_selection(
             </div>
         </div>
     }
-}
-
-#[component]
-pub fn ross(cx: Scope, #[prop(into)] label: MaybeSignal<Cow<'static, str>>) -> impl IntoView {
-    view! { cx, <div class="w-64">{label}</div> }
 }
