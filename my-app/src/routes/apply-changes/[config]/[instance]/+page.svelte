@@ -15,7 +15,7 @@
             await trpc($page).revisions.approveInstanceRevision.mutate({
                 configName: config,
                 instance: instance,
-                revision: data.pendingRevision,
+                revision: data.pendingRevision as string,
             });
             goto(`/view-instance/${config}/${instance}`);
         } catch (e) {
