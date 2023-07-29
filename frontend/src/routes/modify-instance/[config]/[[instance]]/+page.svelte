@@ -16,9 +16,8 @@
     let { labels } = data;
     let selectedLabels: { [labelName: string]: string } = {}; // <LabelName, Value>
 
-    let input = "";
-    let contentType = "text/plain";
-
+    let input = data.data?.data ?? "";
+    let contentType = data.data?.contentType ?? "text/plain";
 
     async function onSubmit() {
         try {
@@ -39,7 +38,7 @@
                 });
             }
 
-            goto("/"); // TODO: Maybe navigate to the view instance instead?
+            goto(`/apply-changes/${config}/${instance}`);
         } catch (e) {
             console.error(e);
         }
