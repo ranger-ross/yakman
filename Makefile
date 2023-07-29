@@ -11,13 +11,16 @@ postgres-connect: ## Connect to Postgres Docker container with psql
 	PGPASSWORD=password psql --host localhost --username postgres
 
 leptos: ## Starts the YakMan frontend with trunk
-	cd frontend; trunk serve --open
+	cd legacy_frontend; trunk serve --open
 
 watch-tailwind: ## Runs Tailwind to update css
-	cd frontend; npx tailwind -o style/output.css -w
+	cd legacy_frontend; npx tailwind -o style/output.css -w
 
 fmt: ## Runs leptosfmt to format the frontend view macros (this may cause Trunk to bug out for 30 seconds)
-	leptosfmt frontend
+	leptosfmt legacy_frontend
 
 build-backend: ## Builds the backend dockerfile with tag local/yakman-backend
 	docker build . -f backend.Dockerfile -t local/yakman-backend
+
+build-frontend: ## Builds the frontend dockerfile with tag local/yakman-frontend
+	docker build . -f frontend.Dockerfile  -t local/yakman-frontend
