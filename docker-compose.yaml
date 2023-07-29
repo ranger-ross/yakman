@@ -12,3 +12,10 @@ services:
       - LOCAL_FILE_SYSTEM_DIRECTORY=/yakman
       - YAKMAN_HOST=0.0.0.0
       - YAKMAN_PORT=8000
+  frontend:
+    image: local/yakman-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - YAKMAN_API_URL=http://backend:8000
+      - ORIGIN=http://localhost:3000

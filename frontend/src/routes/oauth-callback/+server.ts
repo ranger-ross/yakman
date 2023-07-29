@@ -5,8 +5,13 @@ import { json } from '@sveltejs/kit';
 
 const BASE_URL = getYakManBaseApiUrl()
 
+// TODO: clean up debug logs
+
 export const POST: RequestHandler = async function ({ request, cookies, fetch }) {
+    console.log('starting code exchange');
     const { code, state, verifier } = await request.json();
+
+    console.log('sending request', `${BASE_URL}/oauth2/exchange`);
 
 
     const response = await fetch(`${BASE_URL}/oauth2/exchange`, {
@@ -21,10 +26,14 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
         })
     });
 
+
+    console.log('request recieved request', response.status);
+
     if (response.status != 200) {
         throw new Error(await response.text())
     }
 
+    console.log('setting cookies');
 
     for (const cookie of parse(response as any)) {
         if (cookie.name === 'refresh_token') {
@@ -42,6 +51,8 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
         }
     }
 
+
+    console.log('cookies set');
 
     return json({
         data: await response.text()

@@ -1,7 +1,7 @@
-import { YAKMAN_API_URL } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 export function getYakManBaseApiUrl() {
-    return YAKMAN_API_URL
+    return env.YAKMAN_API_URL
 }
 
 
