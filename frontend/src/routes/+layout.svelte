@@ -1,34 +1,32 @@
 <script>
-	import { page } from "$app/stores";
 	import YakManHeader from "$lib/components/YakManHeader.svelte";
-	import { trpc } from "$lib/trpc/client";
 	import { onMount } from "svelte";
-	import "./styles.css";
 	import { roles } from "$lib/stores/roles";
-	import { goto } from "$app/navigation";
+	import "./styles.css";
 
-	onMount(async () => {
-		try {
-			const userRoles = await trpc($page).oauth.fetchUserRoles.query();
+	// TODO: Fix typescript typing
+	export let data;
 
-			if (
-				userRoles.global_roles.length == 0 &&
-				Object.keys(userRoles.roles).length == 0
-			) {
-				throw Error("No Roles found");
-			}
+	const userRoles = data.userRoles;
 
+	$: {
+		if (userRoles) {
 			roles.set({
 				globalRoles: userRoles.global_roles,
 				roles: userRoles.roles,
 			});
-		} catch (e) {
-			const response = await fetch("/refresh-token", {
+		}
+	}
+
+	onMount(() => {
+		if (data.tokenRefreshNeeded) {
+			fetch("/refresh-token", {
 				method: "POST",
+			}).then((response) => {
+				if (response.status === 200) {
+					window.location.reload();
+				}
 			});
-			if (response.status === 200) {
-				goto(window.location.pathname);
-			}
 		}
 	});
 </script>
