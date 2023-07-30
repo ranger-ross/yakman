@@ -4,7 +4,7 @@ import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 
 const BASE_URL = getYakManBaseApiUrl();
 
-export type GetUserRolesResponse = {
+type GetUserRolesResponse = {
     global_roles: string[],
     roles: { [key: string]: string },
 };
