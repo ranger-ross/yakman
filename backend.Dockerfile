@@ -30,5 +30,7 @@ RUN cargo build --release
 
 
 FROM debian:bullseye-slim
+RUN apt update
+RUN apt install -y ca-certificates
 COPY --from=builder /app/target/release/yak-man-backend /usr/local/bin/yak-man-backend
 CMD ["yak-man-backend"]
