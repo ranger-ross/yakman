@@ -8,7 +8,7 @@ const BASE_URL = getYakManBaseApiUrl()
 export const load: LayoutServerLoad = async (event) => {
     const route = event.route.id;
     if (route === '/login') {
-        return { userRoles: null }; // TODO: Handle this better (use null)
+        return { userRoles: null };
     }
 
     let userRoles: GetUserRolesResponse | null = null;
