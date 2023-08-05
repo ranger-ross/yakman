@@ -167,12 +167,24 @@ impl StorageService for KVStorageService {
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to load configs"))?;
 
-        if configs
-            .iter()
-            .find(|config| config.name == config_name)
-            .is_some()
-        {
-            return Err(CreateConfigError::duplicate_config(config_name));
+        let mut config = configs.iter_mut().find(|config| config.name == config_name);
+
+        match &mut config {
+            Some(&mut ref mut config) => {
+                if !config.hidden {
+                    return Err(CreateConfigError::duplicate_config(config_name));
+                }
+
+                info!("Config '{config_name}' already exists, unhiding it");
+
+                // Config already exists, just unhide it
+                config.hidden = false;
+                self.adapter.save_configs(configs).await.map_err(|_| {
+                    CreateConfigError::storage_error("Failed to update configs file")
+                })?;
+                return Ok(());
+            }
+            None => (),
         }
 
         configs.push(Config {

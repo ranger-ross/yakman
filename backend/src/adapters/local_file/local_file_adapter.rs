@@ -252,7 +252,9 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<(), GenericStorageError> {
         let config_instance_dir = self.get_config_instance_dir();
         let config_instance_path = format!("{config_instance_dir}/{config_name}");
-        fs::create_dir(&config_instance_path)?;
+        if !Path::new(&config_instance_path).exists() {
+            fs::create_dir(&config_instance_path)?;
+        }
         return Ok(());
     }
 
@@ -262,7 +264,9 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<(), GenericStorageError> {
         let revision_instance_dir = self.get_instance_revisions_path();
         let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
-        fs::create_dir(&revision_instance_path)?;
+        if !Path::new(&revision_instance_path).exists() {
+            fs::create_dir(&revision_instance_path)?;
+        }
         return Ok(());
     }
 
