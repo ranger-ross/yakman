@@ -1,16 +1,18 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import LabelPill from "$lib/components/LabelPill.svelte";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
-    import { trpc } from "$lib/trpc/client";
-    import type { YakManInstanceRevision } from "$lib/types/types";
+    import YakManSegmentSelect from "$lib/components/YakManSegmentSelect.svelte";
     import type { PageData } from "./$types";
+    import ChangelogTab from "./ChangelogTab.svelte";
+    import RevisionsTab from "./RevisionsTab.svelte";
 
     let { config, instance } = $page.params;
 
     export let data: PageData;
+
+    let selectedHistoryTab: "Changelog" | "Revisions" = "Changelog";
 
     let sortedRevisions =
         data.revisions.sort((a, b) => b.timestamp_ms - a.timestamp_ms) ?? [];
@@ -18,24 +20,6 @@
         data.instance?.changelog.sort(
             (a, b) => b.timestamp_ms - a.timestamp_ms
         ) ?? [];
-
-    function formatDate(ts: number): string {
-        const date = new Date(ts);
-        return date.toLocaleDateString() + " " + date.toLocaleTimeString();
-    }
-
-    async function onRevisionClicked(revision: YakManInstanceRevision) {
-        try {
-            await trpc($page).revisions.updateInstanceRevision.mutate({
-                configName: config,
-                instance: instance,
-                revision: revision.revision,
-            });
-            goto(`/apply-changes/${config}/${instance}`);
-        } catch (e) {
-            console.error("failed to update revision", e);
-        }
-    }
 </script>
 
 <div class="container mx-auto">
@@ -84,34 +68,23 @@
     </div>
     <YakManCard>
         <h1 class="text-lg font-bold mb-1">History</h1>
-        <h3 class="text-lg font-bold text-gray-800 mt-4">Revisions</h3>
-        {#each sortedRevisions as revision}
-            <div class="flex gap-2">
-                <p>{formatDate(revision.timestamp_ms)} =></p>
-                {#if revision.revision == data.instance?.current_revision}
-                    <p class="text-yellow-400">{revision.revision}</p>
-                {:else}
-                    <p
-                        class="text-blue-600 cursor-pointer"
-                        on:click={() => onRevisionClicked(revision)}
-                    >
-                        {revision.revision}
-                    </p>
-                {/if}
-                {#if revision.revision == data.instance?.pending_revision}
-                    (pending)
-                {/if}
-            </div>
-        {/each}
-        <h3 class="text-lg font-bold text-gray-800 mt-4">Changelog</h3>
-        {#each sortedChangelog as change}
-            <div class="flex gap-2">
-                <p>{formatDate(change.timestamp_ms)} =></p>
-                {#if change.previous_revision}
-                    <p>Previous: {change.previous_revision} =></p>
-                {/if}
-                <p>New: {change.new_revision}</p>
-            </div>
-        {/each}
+        <YakManSegmentSelect
+            bind:selectedOption={selectedHistoryTab}
+            options={["Changelog", "Revisions"]}
+        />
+
+        <div class="mt-2">
+            {#if selectedHistoryTab == "Changelog"}
+                <ChangelogTab {sortedChangelog} />
+            {/if}
+
+            {#if selectedHistoryTab == "Revisions"}
+                <RevisionsTab
+                    {sortedRevisions}
+                    currentRevision={data.instance?.current_revision}
+                    pendingRevision={data.instance?.pending_revision}
+                />
+            {/if}
+        </div>
     </YakManCard>
 </div>
