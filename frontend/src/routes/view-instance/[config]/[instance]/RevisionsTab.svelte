@@ -95,7 +95,7 @@
     </div>
 
     <div class="w-fit mr-2">
-        <h1 class="text-lg font-bold mb-4">
+        <h1 class="text-lg font-bold mb-1">
             {`Revision: ${selectedRevisionData.revision}`}
         </h1>
 
