@@ -67,24 +67,21 @@
         </YakManCard>
     </div>
     <YakManCard>
-        <h1 class="text-lg font-bold mb-1">History</h1>
         <YakManSegmentSelect
             bind:selectedOption={selectedHistoryTab}
             options={["Changelog", "Revisions"]}
         />
 
-        <div class="mt-2">
-            {#if selectedHistoryTab == "Changelog"}
-                <ChangelogTab {sortedChangelog} />
-            {/if}
+        {#if selectedHistoryTab == "Changelog"}
+            <ChangelogTab {sortedChangelog} />
+        {/if}
 
-            {#if selectedHistoryTab == "Revisions"}
-                <RevisionsTab
-                    {sortedRevisions}
-                    currentRevision={data.instance?.current_revision}
-                    pendingRevision={data.instance?.pending_revision}
-                />
-            {/if}
-        </div>
+        {#if selectedHistoryTab == "Revisions"}
+            <RevisionsTab
+                {sortedRevisions}
+                currentRevision={data.instance?.current_revision}
+                pendingRevision={data.instance?.pending_revision}
+            />
+        {/if}
     </YakManCard>
 </div>
