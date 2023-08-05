@@ -11,9 +11,9 @@
     }
 
     // TODO: FIX
-    // function onRevisionClicked(revision: any): any {
-    //     throw new Error("Function not implemented.");
-    // }
+    function onRevisionClicked(revision: any): any {
+        throw new Error("Function not implemented.");
+    }
 </script>
 
 {#each sortedRevisions as revision}
@@ -22,6 +22,8 @@
         {#if revision.revision == currentRevision}
             <p class="text-yellow-400">{revision.revision}</p>
         {:else}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
             <p
                 class="text-blue-600 cursor-pointer"
                 on:click={() => onRevisionClicked(revision)}
