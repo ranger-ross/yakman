@@ -12,6 +12,7 @@
 	import type { PageData } from "./$types";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
+	import { trpc } from "$lib/trpc/client";
 	import YakManModal from "$lib/components/YakManModal.svelte";
 
 	export let data: PageData;
@@ -64,11 +65,36 @@
 		let last = instance.changelog[instance.changelog.length - 1];
 		return last?.timestamp_ms;
 	}
+
+	async function onDeleteConfig() {
+		// Optimistic update
+		const index = data.configs.findIndex(
+			(c) =>
+				c.config.name === configToDelete?.name &&
+				c.config.project_uuid === configToDelete.project_uuid
+		);
+		const config = data.configs[index];
+		data.configs.splice(index, 1);
+		data = data; // Tell Svelte to re-render
+
+		try {
+			await trpc($page).configs.deleteConfig.mutate({
+				name: configToDelete?.name!,
+				projectUuid: configToDelete?.project_uuid!,
+			});
+
+			configToDelete = null;
+		} catch (e) {
+			// Rollback optimistic update
+			data.configs.splice(index, 0, config)
+			data = data; // Tell Svelte to re-render
+		}
+	}
 </script>
 
 <svelte:head>
 	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
+	<meta name="description" content="YakMan Configs" />
 </svelte:head>
 
 <section>
@@ -77,10 +103,7 @@
 			title="Delete Config"
 			open={!!configToDelete}
 			isStaticBackdrop={true}
-			onConfirm={() => {
-				console.warn("TODO: impl delete config", configToDelete);
-				configToDelete = null;
-			}}
+			onConfirm={onDeleteConfig}
 		>
 			<p class="text-gray-800">Config Name: {configToDelete?.name}</p>
 			<p class="text-gray-800">
@@ -124,7 +147,6 @@
 							if (selection === "AddInstance") {
 								goto(`/modify-instance/${config.config.name}`);
 							} else if (selection === "DeleteConfig") {
-								console.warn("TODO: open delete config modal");
 								configToDelete = config.config;
 							}
 						}}
