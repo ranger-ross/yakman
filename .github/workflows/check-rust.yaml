@@ -1,4 +1,4 @@
-name: Rust CI
+name: Rust Check
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     
     steps:
@@ -19,7 +19,8 @@ jobs:
       with:
         workspaces: backend
 
-    - run: |
-        cargo check
-        cargo build
+    - run: cargo check
+      working-directory: backend
+
+    - run: cargo build
       working-directory: backend
