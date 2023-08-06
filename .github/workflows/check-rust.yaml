@@ -23,4 +23,3 @@ jobs:
         cargo check
         cargo build
       working-directory: backend
-
