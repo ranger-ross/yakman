@@ -43,7 +43,7 @@ The local setup is a bit lack luster due to the immaturity of this project.
 Hopefully this will get better with time.
 
 
-First you will need Cargo and Node 18 installed:
+First you will need Cargo, Node 20, and PNPM installed:
 
 1. Create a `.env` file with the following values in the root of the project
     ```sh
@@ -66,7 +66,7 @@ First you will need Cargo and Node 18 installed:
    ```sh
    YAKMAN_API_URL=http://127.0.0.1:8000
    ```
-1. Run `make install` to install the NPM dependencies for the frontend
+1. Run `make install` to install the PNPM dependencies for the frontend
 1. Run `make fd` to start the frontend server. (where 'fd' stands for 'frontend-dev')
 1. Run `make bd` to start the backend server. (where 'bd' stands for 'backend-dev')
 

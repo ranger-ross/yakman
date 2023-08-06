@@ -1,10 +1,12 @@
 FROM node:20 as builder
+# Add PNPM
+RUN corepack enable
 
 WORKDIR /app
 
 # Install dependencies
 COPY ./frontend/package*.json ./
-RUN npm install
+RUN pnpm install
 
 # Copy project source code
 COPY ./frontend ./
@@ -15,17 +17,19 @@ RUN rm -rf .svelte-kit
 
 
 # Build application
-RUN npm run build
+RUN pnpm run build
 
 
 FROM node:20-alpine
+# Add PNPM
+RUN corepack enable
 
 WORKDIR /app
 
 COPY --from=builder /app/package*.json  /app/
 COPY --from=builder /app/build /app/build
 
-RUN npm install --production
+RUN pnpm install --production
 
 ENV YAKMAN_API_URL ''
 
