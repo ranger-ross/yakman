@@ -148,6 +148,7 @@ curl -H "Cookie: access_token=${YAKMAN_TOKEN}" ${YAKMAN_BASE_URL}/v1/configs/pos
 }
 ```
 
-Finally, you can see the update history from the view instance page
+Finally, you can see the update history from the view instance page.
+You will notice that a new revision was created and set as the current.
 
 ![](./images/yakman-basics/view-instance-page-dev.png)
