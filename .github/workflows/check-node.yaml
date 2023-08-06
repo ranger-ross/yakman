@@ -1,0 +1,23 @@
+name: Node Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - run: pnpm install
+      working-directory: frontend
+
+    - run: pnpm run check
+      working-directory: frontend
