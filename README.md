@@ -1,6 +1,6 @@
 # YakMan
 
-Basic storage egnostic config manager.
+Basic, storage agnostic config manager.
 
 ### ⚠️ This project is still in a very early alpha stage so if you come across this repo, I would recommend against using it in any production systems.
 
@@ -17,15 +17,15 @@ For info on how to use YakMan check out the [docs](./docs/index.md)
 
 ## About this project
 
-My goal with this project is to provide an Open Source storage egnostic config manager for backend systems. The primary audience for this project are software teams that have reached a scale where they need a way to manage application configs across multiple applications/projects.
+My goal with this project is to provide an Open Source storage agnostic config manager for backend systems. The primary audience for this project are software teams that have reached a scale where they need a way to manage application configs across multiple applications/projects.
 
 ### Motivations / Goals
 
 - Update application configs quickly without restarting applications
-- Language/framework egonistic
+- Language/framework agnostic
 - Simple to setup with sane defaults
-- Storage engine egonistic, meaning you can use whatever storage system you already have (Blob storage, SQL, KV, ect)
-- Low cost effective
+- Storage engine agnostic, meaning you can use whatever storage system you already have (Blob storage, SQL, KV, ect)
+- Cost effective
 - Avoid vendor lock in
 - Kubernetes first (however I would like to support Serverless projects/teams too)
 
@@ -67,8 +67,8 @@ First you will need Cargo and Node 18 installed:
    YAKMAN_API_URL=http://127.0.0.1:8000
    ```
 1. Run `make install` to install the NPM dependencies for the frontend
-1. Run `make fd` to start the frontend server. (fd is short for frontend-dev)
-1. Run `make bd` to start the backend server. (bd is short for backend-dev)
+1. Run `make fd` to start the frontend server. (where 'fd' stands for 'frontend-dev')
+1. Run `make bd` to start the backend server. (where 'bd' stands for 'backend-dev')
 
 ### Run the project(s) in docker (release mode)
 
