@@ -37,11 +37,11 @@ My goal with this project is to provide an Open Source storage egnostic config m
 
 ### Run the project(s)
 
-The local setup is a bit lack luster due to the immaturity of this project as well as Leptos.
+The local setup is a bit lack luster due to the immaturity of this project.
 Hopefully this will get better with time.
 
 
-1. Create a `.env` file with the following values
+1. Create a `.env` file with the following values in the root of the project
     ```sh
     YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
     RUST_LOG=info
@@ -58,9 +58,13 @@ Hopefully this will get better with time.
     YAKMAN_OAUTH_CLIENT_ID=
     YAKMAN_OAUTH_CLIENT_SECRET=
     ```
-2. Run `npm install` from the `frontend` directory
-3. Run `cargo run` to start the backend server
-4. Run `make watch-tailwind` and `make leptos` in seperate terminals.
+1. Create  a `.env` file with the following values at `./frontend/.env`
+   ```sh
+   YAKMAN_API_URL=http://127.0.0.1:8000
+   ```
+1. Run `make install` to install the NPM dependencies for the frontend
+1. Run `make fd` to start the frontend server. (fd is short for frontend-dev)
+1. Run `make bd` to start the backend server. (bd is short for backend-dev)
 
 
 
