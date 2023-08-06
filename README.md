@@ -35,11 +35,13 @@ My goal with this project is to provide an Open Source storage egnostic config m
 
 ## Contributing
 
-### Run the project(s)
+### Run the project(s) in dev mode
 
 The local setup is a bit lack luster due to the immaturity of this project.
 Hopefully this will get better with time.
 
+
+First you will need Cargo and Node 18 installed:
 
 1. Create a `.env` file with the following values in the root of the project
     ```sh
@@ -66,5 +68,14 @@ Hopefully this will get better with time.
 1. Run `make fd` to start the frontend server. (fd is short for frontend-dev)
 1. Run `make bd` to start the backend server. (bd is short for backend-dev)
 
+### Run the project(s) in docker (release mode)
+
+Of course to do this you will need Docker installed
+
+1. Setup the `.env` file in step 1 of the dev mode section above
+   - Note: The frontend application will run on port 3000, so you will want to change the port in the oauth redirect env var.  
+1. Run `make build-backend` to build the backend docker image
+1. Run `make build-frontend` to build the frontend docker image
+1. Run `docker compose up` to start the application 
 
 
