@@ -68,7 +68,7 @@ First you will need Cargo and Node 18 installed:
    ```
 1. Run `make install` to install the NPM dependencies for the frontend
 1. Run `make fd` to start the frontend server. (where 'fd' stands for 'frontend-dev')
-1. Run `make bd` to start the backend server. (bd is short for backend-dev)
+1. Run `make bd` to start the backend server. (where 'bd' stands for 'backend-dev')
 
 ### Run the project(s) in docker (release mode)
 
