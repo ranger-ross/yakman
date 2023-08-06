@@ -1,0 +1,24 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: rustup toolchain install stable --profile minimal --no-self-update
+
+    - uses: Swatinem/rust-cache@v2
+
+    - run: |
+        cargo check
+        cargo build
+      working-directory: backend
+
