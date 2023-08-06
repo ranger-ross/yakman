@@ -62,7 +62,7 @@ First lets create the `yak-post-service` project
 ![](./images/yakman-basics/empty-project.png)
 
 
-Great, now that we have an empty project lets add an `env` label so that we can easily track which config belongs to each environment.  
+Now that we have an empty project lets add an `env` label so that we can easily track which config belongs to each environment.  
 
 
 ![](./images/yakman-basics/create-label.png)
@@ -84,3 +84,70 @@ Now we can finally create our config instances. Notice that we use the postLimit
 
 ![](./images/yakman-basics/create-instance-dev.png)
 
+
+
+![](./images/yakman-basics/configs-created.png)
+
+And that is it! We can now start using our config in our application.
+Notice how YakMan created an ID for each instance (`88355e922571` and `6976daffd169`). 
+We can use these IDs to reference each config using the YakMan API. 
+
+Below is an example curl for each environment:
+
+```sh
+curl -H "Cookie: access_token=${YAKMAN_TOKEN}" ${YAKMAN_BASE_URL}/v1/configs/posts-rate-limit/instances/88355e922571/data
+```
+
+```json
+{
+    "postLimit": 3,
+    "periodInSeconds": 60
+}
+```
+
+
+```sh
+curl -H "Cookie: access_token=${YAKMAN_TOKEN}" ${YAKMAN_BASE_URL}/v1/configs/posts-rate-limit/instances/6976daffd169/data
+```
+
+```json
+{
+    "postLimit": 100,
+    "periodInSeconds": 60
+}
+```
+
+
+Great, we can now use our configs in our application. Ideally, your application polls for config updates to avoid adding latency to our requests.
+
+But, lets say that in our dev env 100 is not high enough and our QA tests are still having issues. Lets update our config in YakMan without modifying/redeploying our application.
+
+
+If we click Edit on the `env=dev` instance we can update the postLimit to 300.
+
+
+![](./images/yakman-basics/update-dev-instance.png)
+
+Before any changes are applied, we will need to get approval from an Admin or Approver for this project.
+
+
+![](./images/yakman-basics/approval-page-dev.png)
+
+
+After approving, the config will be applied and if we rerun our curl from ealier we will see an updated value:
+
+
+```sh
+curl -H "Cookie: access_token=${YAKMAN_TOKEN}" ${YAKMAN_BASE_URL}/v1/configs/posts-rate-limit/instances/6976daffd169/data
+```
+
+```json
+{
+    "postLimit": 300,
+    "periodInSeconds": 60
+}
+```
+
+Finally, you can see the update history from the view instance page
+
+![](./images/yakman-basics/view-instance-page-dev.png)
