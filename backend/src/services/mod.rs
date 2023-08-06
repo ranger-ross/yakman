@@ -6,12 +6,12 @@ use crate::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError, DeleteConfigError,
     },
+    model::{
+        Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject, YakManUser,
+        YakManUserDetails,
+    }
 };
 use async_trait::async_trait;
-use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject, YakManUser,
-    YakManUserDetails,
-};
 
 #[async_trait]
 pub trait StorageService: Sync + Send {

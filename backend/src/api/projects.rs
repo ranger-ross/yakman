@@ -1,14 +1,16 @@
 use std::collections::HashSet;
 
 use crate::{
-    api::is_alphanumeric_kebab_case, error::CreateProjectError,
-    middleware::roles::YakManRoleBinding, StateManager,
+    api::is_alphanumeric_kebab_case,
+    error::CreateProjectError,
+    middleware::roles::YakManRoleBinding,
+    model::{request::CreateProjectPayload, YakManProject, YakManRole},
+    StateManager,
 };
 
 use actix_web::{get, put, web, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
-use yak_man_core::model::{request::CreateProjectPayload, YakManProject, YakManRole};
 
 /// Get all of the projects
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]

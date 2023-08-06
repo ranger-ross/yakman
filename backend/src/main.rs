@@ -4,6 +4,7 @@ mod auth;
 mod error;
 mod middleware;
 mod services;
+mod model;
 
 extern crate dotenv;
 
@@ -22,14 +23,11 @@ use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use yak_man_core::model::response::GetUserRolesResponse;
-use yak_man_core::{
-    load_yak_man_settings,
-    model::{
-        request::{CreateConfigPayload, CreateProjectPayload},
-        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManProject, YakManRole, YakManSettings, YakManUser,
-    },
+use model::response::GetUserRolesResponse;
+use model::{
+    request::{CreateConfigPayload, CreateProjectPayload},
+    Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+    YakManProject, YakManRole, YakManSettings, YakManUser,
 };
 
 #[derive(Clone)]
@@ -198,5 +196,12 @@ async fn create_service() -> impl StorageService {
             KVStorageService { adapter: adapter }
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
+    };
+}
+
+
+fn load_yak_man_settings() -> YakManSettings {
+    return YakManSettings {
+        version: "0.0.1".to_string(),
     };
 }

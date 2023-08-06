@@ -11,7 +11,7 @@ use serde::Serialize;
 use sha2::Sha256;
 use std::env::{self, VarError};
 use thiserror::Error;
-use yak_man_core::model::YakManUser;
+use crate::model::YakManUser;
 
 pub struct TokenService {
     secret: String,

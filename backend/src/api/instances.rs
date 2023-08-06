@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
+use crate::model::{Label, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
-use yak_man_core::model::{Label, YakManRole};
 
 /// Get config instances by config_name
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstance>)))]

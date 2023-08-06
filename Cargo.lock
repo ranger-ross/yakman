@@ -3370,17 +3370,6 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
- "yak-man-core",
-]
-
-[[package]]
-name = "yak-man-core"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "oauth2",
- "serde",
- "utoipa",
 ]
 
 [[package]]

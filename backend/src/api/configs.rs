@@ -1,3 +1,7 @@
+use crate::model::{
+    request::{CreateConfigPayload, DeleteConfigPayload},
+    YakManRole,
+};
 use crate::{
     api::is_alphanumeric_kebab_case,
     error::YakManError,
@@ -10,10 +14,6 @@ use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use serde::Deserialize;
 use std::collections::HashSet;
-use yak_man_core::model::{
-    request::{CreateConfigPayload, DeleteConfigPayload},
-    YakManRole,
-};
 
 #[derive(Deserialize)]
 pub struct GetConfigsQuery {

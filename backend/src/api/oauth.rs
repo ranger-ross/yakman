@@ -8,6 +8,11 @@ use crate::{
     error::YakManError,
     middleware::roles::YakManRoleBinding,
     StateManager,
+    model::{
+        oauth::{OAuthExchangePayload, OAuthInitPayload},
+        response::GetUserRolesResponse,
+        YakManRole,
+    }
 };
 use actix_web::{
     cookie::{time::Duration, Cookie},
@@ -18,11 +23,6 @@ use actix_web::{
 use actix_web_grants::permissions::AuthDetails;
 use log::{error, warn};
 use oauth2::TokenResponse;
-use yak_man_core::model::{
-    oauth::{OAuthExchangePayload, OAuthInitPayload},
-    response::GetUserRolesResponse,
-    YakManRole,
-};
 
 /// Begins the oauth login flow
 #[utoipa::path(responses((status = 200, body = String)))]
