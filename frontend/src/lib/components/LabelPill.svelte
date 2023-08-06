@@ -10,6 +10,7 @@
             ["bg-pink-100", "text-pink-900"],
         ];
 
+        // TODO: Create a better way to color labels
         function hash(input: string): number {
             var hash = 0,
                 i,
@@ -20,7 +21,7 @@
                 hash = (hash << 5) - hash + chr;
                 hash |= 0; // Convert to 32bit integer
             }
-            return hash;
+            return hash < 0 ? hash * -1 : hash; // if negative, make positive
         }
 
         const index = hash(input) % colors.length;
