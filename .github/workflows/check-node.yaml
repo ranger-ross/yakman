@@ -16,5 +16,8 @@ jobs:
       with:
         version: 8
 
+    - run: pnpm install
+      working-directory: frontend
+
     - run: pnpm run check
       working-directory: frontend
