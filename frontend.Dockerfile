@@ -1,4 +1,4 @@
-FROM node:18 as builder
+FROM node:20 as builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN rm -rf .svelte-kit
 RUN npm run build
 
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
