@@ -31,16 +31,18 @@
             </div>
 
             <div>
+                <p>
+                    New Revision: <span class="text-green-600"
+                        >{change.new_revision}</span
+                    >
+                </p>
                 {#if change.previous_revision}
                     <p>
-                        Previous Revision: <span class="text-green-600"
+                        Previous Revision: <span class="text-red-600"
                             >{change.previous_revision}</span
                         >
                     </p>
                 {/if}
-                <p>
-                    New Revision: <span class="text-red-600">{change.new_revision}</span>
-                </p>
             </div>
         </div>
     {/each}

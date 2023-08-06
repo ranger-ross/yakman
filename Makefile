@@ -15,3 +15,12 @@ build-backend: ## Builds the backend dockerfile with tag local/yakman-backend
 
 build-frontend: ## Builds the frontend dockerfile with tag local/yakman-frontend
 	docker build . -f frontend.Dockerfile  -t local/yakman-frontend
+
+install: # Run NPM install in the frontend project
+	@cd frontend && npm install
+
+bd: ## (backend-dev) Start the backend in dev mode
+	@cd backend && cargo run
+
+fd: ## (frontend-dev) Start the fronend in dev mode
+	@cd frontend && npm run dev
