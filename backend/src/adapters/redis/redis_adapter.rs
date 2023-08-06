@@ -1,14 +1,14 @@
 extern crate redis;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
+use crate::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManUserDetails,
+};
 use async_trait::async_trait;
 use log::{info, warn};
 use redis::{Commands, Connection, RedisError, RedisResult};
 use serde::de::DeserializeOwned;
-use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
-    YakManUserDetails,
-};
 
 pub struct RedisStorageAdapter {
     pub host: String,
@@ -130,18 +130,12 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
-    async fn create_config_instance_dir(
-        &self,
-        _: &str,
-    ) -> Result<(), GenericStorageError> {
+    async fn create_config_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())
     }
 
-    async fn create_revision_instance_dir(
-        &self,
-        _: &str,
-    ) -> Result<(), GenericStorageError> {
+    async fn create_revision_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())
     }

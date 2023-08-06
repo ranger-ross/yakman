@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use yak_man_core::model::{LabelType, Config, ConfigInstance, ConfigInstanceRevision, YakManUser};
+use crate::model::{LabelType, Config, ConfigInstance, ConfigInstanceRevision, YakManUser};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LabelJson {

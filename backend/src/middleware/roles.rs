@@ -4,7 +4,7 @@ use crate::auth::oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME;
 use crate::StateManager;
 use actix_web::{dev::ServiceRequest, web, Error};
 use log::info;
-use yak_man_core::model::{YakManRole, YakManUserProjectRole};
+use crate::model::{YakManRole, YakManUserProjectRole};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum YakManRoleBinding {

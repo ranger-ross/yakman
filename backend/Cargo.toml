@@ -12,7 +12,6 @@ serde_json = "1.0.99"
 redis = "0.23.0"
 sqlx = { version = "0.6.3", features = [ "runtime-tokio-rustls", "postgres" ] }
 async-trait = {version = "0.1.68"}
-yak-man-core = {path = "../core"}
 uuid = {version = "1.4.0", features = ["v4"]}
 chrono = "0.4.26"
 thiserror = "1.0.40"

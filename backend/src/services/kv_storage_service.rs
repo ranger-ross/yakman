@@ -5,16 +5,15 @@ use crate::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
         UpdateConfigInstanceCurrentRevisionError,
+    }, model::{
+        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+        YakManProject, YakManRole, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
 use chrono::Utc;
 use log::info;
 use uuid::Uuid;
-use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-    YakManProject, YakManRole, YakManUser, YakManUserDetails,
-};
 
 pub struct KVStorageService {
     pub adapter: Box<dyn KVStorageAdapter>,

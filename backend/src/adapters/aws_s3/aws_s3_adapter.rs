@@ -3,15 +3,15 @@ use super::{
     GenericStorageError, KVStorageAdapter,
 };
 use crate::adapters::aws_s3::storage_types::RevisionJson;
+use crate::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManUserDetails,
+};
 use async_trait::async_trait;
 use aws_sdk_s3 as s3;
 use log::error;
 use s3::primitives::ByteStream;
 use tokio::io::AsyncReadExt;
-use yak_man_core::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
-    YakManUserDetails,
-};
 
 #[derive(Clone)]
 pub struct AwsS3StorageAdapter {
@@ -244,7 +244,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     async fn save_user_details(
         &self,
         uuid: &str,
-        details: YakManUserDetails
+        details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_user_dir();
         let path: String = format!("{dir}/{uuid}.json");

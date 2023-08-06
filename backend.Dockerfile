@@ -1,34 +1,34 @@
 FROM rust:latest as builder
 
 # create a new empty shell project
-RUN USER=root cargo new --bin app
-WORKDIR /app
 RUN USER=root cargo new --bin backend
-RUN USER=root cargo new --bin core
+
+WORKDIR /backend
+
 
 # Copy Cargo files
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./backend/Cargo.toml ./backend/Cargo.toml
-COPY ./core/Cargo.toml ./core/Cargo.toml
+COPY ./backend/Cargo.toml Cargo.toml
+COPY ./backend/Cargo.lock Cargo.lock
+
 
 # Fetch dependencies
 RUN cargo build --release
-RUN rm ./src/*.rs
-RUN rm -rf ./backend/src
-RUN rm -rf ./core/src
+RUN rm -rf src
+# TODO: This command makes the build slight slower,
+#       but for some reason Cargo will not compile the project without it.
+RUN rm -rf ./target/release/build
+RUN rm -rf ./target/release/yak-man-backend*
 
 # copy source
-COPY ./src ./src
-COPY ./backend ./backend
-COPY ./core ./core
+COPY ./backend/src ./src
 
-RUN rm ./target/release/yak-man-backend*
 RUN cargo build --release
 
+
+CMD ["/backend/target/release/yak-man-backend"]
 
 FROM debian:bullseye-slim
 RUN apt update
 RUN apt install -y ca-certificates
-COPY --from=builder /app/target/release/yak-man-backend /usr/local/bin/yak-man-backend
+COPY --from=builder /backend/target/release/yak-man-backend /usr/local/bin/yak-man-backend
 CMD ["yak-man-backend"]

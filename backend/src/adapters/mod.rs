@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use yak_man_core::model::{
+use crate::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
+use async_trait::async_trait;
 
 use self::errors::GenericStorageError;
 

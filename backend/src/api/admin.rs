@@ -1,12 +1,12 @@
+use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{
     get, put,
     web::{self, Json},
     HttpResponse,
 };
-use actix_web_grants::{permissions::AuthDetails};
+use actix_web_grants::permissions::AuthDetails;
 use uuid::Uuid;
-use yak_man_core::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 
 /// Gets users
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]

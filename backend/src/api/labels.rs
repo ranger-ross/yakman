@@ -1,3 +1,4 @@
+use crate::model::{LabelType, YakManRole};
 use crate::{
     api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManError,
     middleware::roles::YakManRoleBinding, StateManager,
@@ -5,7 +6,6 @@ use crate::{
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
-use yak_man_core::model::{LabelType, YakManRole};
 
 /// List of all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
