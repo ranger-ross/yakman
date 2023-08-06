@@ -1,0 +1,26 @@
+name: Rust Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: rustup toolchain install stable --profile minimal --no-self-update
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: backend
+
+    - run: cargo check
+      working-directory: backend
+
+    - run: cargo build
+      working-directory: backend
