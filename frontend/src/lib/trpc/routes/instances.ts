@@ -39,6 +39,10 @@ export const instances = t.router({
             if (response.status != 200) {
                 throw new Error(`failed to create config instance, http-status: [${response.status}]`);
             }
+
+            return {
+                instance: await response.text()
+            };
         }),
     updateConfigInstance: t.procedure
         .input(z.object({
