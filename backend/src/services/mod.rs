@@ -47,7 +47,7 @@ pub trait StorageService: Sync + Send {
         labels: Vec<Label>,
         data: &str,
         content_type: Option<String>,
-    ) -> Result<(), CreateConfigInstanceError>;
+    ) -> Result<String, CreateConfigInstanceError>;
 
     async fn get_config_instance_metadata(
         &self,

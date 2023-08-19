@@ -34,16 +34,18 @@
                     data: input,
                     labels: filtedSelectedLabels,
                 });
+                goto(`/apply-changes/${config}/${instance}`);
             } else {
-                await trpc($page).instances.createConfigInstance.mutate({
+                const result = await trpc(
+                    $page
+                ).instances.createConfigInstance.mutate({
                     configName: config,
                     contentType: contentType,
                     data: input,
                     labels: filtedSelectedLabels,
                 });
+                goto(`/view-instance/${config}/${result.instance}`);
             }
-
-            goto(`/apply-changes/${config}/${instance}`);
         } catch (e) {
             console.error(e);
         }
