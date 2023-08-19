@@ -52,7 +52,7 @@
             selectedRevisionData.contentType = contentType;
             selectedRevisionData.data = data;
             selectedRevisionData.labels = revision.labels.map(
-                (l) => `${l.label_type}`
+                (l) => `${l.label_type}=${l.value}`
             );
         } catch (e) {
             console.error(e);
