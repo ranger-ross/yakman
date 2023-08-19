@@ -36,8 +36,7 @@
 
 	function timeAgo(timestamp: number, locale = "en") {
 		let value;
-		const diff =
-			(new Date().getTime() - new Date(timestamp).getTime()) / 1000;
+		const diff = (Date.now() - new Date(timestamp).getTime()) / 1000;
 		const minutes = Math.floor(diff / 60);
 		const hours = Math.floor(minutes / 60);
 		const days = Math.floor(hours / 24);
@@ -56,7 +55,8 @@
 		} else if (minutes > 0) {
 			value = rtf.format(0 - minutes, "minute");
 		} else {
-			value = rtf.format(0 - diff, "second");
+			const roundedSeconds = Math.round(0 - diff)
+			value = rtf.format(roundedSeconds, "second");
 		}
 		return value;
 	}
