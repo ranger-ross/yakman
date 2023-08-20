@@ -10,8 +10,10 @@
 
     async function onCreateProject() {
         try {
-            await trpc($page).projects.createProject.mutate(name);
-            goto("/");
+            const { projectUuid } = await trpc(
+                $page
+            ).projects.createProject.mutate(name);
+            goto(`/?project=${projectUuid}`);
         } catch (e) {
             console.error("Error creating project", e);
         }

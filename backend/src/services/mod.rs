@@ -17,7 +17,7 @@ use async_trait::async_trait;
 pub trait StorageService: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
-    async fn create_project(&self, project_name: &str) -> Result<(), CreateProjectError>;
+    async fn create_project(&self, project_name: &str) -> Result<String, CreateProjectError>;
 
     async fn get_visible_configs(
         &self,

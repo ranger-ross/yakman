@@ -97,7 +97,7 @@ async fn create_project(
     let service = state.get_service();
 
     return match service.create_project(&project_name).await {
-        Ok(()) => HttpResponse::Ok().finish(),
+        Ok(project_uuid) => HttpResponse::Ok().body(project_uuid),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
                 error!("Failed to create config {project_name}, error: {message}");
