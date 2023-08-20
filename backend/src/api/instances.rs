@@ -140,7 +140,7 @@ async fn create_new_instance(
         .create_config_instance(&config_name, labels, &data, content_type)
         .await
     {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(instance) => HttpResponse::Ok().body(instance),
         Err(CreateConfigInstanceError::NoConfigFound) => {
             HttpResponse::BadRequest().body("Invalid config name")
         }

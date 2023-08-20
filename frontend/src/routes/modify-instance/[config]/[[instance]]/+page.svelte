@@ -14,12 +14,17 @@
 
     export let data: PageData;
     let { labels } = data;
-    let selectedLabels: { [labelName: string]: string } = {}; // <LabelName, Value>
+    let selectedLabels: { [labelName: string]: string } = data.selectedLabels; // <LabelName, Value>
 
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
 
     async function onSubmit() {
+        // Remove any non-selected labels
+        const filtedSelectedLabels = Object.fromEntries(
+            Object.entries(selectedLabels).filter(([_, v]) => v != null)
+        ) as { [labelName: string]: string };
+
         try {
             if (editMode) {
                 await trpc($page).instances.updateConfigInstance.mutate({
@@ -27,18 +32,20 @@
                     instance: instance,
                     contentType: contentType,
                     data: input,
-                    labels: selectedLabels,
+                    labels: filtedSelectedLabels,
                 });
+                goto(`/apply-changes/${config}/${instance}`);
             } else {
-                await trpc($page).instances.createConfigInstance.mutate({
+                const result = await trpc(
+                    $page
+                ).instances.createConfigInstance.mutate({
                     configName: config,
                     contentType: contentType,
                     data: input,
-                    labels: selectedLabels,
+                    labels: filtedSelectedLabels,
                 });
+                goto(`/view-instance/${config}/${result.instance}`);
             }
-
-            goto(`/apply-changes/${config}/${instance}`);
         } catch (e) {
             console.error(e);
         }

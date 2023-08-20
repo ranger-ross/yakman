@@ -3,14 +3,20 @@
     import type { YakManLabelType } from "$lib/types/types";
 
     export let labels: YakManLabelType[] = [];
-    export let selectedLabels: { [key: string]: string } | undefined =
-        undefined;
+    export let selectedLabels: { [key: string]: string };
 
     function onSelectChange(label: YakManLabelType, event: Event) {
         const value = (event.target! as HTMLSelectElement).value;
+        const newValue = value === "" ? null : value;
 
         if (selectedLabels) {
-            selectedLabels[label.name] = value;
+            if  (newValue) {
+                selectedLabels[label.name] = newValue;
+            } else {
+                delete selectedLabels[label.name];
+                selectedLabels = selectedLabels; // force Svelte to re-render
+            }
+            console.log("updated", selectedLabels);
         }
     }
 </script>
@@ -22,10 +28,13 @@
             <YakManSelect
                 label={label.name}
                 on:change={(e) => onSelectChange(label, e)}
+                value={selectedLabels?.[label.name] ?? undefined}
             >
-                <option value="none" selected={true}> None </option>
+                <option value={undefined}> None </option>
                 {#each label.options as option}
-                    <option value={option}>{option}</option>
+                    <option value={option}>
+                        {option}
+                    </option>
                 {/each}
             </YakManSelect>
         {/each}
