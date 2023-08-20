@@ -16,9 +16,7 @@
     export let data: PageData;
     let { labels } = data;
     let selectedLabels: { [labelName: string]: string } = data.selectedLabels; // <LabelName, Value>
-    let originalSelectedLabels = JSON.parse(
-        JSON.stringify(data.selectedLabels)
-    ); // Create a clone of the data
+    let originalSelectedLabels = structuredClone(data.selectedLabels);
 
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
