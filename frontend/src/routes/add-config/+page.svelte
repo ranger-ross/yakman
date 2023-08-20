@@ -19,7 +19,7 @@
                 name: name,
                 projectUuid: selectedProjectUuid,
             });
-            goto("/");
+            goto(`/?project=${selectedProjectUuid}`);
         } catch (e) {
             console.error("Error creating config:", e);
         }
@@ -28,7 +28,7 @@
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1 class="text-lg font-bold mb-4">{"Add Config"}</h1>
+        <h1 class="text-lg font-bold mb-4">Add Config</h1>
         <div class="mb-3">
             <YakManInput
                 label="Name"
@@ -44,6 +44,9 @@
                 {/each}
             </YakManSelect>
         </div>
-        <YakManButton on:click={onCreateConfig}>Create</YakManButton>
+        <YakManButton
+            on:click={onCreateConfig}
+            disabled={!name || name.length === 0}>Create</YakManButton
+        >
     </YakManCard>
 </div>

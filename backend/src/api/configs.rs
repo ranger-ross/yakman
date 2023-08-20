@@ -103,6 +103,10 @@ async fn create_config(
         return HttpResponse::Forbidden().finish();
     }
 
+    if config_name.is_empty() {
+        return HttpResponse::BadRequest().body("Invalid config name. Must not be empty");
+    }
+
     if !is_alphanumeric_kebab_case(&config_name) {
         return HttpResponse::BadRequest()
             .body("Invalid config name. Must be alphanumeric kebab case");
@@ -130,7 +134,7 @@ async fn create_config(
         service.create_config(&config_name, &project_uuid).await;
 
     return match result {
-        Ok(()) => HttpResponse::Ok().finish(),
+        Ok(()) => HttpResponse::Ok().body(config_name),
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");
