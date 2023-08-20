@@ -31,7 +31,7 @@ impl StorageService for KVStorageService {
         return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
     }
 
-    async fn create_project(&self, project_name: &str) -> Result<(), CreateProjectError> {
+    async fn create_project(&self, project_name: &str) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
         // Prevent duplicates
@@ -43,14 +43,16 @@ impl StorageService for KVStorageService {
             }
         }
 
+        let project_uuid = Uuid::new_v4();
+
         projects.push(YakManProject {
             name: String::from(project_name),
-            uuid: Uuid::new_v4().to_string(),
+            uuid: project_uuid.to_string(),
         });
 
         self.adapter.save_projects(projects).await?;
 
-        return Ok(());
+        return Ok(project_uuid.to_string());
     }
 
     async fn get_visible_configs(

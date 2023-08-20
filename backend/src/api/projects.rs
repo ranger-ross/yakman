@@ -85,6 +85,10 @@ async fn create_project(
         return HttpResponse::Forbidden().finish();
     }
 
+    if project_name.is_empty() {
+        return HttpResponse::BadRequest().body("Invalid project name. Must not be empty");
+    }
+
     if !is_alphanumeric_kebab_case(&project_name) {
         return HttpResponse::BadRequest()
             .body("Invalid project name. Must be alphanumeric kebab case");
@@ -93,7 +97,7 @@ async fn create_project(
     let service = state.get_service();
 
     return match service.create_project(&project_name).await {
-        Ok(()) => HttpResponse::Ok().finish(),
+        Ok(project_uuid) => HttpResponse::Ok().body(project_uuid),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
                 error!("Failed to create config {project_name}, error: {message}");

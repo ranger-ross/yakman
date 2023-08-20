@@ -10,8 +10,10 @@
 
     async function onCreateProject() {
         try {
-            await trpc($page).projects.createProject.mutate(name);
-            goto("/");
+            const { projectUuid } = await trpc(
+                $page
+            ).projects.createProject.mutate(name);
+            goto(`/?project=${projectUuid}`);
         } catch (e) {
             console.error("Error creating project", e);
         }
@@ -29,7 +31,11 @@
                 mask="kebab-case"
             />
         </div>
-        <YakManButton on:click={onCreateProject} type="submit">
+        <YakManButton
+            on:click={onCreateProject}
+            type="submit"
+            disabled={!name || name.length === 0}
+        >
             Create
         </YakManButton>
     </YakManCard>

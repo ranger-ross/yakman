@@ -30,6 +30,10 @@ export const projects = t.router({
             if (response.status != 200) {
                 throw new Error(await response.text())
             }
+
+            return {
+                projectUuid: await response.text()
+            }
         })
 })
 
