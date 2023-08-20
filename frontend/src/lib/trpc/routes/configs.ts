@@ -35,6 +35,9 @@ export const configs = t.router({
             if (response.status != 200) {
                 throw new Error(await response.text())
             }
+            return {
+                config: await response.text()
+            }
         }),
     deleteConfig: t.procedure
         .input(z.object({

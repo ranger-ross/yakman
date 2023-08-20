@@ -19,7 +19,7 @@
                 name: name,
                 projectUuid: selectedProjectUuid,
             });
-            goto("/");
+            goto(`/?project=${selectedProjectUuid}`);
         } catch (e) {
             console.error("Error creating config:", e);
         }
