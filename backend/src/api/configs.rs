@@ -103,6 +103,10 @@ async fn create_config(
         return HttpResponse::Forbidden().finish();
     }
 
+    if config_name.is_empty() {
+        return HttpResponse::BadRequest().body("Invalid config name. Must not be empty");
+    }
+
     if !is_alphanumeric_kebab_case(&config_name) {
         return HttpResponse::BadRequest()
             .body("Invalid config name. Must be alphanumeric kebab case");
