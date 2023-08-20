@@ -23,8 +23,8 @@ dependencies:
 
 devDependencies:
   '@fontsource/fira-mono':
-    specifier: ^4.5.10
-    version: 4.5.10
+    specifier: ^5.0.0
+    version: 5.0.8
   '@neoconfetti/svelte':
     specifier: ^1.0.0
     version: 1.0.0
@@ -258,8 +258,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@fontsource/fira-mono@4.5.10:
-    resolution: {integrity: sha512-bxUnRP8xptGRo8YXeY073DSpfK74XpSb0ZyRNpHV9WvLnJ7TwPOjZll8hTMin7zLC6iOp59pDZ8EQDj1gzgAQQ==}
+  /@fontsource/fira-mono@5.0.8:
+    resolution: {integrity: sha512-8OJiUK2lzJjvDlkmamEfhtpL1cyFApg1Pk4kE5Pw5UTf1ETF3Yy/pprgwV5I+LQPDjuFvinsinT9xSUZ2b/zuQ==}
     dev: true
 
   /@jridgewell/gen-mapping@0.3.3:

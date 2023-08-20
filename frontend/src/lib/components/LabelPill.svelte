@@ -36,6 +36,13 @@
     export let text: string = "";
 
     let { bgColorClass, textColorClass } = colorFromString(text);
+
+    // When text changes, update the colors
+    $: {
+        let newColors = colorFromString(text);
+        bgColorClass = newColors.bgColorClass;
+        textColorClass = newColors.textColorClass;
+    }
 </script>
 
 <div

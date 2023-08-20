@@ -5,7 +5,8 @@ use crate::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
         UpdateConfigInstanceCurrentRevisionError,
-    }, model::{
+    },
+    model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
         YakManProject, YakManRole, YakManUser, YakManUserDetails,
     },
@@ -108,7 +109,7 @@ impl StorageService for KVStorageService {
         labels: Vec<Label>,
         data: &str,
         content_type: Option<String>,
-    ) -> Result<(), CreateConfigInstanceError> {
+    ) -> Result<String, CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = short_sha(&Uuid::new_v4().to_string());
             let revision_key = short_sha(&Uuid::new_v4().to_string());
@@ -134,7 +135,7 @@ impl StorageService for KVStorageService {
             // Add new instance to instances and update the instance metadata
             instances.push(ConfigInstance {
                 config_name: config_name.to_string(),
-                instance: instance,
+                instance: instance.to_string(),
                 labels: revision.labels,
                 current_revision: revision.revision.clone(),
                 pending_revision: None,
@@ -150,7 +151,7 @@ impl StorageService for KVStorageService {
                 .await?;
             info!("Update instance metadata for config: {}", config_name);
 
-            return Ok(());
+            return Ok(instance);
         }
 
         return Err(CreateConfigInstanceError::NoConfigFound);
