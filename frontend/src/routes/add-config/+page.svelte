@@ -44,6 +44,9 @@
                 {/each}
             </YakManSelect>
         </div>
-        <YakManButton on:click={onCreateConfig}>Create</YakManButton>
+        <YakManButton
+            on:click={onCreateConfig}
+            disabled={!name || name.length === 0}>Create</YakManButton
+        >
     </YakManCard>
 </div>
