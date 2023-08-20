@@ -1,8 +1,10 @@
 <script>
 	import YakManHeader from "$lib/components/YakManHeader.svelte";
-	import { onMount } from "svelte";
+	import { onMount, setContext } from "svelte";
 	import { roles } from "$lib/stores/roles";
 	import "./styles.css";
+	import YakManModal from "$lib/components/YakManModal.svelte";
+    import { globalModalState } from "$lib/stores/global-modal-state";
 
 	// TODO: Fix typescript typing
 	export let data;
@@ -33,6 +35,16 @@
 
 <div class="app">
 	<YakManHeader />
+
+	<!-- Globally shared modal -->
+	<YakManModal
+		title={$globalModalState.title}
+		open={$globalModalState.open}
+		isStaticBackdrop={$globalModalState.isStaticBackdrop}
+		onConfirm={$globalModalState.onConfirm}
+	>
+		<p class="text-gray-800">{$globalModalState.message}</p>
+	</YakManModal>
 
 	<main>
 		<slot />

@@ -8,6 +8,7 @@
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
     import LabelSelection from "./LabelSelection.svelte";
+    import { openGlobaModal } from "$lib/stores/global-modal-state";
 
     const { config, instance } = $page.params;
     const editMode = !!instance;
@@ -19,7 +20,22 @@
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
 
-    async function onSubmit() {
+    function onSubmit() {
+        const title = editMode ? "Update Config" : "Create Config";
+        const message = editMode
+            ? "Are you sure you want to update this config? (approval will be required before it takes effect)"
+            : "Are you sure you want to create this config?";
+
+        openGlobaModal({
+            title: title,
+            message: message,
+            onConfirm() {
+                saveChanges();
+            },
+        });
+    }
+
+    async function saveChanges() {
         // Remove any non-selected labels
         const filtedSelectedLabels = Object.fromEntries(
             Object.entries(selectedLabels).filter(([_, v]) => v != null)
