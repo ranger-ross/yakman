@@ -85,6 +85,10 @@ async fn create_project(
         return HttpResponse::Forbidden().finish();
     }
 
+    if project_name.is_empty() {
+        return HttpResponse::BadRequest().body("Invalid project name. Must not be empty");
+    }
+
     if !is_alphanumeric_kebab_case(&project_name) {
         return HttpResponse::BadRequest()
             .body("Invalid project name. Must be alphanumeric kebab case");
