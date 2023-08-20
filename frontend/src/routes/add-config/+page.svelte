@@ -28,7 +28,7 @@
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1 class="text-lg font-bold mb-4">{"Add Config"}</h1>
+        <h1 class="text-lg font-bold mb-4">Add Config</h1>
         <div class="mb-3">
             <YakManInput
                 label="Name"
