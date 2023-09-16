@@ -6,11 +6,11 @@ settings:
 
 dependencies:
   '@trpc/client':
-    specifier: 10.37.1
-    version: 10.37.1(@trpc/server@10.37.1)
+    specifier: 10.38.3
+    version: 10.38.3(@trpc/server@10.38.3)
   '@trpc/server':
-    specifier: 10.37.1
-    version: 10.37.1
+    specifier: 10.38.3
+    version: 10.38.3
   monaco-editor:
     specifier: 0.43.0
     version: 0.43.0
@@ -19,7 +19,7 @@ dependencies:
     version: 2.6.0
   trpc-sveltekit:
     specifier: 3.5.20
-    version: 3.5.20(@sveltejs/adapter-node@1.3.1)(@trpc/client@10.37.1)(@trpc/server@10.37.1)(ws@8.13.0)
+    version: 3.5.20(@sveltejs/adapter-node@1.3.1)(@trpc/client@10.38.3)(@trpc/server@10.38.3)(ws@8.13.0)
   zod:
     specifier: 3.21.4
     version: 3.21.4
@@ -462,16 +462,16 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /@trpc/client@10.37.1(@trpc/server@10.37.1):
-    resolution: {integrity: sha512-OSblNfeI0Z9ERn3usgLV2x63CwwPoNOHf1FQK85cOT7F8MNaWyEHoEv7tHUwNGJwyzKXmpU+ockZ0movzX3D0g==}
+  /@trpc/client@10.38.3(@trpc/server@10.38.3):
+    resolution: {integrity: sha512-hHPsElTL4sB+UGzuAZ4iwRVHjELrk/Nsl2owsYw9ITJz3EY7VWRsQ6vK48kJvlHPYPhP+efID5UOgyZMs4bFXA==}
     peerDependencies:
-      '@trpc/server': 10.37.1
+      '@trpc/server': 10.38.3
     dependencies:
-      '@trpc/server': 10.37.1
+      '@trpc/server': 10.38.3
     dev: false
 
-  /@trpc/server@10.37.1:
-    resolution: {integrity: sha512-r3VeA319/braYMBIzj+XLgLKQ9lJSVglvPvP9HUv4kr5w6Y5grQMxMcExhTiZWltE9bnSJHKtBBzHafOo7KC8A==}
+  /@trpc/server@10.38.3:
+    resolution: {integrity: sha512-9s8/kwo2IDB5hwB2SKZZrfevRhdb1f9fdXtIYd3lbQuf2jQaC/LyQuHaIQjDQoUx9updBfsHXcFFPiCP1DL6pg==}
     dev: false
 
   /@types/cookie@0.5.2:
@@ -1456,7 +1456,7 @@ packages:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
 
-  /trpc-sveltekit@3.5.20(@sveltejs/adapter-node@1.3.1)(@trpc/client@10.37.1)(@trpc/server@10.37.1)(ws@8.13.0):
+  /trpc-sveltekit@3.5.20(@sveltejs/adapter-node@1.3.1)(@trpc/client@10.38.3)(@trpc/server@10.38.3)(ws@8.13.0):
     resolution: {integrity: sha512-RHh5VxRkDmZNtH0nMkq0KW5ePFh+H3H/EhJuE74knDnhDiv3WnPLiCfA0XdZRkLLWYZP6waCBBbUjFPOK5Z1vg==}
     peerDependencies:
       '@sveltejs/adapter-node': '>=1.2'
@@ -1465,8 +1465,8 @@ packages:
       ws: '>=8'
     dependencies:
       '@sveltejs/adapter-node': 1.3.1(@sveltejs/kit@1.25.0)
-      '@trpc/client': 10.37.1(@trpc/server@10.37.1)
-      '@trpc/server': 10.37.1
+      '@trpc/client': 10.38.3(@trpc/server@10.38.3)
+      '@trpc/server': 10.38.3
       ws: 8.13.0
     dev: false
 
