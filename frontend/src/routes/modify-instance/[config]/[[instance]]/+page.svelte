@@ -9,6 +9,7 @@
     import type { PageData } from "./$types";
     import LabelSelection from "./LabelSelection.svelte";
     import { openGlobaModal } from "$lib/stores/global-modal-state";
+    import YakManAutoComplete from "$lib/components/YakManAutoComplete.svelte";
 
     const { config, instance } = $page.params;
     const editMode = !!instance;
@@ -110,10 +111,11 @@
             placeholder="My really cool config"
         />
         <div class="my-3">
-            <YakManInput
+            <YakManAutoComplete
                 label="Content Type"
+                placeholder="application/json"
                 bind:value={contentType}
-                placeholder="my-config-name"
+                options={["application/json", "text/html", "text/plain"]}
             />
         </div>
         <LabelSelection {labels} bind:selectedLabels />
