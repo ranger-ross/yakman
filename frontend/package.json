@@ -29,6 +29,7 @@
 	"dependencies": {
 		"@trpc/client": "^10.37.1",
 		"@trpc/server": "^10.37.1",
+		"monaco-editor": "^0.43.0",
 		"set-cookie-parser": "^2.6.0",
 		"trpc-sveltekit": "^3.5.20",
 		"zod": "^3.21.4"
