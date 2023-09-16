@@ -5,5 +5,8 @@
   ],
   "lockFileMaintenance": {
     "enabled": true
+  },
+  "npm": {
+    "rangeStrategy": "pin"
   }
 }
