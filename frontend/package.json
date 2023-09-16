@@ -30,7 +30,7 @@
 		"@trpc/client": "10.38.3",
 		"@trpc/server": "10.38.3",
 		"monaco-editor": "0.43.0",
-		"monaco-yaml": "^5.1.0",
+		"monaco-yaml": "5.1.0",
 		"set-cookie-parser": "2.6.0",
 		"trpc-sveltekit": "3.5.20",
 		"zod": "3.22.2"

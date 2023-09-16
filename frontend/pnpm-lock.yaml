@@ -15,7 +15,7 @@ dependencies:
     specifier: 0.43.0
     version: 0.43.0
   monaco-yaml:
-    specifier: ^5.1.0
+    specifier: 5.1.0
     version: 5.1.0(monaco-editor@0.43.0)
   set-cookie-parser:
     specifier: 2.6.0
