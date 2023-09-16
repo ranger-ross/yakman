@@ -57,6 +57,7 @@
                 <MonacoEditor
                     content={data?.data?.data ?? ""}
                     language={editorLanguage}
+                    disabled={true}
                 />
             </div>
         </YakManCard>

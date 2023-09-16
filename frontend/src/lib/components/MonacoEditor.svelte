@@ -14,6 +14,7 @@
 
   export let content = "";
   export let language: MonacoLanguage = "text";
+  export let disabled: boolean = false;
 
   onMount(async () => {
     self.MonacoEnvironment = {
@@ -38,6 +39,7 @@
     editor = Monaco.editor.create(divEl!, {
       value: content,
       language: language,
+      readOnly: disabled,
     });
 
     editor.onDidChangeModelContent(() => (content = editor.getValue()));
@@ -48,6 +50,10 @@
     editor?.getModel().setLanguage(language);
   }
 
+  $: {
+    editor?.updateOptions({ readOnly: disabled });
+  }
+
   onDestroy(() => {
     editor?.dispose();
   });
@@ -56,5 +62,3 @@
 <div class="h-full w-full shadow-sm rounded-md border border-gray-300">
   <div bind:this={divEl} class="h-full w-full" />
 </div>
-
-<!-- class="bg-white hover:bg-gray-50 disabled:bg-gray-300 rounded-md shadow-sm py-1 px-4 m-1 text-lg text-gray-700 border border-gray-300 transition-colors duration-200" -->
