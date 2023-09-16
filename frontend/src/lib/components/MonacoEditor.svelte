@@ -17,25 +17,41 @@
   export let disabled: boolean = false;
 
   onMount(async () => {
+    // Load Monaco and Yaml plugin dynamically because they are client-side only libraries
+    Monaco = await import("monaco-editor");
+    const EditorWorker = await import(
+      "monaco-editor/esm/vs/editor/editor.worker?worker"
+    );
+    const YamlWorker = await import("$lib/utils/yaml.worker?worker");
+    const { configureMonacoYaml } = await import("monaco-yaml");
+
     self.MonacoEnvironment = {
       getWorker: function (_moduleId: string, label: string) {
-        if (label === "json") {
-          return new jsonWorker();
+        switch (label) {
+          case "editorWorkerService":
+            return new EditorWorker.default();
+          case "yaml":
+            return new YamlWorker.default();
+          case "json":
+            return new jsonWorker();
+          case "javascript":
+          case "typescript":
+            return new tsWorker();
+          case "html":
+            return new htmlWorker();
+          case "css":
+            return new cssWorker();
+          default:
+            throw new editorWorker(); // plain text
         }
-        if (label === "css" || label === "scss" || label === "less") {
-          return new cssWorker();
-        }
-        if (label === "html" || label === "handlebars" || label === "razor") {
-          return new htmlWorker();
-        }
-        if (label === "typescript" || label === "javascript") {
-          return new tsWorker();
-        }
-        return new editorWorker(); // plain text
       },
     };
 
-    Monaco = await import("monaco-editor");
+    configureMonacoYaml(Monaco, {
+      enableSchemaRequest: true,
+      schemas: [],
+    });
+
     editor = Monaco.editor.create(divEl!, {
       value: content,
       language: language,
