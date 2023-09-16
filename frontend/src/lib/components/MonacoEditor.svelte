@@ -6,13 +6,14 @@
   import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
   import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
   import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+  import type { MonacoLanguage } from "$lib/utils/content-type-utils";
 
   let divEl: HTMLDivElement | null = null;
   let editor: monaco.editor.IStandaloneCodeEditor;
   let Monaco;
 
   export let content = "";
-  export let language: "json" | "html" | "typescript" | "css" | "text" = "json"
+  export let language: MonacoLanguage = "text";
 
   onMount(async () => {
     self.MonacoEnvironment = {
@@ -42,10 +43,9 @@
     editor.onDidChangeModelContent(() => (content = editor.getValue()));
   });
 
-
   $: {
     // @ts-ignore setLanguage exists but is not on type def for some reason
-    editor?.getModel().setLanguage(language)
+    editor?.getModel().setLanguage(language);
   }
 
   onDestroy(() => {
@@ -53,7 +53,7 @@
   });
 </script>
 
-<div class="h-full w-full shadow-sm rounded-md border border-gray-300" >
+<div class="h-full w-full shadow-sm rounded-md border border-gray-300">
   <div bind:this={divEl} class="h-full w-full" />
 </div>
 

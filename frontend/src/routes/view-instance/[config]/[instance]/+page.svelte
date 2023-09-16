@@ -1,9 +1,11 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import LabelPill from "$lib/components/LabelPill.svelte";
+    import MonacoEditor from "$lib/components/MonacoEditor.svelte";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManSegmentSelect from "$lib/components/YakManSegmentSelect.svelte";
+    import { contentTypeToMonacoLanguage } from "$lib/utils/content-type-utils";
     import type { PageData } from "./$types";
     import ChangelogTab from "./ChangelogTab.svelte";
     import RevisionsTab from "./RevisionsTab.svelte";
@@ -11,6 +13,7 @@
     let { config, instance } = $page.params;
 
     export let data: PageData;
+    $: editorLanguage = contentTypeToMonacoLanguage(data.data?.contentType);
 
     let selectedHistoryTab: "Changelog" | "Revisions" = "Changelog";
 
@@ -47,8 +50,14 @@
                     {data.data?.contentType}
                 </YakManCard>
             </div>
-            <div class="mb-2">
-                <YakManCard>{data.data?.data}</YakManCard>
+            <div class="h-56 mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Data
+                </label>
+                <MonacoEditor
+                    content={data?.data?.data ?? ""}
+                    language={editorLanguage}
+                />
             </div>
         </YakManCard>
     </div>

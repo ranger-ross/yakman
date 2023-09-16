@@ -9,6 +9,7 @@
     import { openGlobaModal } from "$lib/stores/global-modal-state";
     import YakManAutoComplete from "$lib/components/YakManAutoComplete.svelte";
     import MonacoEditor from "$lib/components/MonacoEditor.svelte";
+    import { contentTypeToMonacoLanguage } from "$lib/utils/content-type-utils";
 
     const { config, instance } = $page.params;
     const editMode = !!instance;
@@ -20,20 +21,7 @@
 
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
-    let editorLanguage: "json" | "text" | "html" = "json";
-    $: {
-        switch (contentType) {
-            case "application/json":
-                editorLanguage = "json";
-                break;
-            case "text/html":
-                editorLanguage = "html";
-                break;
-            default:
-                editorLanguage = "text";
-                break;
-        }
-    }
+    $: editorLanguage = contentTypeToMonacoLanguage(contentType);
 
     function onSubmit() {
         const title = editMode ? "Update Config" : "Create Config";
