@@ -3,13 +3,13 @@
     import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
-    import YakManInput from "$lib/components/YakManInput.svelte";
-    import YakManTextArea from "$lib/components/YakManTextArea.svelte";
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
     import LabelSelection from "./LabelSelection.svelte";
     import { openGlobaModal } from "$lib/stores/global-modal-state";
     import YakManAutoComplete from "$lib/components/YakManAutoComplete.svelte";
+    import MonacoEditor from "$lib/components/MonacoEditor.svelte";
+    import { contentTypeToMonacoLanguage } from "$lib/utils/content-type-utils";
 
     const { config, instance } = $page.params;
     const editMode = !!instance;
@@ -21,6 +21,7 @@
 
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
+    $: editorLanguage = contentTypeToMonacoLanguage(contentType);
 
     function onSubmit() {
         const title = editMode ? "Update Config" : "Create Config";
@@ -105,12 +106,15 @@
                 Create Config Instance
             {/if}
         </h1>
-        <YakManTextArea
-            label="Data"
-            bind:value={input}
-            placeholder="My really cool config"
-        />
-        <div class="my-3">
+
+        <div class="h-56">
+            <label class="block text-gray-700 text-sm font-bold mb-2">
+                Data
+            </label>
+            <MonacoEditor bind:content={input} language={editorLanguage} />
+        </div>
+
+        <div class="my-8">
             <YakManAutoComplete
                 label="Content Type"
                 placeholder="application/json"
