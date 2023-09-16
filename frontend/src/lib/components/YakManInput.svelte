@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+    const dispatch = createEventDispatcher();
+
     export let label: string = "";
     export let placeholder: string = "";
     export let value: string = "";
@@ -23,6 +26,9 @@
             {placeholder}
             {disabled}
             bind:value
+            on:input={(e) => dispatch('input', e)}
+            on:focus={(e) => dispatch('focus', e)}
+            on:blur={(e) => dispatch('blur', e)}
         />
     </div>
 </div>
