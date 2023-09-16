@@ -119,7 +119,12 @@
                 label="Content Type"
                 placeholder="application/json"
                 bind:value={contentType}
-                options={["application/json", "text/html", "text/plain"]}
+                options={[
+                    "application/json",
+                    "application/yaml",
+                    "text/plain",
+                    "text/html",
+                ]}
             />
         </div>
         <LabelSelection {labels} bind:selectedLabels />
