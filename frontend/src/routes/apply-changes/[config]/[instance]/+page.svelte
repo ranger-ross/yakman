@@ -23,8 +23,25 @@
         openGlobaModal({
             title: "Approve Changes",
             message,
-            onConfirm() {
-                saveChanges(isApply);
+            async onConfirm() {
+                try {
+                    await trpc($page).revisions.reviewInstanceRevision.mutate({
+                        configName: config,
+                        instance: instance,
+                        revision: data.pendingRevision?.revision as string,
+                        reviewResult: isApply ? "ApproveAndApply" : "Approve",
+                    });
+
+                    if (isApply) {
+                        goto(`/view-instance/${config}/${instance}`);
+                    } else {
+                        goto(`/apply-changes/${config}/${instance}`, {
+                            invalidateAll: true,
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error while approving config: ", e);
+                }
             },
         });
     }
@@ -46,20 +63,6 @@
                 }
             },
         });
-    }
-
-    async function saveChanges(isApply: boolean) {
-        try {
-            await trpc($page).revisions.reviewInstanceRevision.mutate({
-                configName: config,
-                instance: instance,
-                revision: data.pendingRevision?.revision as string,
-                reviewResult: isApply ? "ApproveAndApply" : "Approve",
-            });
-            goto(`/view-instance/${config}/${instance}`);
-        } catch (e) {
-            console.error("Error while approving config: ", e);
-        }
     }
 </script>
 
