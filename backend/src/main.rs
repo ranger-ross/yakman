@@ -72,7 +72,7 @@ impl StateManager {
         api::data::get_revision_data,
         api::revisions::get_instance_revisions,
         api::revisions::submit_instance_revision,
-        api::revisions::approve_pending_instance_revision,
+        api::revisions::review_pending_instance_revision,
     ),
     components(
         schemas(
@@ -163,7 +163,7 @@ async fn main() -> std::io::Result<()> {
             // Revisions
             .service(api::revisions::get_instance_revisions)
             .service(api::revisions::submit_instance_revision)
-            .service(api::revisions::approve_pending_instance_revision)
+            .service(api::revisions::review_pending_instance_revision)
     })
     .bind((host, port))?
     .run()

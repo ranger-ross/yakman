@@ -23,10 +23,11 @@
 
     async function saveChanges() {
         try {
-            await trpc($page).revisions.approveInstanceRevision.mutate({
+            await trpc($page).revisions.reviewInstanceRevision.mutate({
                 configName: config,
                 instance: instance,
                 revision: data.pendingRevision as string,
+                reviewResult: 'Approve'
             });
             goto(`/view-instance/${config}/${instance}`);
         } catch (e) {
