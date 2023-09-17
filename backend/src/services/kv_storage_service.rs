@@ -111,10 +111,11 @@ impl StorageService for KVStorageService {
         labels: Vec<Label>,
         data: &str,
         content_type: Option<String>,
+        creator_uuid: &str,
     ) -> Result<String, CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = short_sha(&Uuid::new_v4().to_string());
-            let revision_key = short_sha(&Uuid::new_v4().to_string());
+            let revision_key: String = short_sha(&Uuid::new_v4().to_string());
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
@@ -130,7 +131,7 @@ impl StorageService for KVStorageService {
                 labels: labels,
                 timestamp_ms: now,
                 review_state: RevisionReviewState::Approved,
-                reviewed_by_uuid: None, // TODO: set user uuid
+                reviewed_by_uuid: Some(creator_uuid.to_string()),
                 review_timestamp_ms: Some(now),
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };

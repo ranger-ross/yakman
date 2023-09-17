@@ -4,12 +4,13 @@ use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-        CreateProjectError, SaveConfigInstanceError, UpdateConfigInstanceCurrentRevisionError, DeleteConfigError,
+        CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
+        UpdateConfigInstanceCurrentRevisionError,
     },
     model::{
-        Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject, YakManUser,
-        YakManUserDetails,
-    }
+        Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject,
+        YakManUser, YakManUserDetails,
+    },
 };
 use async_trait::async_trait;
 
@@ -36,10 +37,7 @@ pub trait StorageService: Sync + Send {
         project_uuid: &str,
     ) -> Result<(), CreateConfigError>;
 
-    async fn delete_config(
-        &self,
-        config_name: &str,
-    ) -> Result<(), DeleteConfigError>;
+    async fn delete_config(&self, config_name: &str) -> Result<(), DeleteConfigError>;
 
     async fn create_config_instance(
         &self,
@@ -47,6 +45,7 @@ pub trait StorageService: Sync + Send {
         labels: Vec<Label>,
         data: &str,
         content_type: Option<String>,
+        creator_uuid: &str,
     ) -> Result<String, CreateConfigInstanceError>;
 
     async fn get_config_instance_metadata(
