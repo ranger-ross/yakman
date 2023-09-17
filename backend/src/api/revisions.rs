@@ -1,8 +1,7 @@
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::dev::ServiceRequest;
-use actix_web::{get, post, put, web, HttpResponse, HttpRequest};
+use actix_web::{get, post, put, web, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get all of the revisions for a config
@@ -12,13 +11,7 @@ async fn get_instance_revisions(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
-    // z: YakManPrinciple
 ) -> HttpResponse {
-
-
-    // log::info!("{:?}", z);
-
-
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
@@ -54,6 +47,7 @@ async fn submit_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
+    principle: YakManPrinciple,
 ) -> HttpResponse {
     let (config_name, instance, revision) = path.into_inner();
     let service = state.get_service();
@@ -88,6 +82,7 @@ async fn approve_pending_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
+    principle: YakManPrinciple,
 ) -> HttpResponse {
     let (config_name, instance, revision) = path.into_inner();
     let service = state.get_service();
@@ -102,8 +97,13 @@ async fn approve_pending_instance_revision(
         return HttpResponse::Forbidden().finish();
     }
 
+    let approved_uuid = principle.user_uuid;
+    if approved_uuid.is_none() {
+        return  HttpResponse::Forbidden().finish();
+    }
+
     return match service
-        .approve_pending_instance_revision(&config_name, &instance, &revision)
+        .approve_pending_instance_revision(&config_name, &instance, &revision, &approved_uuid.unwrap())
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),

@@ -407,6 +407,7 @@ impl StorageService for KVStorageService {
         config_name: &str,
         instance: &str,
         revision: &str,
+        approved_uuid: &str,
     ) -> Result<(), ApproveRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_name).await? {
             Some(metadata) => metadata,
@@ -434,7 +435,7 @@ impl StorageService for KVStorageService {
 
         let now = Utc::now().timestamp_millis();
         revision_data.review_state = RevisionReviewState::Approved;
-        revision_data.reviewed_by_uuid = None; // TODO: Set the review uuid
+        revision_data.reviewed_by_uuid = Some(approved_uuid.to_string());
         revision_data.review_timestamp_ms = Some(now);
         self.adapter
             .save_revision(config_name, &revision_data)

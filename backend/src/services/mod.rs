@@ -99,6 +99,7 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         instance: &str,
         revision: &str,
+        approved_uuid: &str,
     ) -> Result<(), ApproveRevisionError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
