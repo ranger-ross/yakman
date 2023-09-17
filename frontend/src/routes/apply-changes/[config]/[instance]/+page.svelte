@@ -11,8 +11,6 @@
 
     let { config, instance } = $page.params;
 
-    console.log(data);
-
     function onApprove(isApply: boolean) {
         const message =
             "Are you sure you want to approve this change?" +
@@ -39,6 +37,26 @@
                             invalidateAll: true,
                         });
                     }
+                } catch (e) {
+                    console.error("Error while approving config: ", e);
+                }
+            },
+        });
+    }
+
+    async function onReject() {
+        openGlobaModal({
+            title: "Reject Changes",
+            message: "Are you sure you want to reject these changes?",
+            async onConfirm() {
+                try {
+                    await trpc($page).revisions.reviewInstanceRevision.mutate({
+                        configName: config,
+                        instance: instance,
+                        revision: data.pendingRevision?.revision as string,
+                        reviewResult: "Reject",
+                    });
+                    goto(`/view-instance/${config}/${instance}`);
                 } catch (e) {
                     console.error("Error while approving config: ", e);
                 }
@@ -74,7 +92,7 @@
         {#if data.pendingRevision}
             <div>
                 <h3 class="text-md font-bold text-gray-600">
-                    Pending Revision => {data.pendingRevision}
+                    Pending Revision => {data.pendingRevision?.revision}
                 </h3>
 
                 <div class="w-full flex justify-evenly gap-6">
@@ -97,6 +115,10 @@
                         <div>{data.pendingData?.data}</div>
                     </div>
                 </div>
+
+                <YakManButton variant="secondary" on:click={() => onReject()}>
+                    Reject
+                </YakManButton>
 
                 {#if data.pendingRevision.review_state != "Approved"}
                     <YakManButton on:click={() => onApprove(false)}>
