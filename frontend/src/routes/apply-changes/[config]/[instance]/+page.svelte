@@ -11,27 +11,58 @@
 
     let { config, instance } = $page.params;
 
-    function onApprove() {
+    console.log(data);
+
+    function onApprove(isApply: boolean) {
+        const message =
+            "Are you sure you want to approve this change?" +
+            (isApply
+                ? "It will be applied immediately"
+                : "You will need to apply it before changes are reflected");
+
         openGlobaModal({
             title: "Approve Changes",
-            message: "Are you sure you want to approve this change? It will be applied immediately",
-            onConfirm() {
-                saveChanges();
+            message,
+            async onConfirm() {
+                try {
+                    await trpc($page).revisions.reviewInstanceRevision.mutate({
+                        configName: config,
+                        instance: instance,
+                        revision: data.pendingRevision?.revision as string,
+                        reviewResult: isApply ? "ApproveAndApply" : "Approve",
+                    });
+
+                    if (isApply) {
+                        goto(`/view-instance/${config}/${instance}`);
+                    } else {
+                        goto(`/apply-changes/${config}/${instance}`, {
+                            invalidateAll: true,
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error while approving config: ", e);
+                }
             },
         });
     }
 
-    async function saveChanges() {
-        try {
-            await trpc($page).revisions.approveInstanceRevision.mutate({
-                configName: config,
-                instance: instance,
-                revision: data.pendingRevision as string,
-            });
-            goto(`/view-instance/${config}/${instance}`);
-        } catch (e) {
-            console.error("Error while approving config: ", e);
-        }
+    async function onApply() {
+        openGlobaModal({
+            title: "Approve Changes",
+            message: "Are you sure you want to apply these changes?",
+            async onConfirm() {
+                try {
+                    await trpc($page).revisions.applyInstanceRevision.mutate({
+                        configName: config,
+                        instance: instance,
+                        revision: data.pendingRevision?.revision as string,
+                    });
+                    goto(`/view-instance/${config}/${instance}`);
+                } catch (e) {
+                    console.error("Error while approving config: ", e);
+                }
+            },
+        });
     }
 </script>
 
@@ -67,7 +98,17 @@
                     </div>
                 </div>
 
-                <YakManButton on:click={onApprove}>Approve</YakManButton>
+                {#if data.pendingRevision.review_state != "Approved"}
+                    <YakManButton on:click={() => onApprove(false)}>
+                        Approve
+                    </YakManButton>
+
+                    <YakManButton on:click={() => onApprove(true)}>
+                        Approve and Apply
+                    </YakManButton>
+                {:else if data.pendingRevision.review_state == "Approved"}
+                    <YakManButton on:click={onApply}>Apply</YakManButton>
+                {/if}
             </div>
         {:else}
             No pending revisions

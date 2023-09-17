@@ -2,9 +2,8 @@ use super::StorageService;
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
-        ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
-        CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
-        UpdateConfigInstanceCurrentRevisionError,
+        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
+        CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
     },
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
@@ -149,6 +148,7 @@ impl StorageService for KVStorageService {
                     timestamp_ms: now,
                     previous_revision: None,
                     new_revision: revision.revision,
+                    applied_by_uuid: creator_uuid.to_string(),
                 }],
             });
             self.adapter
@@ -320,6 +320,8 @@ impl StorageService for KVStorageService {
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
                 instance.pending_revision = Some(String::from(&revision.revision));
+                instance.revisions.push(String::from(&revision.revision));
+
                 self.adapter
                     .save_instance_metadata(config_name, instances)
                     .await?;
@@ -375,35 +377,7 @@ impl StorageService for KVStorageService {
         return Ok(None);
     }
 
-    async fn update_instance_current_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-    ) -> Result<(), UpdateConfigInstanceCurrentRevisionError> {
-        let mut instances = self
-            .get_config_instance_metadata(config_name)
-            .await?
-            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
-
-        let instance = instances
-            .iter_mut()
-            .find(|i| i.instance == instance)
-            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
-
-        if !instance.revisions.contains(&String::from(revision)) {
-            return Err(UpdateConfigInstanceCurrentRevisionError::NoRevisionFound);
-        }
-        instance.pending_revision = Some(String::from(revision));
-
-        self.adapter
-            .save_instance_metadata(config_name, instances)
-            .await?;
-
-        return Ok(());
-    }
-
-    async fn approve_pending_instance_revision(
+    async fn approve_instance_revision(
         &self,
         config_name: &str,
         instance: &str,
@@ -441,10 +415,59 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_revision(config_name, &revision_data)
             .await?;
+
+        if !instance.revisions.contains(&String::from(revision)) {
+            instance.revisions.push(String::from(revision));
+        }
+
+        self.adapter
+            .save_instance_metadata(config_name, metadata)
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn apply_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+        applied_by_uuid: &str,
+    ) -> Result<(), ApplyRevisionError> {
+        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
+            Some(metadata) => metadata,
+            None => return Err(ApplyRevisionError::InvalidConfig),
+        };
+
+        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+            Some(instance) => instance,
+            None => return Err(ApplyRevisionError::InvalidInstance),
+        };
+
+        // Verify instance is the pending revision
+        if let Some(pending_revision) = &instance.pending_revision {
+            if pending_revision != revision {
+                return Err(ApplyRevisionError::InvalidRevision);
+            }
+        } else {
+            return Err(ApplyRevisionError::InvalidRevision);
+        }
+
+        let revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+            Some(Some(revision_data)) => revision_data,
+            None | Some(None) => return Err(ApplyRevisionError::InvalidRevision),
+        };
+
+        if revision_data.review_state != RevisionReviewState::Approved {
+            return Err(ApplyRevisionError::NotApproved);
+        }
+
+        let now = Utc::now().timestamp_millis();
         instance.changelog.push(ConfigInstanceChange {
             timestamp_ms: now,
             previous_revision: Some(instance.current_revision.clone()),
             new_revision: String::from(revision),
+            applied_by_uuid: String::from(applied_by_uuid),
         });
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;

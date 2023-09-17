@@ -18,38 +18,37 @@ export const revisions = t.router({
 
             return await response.json();
         }),
-    approveInstanceRevision: t.procedure
+    reviewInstanceRevision: t.procedure
         .input(z.object({
             configName: z.string(),
             instance: z.string(),
             revision: z.string(),
+            reviewResult: z.enum(["Approve", "ApproveAndApply", "Reject"])
         }))
         .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/approve`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/review/${input.reviewResult}`, {
                 headers: createYakManAuthHeaders(ctx.accessToken),
                 method: 'POST'
             });
 
             if (response.status != 200) {
-                throw new Error(`failed to approve revision: http-status [${response.status}]`);
+                throw new Error(`failed to review revision: http-status [${response.status}]`);
             }
-
         }),
-    updateInstanceRevision: t.procedure
+    applyInstanceRevision: t.procedure
         .input(z.object({
             configName: z.string(),
             instance: z.string(),
             revision: z.string(),
         }))
         .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/submit`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/apply`, {
                 headers: createYakManAuthHeaders(ctx.accessToken),
-                method: 'PUT'
+                method: 'POST'
             });
 
             if (response.status != 200) {
-                throw new Error(`failed to submit revision: http-status [${response.status}]`);
+                throw new Error(`failed to apply revision: http-status [${response.status}]`);
             }
-
         }),
 });

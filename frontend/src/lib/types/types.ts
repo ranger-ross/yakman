@@ -36,6 +36,7 @@ export const ConfigInstanceChangeSchema = z.object({
     timestamp_ms: z.number(),
     previous_revision: z.string().nullable(),
     new_revision: z.string(),
+    applied_by_uuid: z.string()
 });
 
 export type ConfigInstanceChange = z.infer<typeof ConfigInstanceChangeSchema>;
@@ -57,7 +58,6 @@ export const YakManInstanceRevisionSchema = z.object({
     data_key: z.string(), // Key to fetch data
     labels: z.array(YakManLabelSchema),
     timestamp_ms: z.number().int(),
-    approved: z.boolean(),
     review_state: z.enum(['Pending', 'Approved', 'Rejected']),
     reviewed_by_uuid: z.string().nullable(),
     review_timestamp_ms: z.number().int().nullable(),

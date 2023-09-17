@@ -72,24 +72,17 @@ where
         Box::pin(async move {
             let mut user_uuid: Option<String> = None;
             let state = req.app_data::<web::Data<StateManager>>().unwrap();
-            let token = &req.cookie(OAUTH_ACCESS_TOKEN_COOKIE_NAME);
-
-            if token.is_none() {
-                req.extensions_mut()
-                    .insert(YakManPrinciple { user_uuid: None });
-            }
-
-            let token = token.as_ref().unwrap();
-
-            match state
-                .get_token_service()
-                .validate_access_token(token.value())
-            {
-                Ok(claims) => {
-                    let uuid = claims.uuid;
-                    user_uuid = Some(uuid);
+            if let Some(token) = &req.cookie(OAUTH_ACCESS_TOKEN_COOKIE_NAME) {
+                match state
+                    .get_token_service()
+                    .validate_access_token(token.value())
+                {
+                    Ok(claims) => {
+                        let uuid = claims.uuid;
+                        user_uuid = Some(uuid);
+                    }
+                    Err(_) => (),
                 }
-                Err(_) => (),
             }
 
             req.extensions_mut().insert(YakManPrinciple {

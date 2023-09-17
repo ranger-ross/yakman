@@ -12,16 +12,20 @@ export const load: PageLoad = async (event) => {
 
     const metadata = await trpc(event).instances.fetchConfigMetadata.query(config);
 
-    let pendingRevision: string | null = null;
     let instanceMetadata: YakManConfigInstance | null = null;
     let currentData: { data: string; contentType: string; } | null = null;
     let pendingData: { data: string; contentType: string; } | null = null;
 
     for (const inst of metadata) {
         if (inst.instance == instance) {
-            pendingRevision = inst.pending_revision;
             instanceMetadata = inst;
         }
+    }
+
+    const pendingRevision = revisions.find(rev => rev.revision === instanceMetadata?.pending_revision)
+
+    if (!pendingRevision) {
+        console.error(`Failed to find revision ${instanceMetadata?.pending_revision}, this will likely prevent approve/reject/applying.`)
     }
 
     if (instanceMetadata) {
