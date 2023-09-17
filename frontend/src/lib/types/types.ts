@@ -58,6 +58,9 @@ export const YakManInstanceRevisionSchema = z.object({
     labels: z.array(YakManLabelSchema),
     timestamp_ms: z.number().int(),
     approved: z.boolean(),
+    review_state: z.enum(['Pending', 'Approved', 'Rejected']),
+    reviewed_by_uuid: z.string().nullable(),
+    review_timestamp_ms: z.number().int().nullable(),
     content_type: z.string(),
 });
 

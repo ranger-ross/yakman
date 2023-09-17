@@ -8,7 +8,7 @@ use crate::{
     },
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManProject, YakManRole, YakManUser, YakManUserDetails,
+        RevisionReviewState, YakManProject, YakManRole, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -111,10 +111,11 @@ impl StorageService for KVStorageService {
         labels: Vec<Label>,
         data: &str,
         content_type: Option<String>,
+        creator_uuid: &str,
     ) -> Result<String, CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
             let instance = short_sha(&Uuid::new_v4().to_string());
-            let revision_key = short_sha(&Uuid::new_v4().to_string());
+            let revision_key: String = short_sha(&Uuid::new_v4().to_string());
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
@@ -129,7 +130,9 @@ impl StorageService for KVStorageService {
                 data_key: String::from(&data_key),
                 labels: labels,
                 timestamp_ms: now,
-                approved: false,
+                review_state: RevisionReviewState::Approved,
+                reviewed_by_uuid: Some(creator_uuid.to_string()),
+                review_timestamp_ms: Some(now),
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
@@ -301,12 +304,15 @@ impl StorageService for KVStorageService {
                 .await?;
 
             // Create revision
+            let now = Utc::now().timestamp_millis();
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
                 labels: labels,
-                timestamp_ms: Utc::now().timestamp_millis(),
-                approved: false,
+                timestamp_ms: now,
+                review_state: RevisionReviewState::Pending,
+                reviewed_by_uuid: None,
+                review_timestamp_ms: Some(now),
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
@@ -380,7 +386,7 @@ impl StorageService for KVStorageService {
             .await?
             .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
 
-        let mut instance = instances
+        let instance = instances
             .iter_mut()
             .find(|i| i.instance == instance)
             .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
@@ -402,13 +408,14 @@ impl StorageService for KVStorageService {
         config_name: &str,
         instance: &str,
         revision: &str,
+        approved_uuid: &str,
     ) -> Result<(), ApproveRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_name).await? {
             Some(metadata) => metadata,
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
 
-        let mut instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApproveRevisionError::InvalidInstance),
         };
@@ -427,12 +434,13 @@ impl StorageService for KVStorageService {
             None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
 
-        revision_data.approved = true;
+        let now = Utc::now().timestamp_millis();
+        revision_data.review_state = RevisionReviewState::Approved;
+        revision_data.reviewed_by_uuid = Some(approved_uuid.to_string());
+        revision_data.review_timestamp_ms = Some(now);
         self.adapter
             .save_revision(config_name, &revision_data)
             .await?;
-
-        let now = Utc::now().timestamp_millis();
         instance.changelog.push(ConfigInstanceChange {
             timestamp_ms: now,
             previous_revision: Some(instance.current_revision.clone()),

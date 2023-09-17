@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::middleware::YakManPrinciple;
 use crate::model::{Label, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
@@ -107,6 +108,7 @@ async fn create_new_instance(
     data: String,
     state: web::Data<StateManager>,
     req: HttpRequest,
+    principle: YakManPrinciple,
 ) -> HttpResponse {
     let config_name = path.into_inner();
     let service = state.get_service();
@@ -132,12 +134,17 @@ async fn create_new_instance(
         return HttpResponse::Forbidden().finish();
     }
 
+    let creator_uuid = principle.user_uuid;
+    if creator_uuid.is_none() {
+        return HttpResponse::Forbidden().finish();
+    } 
+
     // TODO: do validation
     // - labels are valid
     // - not a duplicate?
 
     match service
-        .create_config_instance(&config_name, labels, &data, content_type)
+        .create_config_instance(&config_name, labels, &data, content_type, &creator_uuid.unwrap())
         .await
     {
         Ok(instance) => HttpResponse::Ok().body(instance),

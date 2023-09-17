@@ -55,12 +55,21 @@ pub struct ConfigInstanceChange {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub enum RevisionReviewState {
+  Pending,
+  Approved,
+  Rejected
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ConfigInstanceRevision {
     pub revision: String, // Unique key
     pub data_key: String, // Key to fetch data
     pub labels: Vec<Label>,
     pub timestamp_ms: i64,
-    pub approved: bool,
+    pub review_state: RevisionReviewState,
+    pub reviewed_by_uuid: Option<String>,
+    pub review_timestamp_ms: Option<i64>,
     pub content_type: String,
 }
 

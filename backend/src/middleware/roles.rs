@@ -1,10 +1,10 @@
 extern crate dotenv;
 
 use crate::auth::oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME;
+use crate::model::{YakManRole, YakManUserProjectRole};
 use crate::StateManager;
 use actix_web::{dev::ServiceRequest, web, Error};
 use log::info;
-use crate::model::{YakManRole, YakManUserProjectRole};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum YakManRoleBinding {
