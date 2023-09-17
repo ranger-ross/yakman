@@ -8,7 +8,7 @@ use crate::{
     },
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManProject, YakManRole, YakManUser, YakManUserDetails,
+        YakManProject, YakManRole, YakManUser, YakManUserDetails, RevisionReviewState,
     },
 };
 use async_trait::async_trait;
@@ -129,7 +129,9 @@ impl StorageService for KVStorageService {
                 data_key: String::from(&data_key),
                 labels: labels,
                 timestamp_ms: now,
-                approved: false,
+                review_state: RevisionReviewState::Approved,
+                reviewed_by_uuid: None, // TODO: set user uuid
+                review_timestamp_ms: Some(now),
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
@@ -301,12 +303,15 @@ impl StorageService for KVStorageService {
                 .await?;
 
             // Create revision
+            let now = Utc::now().timestamp_millis();
             let revision = ConfigInstanceRevision {
                 revision: String::from(&revision_key),
                 data_key: String::from(&data_key),
                 labels: labels,
-                timestamp_ms: Utc::now().timestamp_millis(),
-                approved: false,
+                timestamp_ms: now,
+                review_state: RevisionReviewState::Pending,
+                reviewed_by_uuid: None, // TODO: Set the review uuid
+                review_timestamp_ms: Some(now), 
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
@@ -427,12 +432,13 @@ impl StorageService for KVStorageService {
             None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
 
-        revision_data.approved = true;
+        let now = Utc::now().timestamp_millis();
+        revision_data.review_state = RevisionReviewState::Approved;
+        revision_data.reviewed_by_uuid = None; // TODO: Set the review uuid
+        revision_data.review_timestamp_ms = Some(now);
         self.adapter
             .save_revision(config_name, &revision_data)
             .await?;
-
-        let now = Utc::now().timestamp_millis();
         instance.changelog.push(ConfigInstanceChange {
             timestamp_ms: now,
             previous_revision: Some(instance.current_revision.clone()),
