@@ -8,7 +8,7 @@ use crate::{
     },
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
-        YakManProject, YakManRole, YakManUser, YakManUserDetails, RevisionReviewState,
+        RevisionReviewState, YakManProject, YakManRole, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -311,8 +311,8 @@ impl StorageService for KVStorageService {
                 labels: labels,
                 timestamp_ms: now,
                 review_state: RevisionReviewState::Pending,
-                reviewed_by_uuid: None, // TODO: Set the review uuid
-                review_timestamp_ms: Some(now), 
+                reviewed_by_uuid: None,
+                review_timestamp_ms: Some(now),
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
