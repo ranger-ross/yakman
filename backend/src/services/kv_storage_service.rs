@@ -4,7 +4,6 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
-        UpdateConfigInstanceCurrentRevisionError,
     },
     model::{
         Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
@@ -320,6 +319,8 @@ impl StorageService for KVStorageService {
             // Update instance data
             if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
                 instance.pending_revision = Some(String::from(&revision.revision));
+                instance.revisions.push(String::from(&revision.revision));
+
                 self.adapter
                     .save_instance_metadata(config_name, instances)
                     .await?;
@@ -373,34 +374,6 @@ impl StorageService for KVStorageService {
         }
         info!("Fetching revision not found");
         return Ok(None);
-    }
-
-    async fn update_instance_current_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-    ) -> Result<(), UpdateConfigInstanceCurrentRevisionError> {
-        let mut instances = self
-            .get_config_instance_metadata(config_name)
-            .await?
-            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
-
-        let instance = instances
-            .iter_mut()
-            .find(|i| i.instance == instance)
-            .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
-
-        if !instance.revisions.contains(&String::from(revision)) {
-            return Err(UpdateConfigInstanceCurrentRevisionError::NoRevisionFound);
-        }
-        instance.pending_revision = Some(String::from(revision));
-
-        self.adapter
-            .save_instance_metadata(config_name, instances)
-            .await?;
-
-        return Ok(());
     }
 
     async fn approve_instance_revision(

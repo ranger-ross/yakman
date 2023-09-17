@@ -86,13 +86,6 @@ pub trait StorageService: Sync + Send {
         instance: &str,
     ) -> Result<Option<Vec<ConfigInstanceRevision>>, GenericStorageError>;
 
-    async fn update_instance_current_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-    ) -> Result<(), UpdateConfigInstanceCurrentRevisionError>;
-
     async fn approve_instance_revision(
         &self,
         config_name: &str,

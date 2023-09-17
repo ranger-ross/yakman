@@ -29,8 +29,23 @@
         });
     }
 
-    function onApply() {
-        console.warn("TODO: Impl apply");
+    async function onApply() {
+        openGlobaModal({
+            title: "Approve Changes",
+            message: "Are you sure you want to apply these changes?",
+            async onConfirm() {
+                try {
+                    await trpc($page).revisions.applyInstanceRevision.mutate({
+                        configName: config,
+                        instance: instance,
+                        revision: data.pendingRevision?.revision as string,
+                    });
+                    goto(`/view-instance/${config}/${instance}`);
+                } catch (e) {
+                    console.error("Error while approving config: ", e);
+                }
+            },
+        });
     }
 
     async function saveChanges(isApply: boolean) {
