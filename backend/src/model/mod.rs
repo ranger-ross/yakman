@@ -52,6 +52,7 @@ pub struct ConfigInstanceChange {
     pub timestamp_ms: i64,
     pub previous_revision: Option<String>,
     pub new_revision: String,
+    pub applied_by_uuid: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

@@ -36,6 +36,7 @@ export const ConfigInstanceChangeSchema = z.object({
     timestamp_ms: z.number(),
     previous_revision: z.string().nullable(),
     new_revision: z.string(),
+    applied_by_uuid: z.string()
 });
 
 export type ConfigInstanceChange = z.infer<typeof ConfigInstanceChangeSchema>;

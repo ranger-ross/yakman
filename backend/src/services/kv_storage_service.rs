@@ -148,6 +148,7 @@ impl StorageService for KVStorageService {
                     timestamp_ms: now,
                     previous_revision: None,
                     new_revision: revision.revision,
+                    applied_by_uuid: creator_uuid.to_string(),
                 }],
             });
             self.adapter
@@ -431,7 +432,7 @@ impl StorageService for KVStorageService {
         config_name: &str,
         instance: &str,
         revision: &str,
-        applied_by_uuid: &str, // TODO: Add this to the changelog data
+        applied_by_uuid: &str,
     ) -> Result<(), ApplyRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_name).await? {
             Some(metadata) => metadata,
@@ -466,6 +467,7 @@ impl StorageService for KVStorageService {
             timestamp_ms: now,
             previous_revision: Some(instance.current_revision.clone()),
             new_revision: String::from(revision),
+            applied_by_uuid: String::from(applied_by_uuid),
         });
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;

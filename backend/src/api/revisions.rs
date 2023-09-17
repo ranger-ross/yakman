@@ -108,7 +108,7 @@ async fn review_pending_instance_revision(
     }
 }
 
-/// Applys an approved revision
+/// Applies an approved revision
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/apply")]
 async fn apply_instance_revision(
