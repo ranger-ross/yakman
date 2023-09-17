@@ -9,6 +9,7 @@ mod model;
 extern crate dotenv;
 
 use crate::auth::oauth_service::OauthService;
+use crate::middleware::YakManPrincipleTransformer;
 use crate::middleware::roles::extract_roles;
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -126,6 +127,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .wrap(YakManPrincipleTransformer)
             .wrap(Etag::default())
             .wrap(Logger::new("%s %r"))
             .wrap(GrantsMiddleware::with_extractor(extract_roles))

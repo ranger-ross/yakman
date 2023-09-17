@@ -1,6 +1,8 @@
+use crate::middleware::YakManPrinciple;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::{get, post, put, web, HttpResponse};
+use actix_web::dev::ServiceRequest;
+use actix_web::{get, post, put, web, HttpResponse, HttpRequest};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get all of the revisions for a config
@@ -10,7 +12,13 @@ async fn get_instance_revisions(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
+    // z: YakManPrinciple
 ) -> HttpResponse {
+
+
+    // log::info!("{:?}", z);
+
+
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
