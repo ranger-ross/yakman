@@ -104,7 +104,15 @@ async fn review_pending_instance_revision(
                 Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
             };
         }
-        ReviewResult::Reject => todo!(),
+        ReviewResult::Reject => {
+            return match service
+                .reject_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
+                .await
+            {
+                Ok(_) => HttpResponse::Ok().finish(),
+                Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
+            };
+        }
     }
 }
 

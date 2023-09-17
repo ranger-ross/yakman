@@ -484,6 +484,50 @@ impl StorageService for KVStorageService {
         return Ok(());
     }
 
+    async fn reject_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+        rejected_by_uuid: &str,
+    ) -> Result<(), ApplyRevisionError> {
+        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
+            Some(metadata) => metadata,
+            None => return Err(ApplyRevisionError::InvalidConfig),
+        };
+
+        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+            Some(instance) => instance,
+            None => return Err(ApplyRevisionError::InvalidInstance),
+        };
+
+        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+            Some(Some(revision_data)) => revision_data,
+            None | Some(None) => return Err(ApplyRevisionError::InvalidRevision),
+        };
+
+        let now = Utc::now().timestamp_millis();
+        revision_data.review_state = RevisionReviewState::Rejected;
+        revision_data.reviewed_by_uuid = Some(rejected_by_uuid.to_string());
+        revision_data.review_timestamp_ms = Some(now);
+
+        instance.pending_revision = None;
+
+        if let Some(index) = instance.revisions.iter().position(|x| *x == revision) {
+            instance.revisions.remove(index);
+        }
+
+        self.adapter
+            .save_revision(config_name, &revision_data)
+            .await?;
+
+        self.adapter
+            .save_instance_metadata(config_name, metadata)
+            .await?;
+
+        return Ok(());
+    }
+
     async fn initialize_storage(&self) -> Result<(), GenericStorageError> {
         info!("initializing local storage adapter");
 

@@ -102,6 +102,14 @@ pub trait StorageService: Sync + Send {
         applied_by_uuid: &str,
     ) -> Result<(), ApplyRevisionError>;
 
+    async fn reject_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+        rejected_by_uuid: &str,
+    ) -> Result<(), ApplyRevisionError>;
+
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
     async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError>;
