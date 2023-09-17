@@ -5,7 +5,7 @@ use crate::{
     error::{
         ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError,
         CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
-        UpdateConfigInstanceCurrentRevisionError,
+        UpdateConfigInstanceCurrentRevisionError, ApplyRevisionError,
     },
     model::{
         Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject,
@@ -93,13 +93,21 @@ pub trait StorageService: Sync + Send {
         revision: &str,
     ) -> Result<(), UpdateConfigInstanceCurrentRevisionError>;
 
-    async fn approve_pending_instance_revision(
+    async fn approve_instance_revision(
         &self,
         config_name: &str,
         instance: &str,
         revision: &str,
         approved_uuid: &str,
     ) -> Result<(), ApproveRevisionError>;
+
+    async fn apply_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+        applied_by_uuid: &str,
+    ) -> Result<(), ApplyRevisionError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 

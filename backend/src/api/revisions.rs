@@ -75,8 +75,7 @@ async fn submit_instance_revision(
     };
 }
 
-#[derive(Debug, Deserialize)]
-
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 enum ReviewResult {
     Approve,
     ApproveAndApply,
@@ -109,23 +108,36 @@ async fn review_pending_instance_revision(
     if reviewer_uuid.is_none() {
         return HttpResponse::Forbidden().finish();
     }
+    let reviewer_uuid = reviewer_uuid.unwrap();
 
     match result {
-        ReviewResult::Approve => {
+        ReviewResult::ApproveAndApply | ReviewResult::Approve => {
             return match service
-                .approve_pending_instance_revision(
-                    &config_name,
-                    &instance,
-                    &revision,
-                    &reviewer_uuid.unwrap(),
-                )
+                .approve_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
                 .await
             {
-                Ok(_) => HttpResponse::Ok().finish(),
+                Ok(_) => {
+                    if result == ReviewResult::ApproveAndApply {
+                        return match service
+                            .apply_instance_revision(
+                                &config_name,
+                                &instance,
+                                &revision,
+                                &reviewer_uuid,
+                            )
+                            .await
+                        {
+                            Ok(_) => HttpResponse::Ok().finish(),
+                            Err(_) => HttpResponse::InternalServerError()
+                                .body("failed to update instance"),
+                        };
+                    }
+
+                    return HttpResponse::Ok().finish();
+                }
                 Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
             };
         }
-        ReviewResult::ApproveAndApply => todo!(),
         ReviewResult::Reject => todo!(),
     }
 }

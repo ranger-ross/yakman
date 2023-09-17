@@ -27,7 +27,7 @@
                 configName: config,
                 instance: instance,
                 revision: data.pendingRevision as string,
-                reviewResult: 'Approve'
+                reviewResult: 'ApproveAndApply'
             });
             goto(`/view-instance/${config}/${instance}`);
         } catch (e) {
