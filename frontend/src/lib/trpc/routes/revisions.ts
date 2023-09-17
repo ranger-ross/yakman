@@ -34,7 +34,6 @@ export const revisions = t.router({
             if (response.status != 200) {
                 throw new Error(`failed to review revision: http-status [${response.status}]`);
             }
-
         }),
     applyInstanceRevision: t.procedure
         .input(z.object({
@@ -51,23 +50,5 @@ export const revisions = t.router({
             if (response.status != 200) {
                 throw new Error(`failed to apply revision: http-status [${response.status}]`);
             }
-
-        }),
-    submitInstanceRevision: t.procedure
-        .input(z.object({
-            configName: z.string(),
-            instance: z.string(),
-            revision: z.string(),
-        }))
-        .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/submit`, {
-                headers: createYakManAuthHeaders(ctx.accessToken),
-                method: 'PUT'
-            });
-
-            if (response.status != 200) {
-                throw new Error(`failed to submit revision: http-status [${response.status}]`);
-            }
-
         }),
 });
