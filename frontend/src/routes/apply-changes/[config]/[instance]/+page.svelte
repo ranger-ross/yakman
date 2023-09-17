@@ -11,23 +11,35 @@
 
     let { config, instance } = $page.params;
 
-    function onApprove() {
+    console.log(data);
+
+    function onApprove(isApply: boolean) {
+        const message =
+            "Are you sure you want to approve this change?" +
+            (isApply
+                ? "It will be applied immediately"
+                : "You will need to apply it before changes are reflected");
+
         openGlobaModal({
             title: "Approve Changes",
-            message: "Are you sure you want to approve this change? It will be applied immediately",
+            message,
             onConfirm() {
-                saveChanges();
+                saveChanges(isApply);
             },
         });
     }
 
-    async function saveChanges() {
+    function onApply() {
+        console.warn("TODO: Impl apply");
+    }
+
+    async function saveChanges(isApply: boolean) {
         try {
             await trpc($page).revisions.reviewInstanceRevision.mutate({
                 configName: config,
                 instance: instance,
-                revision: data.pendingRevision as string,
-                reviewResult: 'ApproveAndApply'
+                revision: data.pendingRevision?.revision as string,
+                reviewResult: isApply ? "ApproveAndApply" : "Approve",
             });
             goto(`/view-instance/${config}/${instance}`);
         } catch (e) {
@@ -68,7 +80,17 @@
                     </div>
                 </div>
 
-                <YakManButton on:click={onApprove}>Approve</YakManButton>
+                {#if data.pendingRevision.review_state != "Approved"}
+                    <YakManButton on:click={() => onApprove(false)}>
+                        Approve
+                    </YakManButton>
+
+                    <YakManButton on:click={() => onApprove(true)}>
+                        Approve and Apply
+                    </YakManButton>
+                {:else if data.pendingRevision.review_state == "Approved"}
+                    <YakManButton on:click={onApply}>Apply</YakManButton>
+                {/if}
             </div>
         {:else}
             No pending revisions

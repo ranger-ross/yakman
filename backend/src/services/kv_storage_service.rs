@@ -441,6 +441,15 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_revision(config_name, &revision_data)
             .await?;
+
+        if !instance.revisions.contains(&String::from(revision)) {
+            instance.revisions.push(String::from(revision));
+        }
+
+        self.adapter
+            .save_instance_metadata(config_name, metadata)
+            .await?;
+
         return Ok(());
     }
 
@@ -449,7 +458,7 @@ impl StorageService for KVStorageService {
         config_name: &str,
         instance: &str,
         revision: &str,
-        applied_by_uuid: &str,
+        applied_by_uuid: &str, // TODO: Add this to the changelog data
     ) -> Result<(), ApplyRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_name).await? {
             Some(metadata) => metadata,
