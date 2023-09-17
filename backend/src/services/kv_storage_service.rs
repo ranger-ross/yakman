@@ -386,7 +386,7 @@ impl StorageService for KVStorageService {
             .await?
             .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
 
-        let mut instance = instances
+        let instance = instances
             .iter_mut()
             .find(|i| i.instance == instance)
             .ok_or(UpdateConfigInstanceCurrentRevisionError::NoConfigFound)?;
@@ -415,7 +415,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
 
-        let mut instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApproveRevisionError::InvalidInstance),
         };

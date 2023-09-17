@@ -47,7 +47,6 @@ async fn submit_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
-    principle: YakManPrinciple,
 ) -> HttpResponse {
     let (config_name, instance, revision) = path.into_inner();
     let service = state.get_service();

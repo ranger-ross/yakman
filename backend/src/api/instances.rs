@@ -135,7 +135,7 @@ async fn create_new_instance(
     }
 
     let creator_uuid = principle.user_uuid;
-    if (creator_uuid.is_none()) {
+    if creator_uuid.is_none() {
         return HttpResponse::Forbidden().finish();
     } 
 
