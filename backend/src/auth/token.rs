@@ -1,3 +1,4 @@
+use crate::model::YakManUser;
 use chrono::Utc;
 use hmac::{Hmac, Mac};
 use jwt::Header;
@@ -5,16 +6,19 @@ use jwt::SignWithKey;
 use jwt::Token;
 use jwt::VerifyWithKey;
 use log::debug;
-use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Sha256;
-use std::env::{self, VarError};
+use short_crypt::ShortCrypt;
+use std::{
+    env::{self, VarError},
+    string::FromUtf8Error,
+};
 use thiserror::Error;
-use crate::model::YakManUser;
 
 pub struct TokenService {
-    secret: String,
+    access_token_signing_key: String,
+    refresh_token_shortcrypt: ShortCrypt,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -28,11 +32,14 @@ pub struct YakManJwtClaims {
 
 impl TokenService {
     pub fn from_env() -> Result<TokenService, JwtServiceCreateError> {
-        let secret = env::var("YAKMAN_TOKEN_SECRET")
-            .map_err(|e| JwtServiceCreateError::FailedToLoadEnvVar(Box::new(e)))?;
+        let access_token_signing_key = env::var("YAKMAN_ACCESS_TOKEN_SIGNING_KEY")
+            .map_err(|e| JwtServiceCreateError::FailedToLoadSigningKey(Box::new(e)))?;
+        let refresh_token_encryption_key = env::var("YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY")
+            .map_err(|e| JwtServiceCreateError::FailedToLoadEncryptionKey(Box::new(e)))?;
 
         Ok(TokenService {
-            secret: String::from(secret),
+            access_token_signing_key: String::from(access_token_signing_key),
+            refresh_token_shortcrypt: ShortCrypt::new(refresh_token_encryption_key),
         })
     }
 
@@ -42,7 +49,7 @@ impl TokenService {
         username: &str,
         user: &YakManUser,
     ) -> Result<(String, i64), JwtCreateError> {
-        let key: Hmac<Sha256> = Hmac::new_from_slice(self.secret.as_bytes())
+        let key: Hmac<Sha256> = Hmac::new_from_slice(self.access_token_signing_key.as_bytes())
             .map_err(|e| JwtCreateError::InvalidSecret(Box::new(e)))?;
 
         let token_time_to_live_seconds = 60 * 60; // TODO: Make overridable
@@ -69,8 +76,19 @@ impl TokenService {
     }
 
     pub fn encrypt_refresh_token(&self, refresh_token: &str) -> String {
-        warn!("Refresh token encyrption is not yet implmented");
-        refresh_token.to_string() // TODO: encrypt refresh token
+        return self
+            .refresh_token_shortcrypt
+            .encrypt_to_url_component(refresh_token);
+    }
+
+    pub fn decrypt_refresh_token(
+        &self,
+        encoded_ciphertext: &str,
+    ) -> Result<String, RefreshTokenDecryptError> {
+        let decrypted_bytes = self
+            .refresh_token_shortcrypt
+            .decrypt_url_component(encoded_ciphertext)?;
+        return Ok(String::from_utf8(decrypted_bytes)?);
     }
 
     pub fn validate_access_token(
@@ -78,7 +96,7 @@ impl TokenService {
         token: &str,
     ) -> Result<YakManJwtClaims, JwtValidationError> {
         debug!("Validating token");
-        let key: Hmac<Sha256> = Hmac::new_from_slice(self.secret.as_bytes())
+        let key: Hmac<Sha256> = Hmac::new_from_slice(self.access_token_signing_key.as_bytes())
             .map_err(|e| JwtValidationError::InvalidSecret(Box::new(e)))?;
 
         let claims: YakManJwtClaims = token
@@ -96,8 +114,10 @@ impl TokenService {
 
 #[derive(Error, Debug)]
 pub enum JwtServiceCreateError {
-    #[error("Failed to load YAKMAN_TOKEN_SECRET env var")]
-    FailedToLoadEnvVar(Box<VarError>),
+    #[error("Failed to load YAKMAN_ACCESS_TOKEN_SIGNING_KEY env var")]
+    FailedToLoadSigningKey(Box<VarError>),
+    #[error("Failed to load YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY env var")]
+    FailedToLoadEncryptionKey(Box<VarError>),
 }
 
 #[derive(Error, Debug)]
@@ -116,4 +136,22 @@ pub enum JwtValidationError {
     InvalidToken(Box<dyn std::error::Error>),
     #[error("Token expired")]
     TokenExpired,
+}
+
+#[derive(Error, Debug)]
+pub enum RefreshTokenDecryptError {
+    #[error("Failed to decrypt token")]
+    FailedToDecrypt(String),
+}
+
+impl From<FromUtf8Error> for RefreshTokenDecryptError {
+    fn from(value: FromUtf8Error) -> Self {
+        RefreshTokenDecryptError::FailedToDecrypt(value.to_string())
+    }
+}
+
+impl From<&str> for RefreshTokenDecryptError {
+    fn from(value: &str) -> Self {
+        RefreshTokenDecryptError::FailedToDecrypt(value.to_string())
+    }
 }
