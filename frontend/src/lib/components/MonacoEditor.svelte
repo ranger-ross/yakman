@@ -56,6 +56,8 @@
       value: content,
       language: language,
       readOnly: disabled,
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 0,
     });
 
     editor.onDidChangeModelContent(() => (content = editor.getValue()));
@@ -75,6 +77,6 @@
   });
 </script>
 
-<div class="h-full w-full shadow-sm rounded-md border border-gray-300">
-  <div bind:this={divEl} class="h-full w-full" />
+<div class="h-full w-full shadow-sm rounded border border-gray-300">
+  <div bind:this={divEl} class="h-full w-full mx-2" />
 </div>
