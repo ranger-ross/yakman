@@ -7,12 +7,12 @@ use crate::{
     },
     error::YakManError,
     middleware::roles::YakManRoleBinding,
-    StateManager,
     model::{
         oauth::{OAuthExchangePayload, OAuthInitPayload},
         response::GetUserRolesResponse,
         YakManRole,
-    }
+    },
+    StateManager,
 };
 use actix_web::{
     cookie::{time::Duration, Cookie},
@@ -121,7 +121,7 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
         Ok(token) => token,
         Err(e) => {
             error!("Could not refresh token {e}");
-            return HttpResponse::InternalServerError().body("Could not refresh token");
+            return HttpResponse::Unauthorized().body("Could not refresh token");
         }
     };
 

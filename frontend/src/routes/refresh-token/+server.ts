@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { getYakManBaseApiUrl } from '$lib/trpc/helper';
 import { parse } from 'set-cookie-parser';
-import { json } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
 
 const BASE_URL = getYakManBaseApiUrl()
 
@@ -10,13 +10,21 @@ export const POST: RequestHandler = async function ({ cookies, fetch }) {
 
     const response = await fetch(`${BASE_URL}/oauth2/refresh`, {
         method: 'POST',
-        headers: {
+        headers: !!refreshToken ? {
             'Cookie': `refresh_token=${refreshToken}`
-        }
+        } : {}
     });
 
+    if (response.status == 401) {
+        throw error(401, {
+            message: 'NAV_TO_LOGIN'
+        })
+    }
+
     if (response.status != 200) {
-        throw new Error(await response.text())
+        throw error(401, {
+            message: await response.text()
+        })
     }
 
     for (const cookie of parse(response as any)) {

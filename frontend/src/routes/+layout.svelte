@@ -4,7 +4,8 @@
 	import { roles } from "$lib/stores/roles";
 	import "./styles.css";
 	import YakManModal from "$lib/components/YakManModal.svelte";
-    import { globalModalState } from "$lib/stores/global-modal-state";
+	import { globalModalState } from "$lib/stores/global-modal-state";
+	import { goto } from "$app/navigation";
 
 	// TODO: Fix typescript typing
 	export let data;
@@ -27,6 +28,8 @@
 			}).then((response) => {
 				if (response.status === 200) {
 					window.location.reload();
+				} else if (response.status === 401) {
+					goto(`/login`);
 				}
 			});
 		}
