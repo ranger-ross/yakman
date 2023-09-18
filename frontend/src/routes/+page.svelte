@@ -139,7 +139,7 @@
 			{/if}
 
 			{#each data.configs as config}
-				<div class="bg-white border-2 border-gray-200 m-2 p-4">
+				<div class="bg-white border-2 border-gray-200 m-2 p-4 rounded">
 					<div class="flex justify-between">
 						<h3 class="text-gray-900 font-bold text-lg">
 							{config.config.name}

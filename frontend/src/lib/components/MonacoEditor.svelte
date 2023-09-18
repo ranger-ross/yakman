@@ -52,10 +52,23 @@
       schemas: [],
     });
 
+    Monaco.editor.defineTheme("yakmanMonacoTheme", {
+      base: "vs",
+      inherit: true,
+      colors: {
+        "editor.background": "#ffffff00", // transparent
+      },
+      rules: [],
+    });
+
     editor = Monaco.editor.create(divEl!, {
       value: content,
       language: language,
       readOnly: disabled,
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 2,
+      minimap: { enabled: false },
+      theme: "yakmanMonacoTheme",
     });
 
     editor.onDidChangeModelContent(() => (content = editor.getValue()));
@@ -75,6 +88,17 @@
   });
 </script>
 
-<div class="h-full w-full shadow-sm rounded-md border border-gray-300">
-  <div bind:this={divEl} class="h-full w-full" />
+<svelte:window
+  on:resize={() => {
+    window.requestAnimationFrame(() => {
+      const rect = divEl?.parentElement?.getBoundingClientRect();
+      if (rect) {
+        editor.layout({ width: rect.width, height: rect.height });
+      }
+    });
+  }}
+/>
+
+<div class="h-full shadow-sm rounded border border-gray-300">
+  <div bind:this={divEl} class="h-full" />
 </div>
