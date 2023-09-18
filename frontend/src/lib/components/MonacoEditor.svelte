@@ -58,6 +58,7 @@
       readOnly: disabled,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
+      minimap: { enabled: false },
     });
 
     editor.onDidChangeModelContent(() => (content = editor.getValue()));
@@ -77,6 +78,17 @@
   });
 </script>
 
-<div class="h-full w-full shadow-sm rounded border border-gray-300">
-  <div bind:this={divEl} class="h-full w-full mx-2" />
+<svelte:window
+  on:resize={() => {
+    window.requestAnimationFrame(() => {
+      const rect = divEl?.parentElement?.getBoundingClientRect();
+      if (rect) {
+        editor.layout({ width: rect.width, height: rect.height });
+      }
+    });
+  }}
+/>
+
+<div class="h-full shadow-sm rounded border border-gray-300">
+  <div bind:this={divEl} class="h-full mx-1" />
 </div>
