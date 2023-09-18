@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
+    import ApprovedPill from "$lib/components/ApprovedPill.svelte";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import { openGlobaModal } from "$lib/stores/global-modal-state";
@@ -91,9 +92,15 @@
         </h1>
         {#if data.pendingRevision}
             <div>
-                <h3 class="text-md font-bold text-gray-600">
-                    Pending Revision => {data.pendingRevision?.revision}
-                </h3>
+                <div class="flex gap-2">
+                    <h3 class="text-md font-bold text-gray-600">
+                        Pending Revision => {data.pendingRevision?.revision}
+                    </h3>
+
+                    {#if data.pendingRevision.review_state == "Approved"}
+                        <ApprovedPill />
+                    {/if}
+                </div>
 
                 <div class="w-full flex justify-evenly gap-6">
                     <div class="m-2 p-2 bg-gray-100 rounded-md w-80">
