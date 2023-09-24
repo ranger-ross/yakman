@@ -27,8 +27,8 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@trpc/client": "10.38.3",
-		"@trpc/server": "10.38.3",
+		"@trpc/client": "10.38.4",
+		"@trpc/server": "10.38.4",
 		"monaco-editor": "0.43.0",
 		"monaco-yaml": "5.1.0",
 		"set-cookie-parser": "2.6.0",
