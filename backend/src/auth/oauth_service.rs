@@ -93,8 +93,6 @@ impl OauthService {
             .await
             .map_err(|_| LoginError::FailedToExchangeCode)?;
 
-        println!("{data:#?}");
-
         let id_token_verifier: CoreIdTokenVerifier = self.client.id_token_verifier();
         let id_token_claims: &CoreIdTokenClaims = data
             .extra_fields()
