@@ -33,6 +33,6 @@
 		"monaco-yaml": "5.1.0",
 		"set-cookie-parser": "2.6.0",
 		"trpc-sveltekit": "3.5.20",
-		"zod": "3.22.2"
+		"zod": "3.22.3"
 	}
 }
