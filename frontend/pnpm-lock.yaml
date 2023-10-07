@@ -47,8 +47,8 @@ devDependencies:
     specifier: 0.5.2
     version: 0.5.2
   '@types/set-cookie-parser':
-    specifier: 2.4.3
-    version: 2.4.3
+    specifier: 2.4.4
+    version: 2.4.4
   autoprefixer:
     specifier: 10.4.16
     version: 10.4.16(postcss@8.4.30)
@@ -495,8 +495,8 @@ packages:
   /@types/resolve@1.20.2:
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
 
-  /@types/set-cookie-parser@2.4.3:
-    resolution: {integrity: sha512-7QhnH7bi+6KAhBB+Auejz1uV9DHiopZqu7LfR/5gZZTkejJV5nYeZZpgfFoE0N8aDsXuiYpfKyfyMatCwQhyTQ==}
+  /@types/set-cookie-parser@2.4.4:
+    resolution: {integrity: sha512-xCfTC/eL/GmvMC24b42qJpYSTdCIBwWcfskDF80ztXtnU6pKXyvuZP2EConb2K9ps0s7gMhCa0P1foy7wiItMA==}
     dependencies:
       '@types/node': 20.6.2
     dev: true
