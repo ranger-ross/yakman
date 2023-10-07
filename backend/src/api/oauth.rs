@@ -2,14 +2,15 @@ use std::collections::HashMap;
 
 use crate::{
     auth::{
-        oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
+        oauth_service::{
+            OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME, OIDC_NONCE_COOKIE_NAME,
+        },
         LoginError,
     },
     error::YakManError,
     middleware::roles::YakManRoleBinding,
     model::{
         oauth::{OAuthExchangePayload, OAuthInitPayload},
-        response::GetUserRolesResponse,
         YakManRole,
     },
     StateManager,
@@ -22,7 +23,8 @@ use actix_web::{
 };
 use actix_web_grants::permissions::AuthDetails;
 use log::{error, warn};
-
+use serde::Serialize;
+use utoipa::ToSchema;
 
 /// Begins the oauth login flow
 #[utoipa::path(responses((status = 200, body = String)))]
@@ -32,24 +34,41 @@ pub async fn oauth_init(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
-    let redirect_uri = service.init_oauth(payload.challenge.clone());
-    HttpResponse::Ok().body(redirect_uri)
+    let (redirect_uri, nonce) = service.init_oauth(payload.challenge.clone());
+
+    HttpResponse::Ok()
+        .cookie(
+            Cookie::build(OIDC_NONCE_COOKIE_NAME, nonce.secret())
+                .path("/")
+                .http_only(true)
+                // TODO: Look up best practice for storing nonces. I just picked 5 minutes because its probably long enough for a user to login.
+                .max_age(Duration::minutes(5))
+                .finish(),
+        )
+        .body(redirect_uri)
 }
 
 /// Exchange an oauth code for token to complete login flow
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/oauth2/exchange")]
 pub async fn oauth_exchange(
+    request: HttpRequest,
     payload: Json<OAuthExchangePayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
+    let nonce_cookie = match request.cookie(OIDC_NONCE_COOKIE_NAME) {
+        Some(cookie) => cookie,
+        None => return HttpResponse::Unauthorized().body("no nonce found"),
+    };
+
     let (username, user, refresh_token) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
+            String::from(nonce_cookie.value()),
         )
         .await
     {
@@ -158,6 +177,12 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
                 .finish(),
         )
         .finish()
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct GetUserRolesResponse {
+    pub global_roles: Vec<YakManRole>,
+    pub roles: HashMap<String, YakManRole>,
 }
 
 /// Endpoint to check if a user is logged in and get user roles

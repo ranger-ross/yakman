@@ -8,10 +8,13 @@ const BASE_URL = getYakManBaseApiUrl()
 export const POST: RequestHandler = async function ({ request, cookies, fetch }) {
     const { code, state, verifier } = await request.json();
 
+    const nonceCookie = cookies.get('oidc_nonce')
+
     const response = await fetch(`${BASE_URL}/oauth2/exchange`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cookie': `oidc_nonce=${nonceCookie}`
         },
         body: JSON.stringify({
             code: code,
@@ -39,6 +42,8 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
             });
         }
     }
+
+    cookies.delete('oidc_nonce')
 
     return json({
         data: await response.text()

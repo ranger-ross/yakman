@@ -19,6 +19,7 @@ use base64::{engine::general_purpose, Engine as _};
 
 pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
 pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";
+pub const OIDC_NONCE_COOKIE_NAME: &str = "oidc_nonce";
 
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
@@ -61,26 +62,26 @@ impl OauthService {
         };
     }
 
-    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> String {
-        let (auth_url, _csrf_token, _nonce) = self
+    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, Nonce) {
+        let (auth_url, _csrf_token, nonce) = self
             .client
             .authorize_url(
                 AuthenticationFlow::<CoreResponseType>::AuthorizationCode,
                 CsrfToken::new_random,
-                static_nonce,
-                // Nonce::new_random,
+                Nonce::new_random,
             )
             .add_scopes(self.scopes.clone())
             .set_pkce_challenge(challenge)
             .url();
 
-        return String::from(auth_url.as_str());
+        return (String::from(auth_url.as_str()), nonce);
     }
 
     pub async fn exchange_oauth_code(
         &self,
         code: String,
         verifier: String,
+        nonce: String,
     ) -> Result<(String, YakManUser, Option<RefreshToken>), LoginError> {
         let pkce_verifier = PkceCodeVerifier::new(verifier);
 
@@ -98,7 +99,7 @@ impl OauthService {
             .extra_fields()
             .id_token()
             .expect("Server did not return an ID token")
-            .claims(&id_token_verifier, &static_nonce())
+            .claims(&id_token_verifier, &Nonce::new(nonce))
             .unwrap(); // TODO: FIX LATER
 
         let username = id_token_claims
@@ -139,11 +140,13 @@ impl OauthService {
         let access_token = response.access_token().secret();
 
         let id_token_verifier: CoreIdTokenVerifier = self.client.id_token_verifier();
-        let id_token_claims: &CoreIdTokenClaims = response
+        let id_token_claims: &CoreIdTokenClaims = &response
             .extra_fields()
             .id_token()
             .expect("Server did not return an ID token")
-            .claims(&id_token_verifier, &static_nonce())
+            .to_owned()
+             // For refresh tokens, nonce is not needed so use a no-op verifier
+            .into_claims(&id_token_verifier, no_op_nonce_verifier) 
             .unwrap(); // TODO: FIX LATER
 
         let username = id_token_claims
@@ -154,6 +157,10 @@ impl OauthService {
 
         return Ok((String::from(access_token), username));
     }
+}
+
+fn no_op_nonce_verifier(_: Option<&Nonce>) -> Result<(), String> {
+    Ok(())
 }
 
 fn get_issuer_url() -> IssuerUrl {

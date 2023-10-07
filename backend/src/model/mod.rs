@@ -1,6 +1,5 @@
 pub mod oauth;
 pub mod request;
-pub mod response;
 
 pub use serde::Deserialize;
 pub use serde::Serialize;

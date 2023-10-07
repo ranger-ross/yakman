@@ -51,10 +51,22 @@
 
         localStorage.setItem(LOCAL_STORAGE_OAUTH2_VERIFER_KEY, verifier);
 
-        redirectUri = await trpc($page).oauth.generateOauthRedirectUri.mutate({
-            challenge: challenge,
-            challengeMethod: "S256",
+        const response = await fetch(`/login/init`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                challenge: {
+                    challenge: challenge,
+                    codeChallengeMethod: "S256",
+                },
+            }),
         });
+
+        const data = await response.json();
+
+        redirectUri = data.redirectUrl;
     });
 </script>
 
