@@ -40,6 +40,8 @@ impl OauthService {
                 .await
                 .unwrap(); // TODO: Better error handling
 
+        // TODO: Support creating CoreClient without fetching metadata
+
         let client = CoreClient::from_provider_metadata(
             provider_metadata,
             get_client_id(),
@@ -90,6 +92,8 @@ impl OauthService {
             .request_async(async_http_client)
             .await
             .map_err(|_| LoginError::FailedToExchangeCode)?;
+
+        println!("{data:#?}");
 
         let id_token_verifier: CoreIdTokenVerifier = self.client.id_token_verifier();
         let id_token_claims: &CoreIdTokenClaims = data
