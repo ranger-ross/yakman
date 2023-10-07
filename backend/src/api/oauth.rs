@@ -22,9 +22,6 @@ use actix_web::{
 };
 use actix_web_grants::permissions::AuthDetails;
 use log::{error, warn};
-// use oauth2::TokenResponse;
-
-
 
 
 /// Begins the oauth login flow
@@ -124,19 +121,11 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
         Ok(refresh_token) => refresh_token,
         Err(_) => return HttpResponse::Unauthorized().body("no refresh_token not valid"),
     };
-    let access_token = match oauth_service.refresh_token(&refresh_token).await {
+    let (_access_token, username) = match oauth_service.refresh_token(&refresh_token).await {
         Ok(token) => token,
         Err(e) => {
             error!("Could not refresh token {e}");
             return HttpResponse::Unauthorized().body("Could not refresh token");
-        }
-    };
-
-    let username = match oauth_service.get_username(&access_token).await {
-        Ok(username) => username,
-        Err(e) => {
-            error!("Could not find username {e}");
-            return HttpResponse::InternalServerError().body("Could not find username");
         }
     };
 

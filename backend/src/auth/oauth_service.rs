@@ -1,5 +1,4 @@
-use super::oauth_provider::OAuthProvider;
-use super::{LoginError, OAuthEmailResolverError, RefreshTokenError};
+use super::{LoginError, RefreshTokenError};
 use crate::model::YakManUser;
 use crate::services::StorageService;
 use log::debug;
@@ -7,12 +6,16 @@ use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, RefreshToken, Scope, TokenResponse, TokenUrl,
 };
-use openidconnect::core::{CoreClient, CoreProviderMetadata, CoreResponseType};
+use openidconnect::core::{
+    CoreClient, CoreIdTokenClaims, CoreIdTokenVerifier, CoreProviderMetadata, CoreResponseType,
+};
 use openidconnect::reqwest::async_http_client;
 use openidconnect::{AuthenticationFlow, IssuerUrl, Nonce};
 use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
+
+use base64::{engine::general_purpose, Engine as _};
 
 pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
 pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";
@@ -21,17 +24,21 @@ pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
     client: CoreClient,
     scopes: Vec<Scope>,
-    oauth_provider: OAuthProvider,
+}
+
+// TODO: Convert this to random per request and integrate it into the auth flow
+fn static_nonce() -> Nonce {
+    let c: u8 = 1;
+    let nonrandom_bytes: Vec<u8> = (0..16).map(|_| c).collect();
+    Nonce::new(general_purpose::URL_SAFE_NO_PAD.encode(nonrandom_bytes))
 }
 
 impl OauthService {
     pub async fn new(storage: Arc<dyn StorageService>) -> OauthService {
-        let provider_metadata = CoreProviderMetadata::discover_async(
-            IssuerUrl::new("https://accounts.google.com".to_string()).unwrap(),
-            async_http_client,
-        )
-        .await
-        .unwrap();
+        let provider_metadata =
+            CoreProviderMetadata::discover_async(get_issuer_url(), async_http_client)
+                .await
+                .unwrap(); // TODO: Better error handling
 
         let client = CoreClient::from_provider_metadata(
             provider_metadata,
@@ -39,20 +46,16 @@ impl OauthService {
             Some(get_client_secret()),
         )
         .set_redirect_uri(get_redirect_url());
-        // TODO: For custom oauth impls, allow introspection
 
         let scopes = get_oauth_scopes()
             .into_iter()
             .map(|s| Scope::new(s))
             .collect();
 
-        let oauth_provider = OAuthProvider::from_env().expect("Could not create oauth provider");
-
         return OauthService {
             storage: storage,
             client: client,
             scopes: scopes,
-            oauth_provider: oauth_provider,
         };
     }
 
@@ -62,7 +65,8 @@ impl OauthService {
             .authorize_url(
                 AuthenticationFlow::<CoreResponseType>::AuthorizationCode,
                 CsrfToken::new_random,
-                Nonce::new_random,
+                static_nonce,
+                // Nonce::new_random,
             )
             .add_scopes(self.scopes.clone())
             .set_pkce_challenge(challenge)
@@ -87,13 +91,19 @@ impl OauthService {
             .await
             .map_err(|_| LoginError::FailedToExchangeCode)?;
 
-        println!("{data:#?}");
+        let id_token_verifier: CoreIdTokenVerifier = self.client.id_token_verifier();
+        let id_token_claims: &CoreIdTokenClaims = data
+            .extra_fields()
+            .id_token()
+            .expect("Server did not return an ID token")
+            .claims(&id_token_verifier, &static_nonce())
+            .unwrap(); // TODO: FIX LATER
 
-        let token: String = data.access_token().secret().clone();
-        let username = self
-            .get_username(&token)
-            .await
-            .map_err(|e| LoginError::FailedToFetchUserData(Box::new(e)))?;
+        let username = id_token_claims
+            .email()
+            .ok_or_else(|| LoginError::FailedToParseUsername)?
+            .as_str()
+            .to_string();
 
         if let Some(yakman_user) = self
             .storage
@@ -111,7 +121,10 @@ impl OauthService {
         return Err(LoginError::UserNotRegistered);
     }
 
-    pub async fn refresh_token(&self, refresh_token: &str) -> Result<String, RefreshTokenError> {
+    pub async fn refresh_token(
+        &self,
+        refresh_token: &str,
+    ) -> Result<(String, String), RefreshTokenError> {
         debug!("Attempting to refresh token");
         let token = RefreshToken::new(refresh_token.to_string());
         let response = self
@@ -122,24 +135,30 @@ impl OauthService {
             .map_err(|e| RefreshTokenError::FailedToRefreshToken(Box::new(e)))?;
 
         let access_token = response.access_token().secret();
-        return Ok(String::from(access_token));
-    }
 
-    pub async fn get_username(
-        &self,
-        access_token: &str,
-    ) -> Result<String, OAuthEmailResolverError> {
-        return self
-            .oauth_provider
-            .get_email_resolver()
-            .resolve_email(access_token)
-            .await;
+        let id_token_verifier: CoreIdTokenVerifier = self.client.id_token_verifier();
+        let id_token_claims: &CoreIdTokenClaims = response
+            .extra_fields()
+            .id_token()
+            .expect("Server did not return an ID token")
+            .claims(&id_token_verifier, &static_nonce())
+            .unwrap(); // TODO: FIX LATER
+
+        let username = id_token_claims
+            .email()
+            .ok_or_else(|| RefreshTokenError::FailedToParseUsername)?
+            .as_str()
+            .to_string();
+
+        return Ok((String::from(access_token), username));
     }
 }
 
-fn get_auth_url() -> AuthUrl {
-    AuthUrl::new(env::var("YAKMAN_OAUTH_AUTH_URL").expect("$YAKMAN_OAUTH_AUTH_URL is not set"))
-        .expect("YAKMAN_OAUTH_AUTH_URL is not a valid URL")
+fn get_issuer_url() -> IssuerUrl {
+    IssuerUrl::new(
+        env::var("YAKMAN_OAUTH_ISSUER_URL").expect("$YAKMAN_OAUTH_ISSUER_URL is not set"),
+    )
+    .expect("YAKMAN_OAUTH_ISSUER_URL is not a valid URL")
 }
 
 fn get_token_url() -> TokenUrl {
