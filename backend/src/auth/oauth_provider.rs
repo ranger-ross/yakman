@@ -1,11 +1,11 @@
-use super::github::GitHubEmailResolver;
+// use super::github::GitHubEmailResolver;
 use super::google::GoogleEmailResolver;
 use super::OAuthEmailResolver;
 use std::env;
 use thiserror::Error;
 
 pub enum OAuthProvider {
-    GitHub,
+    // GitHub,
     Google,
 }
 
@@ -23,7 +23,7 @@ impl OAuthProvider {
             .map_err(|e| OauthProviderCreateError::FailedToLoadEnvVar(Box::new(e)))?;
 
         let provider = match v.as_str() {
-            "GITHUB" => OAuthProvider::GitHub,
+            // "GITHUB" => OAuthProvider::GitHub,
             "GOOGLE" => OAuthProvider::Google,
             _ => return Err(OauthProviderCreateError::UnknownProvider),
         };
@@ -33,7 +33,7 @@ impl OAuthProvider {
 
     pub fn get_email_resolver(&self) -> Box<dyn OAuthEmailResolver> {
         return match self {
-            OAuthProvider::GitHub => Box::new(GitHubEmailResolver::new()),
+            // OAuthProvider::GitHub => Box::new(GitHubEmailResolver::new()),
             OAuthProvider::Google => Box::new(GoogleEmailResolver::new()),
         };
     }

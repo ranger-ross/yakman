@@ -22,7 +22,10 @@ use actix_web::{
 };
 use actix_web_grants::permissions::AuthDetails;
 use log::{error, warn};
-use oauth2::TokenResponse;
+// use oauth2::TokenResponse;
+
+
+
 
 /// Begins the oauth login flow
 #[utoipa::path(responses((status = 200, body = String)))]
@@ -46,7 +49,7 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, user, token_result) = match service
+    let (username, user, refresh_token) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -85,10 +88,10 @@ pub async fn oauth_exchange(
             .finish(),
     );
 
-    if let Some(refresh_token) = token_result.refresh_token() {
-        let refresh_token = refresh_token.secret();
+    if let Some(refresh_token) = refresh_token {
+        let refresh_token = refresh_token;
 
-        let encrypted_refresh_token = token_service.encrypt_refresh_token(refresh_token);
+        let encrypted_refresh_token = token_service.encrypt_refresh_token(&refresh_token.secret());
         response.cookie(
             Cookie::build(OAUTH_REFRESH_TOKEN_COOKIE_NAME, encrypted_refresh_token)
                 .path("/api/oauth2/refresh") // TODO: This is currently a bug and will only work running locally with Trunk. (/api is not a path in release build)

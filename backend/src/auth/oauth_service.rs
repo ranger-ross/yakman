@@ -3,13 +3,13 @@ use super::{LoginError, OAuthEmailResolverError, RefreshTokenError};
 use crate::model::YakManUser;
 use crate::services::StorageService;
 use log::debug;
-use oauth2::basic::{BasicClient, BasicTokenType};
-use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl, RefreshToken,
-    Scope, TokenResponse, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
+    PkceCodeVerifier, RedirectUrl, RefreshToken, Scope, TokenResponse, TokenUrl,
 };
-use oauth2::{AuthorizationCode, EmptyExtraTokenFields, PkceCodeVerifier, StandardTokenResponse};
+use openidconnect::core::{CoreClient, CoreProviderMetadata, CoreResponseType};
+use openidconnect::reqwest::async_http_client;
+use openidconnect::{AuthenticationFlow, IssuerUrl, Nonce};
 use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
@@ -19,18 +19,24 @@ pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";
 
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
-    client: BasicClient,
+    client: CoreClient,
     scopes: Vec<Scope>,
     oauth_provider: OAuthProvider,
 }
 
 impl OauthService {
-    pub fn new(storage: Arc<dyn StorageService>) -> OauthService {
-        let client = BasicClient::new(
+    pub async fn new(storage: Arc<dyn StorageService>) -> OauthService {
+        let provider_metadata = CoreProviderMetadata::discover_async(
+            IssuerUrl::new("https://accounts.google.com".to_string()).unwrap(),
+            async_http_client,
+        )
+        .await
+        .unwrap();
+
+        let client = CoreClient::from_provider_metadata(
+            provider_metadata,
             get_client_id(),
             Some(get_client_secret()),
-            get_auth_url(),
-            Some(get_token_url()),
         )
         .set_redirect_uri(get_redirect_url());
         // TODO: For custom oauth impls, allow introspection
@@ -51,9 +57,13 @@ impl OauthService {
     }
 
     pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> String {
-        let (auth_url, _csrf_token) = self
+        let (auth_url, _csrf_token, _nonce) = self
             .client
-            .authorize_url(CsrfToken::new_random)
+            .authorize_url(
+                AuthenticationFlow::<CoreResponseType>::AuthorizationCode,
+                CsrfToken::new_random,
+                Nonce::new_random,
+            )
             .add_scopes(self.scopes.clone())
             .set_pkce_challenge(challenge)
             .url();
@@ -65,14 +75,7 @@ impl OauthService {
         &self,
         code: String,
         verifier: String,
-    ) -> Result<
-        (
-            String,
-            YakManUser,
-            StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>,
-        ),
-        LoginError,
-    > {
+    ) -> Result<(String, YakManUser, Option<RefreshToken>), LoginError> {
         let pkce_verifier = PkceCodeVerifier::new(verifier);
 
         let data = self
@@ -83,6 +86,8 @@ impl OauthService {
             .request_async(async_http_client)
             .await
             .map_err(|_| LoginError::FailedToExchangeCode)?;
+
+        println!("{data:#?}");
 
         let token: String = data.access_token().secret().clone();
         let username = self
@@ -96,7 +101,11 @@ impl OauthService {
             .await
             .map_err(|_| LoginError::FailedToCheckRegisteredUsers)?
         {
-            return Ok((username, yakman_user, data));
+            return Ok((
+                username,
+                yakman_user,
+                data.refresh_token().map(|v| v.clone()), // TODO: Can we do this without cloning?
+            ));
         }
 
         return Err(LoginError::UserNotRegistered);
