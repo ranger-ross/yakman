@@ -27,13 +27,6 @@ pub struct OauthService {
     scopes: Vec<Scope>,
 }
 
-// TODO: Convert this to random per request and integrate it into the auth flow
-fn static_nonce() -> Nonce {
-    let c: u8 = 1;
-    let nonrandom_bytes: Vec<u8> = (0..16).map(|_| c).collect();
-    Nonce::new(general_purpose::URL_SAFE_NO_PAD.encode(nonrandom_bytes))
-}
-
 impl OauthService {
     pub async fn new(storage: Arc<dyn StorageService>) -> OauthService {
         let provider_metadata =
