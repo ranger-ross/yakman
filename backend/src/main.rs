@@ -110,7 +110,7 @@ async fn main() -> std::io::Result<()> {
 
     let arc = Arc::new(service);
 
-    let oauth_service = OauthService::new(arc.clone()).await;
+    let oauth_service = OauthService::new(arc.clone()).await.unwrap();
     let jwt_service = TokenService::from_env().map_err(|e| log::error!("{e}")).expect("Failed to create jwt service");
 
     let state = web::Data::new(StateManager {

@@ -11,7 +11,9 @@ pub enum LoginError {
     UserNotRegistered,
     #[error("Failed to check registered users")]
     FailedToCheckRegisteredUsers,
-    #[error("Failed to get user data from OAuth provider")]
+    #[error("Failed to parse claims from openid connect response")]
+    FailedToParseClaims,
+    #[error("Failed to parse username from openid connect response")]
     FailedToParseUsername,
 }
 
@@ -19,6 +21,8 @@ pub enum LoginError {
 pub enum RefreshTokenError {
     #[error("Failed to refresh token from OAuth provider")]
     FailedToRefreshToken(Box<dyn std::error::Error>),
+    #[error("Failed to parse claims from openid connect response")]
+    FailedToParseClaims,
     #[error("Failed to parse username from openid connect response")]
     FailedToParseUsername,
 }
