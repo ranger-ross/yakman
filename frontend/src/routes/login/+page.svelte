@@ -75,7 +75,7 @@
         <div class="flex flex-col items-center gap-4">
             <h1 class="text-xl font-bold">Login</h1>
             <a href={redirectUri}>
-                <YakManButton>Click to login</YakManButton>
+                <YakManButton>Login with SSO</YakManButton>
             </a>
         </div>
     </YakManCard>
