@@ -1,9 +1,14 @@
 import type { RequestHandler } from './$types';
 import { getYakManBaseApiUrl } from '$lib/trpc/helper';
 import { json } from '@sveltejs/kit';
-import { copyCookiesFromResponse } from '$lib/utils/cookie-util';
 
 const BASE_URL = getYakManBaseApiUrl()
+
+type OAuthInitResponse = {
+    redirect_uri: string,
+    csrf_token: string,
+    nonce: string,
+}
 
 export const POST: RequestHandler = async function ({ request, cookies, fetch }) {
     const { challenge } = await request.json();
@@ -25,10 +30,15 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
         throw new Error(await response.text())
     }
 
-    copyCookiesFromResponse(response, cookies);
+    const { redirect_uri, nonce } = await response.json() as OAuthInitResponse;
+
+    cookies.set('oidc_nonce', nonce, {
+        httpOnly: true,
+        path: '/'
+    })
 
     return json({
-        redirectUrl: await response.text()
+        redirectUrl: redirect_uri
     });
 }
 

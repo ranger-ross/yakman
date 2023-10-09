@@ -17,7 +17,7 @@ use actix_web_grants::GrantsMiddleware;
 use adapters::aws_s3::AwsS3StorageAdapter;
 use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::create_redis_adapter;
-use api::oauth::GetUserRolesResponse;
+use api::oauth::{GetUserRolesResponse, OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse};
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
@@ -77,7 +77,8 @@ impl StateManager {
     components(
         schemas(
             Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
-            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse
+            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse, 
+            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse
         )
     ),
     tags(

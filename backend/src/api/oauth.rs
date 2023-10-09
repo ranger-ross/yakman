@@ -9,10 +9,7 @@ use crate::{
     },
     error::YakManError,
     middleware::roles::YakManRoleBinding,
-    model::{
-        oauth::{OAuthExchangePayload, OAuthInitPayload},
-        YakManRole,
-    },
+    model::YakManRole,
     StateManager,
 };
 use actix_web::{
@@ -23,8 +20,23 @@ use actix_web::{
 };
 use actix_web_grants::permissions::AuthDetails;
 use log::{error, warn};
+use oauth2::PkceCodeChallenge;
+use oauth2::PkceCodeVerifier;
+pub use serde::Deserialize;
 use serde::Serialize;
 use utoipa::ToSchema;
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthInitPayload {
+    pub challenge: PkceCodeChallenge,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthInitResponse {
+    redirect_uri: String,
+    csrf_token: String,
+    nonce: String,
+}
 
 /// Begins the oauth login flow
 #[utoipa::path(responses((status = 200, body = String)))]
@@ -34,41 +46,38 @@ pub async fn oauth_init(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
-    let (redirect_uri, nonce) = service.init_oauth(payload.challenge.clone());
+    let (redirect_uri, csrf_token, nonce) = service.init_oauth(payload.challenge.clone());
 
-    HttpResponse::Ok()
-        .cookie(
-            Cookie::build(OIDC_NONCE_COOKIE_NAME, nonce.secret())
-                .path("/")
-                .http_only(true)
-                // TODO: Look up best practice for storing nonces. I just picked 5 minutes because its probably long enough for a user to login.
-                .max_age(Duration::minutes(5))
-                .finish(),
-        )
-        .body(redirect_uri)
+    HttpResponse::Ok().json(OAuthInitResponse {
+        redirect_uri: redirect_uri,
+        csrf_token: csrf_token.secret().clone(),
+        nonce: nonce.secret().clone(),
+    })
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthExchangePayload {
+    pub state: String,
+    pub code: String,
+    pub verifier: PkceCodeVerifier,
+    pub nonce: String,
 }
 
 /// Exchange an oauth code for token to complete login flow
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/oauth2/exchange")]
 pub async fn oauth_exchange(
-    request: HttpRequest,
     payload: Json<OAuthExchangePayload>,
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let nonce_cookie = match request.cookie(OIDC_NONCE_COOKIE_NAME) {
-        Some(cookie) => cookie,
-        None => return HttpResponse::Unauthorized().body("no nonce found"),
-    };
-
     let (username, user, refresh_token) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
-            String::from(nonce_cookie.value()),
+            payload.nonce.clone(),
         )
         .await
     {

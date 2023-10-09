@@ -18,7 +18,6 @@ use std::sync::Arc;
 
 pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
 pub const OAUTH_REFRESH_TOKEN_COOKIE_NAME: &str = "refresh_token";
-pub const OIDC_NONCE_COOKIE_NAME: &str = "oidc_nonce";
 
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
@@ -54,8 +53,8 @@ impl OauthService {
         });
     }
 
-    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, Nonce) {
-        let (auth_url, _csrf_token, nonce) = self
+    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
+        let (auth_url, csrf_token, nonce) = self
             .client
             .authorize_url(
                 AuthenticationFlow::<CoreResponseType>::AuthorizationCode,
@@ -66,7 +65,7 @@ impl OauthService {
             .set_pkce_challenge(challenge)
             .url();
 
-        return (String::from(auth_url.as_str()), nonce);
+        return (String::from(auth_url.as_str()), csrf_token, nonce);
     }
 
     pub async fn exchange_oauth_code(

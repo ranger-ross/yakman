@@ -14,12 +14,12 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Cookie': `oidc_nonce=${nonceCookie}`
         },
         body: JSON.stringify({
             code: code,
             state: state,
             verifier: verifier,
+            nonce: nonceCookie
         })
     });
 
