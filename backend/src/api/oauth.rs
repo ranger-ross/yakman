@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     auth::{
-        oauth_service::{
-            OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME, OIDC_NONCE_COOKIE_NAME,
-        },
+        oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
         LoginError,
     },
     error::YakManError,
@@ -63,6 +61,13 @@ pub struct OAuthExchangePayload {
     pub nonce: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthExchangeResponse {
+    pub access_token: String,
+    pub access_token_expire_timestamp: i64,
+    pub refresh_token: Option<String>,
+}
+
 /// Exchange an oauth code for token to complete login flow
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/oauth2/exchange")]
@@ -104,31 +109,35 @@ pub async fn oauth_exchange(
             }
         };
 
-    let mut response = HttpResponse::Ok();
-    response.cookie(
-        Cookie::build(OAUTH_ACCESS_TOKEN_COOKIE_NAME, access_token_jwt)
-            .path("/")
-            .http_only(true)
-            .max_age(Duration::milliseconds(expire_timestamp))
-            .finish(),
-    );
+    // let mut response = HttpResponse::Ok();
+    // response.cookie(
+    //     Cookie::build(OAUTH_ACCESS_TOKEN_COOKIE_NAME, access_token_jwt)
+    //         .path("/")
+    //         .http_only(true)
+    //         .max_age(Duration::milliseconds(expire_timestamp))
+    //         .finish(),
+    // );
 
-    if let Some(refresh_token) = refresh_token {
-        let refresh_token = refresh_token;
+    // if let Some(refresh_token) = refresh_token {
+    //     let refresh_token = refresh_token;
 
-        let encrypted_refresh_token = token_service.encrypt_refresh_token(&refresh_token.secret());
-        response.cookie(
-            Cookie::build(OAUTH_REFRESH_TOKEN_COOKIE_NAME, encrypted_refresh_token)
-                .path("/api/oauth2/refresh") // TODO: This is currently a bug and will only work running locally with Trunk. (/api is not a path in release build)
-                .http_only(true)
-                .max_age(Duration::days(365 * 10)) // TODO: make this dynamic
-                .finish(),
-        );
-    } else {
-        warn!("No refresh token found, skipping refresh token cookie")
-    }
+    //     let encrypted_refresh_token = token_service.encrypt_refresh_token(&refresh_token.secret());
+    //     response.cookie(
+    //         Cookie::build(OAUTH_REFRESH_TOKEN_COOKIE_NAME, encrypted_refresh_token)
+    //             .path("/api/oauth2/refresh") // TODO: This is currently a bug and will only work running locally with Trunk. (/api is not a path in release build)
+    //             .http_only(true)
+    //             .max_age(Duration::days(365 * 10)) // TODO: make this dynamic
+    //             .finish(),
+    //     );
+    // } else {
+    //     warn!("No refresh token found, skipping refresh token cookie")
+    // }
 
-    response.finish()
+    HttpResponse::Ok().json(OAuthExchangeResponse {
+        access_token: access_token_jwt,
+        access_token_expire_timestamp: expire_timestamp,
+        refresh_token: refresh_token.map(|t| t.secret().clone()),
+    })
 }
 
 /// Use refresh_token cookie to generate new access token

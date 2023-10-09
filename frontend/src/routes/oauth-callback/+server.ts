@@ -1,9 +1,14 @@
 import type { RequestHandler } from './$types';
 import { getYakManBaseApiUrl } from '$lib/trpc/helper';
-import { parse } from 'set-cookie-parser';
 import { json } from '@sveltejs/kit';
 
 const BASE_URL = getYakManBaseApiUrl()
+
+type OAuthExchangeResponse = {
+    access_token: string,
+    access_token_expire_timestamp: number,
+    refresh_token: string | null,
+}
 
 export const POST: RequestHandler = async function ({ request, cookies, fetch }) {
     const { code, state, verifier } = await request.json();
@@ -27,26 +32,27 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
         throw new Error(await response.text())
     }
 
-    for (const cookie of parse(response as any)) {
-        if (cookie.name === 'refresh_token') {
-            cookies.set(cookie.name, cookie.value, {
-                httpOnly: cookie.httpOnly,
-                path: '/refresh-token',
-                maxAge: cookie.maxAge,
-            });
-        } else {
-            cookies.set(cookie.name, cookie.value, {
-                httpOnly: cookie.httpOnly,
-                path: cookie.path,
-                maxAge: cookie.maxAge,
-            });
-        }
+    const { access_token, access_token_expire_timestamp, refresh_token } = await response.json() as OAuthExchangeResponse
+
+    cookies.set('access_token', access_token, {
+        httpOnly: true,
+        path: '/',
+        maxAge: access_token_expire_timestamp,
+    })
+
+    if (refresh_token) {
+        cookies.set('refresh_token', refresh_token, {
+            httpOnly: true,
+            path: '/refresh-token',
+            maxAge: Date.now() + (1000 * 60 * 60 * 24 * 356) // TODO: Dynamically set from metadata
+        })
+
     }
 
     cookies.delete('oidc_nonce')
 
     return json({
-        data: await response.text()
+        data: "SUCCESS"
     });
 }
 
