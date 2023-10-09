@@ -1,23 +1,16 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::{
-        oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
-        LoginError,
-    },
-    error::YakManError,
-    middleware::roles::YakManRoleBinding,
-    model::YakManRole,
+    auth::LoginError, error::YakManError, middleware::roles::YakManRoleBinding, model::YakManRole,
     StateManager,
 };
 use actix_web::{
-    cookie::{time::Duration, Cookie},
     get, post,
     web::{self, Json},
-    HttpRequest, HttpResponse, Responder,
+    HttpResponse, Responder,
 };
 use actix_web_grants::permissions::AuthDetails;
-use log::{error, warn};
+use log::error;
 use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
 pub use serde::Deserialize;
@@ -109,30 +102,6 @@ pub async fn oauth_exchange(
             }
         };
 
-    // let mut response = HttpResponse::Ok();
-    // response.cookie(
-    //     Cookie::build(OAUTH_ACCESS_TOKEN_COOKIE_NAME, access_token_jwt)
-    //         .path("/")
-    //         .http_only(true)
-    //         .max_age(Duration::milliseconds(expire_timestamp))
-    //         .finish(),
-    // );
-
-    // if let Some(refresh_token) = refresh_token {
-    //     let refresh_token = refresh_token;
-
-    //     let encrypted_refresh_token = token_service.encrypt_refresh_token(&refresh_token.secret());
-    //     response.cookie(
-    //         Cookie::build(OAUTH_REFRESH_TOKEN_COOKIE_NAME, encrypted_refresh_token)
-    //             .path("/api/oauth2/refresh") // TODO: This is currently a bug and will only work running locally with Trunk. (/api is not a path in release build)
-    //             .http_only(true)
-    //             .max_age(Duration::days(365 * 10)) // TODO: make this dynamic
-    //             .finish(),
-    //     );
-    // } else {
-    //     warn!("No refresh token found, skipping refresh token cookie")
-    // }
-
     HttpResponse::Ok().json(OAuthExchangeResponse {
         access_token: access_token_jwt,
         access_token_expire_timestamp: expire_timestamp,
@@ -140,20 +109,29 @@ pub async fn oauth_exchange(
     })
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthRefreshTokenPayload {
+    pub refresh_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthRefreshTokenResponse {
+    pub access_token: String,
+    pub access_token_expire_timestamp: i64,
+}
+
 /// Use refresh_token cookie to generate new access token
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/oauth2/refresh")]
-pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>) -> HttpResponse {
-    let cookie = match request.cookie(OAUTH_REFRESH_TOKEN_COOKIE_NAME) {
-        Some(cookie) => cookie,
-        None => return HttpResponse::Unauthorized().body("no refresh_token cookie found"),
-    };
-
+pub async fn oauth_refresh(
+    payload: Json<OAuthRefreshTokenPayload>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
     let oauth_service = state.get_oauth_service();
     let storage = state.get_service();
     let token_service = state.get_token_service();
 
-    let encrypted_refresh_token = cookie.value();
+    let encrypted_refresh_token = &payload.refresh_token;
     let refresh_token = match token_service.decrypt_refresh_token(encrypted_refresh_token) {
         Ok(refresh_token) => refresh_token,
         Err(_) => return HttpResponse::Unauthorized().body("no refresh_token not valid"),
@@ -186,15 +164,10 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
             }
         };
 
-    HttpResponse::Ok()
-        .cookie(
-            Cookie::build(OAUTH_ACCESS_TOKEN_COOKIE_NAME, access_token_jwt)
-                .path("/")
-                .http_only(true)
-                .max_age(Duration::milliseconds(expire_timestamp))
-                .finish(),
-        )
-        .finish()
+    HttpResponse::Ok().json(OAuthRefreshTokenResponse {
+        access_token: access_token_jwt,
+        access_token_expire_timestamp: expire_timestamp,
+    })
 }
 
 #[derive(Debug, Serialize, ToSchema)]
