@@ -16,9 +16,6 @@ use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
 
-// TODO: Remove and change to Authorization header
-pub const OAUTH_ACCESS_TOKEN_COOKIE_NAME: &str = "access_token";
-
 pub struct OauthService {
     pub storage: Arc<dyn StorageService>,
     client: CoreClient,
