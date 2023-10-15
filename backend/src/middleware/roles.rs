@@ -1,10 +1,11 @@
 extern crate dotenv;
 
-use crate::auth::oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME;
 use crate::model::{YakManRole, YakManUserProjectRole};
 use crate::StateManager;
 use actix_web::{dev::ServiceRequest, web, Error};
 use log::info;
+
+use super::token::extract_access_token;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum YakManRoleBinding {
@@ -86,10 +87,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
     let mut role_bindings: Vec<YakManRoleBinding> = vec![];
 
     let state = req.app_data::<web::Data<StateManager>>().unwrap();
-    let cookies = req.cookies().unwrap();
-    let token = cookies
-        .iter()
-        .find(|c| c.name() == OAUTH_ACCESS_TOKEN_COOKIE_NAME);
+    let token: Option<String> = extract_access_token(req);
 
     if token.is_none() {
         return Ok(vec![]);
@@ -97,7 +95,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
 
     match state
         .get_token_service()
-        .validate_access_token(token.unwrap().value())
+        .validate_access_token(&token.unwrap())
     {
         Ok(claims) => {
             let uuid = claims.uuid;

@@ -1,4 +1,5 @@
 pub mod roles;
+pub mod token;
 use actix_web::{
     dev::{self, Payload, Service, ServiceRequest, ServiceResponse, Transform},
     web::{self},
@@ -10,7 +11,9 @@ use std::{
     rc::Rc,
 };
 
-use crate::{auth::oauth_service::OAUTH_ACCESS_TOKEN_COOKIE_NAME, StateManager};
+use crate::StateManager;
+
+use self::token::extract_access_token;
 
 #[derive(Debug, Clone)]
 pub struct YakManPrinciple {
@@ -72,11 +75,8 @@ where
         Box::pin(async move {
             let mut user_uuid: Option<String> = None;
             let state = req.app_data::<web::Data<StateManager>>().unwrap();
-            if let Some(token) = &req.cookie(OAUTH_ACCESS_TOKEN_COOKIE_NAME) {
-                match state
-                    .get_token_service()
-                    .validate_access_token(token.value())
-                {
+            if let Some(token) = extract_access_token(&req) {
+                match state.get_token_service().validate_access_token(&token) {
                     Ok(claims) => {
                         let uuid = claims.uuid;
                         user_uuid = Some(uuid);

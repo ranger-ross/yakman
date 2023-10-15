@@ -56,7 +56,7 @@ First you will need Cargo, Node 20, and PNPM installed:
     YAKMAN_OAUTH_PROVIDER=GOOGLE
     YAKMAN_OAUTH_REDIRECT_URL=http://127.0.0.1:8080/oauth-callback
     YAKMAN_OAUTH_TOKEN_URL=https://www.googleapis.com/oauth2/v3/token
-    YAKMAN_OAUTH_AUTH_URL=https://accounts.google.com/o/oauth2/v2/auth?prompt=consent&access_type=offline
+    YAKMAN_OAUTH_ISSUER_URL=https://accounts.google.com
     YAKMAN_OAUTH_SCOPES=email,profile,openid
     # Be sure to add values for these
     YAKMAN_OAUTH_CLIENT_ID=

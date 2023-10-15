@@ -1,28 +1,33 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::{
-        oauth_service::{OAUTH_ACCESS_TOKEN_COOKIE_NAME, OAUTH_REFRESH_TOKEN_COOKIE_NAME},
-        LoginError,
-    },
-    error::YakManError,
-    middleware::roles::YakManRoleBinding,
-    model::{
-        oauth::{OAuthExchangePayload, OAuthInitPayload},
-        response::GetUserRolesResponse,
-        YakManRole,
-    },
+    auth::LoginError, error::YakManError, middleware::roles::YakManRoleBinding, model::YakManRole,
     StateManager,
 };
 use actix_web::{
-    cookie::{time::Duration, Cookie},
     get, post,
     web::{self, Json},
-    HttpRequest, HttpResponse, Responder,
+    HttpResponse, Responder,
 };
 use actix_web_grants::permissions::AuthDetails;
-use log::{error, warn};
-use oauth2::TokenResponse;
+use log::error;
+use oauth2::PkceCodeChallenge;
+use oauth2::PkceCodeVerifier;
+pub use serde::Deserialize;
+use serde::Serialize;
+use utoipa::ToSchema;
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthInitPayload {
+    pub challenge: PkceCodeChallenge,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthInitResponse {
+    redirect_uri: String,
+    csrf_token: String,
+    nonce: String,
+}
 
 /// Begins the oauth login flow
 #[utoipa::path(responses((status = 200, body = String)))]
@@ -32,8 +37,28 @@ pub async fn oauth_init(
     state: web::Data<StateManager>,
 ) -> HttpResponse {
     let service = state.get_oauth_service();
-    let redirect_uri = service.init_oauth(payload.challenge.clone());
-    HttpResponse::Ok().body(redirect_uri)
+    let (redirect_uri, csrf_token, nonce) = service.init_oauth(payload.challenge.clone());
+
+    HttpResponse::Ok().json(OAuthInitResponse {
+        redirect_uri: redirect_uri,
+        csrf_token: csrf_token.secret().clone(),
+        nonce: nonce.secret().clone(),
+    })
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthExchangePayload {
+    pub state: String,
+    pub code: String,
+    pub verifier: PkceCodeVerifier,
+    pub nonce: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthExchangeResponse {
+    pub access_token: String,
+    pub access_token_expire_timestamp: i64,
+    pub refresh_token: Option<String>,
 }
 
 /// Exchange an oauth code for token to complete login flow
@@ -46,10 +71,11 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, user, token_result) = match service
+    let (username, user, refresh_token) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
+            payload.nonce.clone(),
         )
         .await
     {
@@ -76,64 +102,45 @@ pub async fn oauth_exchange(
             }
         };
 
-    let mut response = HttpResponse::Ok();
-    response.cookie(
-        Cookie::build(OAUTH_ACCESS_TOKEN_COOKIE_NAME, access_token_jwt)
-            .path("/")
-            .http_only(true)
-            .max_age(Duration::milliseconds(expire_timestamp))
-            .finish(),
-    );
+    HttpResponse::Ok().json(OAuthExchangeResponse {
+        access_token: access_token_jwt,
+        access_token_expire_timestamp: expire_timestamp,
+        refresh_token: refresh_token.map(|t| t.secret().clone()),
+    })
+}
 
-    if let Some(refresh_token) = token_result.refresh_token() {
-        let refresh_token = refresh_token.secret();
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthRefreshTokenPayload {
+    pub refresh_token: String,
+}
 
-        let encrypted_refresh_token = token_service.encrypt_refresh_token(refresh_token);
-        response.cookie(
-            Cookie::build(OAUTH_REFRESH_TOKEN_COOKIE_NAME, encrypted_refresh_token)
-                .path("/api/oauth2/refresh") // TODO: This is currently a bug and will only work running locally with Trunk. (/api is not a path in release build)
-                .http_only(true)
-                .max_age(Duration::days(365 * 10)) // TODO: make this dynamic
-                .finish(),
-        );
-    } else {
-        warn!("No refresh token found, skipping refresh token cookie")
-    }
-
-    response.finish()
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OAuthRefreshTokenResponse {
+    pub access_token: String,
+    pub access_token_expire_timestamp: i64,
 }
 
 /// Use refresh_token cookie to generate new access token
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/oauth2/refresh")]
-pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>) -> HttpResponse {
-    let cookie = match request.cookie(OAUTH_REFRESH_TOKEN_COOKIE_NAME) {
-        Some(cookie) => cookie,
-        None => return HttpResponse::Unauthorized().body("no refresh_token cookie found"),
-    };
-
+pub async fn oauth_refresh(
+    payload: Json<OAuthRefreshTokenPayload>,
+    state: web::Data<StateManager>,
+) -> HttpResponse {
     let oauth_service = state.get_oauth_service();
     let storage = state.get_service();
     let token_service = state.get_token_service();
 
-    let encrypted_refresh_token = cookie.value();
+    let encrypted_refresh_token = &payload.refresh_token;
     let refresh_token = match token_service.decrypt_refresh_token(encrypted_refresh_token) {
         Ok(refresh_token) => refresh_token,
         Err(_) => return HttpResponse::Unauthorized().body("no refresh_token not valid"),
     };
-    let access_token = match oauth_service.refresh_token(&refresh_token).await {
+    let (_access_token, username) = match oauth_service.refresh_token(&refresh_token).await {
         Ok(token) => token,
         Err(e) => {
             error!("Could not refresh token {e}");
             return HttpResponse::Unauthorized().body("Could not refresh token");
-        }
-    };
-
-    let username = match oauth_service.get_username(&access_token).await {
-        Ok(username) => username,
-        Err(e) => {
-            error!("Could not find username {e}");
-            return HttpResponse::InternalServerError().body("Could not find username");
         }
     };
 
@@ -157,15 +164,16 @@ pub async fn oauth_refresh(request: HttpRequest, state: web::Data<StateManager>)
             }
         };
 
-    HttpResponse::Ok()
-        .cookie(
-            Cookie::build(OAUTH_ACCESS_TOKEN_COOKIE_NAME, access_token_jwt)
-                .path("/")
-                .http_only(true)
-                .max_age(Duration::milliseconds(expire_timestamp))
-                .finish(),
-        )
-        .finish()
+    HttpResponse::Ok().json(OAuthRefreshTokenResponse {
+        access_token: access_token_jwt,
+        access_token_expire_timestamp: expire_timestamp,
+    })
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct GetUserRolesResponse {
+    pub global_roles: Vec<YakManRole>,
+    pub roles: HashMap<String, YakManRole>,
 }
 
 /// Endpoint to check if a user is logged in and get user roles

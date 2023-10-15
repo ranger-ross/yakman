@@ -17,6 +17,7 @@ use actix_web_grants::GrantsMiddleware;
 use adapters::aws_s3::AwsS3StorageAdapter;
 use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::create_redis_adapter;
+use api::oauth::{GetUserRolesResponse, OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse};
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
@@ -24,7 +25,6 @@ use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use model::response::GetUserRolesResponse;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
@@ -77,7 +77,8 @@ impl StateManager {
     components(
         schemas(
             Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
-            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse
+            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse, 
+            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse
         )
     ),
     tags(
@@ -110,7 +111,7 @@ async fn main() -> std::io::Result<()> {
 
     let arc = Arc::new(service);
 
-    let oauth_service = OauthService::new(arc.clone());
+    let oauth_service = OauthService::new(arc.clone()).await.unwrap();
     let jwt_service = TokenService::from_env().map_err(|e| log::error!("{e}")).expect("Failed to create jwt service");
 
     let state = web::Data::new(StateManager {
