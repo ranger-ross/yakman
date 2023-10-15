@@ -17,8 +17,8 @@ chrono = "0.4.31"
 thiserror = "1.0.49"
 anyhow = "1.0"
 derive_more = "0.99.17"
-utoipa = { version = "3.5.0", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "3.1.5", features = ["actix-web"] }
+utoipa = { version = "4", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
 actix-middleware-etag = "0.2.0"
 log = "0.4"
 env_logger = "0.10.0"
