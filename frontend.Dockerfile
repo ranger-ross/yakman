@@ -1,4 +1,4 @@
-FROM node:20 as builder
+FROM node:21 as builder
 # Add PNPM
 RUN corepack enable
 
@@ -20,7 +20,7 @@ RUN rm -rf .svelte-kit
 RUN pnpm run build
 
 
-FROM node:20-alpine
+FROM node:21-alpine
 # Add PNPM
 RUN corepack enable
 
