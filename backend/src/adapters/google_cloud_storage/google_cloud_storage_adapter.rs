@@ -1,0 +1,383 @@
+use super::{
+    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
+    GenericStorageError, KVStorageAdapter,
+};
+use crate::adapters::google_cloud_storage::storage_types::RevisionJson;
+use crate::model::{
+    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManUserDetails,
+};
+use async_trait::async_trait;
+use google_cloud_storage::{
+    client::{Client, ClientConfig},
+    http::objects::{
+        download::Range,
+        get::GetObjectRequest,
+        upload::{Media, UploadObjectRequest, UploadType},
+    },
+};
+use log::error;
+use anyhow::Result;
+
+#[derive(Clone)]
+pub struct GoogleCloudStorageAdapter {
+    pub yakman_dir: Option<String>,
+    pub client: Client,
+    pub bucket: String,
+}
+
+#[async_trait]
+impl KVStorageAdapter for GoogleCloudStorageAdapter {
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
+        let path = self.get_projects_file_path();
+        let content = self.get_object(&path).await?;
+        let data: Vec<YakManProject> = serde_json::from_str(&content)?;
+        return Ok(data);
+    }
+
+    async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&projects)?;
+        let path = self.get_projects_file_path();
+        self.put_object(&path, data).await?;
+        return Ok(());
+    }
+
+    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
+        let path = self.get_configs_file_path();
+        let content = self.get_object(&path).await?;
+        let v: ConfigJson = serde_json::from_str(&content)?;
+        return Ok(v.configs);
+    }
+
+    async fn get_configs_by_project_uuid(
+        &self,
+        project_uuid: String,
+    ) -> Result<Vec<Config>, GenericStorageError> {
+        let configs = self.get_configs().await?;
+        Ok(configs
+            .into_iter()
+            .filter(|c| c.project_uuid == project_uuid)
+            .collect())
+    }
+
+    async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
+        // Add config to base config file
+        let data = serde_json::to_string(&ConfigJson { configs: configs })?;
+        let path: String = self.get_configs_file_path();
+        self.put_object(&path, data).await?;
+        Ok(())
+    }
+
+    async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
+        let path = self.get_labels_file_path();
+        let content = self.get_object(&path).await?;
+        let v: LabelJson = serde_json::from_str(&content)?;
+        return Ok(v.labels);
+    }
+
+    async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError> {
+        let label_file = self.get_labels_file_path();
+        let data = serde_json::to_string(&LabelJson { labels: labels })?;
+        self.put_object(&label_file, data).await?;
+        return Ok(());
+    }
+
+    async fn get_instance_metadata(
+        &self,
+        config_name: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
+        let metadata_dir = self.get_config_instance_metadata_dir();
+        let instance_file = format!("{metadata_dir}/{config_name}.json");
+        if let Some(content) = self.get_object(&instance_file).await.ok() {
+            let v: InstanceJson = serde_json::from_str(&content)?;
+            return Ok(Some(v.instances));
+        }
+        return Ok(None);
+    }
+
+    async fn save_instance_metadata(
+        &self,
+        config_name: &str,
+        instances: Vec<ConfigInstance>,
+    ) -> Result<(), GenericStorageError> {
+        let metadata_path = self.get_config_instance_metadata_dir();
+        let instance_file = format!("{metadata_path}/{config_name}.json");
+        let data = serde_json::to_string(&InstanceJson {
+            instances: instances,
+        })?;
+
+        self.put_object(&instance_file, data).await?;
+
+        Ok(())
+    }
+
+    async fn get_revsion(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
+        let dir = self.get_instance_revisions_path();
+        let path = format!("{dir}/{config_name}/{revision}");
+
+        if let Ok(content) = self.get_object(&path).await {
+            let data: RevisionJson = serde_json::from_str(&content)?;
+            return Ok(Some(data.revision));
+        } else {
+            error!("Failed to load revision file: {revision}");
+        }
+
+        return Ok(None);
+    }
+
+    async fn save_revision(
+        &self,
+        config_name: &str,
+        revision: &ConfigInstanceRevision,
+    ) -> Result<(), GenericStorageError> {
+        let revisions_path = self.get_instance_revisions_path();
+        let revision_key = &revision.revision;
+        let revision_data = serde_json::to_string(&RevisionJson {
+            revision: revision.clone(),
+        })?;
+        let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
+        self.put_object(&revision_file_path, revision_data).await?;
+        return Ok(());
+    }
+
+    async fn get_instance_data(
+        &self,
+        config_name: &str,
+        data_key: &str,
+    ) -> Result<String, GenericStorageError> {
+        let instance_dir = self.get_config_instance_dir();
+        let instance_path = format!("{instance_dir}/{config_name}/{data_key}");
+        return Ok(self.get_object(&instance_path).await?);
+    }
+
+    async fn save_instance_data(
+        &self,
+        config_name: &str,
+        data_key: &str,
+        data: &str,
+    ) -> Result<(), GenericStorageError> {
+        let instance_dir = self.get_config_instance_dir();
+        // Create new file with data
+        let data_file_path = format!("{instance_dir}/{config_name}/{data_key}");
+        self.put_object(&data_file_path, data.to_string()).await?;
+        return Ok(());
+    }
+
+    async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
+        let project_file = self.get_projects_file_path();
+        if !self.object_exists(&project_file).await {
+            self.save_projects(vec![])
+                .await
+                .expect("Failed to create project file");
+        }
+
+        let config_file = self.get_configs_file_path();
+        if !self.object_exists(&config_file).await {
+            self.save_configs(vec![])
+                .await
+                .expect("Failed to create config file");
+        }
+
+        let label_file = self.get_labels_file_path();
+        if !self.object_exists(&label_file).await {
+            self.save_labels(vec![])
+                .await
+                .expect("Failed to create labels file");
+        }
+
+        let user_file = self.get_user_file_path();
+        if !self.object_exists(&user_file).await {
+            self.save_users(vec![])
+                .await
+                .expect("Failed to create users file");
+        }
+
+        Ok(())
+    }
+
+    // Directory modification funcs
+
+    async fn create_config_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+        // NOP
+        return Ok(());
+    }
+
+    async fn create_revision_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+        // NOP
+        return Ok(());
+    }
+
+    async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
+        let path = self.get_user_file_path();
+        let data = self.get_object(&path).await?;
+        let user_data: UsersJson = serde_json::from_str(&data)?;
+        return Ok(user_data.users);
+    }
+
+    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        let users = self.get_users().await?;
+
+        for user in users {
+            if user.email == id {
+                return Ok(Some(user));
+            }
+        }
+
+        return Ok(None);
+    }
+
+    async fn get_user_details(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
+        let dir = self.get_user_dir();
+        let path = format!("{dir}/{uuid}.json");
+
+        if let Ok(content) = self.get_object(&path).await {
+            let data: YakManUserDetails = serde_json::from_str(&content)?;
+            return Ok(Some(data));
+        } else {
+            error!("Failed to load user file: {uuid}");
+        }
+
+        return Ok(None);
+    }
+
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_user_dir();
+        let path: String = format!("{dir}/{uuid}.json");
+
+        let data: String = serde_json::to_string(&details)?;
+
+        self.put_object(&path, data).await?;
+        return Ok(());
+    }
+
+    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&UsersJson { users: users })?;
+        let data_file_path = self.get_user_file_path();
+        self.put_object(&data_file_path, data).await?;
+        Ok(())
+    }
+}
+
+// Helper functions
+impl GoogleCloudStorageAdapter {
+    fn get_yakman_dir(&self) -> String {
+        let default_dir = String::from(".yakman");
+        return self.yakman_dir.as_ref().unwrap_or(&default_dir).to_string();
+    }
+
+    fn get_labels_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/labels.json");
+    }
+
+    fn get_projects_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/projects.json");
+    }
+
+    fn get_configs_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/configs.json");
+    }
+
+    fn get_user_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/users.json");
+    }
+
+    fn get_instance_revisions_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/instance-revisions");
+    }
+
+    fn get_config_instance_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/instances");
+    }
+
+    fn get_user_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/users");
+    }
+
+    fn get_config_instance_metadata_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/instance-metadata");
+    }
+
+    async fn put_object(&self, path: &str, data: String) -> Result<(), GenericStorageError> {
+        let upload_type = UploadType::Simple(Media::new(path.to_string()));
+        let request = UploadObjectRequest {
+            bucket: self.bucket.to_string(),
+            ..Default::default()
+        };
+        self.client
+            .clone()
+            .upload_object(&request, data, &upload_type)
+            .await?;
+
+        return Ok(());
+    }
+
+    /// Checks if a file exists in Google Cloud Storage, if an unexpected error occurs, the file is assumped to exist.
+    /// This is because we use this function to check files exist at start up.
+    /// To avoid accidently overriding a file on an unexpected error, we assume a file exists on an unexpected error.
+    async fn object_exists(&self, key: &str) -> bool {
+        let res = self
+            .client
+            .get_object(&GetObjectRequest {
+                bucket: self.bucket.to_string(),
+                object: key.to_string(),
+                ..Default::default()
+            })
+            .await;
+
+        return match res {
+            Ok(_) => true,
+            Err(e) => match e {
+                google_cloud_storage::http::Error::Response(e) => e.code != 404,
+                _ => true,
+            },
+        };
+    }
+
+    async fn get_object(&self, path: &str) -> Result<String, GenericStorageError> {
+        let obj = self
+            .client
+            .download_object(
+                &GetObjectRequest {
+                    bucket: self.bucket.to_string(),
+                    object: path.to_string(),
+                    ..Default::default()
+                },
+                &Range::default(),
+            )
+            .await?;
+
+        return Ok(String::from_utf8(obj)?);
+    }
+
+    pub async fn from_env() -> Result<GoogleCloudStorageAdapter> {
+        let config = ClientConfig::default().with_auth().await?;
+        let client = Client::new(config);
+
+        let bucket = std::env::var("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET")
+            .expect("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET was not set and is required for Google Cloud Storage adapter");
+        Ok(GoogleCloudStorageAdapter {
+            yakman_dir: None,
+            client: client,
+            bucket: bucket,
+        })
+    }
+}

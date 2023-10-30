@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use self::errors::GenericStorageError;
 
 pub mod aws_s3;
+pub mod google_cloud_storage;
 pub mod errors;
 pub mod local_file;
 pub mod postgres;
