@@ -30,6 +30,7 @@ use model::{
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
     YakManProject, YakManRole, YakManSettings, YakManUser,
 };
+use anyhow::Context;
 
 #[derive(Clone)]
 pub struct StateManager {
@@ -199,7 +200,11 @@ async fn create_service() -> impl StorageService {
             KVStorageService { adapter: adapter }
         },
         "GOOGLE_CLOUD_STORAGE" => {
-            let adapter = Box::new(GoogleCloudStorageAdapter::from_env().await);
+            let adapter = Box::new(
+                GoogleCloudStorageAdapter::from_env().await
+                .context("Failed to initialize Google Cloud Storage adapter")
+                .unwrap()
+            );
             KVStorageService { adapter: adapter }
         },
         _ => panic!("Unsupported adapter {adapter_name}"),

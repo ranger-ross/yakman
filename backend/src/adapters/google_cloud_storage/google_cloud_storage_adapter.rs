@@ -17,6 +17,7 @@ use google_cloud_storage::{
     },
 };
 use log::error;
+use anyhow::Result;
 
 #[derive(Clone)]
 pub struct GoogleCloudStorageAdapter {
@@ -367,16 +368,16 @@ impl GoogleCloudStorageAdapter {
         return Ok(String::from_utf8(obj)?);
     }
 
-    pub async fn from_env() -> GoogleCloudStorageAdapter {
-        let config = ClientConfig::default().with_auth().await.unwrap(); // TODO: Handle Error
+    pub async fn from_env() -> Result<GoogleCloudStorageAdapter> {
+        let config = ClientConfig::default().with_auth().await?;
         let client = Client::new(config);
 
         let bucket = std::env::var("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET")
             .expect("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET was not set and is required for Google Cloud Storage adapter");
-        GoogleCloudStorageAdapter {
+        Ok(GoogleCloudStorageAdapter {
             yakman_dir: None,
             client: client,
             bucket: bucket,
-        }
+        })
     }
 }
