@@ -361,7 +361,7 @@ impl GoogleCloudStorageAdapter {
                     object: path.to_string(),
                     ..Default::default()
                 },
-                &Range::default(), // TODO: Investigate if this truncates the data if the file is to long?
+                &Range::default(),
             )
             .await?;
 
