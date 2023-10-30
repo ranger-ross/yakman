@@ -186,8 +186,6 @@ impl KVStorageAdapter for RedisStorageAdapter {
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
-        warn!("Redis adapter not yet setting up");
-
         let mut connection = self.open_connection()?;
 
         let configs_key = self.get_configs_key();
@@ -223,7 +221,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
 const DEFAULT_REDIS_PORT: i32 = 6379;
 
 impl RedisStorageAdapter {
-    pub fn from_env() -> Result<RedisStorageAdapter> {
+    pub async fn from_env() -> Result<RedisStorageAdapter> {
         let host = env::var("YAKMAN_REDIS_HOST")
             .expect("YAKMAN_REDIS_HOST was not set and is required by the Redis adapter");
 
