@@ -1,10 +1,13 @@
 extern crate redis;
+use std::env;
+
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use log::{info, warn};
 use redis::{Commands, Connection, RedisError, RedisResult};
@@ -217,7 +220,26 @@ impl KVStorageAdapter for RedisStorageAdapter {
     }
 }
 
+const DEFAULT_REDIS_PORT: i32 = 6379;
+
 impl RedisStorageAdapter {
+    pub fn from_env() -> Result<RedisStorageAdapter> {
+        let host = env::var("YAKMAN_REDIS_HOST")
+            .expect("YAKMAN_REDIS_HOST was not set and is required by the Redis adapter");
+
+        let port: i32 = env::var("YAKMAN_REDIS_PORT")
+            .map(|v| v.parse::<i32>().unwrap_or(DEFAULT_REDIS_PORT))
+            .unwrap_or(DEFAULT_REDIS_PORT);
+
+        // TODO: use env vars
+        return Ok(RedisStorageAdapter {
+            host: host,
+            port: port,
+            username: "".to_string(),
+            password: "".to_string(),
+        });
+    }
+
     // TODO: Connection Pooling?
     fn open_connection(&self) -> RedisResult<Connection> {
         // TODO: Handle Auth
