@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use aws_sdk_s3::error::SdkError;
 use thiserror::Error;
 
@@ -32,5 +34,17 @@ impl From<serde_json::Error> for GenericStorageError {
 impl<E, R> From<SdkError<E, R>> for GenericStorageError {
     fn from(e: SdkError<E, R>) -> Self {
         GenericStorageError::new(String::from("AWS S3 Error"), e.to_string())
+    }
+}
+
+impl From<google_cloud_storage::http::Error> for GenericStorageError {
+    fn from(e: google_cloud_storage::http::Error) -> Self {
+        GenericStorageError::new(String::from("Google Cloud Storage Error"), e.to_string())
+    }
+}
+
+impl From<FromUtf8Error> for GenericStorageError {
+    fn from(e: FromUtf8Error) -> Self {
+        GenericStorageError::new(String::from("Error converting utf-8 bytes to String"), e.to_string())
     }
 }

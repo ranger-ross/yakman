@@ -14,7 +14,7 @@ use crate::middleware::roles::extract_roles;
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
-use adapters::aws_s3::AwsS3StorageAdapter;
+use adapters::{aws_s3::AwsS3StorageAdapter, google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter};
 use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::create_redis_adapter;
 use api::oauth::{GetUserRolesResponse, OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse};
@@ -197,7 +197,11 @@ async fn create_service() -> impl StorageService {
         "S3" => {
             let adapter = Box::new(AwsS3StorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
-        }
+        },
+        "GOOGLE_CLOUD_STORAGE" => {
+            let adapter = Box::new(GoogleCloudStorageAdapter::from_env().await);
+            KVStorageService { adapter: adapter }
+        },
         _ => panic!("Unsupported adapter {adapter_name}"),
     };
 }
