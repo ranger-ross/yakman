@@ -3,34 +3,37 @@ mod api;
 mod auth;
 mod error;
 mod middleware;
-mod services;
 mod model;
+mod services;
 
 extern crate dotenv;
 
 use crate::auth::oauth_service::OauthService;
-use crate::middleware::YakManPrincipleTransformer;
 use crate::middleware::roles::extract_roles;
+use crate::middleware::YakManPrincipleTransformer;
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
-use adapters::{aws_s3::AwsS3StorageAdapter, google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter};
 use adapters::local_file::LocalFileStorageAdapter;
-use adapters::redis::create_redis_adapter;
-use api::oauth::{GetUserRolesResponse, OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse};
+use adapters::redis::redis_adapter::RedisStorageAdapter;
+use adapters::{
+    aws_s3::AwsS3StorageAdapter,
+    google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter,
+};
+use anyhow::Context;
+use api::oauth::{GetUserRolesResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
-use services::{kv_storage_service::KVStorageService, StorageService};
-use std::{env, sync::Arc};
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
     Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
     YakManProject, YakManRole, YakManSettings, YakManUser,
 };
-use anyhow::Context;
+use services::{kv_storage_service::KVStorageService, StorageService};
+use std::{env, sync::Arc};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(Clone)]
 pub struct StateManager {
@@ -113,7 +116,9 @@ async fn main() -> std::io::Result<()> {
     let arc = Arc::new(service);
 
     let oauth_service = OauthService::new(arc.clone()).await.unwrap();
-    let jwt_service = TokenService::from_env().map_err(|e| log::error!("{e}")).expect("Failed to create jwt service");
+    let jwt_service = TokenService::from_env()
+        .map_err(|e| log::error!("{e}"))
+        .expect("Failed to create jwt service");
 
     let state = web::Data::new(StateManager {
         service: arc,
@@ -187,30 +192,35 @@ async fn create_service() -> impl StorageService {
     // TODO: handle non file storage
     return match adapter_name.as_str() {
         "REDIS" => {
-            let adapter = Box::new(create_redis_adapter());
+            let adapter = Box::new(
+                RedisStorageAdapter::from_env()
+                    .await
+                    .context("Failed to initialize Redis adapter")
+                    .unwrap(),
+            );
             KVStorageService { adapter: adapter }
-        },
+        }
         // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
-        },
+        }
         "S3" => {
             let adapter = Box::new(AwsS3StorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
-        },
+        }
         "GOOGLE_CLOUD_STORAGE" => {
             let adapter = Box::new(
-                GoogleCloudStorageAdapter::from_env().await
-                .context("Failed to initialize Google Cloud Storage adapter")
-                .unwrap()
+                GoogleCloudStorageAdapter::from_env()
+                    .await
+                    .context("Failed to initialize Google Cloud Storage adapter")
+                    .unwrap(),
             );
             KVStorageService { adapter: adapter }
-        },
+        }
         _ => panic!("Unsupported adapter {adapter_name}"),
     };
 }
-
 
 fn load_yak_man_settings() -> YakManSettings {
     return YakManSettings {
