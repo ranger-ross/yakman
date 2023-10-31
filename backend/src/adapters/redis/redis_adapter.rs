@@ -7,10 +7,11 @@ use crate::model::{
     Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
-use anyhow::{Context, Result};
+use anyhow::Result;
 use async_trait::async_trait;
-use log::{info, warn};
-use redis::{Commands, Connection, RedisError, RedisResult};
+use log::info;
+use r2d2::PooledConnection;
+use redis::{Commands, RedisError};
 use serde::de::DeserializeOwned;
 
 pub struct RedisStorageAdapter {
@@ -18,7 +19,7 @@ pub struct RedisStorageAdapter {
     pub port: i32,
     pub username: Option<String>,
     pub password: Option<String>,
-    pub client: redis::Client,
+    pub connection_pool: r2d2::Pool<redis::Client>,
 }
 
 const REDIS_PREFIX: &str = "YAKMAN";
@@ -26,19 +27,19 @@ const REDIS_PREFIX: &str = "YAKMAN";
 #[async_trait]
 impl KVStorageAdapter for RedisStorageAdapter {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let projects: String = connection.get(self.get_projects_key())?;
         return Ok(serde_json::from_str(&projects)?);
     }
 
     async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_projects_key(), serde_json::to_string(&projects)?)?;
         return Ok(());
     }
 
     async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let configs: String = connection.get(self.get_configs_key())?;
         return Ok(serde_json::from_str(&configs)?);
     }
@@ -55,19 +56,19 @@ impl KVStorageAdapter for RedisStorageAdapter {
     }
 
     async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_configs_key(), serde_json::to_string(&configs)?)?;
         Ok(())
     }
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let labels: String = connection.get(self.get_labels_key())?;
         return Ok(serde_json::from_str(&labels)?);
     }
 
     async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_labels_key(), serde_json::to_string(&labels)?)?;
         Ok(())
     }
@@ -86,7 +87,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         config_name: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         Ok(connection.get(self.get_data_key(config_name, data_key))?)
     }
 
@@ -96,7 +97,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_data_key(config_name, data_key), data)?;
         Ok(())
     }
@@ -106,7 +107,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         config_name: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let data = serde_json::to_string(&instances)?;
         let _: () = connection.set(self.get_config_metadata_key(config_name), data)?;
         Ok(())
@@ -127,7 +128,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         config_name: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let revision_key = &revision.revision;
         let data = serde_json::to_string(&revision)?;
         let _: () = connection.set(self.get_revision_key(config_name, revision_key), data)?;
@@ -145,7 +146,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     }
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let data: String = connection.get(self.get_users_key())?;
         return Ok(serde_json::from_str(&data)?);
     }
@@ -175,19 +176,19 @@ impl KVStorageAdapter for RedisStorageAdapter {
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let key = self.get_user_key(uuid);
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let _: () = connection.set(key, serde_json::to_string(&details)?)?;
         return Ok(());
     }
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_users_key(), serde_json::to_string(&users)?)?;
         Ok(())
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
 
         let configs_key = self.get_configs_key();
         if !connection.exists(&configs_key)? {
@@ -234,29 +235,35 @@ impl RedisStorageAdapter {
         let password = env::var("YAKMAN_REDIS_PASSWORD").ok();
 
         let connection_url: String = Self::create_connection_url(
-            &host, 
-            port, 
-            username.as_ref().map(|x| x.as_str()), 
-            password.as_ref().map(|x| x.as_str())
+            &host,
+            port,
+            username.as_ref().map(|x| x.as_str()),
+            password.as_ref().map(|x| x.as_str()),
         );
 
         let client = redis::Client::open(connection_url)?;
-            
+
+        let pool: r2d2::Pool<redis::Client> = r2d2::Pool::builder().build(client).unwrap();
+
         return Ok(RedisStorageAdapter {
             host: host,
             port: port,
             username: username,
             password: password,
-            client: client,
+            connection_pool: pool,
         });
     }
 
-    // TODO: Connection Pooling?
-    fn open_connection(&self) -> RedisResult<Connection> {
-        return self.client.get_connection();
+    fn get_connection(&self) -> Result<PooledConnection<redis::Client>, GenericStorageError> {
+        return Ok(self.connection_pool.get()?);
     }
 
-    fn create_connection_url(host: &str, port: i32, username: Option<&str>, password: Option<&str>) -> String {
+    fn create_connection_url(
+        host: &str,
+        port: i32,
+        username: Option<&str>,
+        password: Option<&str>,
+    ) -> String {
         let auth = match (&username, &password) {
             (Some(u), Some(p)) => format!("{}:{}@", u, p),
             (Some(u), None) => format!("{}@", u),
@@ -264,18 +271,14 @@ impl RedisStorageAdapter {
             (None, None) => String::new(),
         };
 
-        return "redis://".to_string()
-            + &auth
-            + host
-            + ":"
-            + port.to_string().as_str();
+        return "redis://".to_string() + &auth + host + ":" + port.to_string().as_str();
     }
 
     async fn get_optional_data<T: DeserializeOwned>(
         &self,
         key: &str,
     ) -> Result<Option<T>, GenericStorageError> {
-        let mut connection = self.open_connection()?;
+        let mut connection = self.get_connection()?;
 
         let data: Option<String> = connection.get(key)?;
 
@@ -329,5 +332,14 @@ impl From<RedisError> for GenericStorageError {
                 value.detail()
             ),
         )
+    }
+}
+
+impl From<r2d2::Error> for GenericStorageError {
+    fn from(value: r2d2::Error) -> Self {
+        GenericStorageError {
+            message: String::from("Redis connection pool error"),
+            raw_message: value.to_string(),
+        }
     }
 }
