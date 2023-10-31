@@ -16,8 +16,9 @@ use serde::de::DeserializeOwned;
 pub struct RedisStorageAdapter {
     pub host: String,
     pub port: i32,
-    pub username: String,
-    pub password: String,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub client: redis::Client,
 }
 
 const REDIS_PREFIX: &str = "YAKMAN";
@@ -229,22 +230,45 @@ impl RedisStorageAdapter {
             .map(|v| v.parse::<i32>().unwrap_or(DEFAULT_REDIS_PORT))
             .unwrap_or(DEFAULT_REDIS_PORT);
 
-        // TODO: use env vars
+        let username = env::var("YAKMAN_REDIS_USERNAME").ok();
+        let password = env::var("YAKMAN_REDIS_PASSWORD").ok();
+
+        let connection_url: String = Self::create_connection_url(
+            &host, 
+            port, 
+            username.as_ref().map(|x| x.as_str()), 
+            password.as_ref().map(|x| x.as_str())
+        );
+
+        let client = redis::Client::open(connection_url)?;
+            
         return Ok(RedisStorageAdapter {
             host: host,
             port: port,
-            username: "".to_string(),
-            password: "".to_string(),
+            username: username,
+            password: password,
+            client: client,
         });
     }
 
     // TODO: Connection Pooling?
     fn open_connection(&self) -> RedisResult<Connection> {
-        // TODO: Handle Auth
-        let connection_url: String =
-            "redis://".to_string() + self.host.as_str() + ":" + self.port.to_string().as_str();
-        let client = redis::Client::open(connection_url)?;
-        return client.get_connection();
+        return self.client.get_connection();
+    }
+
+    fn create_connection_url(host: &str, port: i32, username: Option<&str>, password: Option<&str>) -> String {
+        let auth = match (&username, &password) {
+            (Some(u), Some(p)) => format!("{}:{}@", u, p),
+            (Some(u), None) => format!("{}@", u),
+            (None, Some(p)) => format!(":{}@", p),
+            (None, None) => String::new(),
+        };
+
+        return "redis://".to_string()
+            + &auth
+            + host
+            + ":"
+            + port.to_string().as_str();
     }
 
     async fn get_optional_data<T: DeserializeOwned>(
