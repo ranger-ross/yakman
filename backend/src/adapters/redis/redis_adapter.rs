@@ -243,7 +243,7 @@ impl RedisStorageAdapter {
 
         let client = redis::Client::open(connection_url)?;
 
-        let pool: r2d2::Pool<redis::Client> = r2d2::Pool::builder().build(client).unwrap();
+        let pool: r2d2::Pool<redis::Client> = r2d2::Pool::builder().build(client)?;
 
         return Ok(RedisStorageAdapter {
             host: host,
