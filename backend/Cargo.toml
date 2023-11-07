@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 serde = {version = "1.0", features = ["derive"]}
-serde_json = "1.0.107"
+serde_json = "1.0.108"
 redis = { version = "0.23.3", features = ["r2d2"] }
 r2d2 = "0.8.10"
 sqlx = { version = "0.7.2", features = [ "runtime-tokio-rustls", "postgres" ] }
@@ -38,5 +38,5 @@ sha256 = "1.4.0"
 futures-util = "0.3.28"
 short-crypt = "1.0.28"
 openidconnect = "3.4.0"
-base64 = "0.21.4"
+base64 = "0.21.5"
 google-cloud-storage = "0.14"
