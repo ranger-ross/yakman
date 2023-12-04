@@ -1,7 +1,6 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import LabelPill from "$lib/components/LabelPill.svelte";
-    import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManInput from "$lib/components/YakManInput.svelte";
     import YakManTextArea from "$lib/components/YakManTextArea.svelte";
     import { trpc } from "$lib/trpc/client";

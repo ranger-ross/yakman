@@ -1,13 +1,12 @@
 <script>
 	import YakManHeader from "$lib/components/YakManHeader.svelte";
-	import { onMount, setContext } from "svelte";
+	import { onMount } from "svelte";
 	import { roles } from "$lib/stores/roles";
 	import "./styles.css";
 	import YakManModal from "$lib/components/YakManModal.svelte";
 	import { globalModalState } from "$lib/stores/global-modal-state";
 	import { goto } from "$app/navigation";
 
-	// TODO: Fix typescript typing
 	export let data;
 
 	const userRoles = data.userRoles;
