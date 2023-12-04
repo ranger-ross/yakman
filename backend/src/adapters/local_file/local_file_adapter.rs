@@ -8,7 +8,7 @@ use async_trait::async_trait;
 
 use log::{error, info};
 use crate::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
 
@@ -42,7 +42,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
+    async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = fs::read_to_string(path)?;
         let v: ConfigJson = serde_json::from_str(&content)?;
@@ -52,7 +52,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn get_configs_by_project_uuid(
         &self,
         project_uuid: String,
-    ) -> Result<Vec<Config>, GenericStorageError> {
+    ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
@@ -60,7 +60,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError> {
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
         let path: String = self.get_configs_file_path();
@@ -246,7 +246,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     // Directory modification funcs
 
-    async fn create_config_instance_dir(
+    async fn prepare_config_instance_storage(
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError> {
@@ -258,7 +258,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn create_revision_instance_dir(
+    async fn prepare_revision_instance_storage(
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError> {

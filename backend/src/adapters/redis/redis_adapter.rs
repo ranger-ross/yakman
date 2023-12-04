@@ -4,7 +4,7 @@ use std::env;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
 use anyhow::Result;
@@ -38,7 +38,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(());
     }
 
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
+    async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let mut connection = self.get_connection()?;
         let configs: String = connection.get(self.get_configs_key())?;
         return Ok(serde_json::from_str(&configs)?);
@@ -47,7 +47,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn get_configs_by_project_uuid(
         &self,
         project_uuid: String,
-    ) -> Result<Vec<Config>, GenericStorageError> {
+    ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
@@ -55,7 +55,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_configs_key(), serde_json::to_string(&configs)?)?;
         Ok(())
@@ -135,12 +135,12 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
-    async fn create_config_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+    async fn prepare_config_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())
     }
 
-    async fn create_revision_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+    async fn prepare_revision_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())
     }

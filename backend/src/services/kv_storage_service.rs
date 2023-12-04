@@ -6,7 +6,7 @@ use crate::{
         CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
     },
     model::{
-        Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+        YakManConfig, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, YakManLabel, LabelType,
         RevisionReviewState, YakManProject, YakManRole, YakManUser, YakManUserDetails,
     },
 };
@@ -25,7 +25,7 @@ impl StorageService for KVStorageService {
         return Ok(self.adapter.get_projects().await?);
     }
 
-    async fn get_config(&self, config_name: &str) -> Result<Option<Config>, GenericStorageError> {
+    async fn get_config(&self, config_name: &str) -> Result<Option<YakManConfig>, GenericStorageError> {
         let c = self.adapter.get_configs().await?;
         return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
     }
@@ -57,7 +57,7 @@ impl StorageService for KVStorageService {
     async fn get_visible_configs(
         &self,
         project_uuid: Option<String>,
-    ) -> Result<Vec<Config>, GenericStorageError> {
+    ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_all_configs(project_uuid).await?;
         return Ok(configs.into_iter().filter(|c| !c.hidden).collect());
     }
@@ -107,7 +107,7 @@ impl StorageService for KVStorageService {
     async fn create_config_instance(
         &self,
         config_name: &str,
-        labels: Vec<Label>,
+        labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         creator_uuid: &str,
@@ -192,7 +192,7 @@ impl StorageService for KVStorageService {
             None => (),
         }
 
-        configs.push(Config {
+        configs.push(YakManConfig {
             name: String::from(config_name),
             description: String::from(""), // TODO: support descriptions?
             project_uuid: String::from(project_uuid),
@@ -207,7 +207,7 @@ impl StorageService for KVStorageService {
 
         // Create config instances directory
         self.adapter
-            .create_config_instance_dir(config_name)
+            .prepare_config_instance_storage(config_name)
             .await
             .map_err(|_| {
                 CreateConfigError::storage_error("Failed to create instances directory")
@@ -215,7 +215,7 @@ impl StorageService for KVStorageService {
 
         // Create config revisions directory
         self.adapter
-            .create_revision_instance_dir(config_name)
+            .prepare_revision_instance_storage(config_name)
             .await
             .map_err(|_| {
                 CreateConfigError::storage_error("Failed to create revisions directory")
@@ -290,7 +290,7 @@ impl StorageService for KVStorageService {
         &self,
         config_name: &str,
         instance: &str,
-        labels: Vec<Label>,
+        labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
     ) -> Result<(), SaveConfigInstanceError> {
@@ -584,7 +584,7 @@ impl KVStorageService {
     async fn get_all_configs(
         &self,
         project_uuid: Option<String>,
-    ) -> Result<Vec<Config>, GenericStorageError> {
+    ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = match project_uuid {
             Some(project_uuid) => {
                 self.adapter

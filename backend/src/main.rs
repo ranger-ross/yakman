@@ -27,7 +27,7 @@ use dotenv::dotenv;
 use log::info;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
-    Config, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, Label, LabelType,
+    YakManConfig, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, YakManLabel, LabelType,
     YakManProject, YakManRole, YakManSettings, YakManUser,
 };
 use services::{kv_storage_service::KVStorageService, StorageService};
@@ -80,7 +80,7 @@ impl StateManager {
     ),
     components(
         schemas(
-            Config, LabelType, Label, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
+            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
             YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse, 
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse
         )
@@ -189,7 +189,6 @@ fn yakman_host_port_from_env() -> (String, u16) {
 async fn create_service() -> impl StorageService {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
 
-    // TODO: handle non file storage
     return match adapter_name.as_str() {
         "REDIS" => {
             let adapter = Box::new(
