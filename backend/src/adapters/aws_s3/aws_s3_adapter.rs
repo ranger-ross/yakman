@@ -4,7 +4,7 @@ use super::{
 };
 use crate::adapters::aws_s3::storage_types::RevisionJson;
 use crate::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
 use async_trait::async_trait;
@@ -36,7 +36,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(());
     }
 
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError> {
+    async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = self.get_object(&path).await?;
         let v: ConfigJson = serde_json::from_str(&content)?;
@@ -46,7 +46,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     async fn get_configs_by_project_uuid(
         &self,
         project_uuid: String,
-    ) -> Result<Vec<Config>, GenericStorageError> {
+    ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
@@ -54,7 +54,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError> {
         // Add config to base config file
         let data = serde_json::to_string(&ConfigJson { configs: configs })?;
         let path: String = self.get_configs_file_path();

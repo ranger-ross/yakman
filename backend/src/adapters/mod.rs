@@ -1,5 +1,5 @@
 use crate::model::{
-    Config, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
     YakManUserDetails,
 };
 use async_trait::async_trait;
@@ -19,14 +19,14 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError>;
 
-    async fn get_configs(&self) -> Result<Vec<Config>, GenericStorageError>;
+    async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
     async fn get_configs_by_project_uuid(
         &self,
         project_uuid: String,
-    ) -> Result<Vec<Config>, GenericStorageError>;
+    ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
-    async fn save_configs(&self, configs: Vec<Config>) -> Result<(), GenericStorageError>;
+    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 

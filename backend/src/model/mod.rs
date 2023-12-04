@@ -12,7 +12,7 @@ pub struct YakManProject {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct Config { // TODO: Rename to YakManConfig
+pub struct YakManConfig {
     pub name: String, // Unique key
     pub project_uuid: String,
     pub description: String,
@@ -29,7 +29,7 @@ pub struct LabelType {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct Label {
+pub struct YakManLabel {
     pub label_type: String,
     pub value: String,
 }
@@ -38,7 +38,7 @@ pub struct Label {
 pub struct ConfigInstance {
     pub config_name: String,
     pub instance: String,   // Unique key
-    pub labels: Vec<Label>, // These should match the labels in the current revision
+    pub labels: Vec<YakManLabel>, // These should match the labels in the current revision
     pub current_revision: String,
     pub pending_revision: Option<String>,
     pub revisions: Vec<String>,
@@ -64,7 +64,7 @@ pub enum RevisionReviewState {
 pub struct ConfigInstanceRevision {
     pub revision: String, // Unique key
     pub data_key: String, // Key to fetch data
-    pub labels: Vec<Label>,
+    pub labels: Vec<YakManLabel>,
     pub timestamp_ms: i64,
     pub review_state: RevisionReviewState,
     pub reviewed_by_uuid: Option<String>,

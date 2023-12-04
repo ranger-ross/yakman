@@ -8,7 +8,7 @@ use crate::{
         UpdateConfigInstanceCurrentRevisionError, ApplyRevisionError,
     },
     model::{
-        Config, ConfigInstance, ConfigInstanceRevision, Label, LabelType, YakManProject,
+        YakManConfig, ConfigInstance, ConfigInstanceRevision, YakManLabel, LabelType, YakManProject,
         YakManUser, YakManUserDetails,
     },
 };
@@ -23,9 +23,9 @@ pub trait StorageService: Sync + Send {
     async fn get_visible_configs(
         &self,
         project_uuid: Option<String>,
-    ) -> Result<Vec<Config>, GenericStorageError>;
+    ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
-    async fn get_config(&self, config_name: &str) -> Result<Option<Config>, GenericStorageError>;
+    async fn get_config(&self, config_name: &str) -> Result<Option<YakManConfig>, GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
@@ -42,7 +42,7 @@ pub trait StorageService: Sync + Send {
     async fn create_config_instance(
         &self,
         config_name: &str,
-        labels: Vec<Label>,
+        labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         creator_uuid: &str,
@@ -75,7 +75,7 @@ pub trait StorageService: Sync + Send {
         &self,
         config_name: &str,
         instance: &str,
-        labels: Vec<Label>,
+        labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
     ) -> Result<(), SaveConfigInstanceError>;

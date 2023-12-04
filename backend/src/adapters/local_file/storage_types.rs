@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::model::{LabelType, Config, ConfigInstance, ConfigInstanceRevision, YakManUser};
+use crate::model::{LabelType, YakManConfig, ConfigInstance, ConfigInstanceRevision, YakManUser};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LabelJson {
@@ -8,7 +8,7 @@ pub struct LabelJson {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConfigJson {
-    pub configs: Vec<Config>,
+    pub configs: Vec<YakManConfig>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

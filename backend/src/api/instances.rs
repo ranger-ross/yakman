@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::middleware::YakManPrinciple;
-use crate::model::{Label, YakManRole};
+use crate::model::{YakManLabel, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::permissions::AuthDetails;
@@ -113,7 +113,7 @@ async fn create_new_instance(
     let config_name = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = extract_labels(query);
+    let labels: Vec<YakManLabel> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
     let config = match service.get_config(&config_name).await {
@@ -171,7 +171,7 @@ async fn update_new_instance(
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
-    let labels: Vec<Label> = extract_labels(query);
+    let labels: Vec<YakManLabel> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
     let config = match service.get_config(&config_name).await {
@@ -205,10 +205,10 @@ async fn update_new_instance(
     };
 }
 
-fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<Label> {
+fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<YakManLabel> {
     return query
         .iter()
-        .map(|param| Label {
+        .map(|param| YakManLabel {
             label_type: param.0.to_string(),
             value: param.1.to_string(),
         })
