@@ -68,13 +68,12 @@ pub trait KVStorageAdapter: Sync + Send {
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError>;
 
-    async fn create_config_instance_dir(
-        // TODO: Rename to "prepare" or something better?
+    async fn prepare_config_instance_storage(
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError>;
 
-    async fn create_revision_instance_dir(
+    async fn prepare_revision_instance_storage(
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError>;

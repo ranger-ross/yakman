@@ -246,7 +246,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     // Directory modification funcs
 
-    async fn create_config_instance_dir(
+    async fn prepare_config_instance_storage(
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError> {
@@ -258,7 +258,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn create_revision_instance_dir(
+    async fn prepare_revision_instance_storage(
         &self,
         config_name: &str,
     ) -> Result<(), GenericStorageError> {

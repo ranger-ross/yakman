@@ -207,7 +207,7 @@ impl StorageService for KVStorageService {
 
         // Create config instances directory
         self.adapter
-            .create_config_instance_dir(config_name)
+            .prepare_config_instance_storage(config_name)
             .await
             .map_err(|_| {
                 CreateConfigError::storage_error("Failed to create instances directory")
@@ -215,7 +215,7 @@ impl StorageService for KVStorageService {
 
         // Create config revisions directory
         self.adapter
-            .create_revision_instance_dir(config_name)
+            .prepare_revision_instance_storage(config_name)
             .await
             .map_err(|_| {
                 CreateConfigError::storage_error("Failed to create revisions directory")

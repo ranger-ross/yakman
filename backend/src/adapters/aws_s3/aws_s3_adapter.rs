@@ -195,12 +195,12 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     // Directory modification funcs
 
-    async fn create_config_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+    async fn prepare_config_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP
         return Ok(());
     }
 
-    async fn create_revision_instance_dir(&self, _: &str) -> Result<(), GenericStorageError> {
+    async fn prepare_revision_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP
         return Ok(());
     }
