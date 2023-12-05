@@ -34,7 +34,7 @@
                     <h1 class="text-md text-gray-700">{instance}</h1>
                 </div>
                 <div>
-                    <a href={`/modify-instance/${config}/${instance}`}>
+                    <a tabindex="-1" href={`/modify-instance/${config}/${instance}`}>
                         <YakManButton>Edit</YakManButton>
                     </a>
                 </div>
