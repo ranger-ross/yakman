@@ -1,12 +1,16 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import LabelPill from "$lib/components/LabelPill.svelte";
+    import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManInput from "$lib/components/YakManInput.svelte";
     import YakManTextArea from "$lib/components/YakManTextArea.svelte";
     import { trpc } from "$lib/trpc/client";
     import type { YakManInstanceRevision } from "$lib/types/types";
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
 
+    export let config: string | null = null;
+    export let instance: string | null = null;
     export let currentRevision: string | null = null;
     export let pendingRevision: string | null = null;
     export let sortedRevisions: YakManInstanceRevision[] = [];
@@ -19,8 +23,6 @@
     };
 
     onMount(async () => {
-        console.log("running");
-
         // TODO: maybe auto-select current revision?
         await onRevisionClicked(sortedRevisions[0]);
     });
@@ -42,7 +44,7 @@
 
         try {
             const { contentType, data } = await trpc(
-                $page
+                $page,
             ).data.fetchRevisionData.query({
                 configName: $page.params.config,
                 instance: $page.params.instance,
@@ -51,7 +53,7 @@
             selectedRevisionData.contentType = contentType;
             selectedRevisionData.data = data;
             selectedRevisionData.labels = revision.labels.map(
-                (l) => `${l.label_type}=${l.value}`
+                (l) => `${l.label_type}=${l.value}`,
             );
         } catch (e) {
             console.error(e);
@@ -60,44 +62,67 @@
             selectedRevisionData.revision = oldRevision;
         }
     }
+
+    function deployRevision(revision: string) {
+        if (pendingRevision === revision)  {
+            goto(`/apply-changes/${config}/${instance}`)
+        } else {
+            alert('TODO: Implment ability to rollback to a revision')
+        }
+    }
+
 </script>
 
 <div class="flex justify-between gap-2">
     <div class="flex-grow mt-2">
         <div class="bg-white rounded shadow-sm overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">Revision</th>
-                <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Time</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {#each sortedRevisions as revision}
-                    <tr   class={`${
-                        revision.revision === selectedRevisionData.revision
-                            ? "bg-yellow-100"
-                            : ""
-                    }`}>
-                        <td class="px-6 py-2 whitespace-nowrap">
-                            <button
-                                class="inline-block text-blue-600 font-bold cursor-pointer"
-                                on:click={() => onRevisionClicked(revision)}
-                            >
-                                {revision.revision}
-                            </button>
-                            {#if revision.revision == currentRevision}
-                                (current)
-                            {/if}
-                        </td>
-                        <td class="px-6 py-2 whitespace-nowrap text-right">
-                            <p class="text-gray-700 text-sm">
-                                {formatDate(revision.timestamp_ms)}
-                            </p>
-                        </td>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th
+                            scope="col"
+                            class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left"
+                            >Revision</th
+                        >
+                        <th
+                            scope="col"
+                            class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right"
+                            >Time</th
+                        >
                     </tr>
-                {/each}
-            </tbody>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {#each sortedRevisions as revision}
+                        <tr
+                            class={`${
+                                revision.revision ===
+                                selectedRevisionData.revision
+                                    ? "bg-yellow-100"
+                                    : ""
+                            }`}
+                        >
+                            <td class="px-6 py-2 whitespace-nowrap">
+                                <button
+                                    class="inline-block text-blue-600 font-bold cursor-pointer"
+                                    on:click={() => onRevisionClicked(revision)}
+                                >
+                                    {revision.revision}
+                                </button>
+                                {#if revision.revision == currentRevision}
+                                    (current)
+                                {/if}
+                                {#if revision.revision == pendingRevision}
+                                    (pending)
+                                {/if}
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right">
+                                <p class="text-gray-700 text-sm">
+                                    {formatDate(revision.timestamp_ms)}
+                                </p>
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
             </table>
         </div>
     </div>
@@ -129,6 +154,20 @@
             {#if selectedRevisionData.labels.length === 0}
                 No labels
             {/if}
+        </div>
+        <div>
+            <div class="block text-gray-700 text-sm font-bold my-2">
+                Actions
+            </div>
+            {#each selectedRevisionData.labels as label}
+                <LabelPill text={label} />
+            {/each}
+            <YakManButton
+                on:click={() => deployRevision(selectedRevisionData.revision)}
+                disabled={currentRevision === selectedRevisionData.revision}
+            >
+                Deploy
+            </YakManButton>
         </div>
     </div>
 </div>

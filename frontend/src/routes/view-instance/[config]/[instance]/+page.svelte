@@ -51,9 +51,9 @@
                 </YakManCard>
             </div>
             <div class="h-56 mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2">
+                <div class="block text-gray-700 text-sm font-bold mb-2">
                     Data
-                </label>
+                </div>
                 <MonacoEditor
                     content={data?.data?.data ?? ""}
                     language={editorLanguage}
@@ -88,6 +88,8 @@
 
         {#if selectedHistoryTab == "Revisions"}
             <RevisionsTab
+                {config}
+                {instance}
                 {sortedRevisions}
                 currentRevision={data.instance?.current_revision}
                 pendingRevision={data.instance?.pending_revision}
