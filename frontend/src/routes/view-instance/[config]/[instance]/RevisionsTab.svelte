@@ -64,33 +64,42 @@
 
 <div class="flex justify-between gap-2">
     <div class="flex-grow mt-2">
-        {#each sortedRevisions as revision}
-            <div
-                class={`flex justify-between my-2 p-1 px-2 rounded ${
-                    revision.revision === selectedRevisionData.revision
-                        ? "bg-yellow-200"
-                        : "bg-gray-200"
-                }`}
-            >
-                <div>
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div
-                        class="inline-block text-blue-600 font-bold cursor-pointer"
-                        on:click={() => onRevisionClicked(revision)}
-                    >
-                        {revision.revision}
-                    </div>
-                    {#if revision.revision == currentRevision}
-                        (current)
-                    {/if}
-                </div>
-
-                <p class="text-gray-700 text-sm">
-                    {formatDate(revision.timestamp_ms)}
-                </p>
-            </div>
-        {/each}
+        <div class="bg-white rounded shadow-sm overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">Revision</th>
+                <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Time</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {#each sortedRevisions as revision}
+                    <tr   class={`${
+                        revision.revision === selectedRevisionData.revision
+                            ? "bg-yellow-100"
+                            : ""
+                    }`}>
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <button
+                                class="inline-block text-blue-600 font-bold cursor-pointer"
+                                on:click={() => onRevisionClicked(revision)}
+                            >
+                                {revision.revision}
+                            </button>
+                            {#if revision.revision == currentRevision}
+                                (current)
+                            {/if}
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right">
+                            <p class="text-gray-700 text-sm">
+                                {formatDate(revision.timestamp_ms)}
+                            </p>
+                        </td>
+                    </tr>
+                {/each}
+            </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="w-fit mr-2">
