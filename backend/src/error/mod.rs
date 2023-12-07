@@ -19,13 +19,6 @@ pub struct YakManApiError {
 }
 
 impl YakManApiError {
-    pub fn new(message: &str) -> YakManApiError {
-        YakManApiError {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-            timestamp: Utc::now().timestamp(),
-            message: String::from(message),
-        }
-    }
     pub fn bad_request(reason: &str) -> YakManApiError {
         YakManApiError {
             status: StatusCode::BAD_REQUEST,
@@ -38,6 +31,13 @@ impl YakManApiError {
             status: StatusCode::FORBIDDEN,
             timestamp: Utc::now().timestamp(),
             message: String::from("forbidden"),
+        }
+    }
+    pub fn server_error(message: &str) -> YakManApiError {
+        YakManApiError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            timestamp: Utc::now().timestamp(),
+            message: String::from(message),
         }
     }
 }
@@ -63,7 +63,7 @@ impl From<GenericStorageError> for YakManApiError {
 /// This function panics if YakManApiError cannot be serialized.
 /// In theory this should never happen because the error is a hardcoded string
 fn generic_yakman_server_error_response() -> String {
-    return serde_json::to_string(&YakManApiError::new("an internal server error occurred")).unwrap()
+    return serde_json::to_string(&YakManApiError::server_error("an internal server error occurred")).unwrap()
 }
 
 #[derive(Error, Debug)]

@@ -114,7 +114,7 @@ async fn create_config(
         Ok(p) => p,
         Err(e) => {
             error!("Failed to load projects, error: {e:?}");
-            return Err(YakManApiError::new("Failed to create config"));
+            return Err(YakManApiError::server_error("Failed to create config"));
         }
     };
 
@@ -134,7 +134,7 @@ async fn create_config(
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");
-                Err(YakManApiError::new("Failed to create config"))
+                Err(YakManApiError::server_error("Failed to create config"))
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
                 Err(YakManApiError::bad_request("duplicate config"))

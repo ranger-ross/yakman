@@ -14,11 +14,8 @@ pub async fn get_labels(
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let service = state.get_service();
-
-    return match service.get_labels().await {
-        Ok(data) => Ok(web::Json(data)),
-        Err(_) => Err(YakManApiError::new("Failed to load labels from storage")),
-    };
+    let data = service.get_labels().await?;
+    return Ok(web::Json(data));
 }
 
 /// Create a new label
