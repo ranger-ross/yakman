@@ -1,6 +1,7 @@
+use crate::error::YakManApiError;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::{get, web, HttpResponse};
+use actix_web::{get, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get config data by instance ID
@@ -10,16 +11,16 @@ async fn get_instance_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
     let config = match service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
-            None => return HttpResponse::NotFound().body("Config not found"),
+            None => return Err(YakManApiError::not_found("Config not found")),
         },
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+        Err(_) => return Err(YakManApiError::server_error("Failed to load config")),
     };
 
     let has_role = YakManRoleBinding::has_any_role(
@@ -34,15 +35,14 @@ async fn get_instance_data(
     );
 
     if !has_role {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
-    return match service.get_config_data(&config_name, &instance).await {
-        Ok(data) => match data {
-            Some((data, content_type)) => HttpResponse::Ok().content_type(content_type).body(data),
-            None => HttpResponse::NotFound().body("Instance not found"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    let data = service.get_config_data(&config_name, &instance).await?;
+
+    return match data {
+        Some((data, content_type)) => Ok(HttpResponse::Ok().content_type(content_type).body(data)),
+        None => Err(YakManApiError::not_found("Instance not found")),
     };
 }
 
@@ -53,16 +53,16 @@ async fn get_revision_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, _, revision) = path.into_inner();
     let service = state.get_service();
 
     let config = match service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
-            None => return HttpResponse::NotFound().body("Config not found"),
+            None => return Err(YakManApiError::not_found("Config not found")),
         },
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+        Err(_) => return Err(YakManApiError::server_error("Failed to load config")),
     };
 
     let has_role = YakManRoleBinding::has_any_role(
@@ -77,14 +77,13 @@ async fn get_revision_data(
     );
 
     if !has_role {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
-    return match service.get_data_by_revision(&config_name, &revision).await {
-        Ok(data) => match data {
-            Some((data, content_type)) => HttpResponse::Ok().content_type(content_type).body(data),
-            None => HttpResponse::NotFound().body("Instance not found"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    let data = service.get_data_by_revision(&config_name, &revision).await?;
+
+    return match data {
+        Some((data, content_type)) => Ok(HttpResponse::Ok().content_type(content_type).body(data)),
+        None => Err(YakManApiError::not_found("Instance not found")),
     };
 }

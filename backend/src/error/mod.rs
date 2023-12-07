@@ -33,6 +33,13 @@ impl YakManApiError {
             message: String::from("forbidden"),
         }
     }
+    pub fn not_found<'a>(message: impl Into<Option<&'a str>>) -> YakManApiError {
+        YakManApiError {
+            status: StatusCode::FORBIDDEN,
+            timestamp: Utc::now().timestamp(),
+            message: String::from(message.into().unwrap_or("not found")),
+        }
+    }
     pub fn server_error(message: &str) -> YakManApiError {
         YakManApiError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
