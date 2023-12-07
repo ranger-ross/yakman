@@ -9,7 +9,7 @@ use crate::{
     middleware::roles::YakManRoleBinding,
     StateManager,
 };
-use actix_web::{delete, get, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, put, web, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use serde::Deserialize;
@@ -101,11 +101,15 @@ async fn create_config(
     }
 
     if config_name.is_empty() {
-        return Err(YakManApiError::bad_request("Invalid config name. Must not be empty"));
+        return Err(YakManApiError::bad_request(
+            "Invalid config name. Must not be empty",
+        ));
     }
 
     if !is_alphanumeric_kebab_case(&config_name) {
-        return Err(YakManApiError::bad_request("Invalid config name. Must be alphanumeric kebab case"));
+        return Err(YakManApiError::bad_request(
+            "Invalid config name. Must be alphanumeric kebab case",
+        ));
     }
 
     let service = state.get_service();
@@ -150,7 +154,7 @@ async fn delete_config(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<DeleteConfigPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
     let project_uuid = payload.project_uuid;
@@ -160,12 +164,13 @@ async fn delete_config(
         &project_uuid,
         &auth_details.permissions,
     ) {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     if !is_alphanumeric_kebab_case(&config_name) {
-        return HttpResponse::BadRequest()
-            .body("Invalid config name. Must be alphanumeric kebab case");
+        return Err(YakManApiError::bad_request(
+            "Invalid config name. Must be alphanumeric kebab case",
+        ));
     }
 
     let service = state.get_service();
@@ -173,14 +178,14 @@ async fn delete_config(
     let result: Result<(), DeleteConfigError> = service.delete_config(&config_name).await;
 
     return match result {
-        Ok(()) => HttpResponse::Ok().finish(),
+        Ok(()) => Ok(web::Json(())),
         Err(e) => match e {
             DeleteConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");
-                HttpResponse::InternalServerError().body("Failed to delete config")
+                Err(YakManApiError::server_error("Failed to delete config"))
             }
             DeleteConfigError::ConfigDoesNotExistError => {
-                HttpResponse::BadRequest().body("config does not exist")
+                Err(YakManApiError::bad_request("config does not exist"))
             }
         },
     };
