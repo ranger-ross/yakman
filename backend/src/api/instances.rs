@@ -46,7 +46,7 @@ async fn get_instances_by_config_name(
     return match data {
         Some(data) => Ok(web::Json(data)),
         None => Err(YakManApiError::not_found("Instance not found")),
-    }
+    };
 }
 
 /// Get config instance by instance ID
@@ -56,16 +56,13 @@ async fn get_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
-    let config = match service.get_config(&config_name).await {
-        Ok(config) => match config {
-            Some(config) => config,
-            None => return HttpResponse::NotFound().body("Config not found"),
-        },
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+    let config = match service.get_config(&config_name).await? {
+        Some(config) => config,
+        None => return Err(YakManApiError::not_found("Config not found")),
     };
 
     let has_role = YakManRoleBinding::has_any_role(
@@ -80,18 +77,12 @@ async fn get_instance(
     );
 
     if !has_role {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
-    return match service.get_config_instance(&config_name, &instance).await {
-        Ok(data) => match data {
-            Some(data) => HttpResponse::Ok().body(
-                serde_json::to_string(&data)
-                    .expect("Failed to serialize Vec<ConfigInstance> to JSON"),
-            ),
-            None => HttpResponse::NotFound().body("Instance not found"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    return match service.get_config_instance(&config_name, &instance).await? {
+        Some(data) => Ok(web::Json(data)),
+        None => Err(YakManApiError::not_found("Instance not found")),
     };
 }
 
@@ -106,7 +97,7 @@ async fn create_new_instance(
     state: web::Data<StateManager>,
     req: HttpRequest,
     principle: YakManPrinciple,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let config_name = path.into_inner();
     let service = state.get_service();
 
@@ -116,9 +107,9 @@ async fn create_new_instance(
     let config = match service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
-            None => return HttpResponse::NotFound().body("Config not found"),
+            None => return Err(YakManApiError::not_found("Config not found")),
         },
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+        Err(_) => return Err(YakManApiError::server_error("Failed to load config")),
     };
 
     let has_role = YakManRoleBinding::has_any_role(
@@ -128,28 +119,34 @@ async fn create_new_instance(
     );
 
     if !has_role {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     let creator_uuid = principle.user_uuid;
     if creator_uuid.is_none() {
-        return HttpResponse::Forbidden().finish();
-    } 
+        return Err(YakManApiError::forbidden());
+    }
 
     // TODO: do validation
     // - labels are valid
     // - not a duplicate?
 
     match service
-        .create_config_instance(&config_name, labels, &data, content_type, &creator_uuid.unwrap())
+        .create_config_instance(
+            &config_name,
+            labels,
+            &data,
+            content_type,
+            &creator_uuid.unwrap(),
+        )
         .await
     {
-        Ok(instance) => HttpResponse::Ok().body(instance),
+        Ok(instance) => Ok(web::Json(instance)),
         Err(CreateConfigInstanceError::NoConfigFound) => {
-            HttpResponse::BadRequest().body("Invalid config name")
+            Err(YakManApiError::bad_request("Invalid config name"))
         }
         Err(CreateConfigInstanceError::StorageError { message: _ }) => {
-            HttpResponse::InternalServerError().body("Failed to create config")
+            Err(YakManApiError::server_error("Failed to create config"))
         }
     }
 }
