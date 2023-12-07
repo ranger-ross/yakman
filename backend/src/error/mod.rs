@@ -12,10 +12,10 @@ use thiserror::Error;
 #[display(fmt = "{} {}", timestamp, message)]
 pub struct YakManApiError {
     #[serde(skip_serializing)]
-    pub status: StatusCode,
+    status: StatusCode,
 
-    pub timestamp: i64,
-    pub message: String,
+    timestamp: i64,
+    message: String,
 }
 
 impl YakManApiError {
