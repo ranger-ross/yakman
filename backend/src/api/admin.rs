@@ -34,11 +34,11 @@ pub async fn create_yakman_user(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: Json<CreateYakManUserPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
     if !is_admin {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     let mut users = state.get_service().get_users().await.unwrap();
@@ -52,5 +52,5 @@ pub async fn create_yakman_user(
 
     state.get_service().save_users(users).await.unwrap();
 
-    HttpResponse::Ok().finish()
+    Ok(web::Json(()))
 }

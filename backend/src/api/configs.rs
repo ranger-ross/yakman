@@ -52,7 +52,7 @@ pub async fn get_configs(
                 &auth_details.permissions,
             )
         {
-            return Err(YakManApiError::new("invalid permissions"));
+            return Err(YakManApiError::forbidden());
         }
     }
 
@@ -66,21 +66,18 @@ pub async fn get_configs(
         .collect();
 
     let service = state.get_service();
-    return match service.get_visible_configs(project_uuid).await {
-        Ok(data) => {
-            if has_global_role {
-                return Ok(web::Json(data));
-            }
+    let data = service.get_visible_configs(project_uuid).await?;
 
-            let filtered_data = data
-                .into_iter()
-                .filter(|c| allowed_projects.contains(&c.project_uuid))
-                .collect();
+    if has_global_role {
+        return Ok(web::Json(data));
+    }
 
-            return Ok(web::Json(filtered_data));
-        }
-        Err(err) => Err(YakManApiError::from(err)),
-    };
+    let filtered_data = data
+        .into_iter()
+        .filter(|c| allowed_projects.contains(&c.project_uuid))
+        .collect();
+
+    return Ok(web::Json(filtered_data));
 }
 
 /// Create a new config
