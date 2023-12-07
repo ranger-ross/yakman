@@ -161,7 +161,7 @@ async fn update_new_instance(
     data: String,
     state: web::Data<StateManager>,
     req: HttpRequest,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
@@ -171,9 +171,9 @@ async fn update_new_instance(
     let config = match service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
-            None => return HttpResponse::NotFound().body("Config not found"),
+            None => return Err(YakManApiError::not_found("Config not found")),
         },
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+        Err(_) => return Err(YakManApiError::server_error("Failed to load config")),
     };
 
     let has_role = YakManRoleBinding::has_any_role(
@@ -183,7 +183,7 @@ async fn update_new_instance(
     );
 
     if !has_role {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     // TODO: do validation
@@ -194,8 +194,8 @@ async fn update_new_instance(
         .save_config_instance(&config_name, &instance, labels, &data, content_type)
         .await
     {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(_) => HttpResponse::InternalServerError().body("failed to create instance"),
+        Ok(_) => Ok(web::Json(())),
+        Err(_) => Err(YakManApiError::server_error("failed to create instance")),
     };
 }
 
