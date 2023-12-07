@@ -2,13 +2,13 @@ use std::collections::HashSet;
 
 use crate::{
     api::is_alphanumeric_kebab_case,
-    error::CreateProjectError,
+    error::{CreateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{request::CreateProjectPayload, YakManProject, YakManRole},
     StateManager,
 };
 
-use actix_web::{get, put, web, HttpResponse};
+use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
 
@@ -18,9 +18,9 @@ use log::error;
 pub async fn get_projects(
     auth_details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     if auth_details.permissions.len() == 0 {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     let user_has_global_role = auth_details
@@ -55,7 +55,7 @@ pub async fn get_projects(
         .filter(|p| user_has_global_role || allowed_projects.contains(&p.uuid))
         .collect();
 
-    return HttpResponse::Ok().body(serde_json::to_string(&projects).unwrap());
+    return Ok(web::Json(projects));
 }
 
 /// Create a new project
@@ -65,7 +65,7 @@ async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateProjectPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
@@ -82,29 +82,28 @@ async fn create_project(
         > 0;
 
     if !is_user_global_admin_or_approver {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     if project_name.is_empty() {
-        return HttpResponse::BadRequest().body("Invalid project name. Must not be empty");
+        return Err(YakManApiError::bad_request("Invalid project name. Must not be empty"));
     }
 
     if !is_alphanumeric_kebab_case(&project_name) {
-        return HttpResponse::BadRequest()
-            .body("Invalid project name. Must be alphanumeric kebab case");
+        return Err(YakManApiError::bad_request("Invalid project name. Must be alphanumeric kebab case"));
     }
 
     let service = state.get_service();
 
     return match service.create_project(&project_name).await {
-        Ok(project_uuid) => HttpResponse::Ok().body(project_uuid),
+        Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
                 error!("Failed to create config {project_name}, error: {message}");
-                HttpResponse::InternalServerError().body("Failed to create config")
+                Err(YakManApiError::server_error("Failed to create config"))
             }
             CreateProjectError::DuplicateNameError { name: _ } => {
-                HttpResponse::BadRequest().body("duplicate project")
+                Err(YakManApiError::bad_request("duplicate project"))
             }
         },
     };
