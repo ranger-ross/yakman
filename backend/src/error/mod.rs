@@ -1,5 +1,7 @@
 use actix_web::{error, http::header::ContentType, HttpResponse};
+use chrono::Utc;
 use derive_more::Display;
+use reqwest::StatusCode;
 use serde::Serialize;
 
 use crate::adapters::errors::GenericStorageError;
@@ -7,32 +9,54 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Debug, Display, derive_more::Error, Serialize)]
-pub struct YakManError {
-    error: String,
+#[display(fmt = "{} {}", timestamp, message)]
+pub struct YakManApiError {
+    #[serde(skip_serializing)]
+    pub status: StatusCode,
+
+    pub timestamp: i64,
+    pub message: String,
 }
 
-impl YakManError {
-    pub fn new(error: &str) -> YakManError {
-        YakManError {
-            error: String::from(error),
+impl YakManApiError {
+    pub fn new(message: &str) -> YakManApiError {
+        YakManApiError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            timestamp: Utc::now().timestamp(),
+            message: String::from(message),
+        }
+    }
+    pub fn forbidden() -> YakManApiError {
+        YakManApiError {
+            status: StatusCode::FORBIDDEN,
+            timestamp: Utc::now().timestamp(),
+            message: String::from("forbidden"),
         }
     }
 }
 
-impl error::ResponseError for YakManError {
+impl error::ResponseError for YakManApiError {
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code())
+        HttpResponse::build(self.status)
             .insert_header(ContentType::json())
-            .body(serde_json::to_string(self).unwrap_or(String::from("{}"))) // TODO: add internal server error message
+            .body(serde_json::to_string(self).unwrap_or(generic_yakman_server_error_response()))
     }
 }
 
-impl From<GenericStorageError> for YakManError {
+impl From<GenericStorageError> for YakManApiError {
     fn from(err: GenericStorageError) -> Self {
-        YakManError {
-            error: err.to_string(),
+        YakManApiError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            timestamp: Utc::now().timestamp(),
+            message: err.to_string(),
         }
     }
+}
+
+/// This function panics if YakManApiError cannot be serialized.
+/// In theory this should never happen because the error is a hardcoded string
+fn generic_yakman_server_error_response() -> String {
+    return serde_json::to_string(&YakManApiError::new("an internal server error occurred")).unwrap()
 }
 
 #[derive(Error, Debug)]

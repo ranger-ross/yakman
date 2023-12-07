@@ -4,7 +4,7 @@ use crate::model::{
 };
 use crate::{
     api::is_alphanumeric_kebab_case,
-    error::YakManError,
+    error::YakManApiError,
     error::{CreateConfigError, DeleteConfigError},
     middleware::roles::YakManRoleBinding,
     StateManager,
@@ -27,7 +27,7 @@ pub async fn get_configs(
     auth_details: AuthDetails<YakManRoleBinding>,
     query: web::Query<GetConfigsQuery>,
     state: web::Data<StateManager>,
-) -> actix_web::Result<impl Responder, YakManError> {
+) -> actix_web::Result<impl Responder, YakManApiError> {
     let project_uuid = query.project.to_owned();
     let has_global_role = YakManRoleBinding::has_any_global_role(
         vec![
@@ -52,7 +52,7 @@ pub async fn get_configs(
                 &auth_details.permissions,
             )
         {
-            return Err(YakManError::new("invalid permissions"));
+            return Err(YakManApiError::new("invalid permissions"));
         }
     }
 
@@ -79,7 +79,7 @@ pub async fn get_configs(
 
             return Ok(web::Json(filtered_data));
         }
-        Err(err) => Err(YakManError::from(err)),
+        Err(err) => Err(YakManApiError::from(err)),
     };
 }
 

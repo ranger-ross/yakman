@@ -1,6 +1,6 @@
 use crate::model::{LabelType, YakManRole};
 use crate::{
-    api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManError,
+    api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding, StateManager,
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
@@ -12,12 +12,12 @@ use log::error;
 #[get("/v1/labels")]
 pub async fn get_labels(
     state: web::Data<StateManager>,
-) -> actix_web::Result<impl Responder, YakManError> {
+) -> actix_web::Result<impl Responder, YakManApiError> {
     let service = state.get_service();
 
     return match service.get_labels().await {
         Ok(data) => Ok(web::Json(data)),
-        Err(_) => Err(YakManError::new("Failed to load labels from storage")),
+        Err(_) => Err(YakManApiError::new("Failed to load labels from storage")),
     };
 }
 

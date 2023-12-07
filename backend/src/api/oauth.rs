@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::LoginError, error::YakManError, middleware::roles::YakManRoleBinding, model::YakManRole,
+    auth::LoginError, error::YakManApiError, middleware::roles::YakManRoleBinding, model::YakManRole,
     StateManager,
 };
 use actix_web::{
@@ -181,7 +181,7 @@ pub struct GetUserRolesResponse {
 #[get("/oauth2/user-roles")]
 pub async fn get_user_roles(
     details: AuthDetails<YakManRoleBinding>,
-) -> actix_web::Result<impl Responder, YakManError> {
+) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
         .permissions
         .iter()
