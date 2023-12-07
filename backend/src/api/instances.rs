@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use crate::error::YakManApiError;
 use crate::middleware::YakManPrinciple;
 use crate::model::{YakManLabel, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
+use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get config instances by config_name
@@ -13,16 +14,16 @@ async fn get_instances_by_config_name(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let config_name = path.into_inner();
     let service = state.get_service();
 
     let config = match service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
-            None => return HttpResponse::NotFound().body("Config not found"),
+            None => return Err(YakManApiError::not_found("Config not found")),
         },
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to load config"),
+        Err(_) => return Err(YakManApiError::server_error("Failed to load config")),
     };
 
     let has_role = YakManRoleBinding::has_any_role(
@@ -37,19 +38,15 @@ async fn get_instances_by_config_name(
     );
 
     if !has_role {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
-    return match service.get_config_instance_metadata(&config_name).await {
-        Ok(data) => match data {
-            Some(data) => HttpResponse::Ok().body(
-                serde_json::to_string(&data)
-                    .expect("Failed to serialize Vec<ConfigInstance> to JSON"),
-            ),
-            None => HttpResponse::NotFound().body("Instance not found"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-    };
+    let data = service.get_config_instance_metadata(&config_name).await?;
+
+    return match data {
+        Some(data) => Ok(web::Json(data)),
+        None => Err(YakManApiError::not_found("Instance not found")),
+    }
 }
 
 /// Get config instance by instance ID
