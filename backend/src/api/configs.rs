@@ -27,7 +27,7 @@ pub async fn get_configs(
     auth_details: AuthDetails<YakManRoleBinding>,
     query: web::Query<GetConfigsQuery>,
     state: web::Data<StateManager>,
-) -> actix_web::Result<impl Responder, YakManApiError> {
+) -> Result<impl Responder, YakManApiError> {
     let project_uuid = query.project.to_owned();
     let has_global_role = YakManRoleBinding::has_any_global_role(
         vec![
@@ -87,7 +87,7 @@ async fn create_config(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateConfigPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
     let project_uuid = payload.project_uuid;
@@ -97,16 +97,15 @@ async fn create_config(
         &project_uuid,
         &auth_details.permissions,
     ) {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     if config_name.is_empty() {
-        return HttpResponse::BadRequest().body("Invalid config name. Must not be empty");
+        return Err(YakManApiError::bad_request("Invalid config name. Must not be empty"));
     }
 
     if !is_alphanumeric_kebab_case(&config_name) {
-        return HttpResponse::BadRequest()
-            .body("Invalid config name. Must be alphanumeric kebab case");
+        return Err(YakManApiError::bad_request("Invalid config name. Must be alphanumeric kebab case"));
     }
 
     let service = state.get_service();
@@ -115,7 +114,7 @@ async fn create_config(
         Ok(p) => p,
         Err(e) => {
             error!("Failed to load projects, error: {e:?}");
-            return HttpResponse::InternalServerError().body("Failed to create config");
+            return Err(YakManApiError::new("Failed to create config"));
         }
     };
 
@@ -124,21 +123,21 @@ async fn create_config(
         .find(|p| p.uuid == project_uuid)
         .is_none()
     {
-        return HttpResponse::BadRequest().body("Project does not exist");
+        return Err(YakManApiError::bad_request("Project does not exist"));
     }
 
     let result: Result<(), CreateConfigError> =
         service.create_config(&config_name, &project_uuid).await;
 
     return match result {
-        Ok(()) => HttpResponse::Ok().body(config_name),
+        Ok(()) => Ok(web::Json(config_name)),
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");
-                HttpResponse::InternalServerError().body("Failed to create config")
+                Err(YakManApiError::new("Failed to create config"))
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
-                HttpResponse::BadRequest().body("duplicate config")
+                Err(YakManApiError::bad_request("duplicate config"))
             }
         },
     };

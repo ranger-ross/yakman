@@ -26,6 +26,13 @@ impl YakManApiError {
             message: String::from(message),
         }
     }
+    pub fn bad_request(reason: &str) -> YakManApiError {
+        YakManApiError {
+            status: StatusCode::BAD_REQUEST,
+            timestamp: Utc::now().timestamp(),
+            message: String::from(reason),
+        }
+    }
     pub fn forbidden() -> YakManApiError {
         YakManApiError {
             status: StatusCode::FORBIDDEN,
