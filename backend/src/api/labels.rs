@@ -1,6 +1,6 @@
 use crate::model::{LabelType, YakManRole};
 use crate::{
-    api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManError,
+    api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding, StateManager,
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
@@ -12,13 +12,10 @@ use log::error;
 #[get("/v1/labels")]
 pub async fn get_labels(
     state: web::Data<StateManager>,
-) -> actix_web::Result<impl Responder, YakManError> {
+) -> Result<impl Responder, YakManApiError> {
     let service = state.get_service();
-
-    return match service.get_labels().await {
-        Ok(data) => Ok(web::Json(data)),
-        Err(_) => Err(YakManError::new("Failed to load labels from storage")),
-    };
+    let data = service.get_labels().await?;
+    return Ok(web::Json(data));
 }
 
 /// Create a new label
@@ -28,7 +25,7 @@ pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
     label_type: web::Json<LabelType>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let service = state.get_service();
     let mut label_type = label_type.into_inner();
     label_type.name = label_type.name.to_lowercase();
@@ -37,30 +34,29 @@ pub async fn create_label(
         vec![YakManRole::Admin, YakManRole::Approver],
         &auth_details.permissions,
     ) {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     if !is_alphanumeric_kebab_case(&label_type.name) {
-        return HttpResponse::BadRequest()
-            .body("Invalid label name. Must be alphanumeric kebab case");
+        return Err(YakManApiError::bad_request("Invalid label name. Must be alphanumeric kebab case"));
     }
 
     return match service.create_label(label_type).await {
-        Ok(()) => HttpResponse::Ok().finish(),
+        Ok(()) => Ok(web::Json(())),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {
-                HttpResponse::BadRequest().body("Duplicate label")
+                 Err(YakManApiError::bad_request("Duplicate label"))
             }
             CreateLabelError::EmptyOptionsError => {
                 // TODO: This does not appear to be working
-                HttpResponse::BadRequest().body("Label must have at least 1 option")
+                 Err(YakManApiError::bad_request("Label must have at least 1 option"))
             }
             CreateLabelError::InvalidPriorityError { prioity } => {
-                HttpResponse::BadRequest().body(format!("Invalid prioity: {prioity}"))
+                 Err(YakManApiError::bad_request(&format!("Invalid prioity: {prioity}")))
             }
             CreateLabelError::StorageError { message } => {
                 error!("Failed to create label, error: {message}");
-                HttpResponse::InternalServerError().body("Failed to create label")
+                Err(YakManApiError::server_error("Failed to create label"))
             }
         },
     };

@@ -1,5 +1,7 @@
+use crate::error::YakManApiError;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
+use actix_web::Responder;
 use actix_web::{
     get, put,
     web::{self, Json},
@@ -14,16 +16,15 @@ use uuid::Uuid;
 pub async fn get_yakman_users(
     auth_details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
     if !is_admin {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
-    let users = state.get_service().get_users().await.unwrap();
-
-    HttpResponse::Ok().body(serde_json::to_string(&users).unwrap())
+    let users = state.get_service().get_users().await?;
+    return Ok(web::Json(users));
 }
 
 /// Create YakMan user
@@ -33,11 +34,11 @@ pub async fn create_yakman_user(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: Json<CreateYakManUserPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
     if !is_admin {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     let mut users = state.get_service().get_users().await.unwrap();
@@ -51,5 +52,5 @@ pub async fn create_yakman_user(
 
     state.get_service().save_users(users).await.unwrap();
 
-    HttpResponse::Ok().finish()
+    Ok(web::Json(()))
 }
