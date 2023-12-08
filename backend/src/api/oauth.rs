@@ -172,6 +172,7 @@ pub async fn oauth_refresh(
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct GetUserRolesResponse {
+    pub profile_picture: Option<String>,
     pub global_roles: Vec<YakManRole>,
     pub roles: HashMap<String, YakManRole>,
 }
@@ -181,6 +182,7 @@ pub struct GetUserRolesResponse {
 #[get("/oauth2/user-roles")]
 pub async fn get_user_roles(
     details: AuthDetails<YakManRoleBinding>,
+    state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
         .permissions
@@ -200,17 +202,13 @@ pub async fn get_user_roles(
         })
         .collect();
 
+    let _storage = state.get_service();
+    // TODO: fetch real profile picture
+    let profile_picture = "https://lh3.googleusercontent.com/a/ACg8ocKyuO8Cp4A0EJZM8FJ1HADi6iWCg1S-nyZkWi5dxb_YZdM=s96-c".to_string();
+
     return Ok(web::Json(GetUserRolesResponse {
         global_roles: global_roles,
         roles: roles,
+        profile_picture: Some(profile_picture),
     }));
-}
-
-#[utoipa::path(responses((status = 200, body = GetUserRolesResponse)))]
-#[get("/oauth2/user-info")]
-pub async fn get_user_info() -> actix_web::Result<impl Responder, YakManApiError> {
-
-
-    
-    return Ok(web::Json(()));
 }
