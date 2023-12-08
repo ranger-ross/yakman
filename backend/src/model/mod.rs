@@ -126,6 +126,7 @@ pub struct YakManUser {
     pub email: String,
     pub uuid: String,
     pub role: Option<YakManRole>,
+    pub profile_picture: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]

@@ -542,6 +542,7 @@ impl StorageService for KVStorageService {
                     .expect("No users found and 'YAKMAN_DEFAULT_ADMIN_USER_EMAIL' is not set"),
                 role: Some(YakManRole::Admin),
                 uuid: Uuid::new_v4().to_string(),
+                profile_picture: None
             };
 
             let admin_user_details = YakManUserDetails {

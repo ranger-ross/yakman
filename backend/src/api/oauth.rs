@@ -71,7 +71,7 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, user, refresh_token) = match service
+    let (username, user, refresh_token, picture) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -204,4 +204,13 @@ pub async fn get_user_roles(
         global_roles: global_roles,
         roles: roles,
     }));
+}
+
+#[utoipa::path(responses((status = 200, body = GetUserRolesResponse)))]
+#[get("/oauth2/user-info")]
+pub async fn get_user_info() -> actix_web::Result<impl Responder, YakManApiError> {
+
+
+    
+    return Ok(web::Json(()));
 }
