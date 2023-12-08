@@ -1,7 +1,8 @@
+use crate::error::YakManApiError;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::{get, post, put, web, HttpResponse};
+use actix_web::{get, post, web, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use serde::Deserialize;
 
@@ -12,7 +13,7 @@ async fn get_instance_revisions(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
 
@@ -28,17 +29,16 @@ async fn get_instance_revisions(
         &config.project_uuid,
         &auth_details.permissions,
     ) {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     if let Some(data) = service
         .get_instance_revisions(&config_name, &instance)
-        .await
-        .unwrap()
+        .await?
     {
-        return HttpResponse::Ok().body(serde_json::to_string(&data).unwrap());
+        return Ok(web::Json(data));
     }
-    return HttpResponse::NotFound().finish();
+    return Err(YakManApiError::not_found("revision not found"));
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -56,7 +56,7 @@ async fn review_pending_instance_revision(
     path: web::Path<(String, String, String, ReviewResult)>,
     state: web::Data<StateManager>,
     principle: YakManPrinciple,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance, revision, result) = path.into_inner();
     let service = state.get_service();
 
@@ -67,12 +67,12 @@ async fn review_pending_instance_revision(
         &config.project_uuid,
         &auth_details.permissions,
     ) {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     let reviewer_uuid = principle.user_uuid;
     if reviewer_uuid.is_none() {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
     let reviewer_uuid = reviewer_uuid.unwrap();
 
@@ -93,15 +93,16 @@ async fn review_pending_instance_revision(
                             )
                             .await
                         {
-                            Ok(_) => HttpResponse::Ok().finish(),
-                            Err(_) => HttpResponse::InternalServerError()
-                                .body("failed to update instance"),
+                            Ok(_) => Ok(web::Json(())),
+                            Err(_) => {
+                                Err(YakManApiError::server_error("failed to update instance"))
+                            }
                         };
                     }
 
-                    return HttpResponse::Ok().finish();
+                    return Ok(web::Json(()));
                 }
-                Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
+                Err(_) => Err(YakManApiError::server_error("failed to update instance")),
             };
         }
         ReviewResult::Reject => {
@@ -109,8 +110,8 @@ async fn review_pending_instance_revision(
                 .reject_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
                 .await
             {
-                Ok(_) => HttpResponse::Ok().finish(),
-                Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
+                Ok(_) => Ok(web::Json(())),
+                Err(_) => Err(YakManApiError::server_error("failed to update instance")),
             };
         }
     }
@@ -124,7 +125,7 @@ async fn apply_instance_revision(
     path: web::Path<(String, String, String)>,
     state: web::Data<StateManager>,
     principle: YakManPrinciple,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance, revision) = path.into_inner();
     let service = state.get_service();
 
@@ -139,12 +140,12 @@ async fn apply_instance_revision(
         &config.project_uuid,
         &auth_details.permissions,
     ) {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
 
     let reviewer_uuid = principle.user_uuid;
     if reviewer_uuid.is_none() {
-        return HttpResponse::Forbidden().finish();
+        return Err(YakManApiError::forbidden());
     }
     let reviewer_uuid = reviewer_uuid.unwrap();
 
@@ -152,7 +153,7 @@ async fn apply_instance_revision(
         .apply_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
         .await
     {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(_) => HttpResponse::InternalServerError().body("failed to update instance"),
+        Ok(_) => Ok(web::Json(())),
+        Err(_) => Err(YakManApiError::server_error("failed to update instance")),
     };
 }
