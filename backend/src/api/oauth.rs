@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::LoginError, error::YakManApiError, middleware::roles::YakManRoleBinding, model::YakManRole,
-    StateManager,
+    auth::LoginError, error::YakManApiError, middleware::roles::YakManRoleBinding,
+    model::YakManRole, StateManager,
 };
 use actix_web::{
     get, post,
     web::{self, Json},
-    HttpResponse, Responder,
+    Responder,
 };
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
@@ -35,15 +35,15 @@ pub struct OAuthInitResponse {
 pub async fn oauth_init(
     payload: Json<OAuthInitPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let service = state.get_oauth_service();
     let (redirect_uri, csrf_token, nonce) = service.init_oauth(payload.challenge.clone());
 
-    HttpResponse::Ok().json(OAuthInitResponse {
+    Ok(web::Json(OAuthInitResponse {
         redirect_uri: redirect_uri,
         csrf_token: csrf_token.secret().clone(),
         nonce: nonce.secret().clone(),
-    })
+    }))
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -67,7 +67,7 @@ pub struct OAuthExchangeResponse {
 pub async fn oauth_exchange(
     payload: Json<OAuthExchangePayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
@@ -83,11 +83,11 @@ pub async fn oauth_exchange(
         Err(e) => {
             return match e {
                 LoginError::UserNotRegistered => {
-                    HttpResponse::Forbidden().body("User not registered")
+                    Err(YakManApiError::forbidden().set_message("User not registered"))
                 }
                 e => {
                     error!("Login error {e:?}");
-                    HttpResponse::InternalServerError().body("Failed to validate user")
+                    Err(YakManApiError::server_error("Failed to validate user"))
                 }
             }
         }
@@ -97,16 +97,16 @@ pub async fn oauth_exchange(
         match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
             Err(e) => {
-                error!("Failed to create token {e}");
-                return HttpResponse::InternalServerError().body("Failed to create token");
+                log::error!("Failed to create token {e}");
+                return Err(YakManApiError::server_error("Failed to create token"));
             }
         };
 
-    HttpResponse::Ok().json(OAuthExchangeResponse {
+    Ok(web::Json(OAuthExchangeResponse {
         access_token: access_token_jwt,
         access_token_expire_timestamp: expire_timestamp,
         refresh_token: refresh_token.map(|t| t.secret().clone()),
-    })
+    }))
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -126,7 +126,7 @@ pub struct OAuthRefreshTokenResponse {
 pub async fn oauth_refresh(
     payload: Json<OAuthRefreshTokenPayload>,
     state: web::Data<StateManager>,
-) -> HttpResponse {
+) -> Result<impl Responder, YakManApiError> {
     let oauth_service = state.get_oauth_service();
     let storage = state.get_service();
     let token_service = state.get_token_service();
@@ -134,24 +134,24 @@ pub async fn oauth_refresh(
     let encrypted_refresh_token = &payload.refresh_token;
     let refresh_token = match token_service.decrypt_refresh_token(encrypted_refresh_token) {
         Ok(refresh_token) => refresh_token,
-        Err(_) => return HttpResponse::Unauthorized().body("no refresh_token not valid"),
+        Err(_) => {
+            return Err(YakManApiError::unauthorized().set_message("no refresh_token not valid"))
+        }
     };
     let (_access_token, username) = match oauth_service.refresh_token(&refresh_token).await {
         Ok(token) => token,
         Err(e) => {
             error!("Could not refresh token {e}");
-            return HttpResponse::Unauthorized().body("Could not refresh token");
+            return Err(YakManApiError::unauthorized().set_message("Could not refresh token"));
         }
     };
 
     let user = match storage.get_user(&username).await {
         Ok(Some(user)) => user,
-        Ok(None) => {
-            return HttpResponse::Forbidden().body("User not found");
-        }
+        Ok(None) => return Err(YakManApiError::forbidden().set_message("User not found")),
         Err(e) => {
-            error!("Could not fetch user {e}");
-            return HttpResponse::InternalServerError().body("Could not load user");
+            log::error!("Could not fetch user {e}");
+            return Err(YakManApiError::server_error("Could not load user"));
         }
     };
 
@@ -160,14 +160,14 @@ pub async fn oauth_refresh(
             Ok(data) => data,
             Err(e) => {
                 error!("Failed to create token {e}");
-                return HttpResponse::InternalServerError().body("Failed to create token");
+                return Err(YakManApiError::server_error("Failed to create token"));
             }
         };
 
-    HttpResponse::Ok().json(OAuthRefreshTokenResponse {
+    Ok(web::Json(OAuthRefreshTokenResponse {
         access_token: access_token_jwt,
         access_token_expire_timestamp: expire_timestamp,
-    })
+    }))
 }
 
 #[derive(Debug, Serialize, ToSchema)]

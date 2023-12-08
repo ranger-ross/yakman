@@ -19,11 +19,23 @@ pub struct YakManApiError {
 }
 
 impl YakManApiError {
+    pub fn set_message(mut self, message: &str) -> YakManApiError {
+        self.message = message.to_string();
+        return self;
+    }
+
     pub fn bad_request(reason: &str) -> YakManApiError {
         YakManApiError {
             status: StatusCode::BAD_REQUEST,
             timestamp: Utc::now().timestamp(),
             message: String::from(reason),
+        }
+    }
+    pub fn unauthorized() -> YakManApiError {
+        YakManApiError {
+            status: StatusCode::UNAUTHORIZED,
+            timestamp: Utc::now().timestamp(),
+            message: String::from("unauthorized"),
         }
     }
     pub fn forbidden() -> YakManApiError {
