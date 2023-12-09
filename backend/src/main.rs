@@ -14,6 +14,7 @@ use crate::middleware::YakManPrincipleTransformer;
 use actix_middleware_etag::Etag;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
+use adapters::in_memory::InMemoryStorageAdapter;
 use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::redis_adapter::RedisStorageAdapter;
 use adapters::{
@@ -216,7 +217,11 @@ async fn create_service() -> impl StorageService {
                     .unwrap(),
             );
             KVStorageService { adapter: adapter }
-        }
+        },
+        "IN_MEMORY" => {
+            let adapter = Box::new(InMemoryStorageAdapter::from_env().await);
+            KVStorageService { adapter: adapter }
+        },
         _ => panic!("Unsupported adapter {adapter_name}"),
     };
 }

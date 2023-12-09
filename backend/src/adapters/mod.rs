@@ -12,6 +12,7 @@ pub mod errors;
 pub mod local_file;
 pub mod postgres;
 pub mod redis;
+pub mod in_memory;
 
 #[async_trait]
 pub trait KVStorageAdapter: Sync + Send {
