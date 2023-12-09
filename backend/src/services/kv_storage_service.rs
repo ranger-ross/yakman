@@ -6,8 +6,9 @@ use crate::{
         CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
     },
     model::{
-        YakManConfig, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, YakManLabel, LabelType,
-        RevisionReviewState, YakManProject, YakManRole, YakManUser, YakManUserDetails,
+        ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
+        RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManRole, YakManUser,
+        YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -25,7 +26,10 @@ impl StorageService for KVStorageService {
         return Ok(self.adapter.get_projects().await?);
     }
 
-    async fn get_config(&self, config_name: &str) -> Result<Option<YakManConfig>, GenericStorageError> {
+    async fn get_config(
+        &self,
+        config_name: &str,
+    ) -> Result<Option<YakManConfig>, GenericStorageError> {
         let c = self.adapter.get_configs().await?;
         return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
     }
@@ -542,12 +546,12 @@ impl StorageService for KVStorageService {
                     .expect("No users found and 'YAKMAN_DEFAULT_ADMIN_USER_EMAIL' is not set"),
                 role: Some(YakManRole::Admin),
                 uuid: Uuid::new_v4().to_string(),
-                profile_picture: None
             };
 
             let admin_user_details = YakManUserDetails {
                 global_roles: vec![YakManRole::Admin],
                 roles: vec![],
+                profile_picture: None,
             };
 
             self.adapter
@@ -564,11 +568,14 @@ impl StorageService for KVStorageService {
         return self.adapter.get_users().await;
     }
 
-    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
-        return self.adapter.get_user(id).await;
+    async fn get_user_by_email(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        return self.adapter.get_user_by_email(id).await;
     }
 
-    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_uuid(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
         return self.adapter.get_user_by_uuid(uuid).await;
     }
 
@@ -577,6 +584,14 @@ impl StorageService for KVStorageService {
         uuid: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
         return self.adapter.get_user_details(uuid).await;
+    }
+
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails,
+    ) -> Result<(), GenericStorageError> {
+        return self.adapter.save_user_details(uuid, details).await;
     }
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {

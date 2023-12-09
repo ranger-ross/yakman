@@ -126,7 +126,6 @@ pub struct YakManUser {
     pub email: String,
     pub uuid: String,
     pub role: Option<YakManRole>,
-    pub profile_picture: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]
@@ -137,6 +136,7 @@ pub struct YakManUserProjectRole {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct YakManUserDetails {
+    pub profile_picture: Option<String>,
     pub global_roles: Vec<YakManRole>,
     pub roles: Vec<YakManUserProjectRole>,
 }

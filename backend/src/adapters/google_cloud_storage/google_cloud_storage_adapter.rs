@@ -218,7 +218,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(user_data.users);
     }
 
-    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_email(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {

@@ -80,8 +80,9 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
-    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError>;
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<YakManUser>, GenericStorageError>;
 
+    /// This is for searching the main user list. It is reccomended to use `get_user_details` instead.
     async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError>;
 
     async fn get_user_details(

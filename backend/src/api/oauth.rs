@@ -149,7 +149,7 @@ pub async fn oauth_refresh(
         }
     };
 
-    let user = match storage.get_user(&username).await {
+    let user = match storage.get_user_by_email(&username).await {
         Ok(Some(user)) => user,
         Ok(None) => return Err(YakManApiError::forbidden().set_message("User not found")),
         Err(e) => {
@@ -210,7 +210,7 @@ pub async fn get_user_info(
 
     if let Some(user_uuid) = principle.user_uuid {
         let storage = state.get_service();
-        if let Some(user) = storage.get_user_by_uuid(&user_uuid).await? {
+        if let Some(user) = storage.get_user_details(&user_uuid).await? {
             profile_picture = user.profile_picture;
         }
     }
