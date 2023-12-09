@@ -151,7 +151,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&data)?);
     }
 
-    async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_email(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {

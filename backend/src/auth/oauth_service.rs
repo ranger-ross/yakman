@@ -103,26 +103,20 @@ impl OauthService {
 
         if let Some(yakman_user) = self
             .storage
-            .get_user(&username)
+            .get_user_by_email(&username)
             .await
             .map_err(|_| LoginError::FailedToCheckRegisteredUsers)?
         {
-
-
-            // log::info!("{id_token_claims:#?} {picture:?}");
             // Update the user's profile picture
             if let Some(profile_picture) = &picture {
-                if let Ok(users) = self.storage.get_users().await {
-                    let users: Vec<_> = users.into_iter().map(|mut user| {
-                        if user.uuid == yakman_user.uuid {
-                            user.profile_picture = Some(profile_picture.to_owned());
-                        }
-                        user 
-                    })
-                    .collect();
-                    // Ignore the error, if the profile picture does not get update, 
+                if let Ok(Some(mut user)) = self.storage.get_user_details(&yakman_user.uuid).await {
+                    user.profile_picture = Some(profile_picture.to_owned());
+                    // Ignore the error, if the profile picture does not get update,
                     // its fine just ignore and move on
-                    let _ = self.storage.save_users(users).await;
+                    let _ = self
+                        .storage
+                        .save_user_details(&yakman_user.uuid, user)
+                        .await;
                 }
             }
 
