@@ -70,7 +70,7 @@ impl OauthService {
         code: String,
         verifier: String,
         nonce: String,
-    ) -> Result<(String, YakManUser, Option<RefreshToken>), LoginError> {
+    ) -> Result<(String, YakManUser, Option<RefreshToken>, Option<String>), LoginError> {
         let pkce_verifier = PkceCodeVerifier::new(verifier);
 
         let data = self
@@ -90,6 +90,11 @@ impl OauthService {
             .claims(&id_token_verifier, &Nonce::new(nonce))
             .map_err(|_| LoginError::FailedToParseClaims)?;
 
+        let picture: Option<String> = id_token_claims
+            .picture()
+            .map(|p| p.get(None).map(|p| p.as_str().to_string()))
+            .flatten();
+
         let username = id_token_claims
             .email()
             .ok_or_else(|| LoginError::FailedToParseUsername)?
@@ -102,10 +107,30 @@ impl OauthService {
             .await
             .map_err(|_| LoginError::FailedToCheckRegisteredUsers)?
         {
+
+
+            // log::info!("{id_token_claims:#?} {picture:?}");
+            // Update the user's profile picture
+            if let Some(profile_picture) = &picture {
+                if let Ok(users) = self.storage.get_users().await {
+                    let users: Vec<_> = users.into_iter().map(|mut user| {
+                        if user.uuid == yakman_user.uuid {
+                            user.profile_picture = Some(profile_picture.to_owned());
+                        }
+                        user 
+                    })
+                    .collect();
+                    // Ignore the error, if the profile picture does not get update, 
+                    // its fine just ignore and move on
+                    let _ = self.storage.save_users(users).await;
+                }
+            }
+
             return Ok((
                 username,
                 yakman_user,
                 data.refresh_token().clone().map(|v| v.clone()),
+                picture,
             ));
         }
 

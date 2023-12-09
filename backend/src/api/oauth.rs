@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::LoginError, error::YakManApiError, middleware::roles::YakManRoleBinding,
-    model::YakManRole, StateManager,
+    auth::LoginError,
+    error::YakManApiError,
+    middleware::{roles::YakManRoleBinding, YakManPrinciple},
+    model::YakManRole,
+    StateManager,
 };
 use actix_web::{
     get, post,
@@ -71,7 +74,7 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, user, refresh_token) = match service
+    let (username, user, refresh_token, picture) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -171,16 +174,19 @@ pub async fn oauth_refresh(
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct GetUserRolesResponse {
+pub struct GetUserInfoResponse {
+    pub profile_picture: Option<String>,
     pub global_roles: Vec<YakManRole>,
     pub roles: HashMap<String, YakManRole>,
 }
 
-/// Endpoint to check if a user is logged in and get user roles
-#[utoipa::path(responses((status = 200, body = GetUserRolesResponse)))]
-#[get("/oauth2/user-roles")]
-pub async fn get_user_roles(
+/// Endpoint to get the currently logged in user's metadata and roles
+#[utoipa::path(responses((status = 200, body = GetUserInfoResponse)))]
+#[get("/oauth2/user-info")]
+pub async fn get_user_info(
     details: AuthDetails<YakManRoleBinding>,
+    state: web::Data<StateManager>,
+    principle: YakManPrinciple,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
         .permissions
@@ -200,7 +206,17 @@ pub async fn get_user_roles(
         })
         .collect();
 
-    return Ok(web::Json(GetUserRolesResponse {
+    let mut profile_picture = None; 
+
+    if let Some(user_uuid) = principle.user_uuid {
+        let storage = state.get_service();
+        if let Some(user) = storage.get_user_by_uuid(&user_uuid).await? {
+            profile_picture = user.profile_picture;
+        }
+    }
+
+    return Ok(web::Json(GetUserInfoResponse {
+        profile_picture: profile_picture,
         global_roles: global_roles,
         roles: roles,
     }));

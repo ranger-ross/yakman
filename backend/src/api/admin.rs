@@ -48,6 +48,7 @@ pub async fn create_yakman_user(
         email: user.email,
         uuid: Uuid::new_v4().to_string(),
         role: user.role,
+        profile_picture: None
     });
 
     state.get_service().save_users(users).await.unwrap();

@@ -1,23 +1,63 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import ProfileIcon from "$lib/icons/ProfileIcon.svelte";
     import { roles } from "$lib/stores/roles";
+    import { userInfo } from "$lib/stores/user-info";
+    import YakManPopoverMenu from "./YakManPopoverMenu.svelte";
 
     let isAdmin = false;
+    let profilePictureUrl: string | null;
 
     roles.subscribe((value) => {
         isAdmin = value?.globalRoles?.includes("Admin") ?? false;
     });
+
+    userInfo.subscribe((value) => {
+        profilePictureUrl = value.profilePictureUrl ?? null;
+    });
 </script>
 
 <div
-    class="bg-white shadow-sm h-14 flex justify-end items-center gap-3 mb-2 p-2"
+    class="bg-white shadow-sm h-14 flex justify-between items-center gap-3 mb-2 p-2"
 >
     <a class="text-2xl font-bold" href="/">YakMan</a>
-    <div style="flex-grow: 1" />
-    <a href="/login">Login</a>
-    <a href="/add-config">Add Config</a>
-    <a href="/add-label">Add Label</a>
-    {#if isAdmin}
-        <a href="/add-project">Add Project</a>
-        <a href="/admin">Admin</a>
-    {/if}
+
+    <YakManPopoverMenu
+        options={[
+            { text: "Add Config", value: "AddConfig" },
+            { text: "Add Label", value: "AddLabel" },
+            ...(isAdmin
+                ? [
+                      { text: "Add Project", value: "AddProject" },
+                      { text: "Admin", value: "Admin" },
+                  ]
+                : []),
+            { text: "Logout", value: "Logout" },
+        ]}
+        on:select={(value) => {
+            const selection = value.detail;
+            switch (true) {
+                case selection === "AddConfig":
+                    return goto(`/add-config`);
+                case selection === "AddLabel":
+                    return goto(`/add-label`);
+                case selection === "AddProject":
+                    return goto(`/add-project`);
+                case selection === "Admin":
+                    return goto(`/admin`);
+                case selection === "Logout":
+                    return goto(`/login`); // TODO: Actually logout user
+            }
+        }}
+    >
+        {#if profilePictureUrl}
+            <img
+                class="rounded-full h-10 w-10 object-cover"
+                alt="menu"
+                src={profilePictureUrl}
+            />
+        {:else}
+            <ProfileIcon />
+        {/if}
+    </YakManPopoverMenu>
 </div>

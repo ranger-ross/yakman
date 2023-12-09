@@ -280,8 +280,22 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
+        log::error!("{:?}", users);
+
         for user in users {
             if user.email == id {
+                return Ok(Some(user));
+            }
+        }
+
+        return Ok(None);
+    }
+
+    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        let users = self.get_users().await?;
+
+        for user in users {
+            if user.uuid == uuid {
                 return Ok(Some(user));
             }
         }

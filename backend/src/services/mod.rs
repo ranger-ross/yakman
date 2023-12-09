@@ -114,6 +114,8 @@ pub trait StorageService: Sync + Send {
 
     async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError>;
 
+    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError>;
+
     async fn get_user_details(
         &self,
         uuid: &str,

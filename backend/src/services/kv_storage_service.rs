@@ -542,6 +542,7 @@ impl StorageService for KVStorageService {
                     .expect("No users found and 'YAKMAN_DEFAULT_ADMIN_USER_EMAIL' is not set"),
                 role: Some(YakManRole::Admin),
                 uuid: Uuid::new_v4().to_string(),
+                profile_picture: None
             };
 
             let admin_user_details = YakManUserDetails {
@@ -565,6 +566,10 @@ impl StorageService for KVStorageService {
 
     async fn get_user(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
         return self.adapter.get_user(id).await;
+    }
+
+    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        return self.adapter.get_user_by_uuid(uuid).await;
     }
 
     async fn get_user_details(

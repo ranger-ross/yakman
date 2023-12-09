@@ -163,6 +163,18 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(None);
     }
 
+    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        let users = self.get_users().await?;
+
+        for user in users {
+            if user.uuid == uuid {
+                return Ok(Some(user));
+            }
+        }
+
+        return Ok(None);
+    }
+
     async fn get_user_details(
         &self,
         uuid: &str,

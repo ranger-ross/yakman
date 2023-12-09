@@ -14,6 +14,7 @@
 	import { page } from "$app/stores";
 	import { trpc } from "$lib/trpc/client";
 	import YakManModal from "$lib/components/YakManModal.svelte";
+    import KebabMenuIcon from "$lib/icons/KebabMenuIcon.svelte";
 
 	export let data: PageData;
 
@@ -55,7 +56,7 @@
 		} else if (minutes > 0) {
 			value = rtf.format(0 - minutes, "minute");
 		} else {
-			const roundedSeconds = Math.round(0 - diff)
+			const roundedSeconds = Math.round(0 - diff);
 			value = rtf.format(roundedSeconds, "second");
 		}
 		return value;
@@ -71,7 +72,7 @@
 		const index = data.configs.findIndex(
 			(c) =>
 				c.config.name === configToDelete?.name &&
-				c.config.project_uuid === configToDelete.project_uuid
+				c.config.project_uuid === configToDelete.project_uuid,
 		);
 		const config = data.configs[index];
 		data.configs.splice(index, 1);
@@ -156,13 +157,15 @@
 								const selection = value.detail;
 								if (selection === "AddInstance") {
 									goto(
-										`/modify-instance/${config.config.name}`
+										`/modify-instance/${config.config.name}`,
 									);
 								} else if (selection === "DeleteConfig") {
 									configToDelete = config.config;
 								}
 							}}
-						/>
+						>
+							<KebabMenuIcon />
+						</YakManPopoverMenu>
 					</div>
 					{#if config.metadata.length > 0}
 						{#each config.metadata as instance}
@@ -176,8 +179,8 @@
 										<div class="text-gray-500">
 											Last Updated: {timeAgo(
 												getLastUpdatedTimestamp(
-													instance
-												)
+													instance,
+												),
 											)}
 										</div>
 									</div>
@@ -232,4 +235,3 @@
 		{/if}
 	</div>
 </section>
-

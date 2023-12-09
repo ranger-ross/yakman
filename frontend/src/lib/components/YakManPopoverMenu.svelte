@@ -1,5 +1,4 @@
 <script lang="ts">
-    import KebabMenuIcon from "$lib/icons/KebabMenuIcon.svelte";
     import { createEventDispatcher } from "svelte";
 
     const dispatch = createEventDispatcher();
@@ -56,12 +55,12 @@
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <!-- svelte-ignore a11y-missing-attribute -->
     <div class="cursor-pointer" on:click={(_) => onModalChange(!open)}>
-        <KebabMenuIcon />
+        <slot />
     </div>
 
     {#if open}
         <div
-            class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black bg-white ring-opacity-5 transition ease-out duration-100 {extra_class}"
+            class="origin-top-right z-10 absolute right-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black bg-white ring-opacity-5 transition ease-out duration-100 {extra_class}"
         >
             <div
                 class="py-1"

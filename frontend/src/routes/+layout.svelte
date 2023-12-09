@@ -6,6 +6,7 @@
 	import YakManModal from "$lib/components/YakManModal.svelte";
 	import { globalModalState } from "$lib/stores/global-modal-state";
 	import { goto } from "$app/navigation";
+    import { userInfo } from "$lib/stores/user-info";
 
 	export let data;
 
@@ -16,6 +17,9 @@
 			roles.set({
 				globalRoles: userRoles.global_roles,
 				roles: userRoles.roles,
+			});
+			userInfo.set({
+				profilePictureUrl: userRoles.profile_picture				
 			});
 		}
 	}
