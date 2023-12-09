@@ -1,0 +1,301 @@
+use std::{collections::HashMap, sync::Arc};
+
+use async_trait::async_trait;
+use futures_util::lock::Mutex;
+use serde::de::DeserializeOwned;
+
+use crate::model::{
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
+    YakManUserDetails,
+};
+use log::info;
+
+use super::{GenericStorageError, KVStorageAdapter};
+
+/// This adapter is meant for development and testing not real world use.
+/// All data is lost when the service is stopped and this instance cannot be scaled horizonally.
+#[derive(Clone)]
+pub struct InMemoryStorageAdapter {
+    pub storage: Arc<Mutex<HashMap<String, String>>>,
+}
+
+#[async_trait]
+impl KVStorageAdapter for InMemoryStorageAdapter {
+    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
+        let storage = self.storage.lock().await;
+        let projects = storage.get(&self.get_projects_key()).unwrap();
+        return Ok(serde_json::from_str(projects)?);
+    }
+
+    async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
+        self.insert(self.get_projects_key(), serde_json::to_string(&projects)?)
+            .await;
+        return Ok(());
+    }
+
+    async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
+        let storage = self.storage.lock().await;
+        let configs = storage.get(&self.get_configs_key()).unwrap();
+        return Ok(serde_json::from_str(&configs)?);
+    }
+
+    async fn get_configs_by_project_uuid(
+        &self,
+        project_uuid: String,
+    ) -> Result<Vec<YakManConfig>, GenericStorageError> {
+        let configs = self.get_configs().await?;
+        Ok(configs
+            .into_iter()
+            .filter(|c| c.project_uuid == project_uuid)
+            .collect())
+    }
+
+    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError> {
+        self.insert(self.get_configs_key(), serde_json::to_string(&configs)?)
+            .await;
+        Ok(())
+    }
+
+    async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
+        let storage = self.storage.lock().await;
+        let labels = storage.get(&self.get_labels_key()).unwrap();
+        return Ok(serde_json::from_str(&labels)?);
+    }
+
+    async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError> {
+        self.insert(self.get_labels_key(), serde_json::to_string(&labels)?)
+            .await;
+        Ok(())
+    }
+
+    async fn get_instance_metadata(
+        &self,
+        config_name: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
+        return Ok(self
+            .get_optional_data(&self.get_config_metadata_key(config_name))
+            .await?);
+    }
+
+    async fn get_instance_data(
+        &self,
+        config_name: &str,
+        data_key: &str,
+    ) -> Result<String, GenericStorageError> {
+        Ok(self
+            .storage
+            .lock()
+            .await
+            .get(&self.get_data_key(config_name, data_key))
+            .unwrap()
+            .to_string())
+    }
+
+    async fn save_instance_data(
+        &self,
+        config_name: &str,
+        data_key: &str,
+        data: &str,
+    ) -> Result<(), GenericStorageError> {
+        self.insert(self.get_data_key(config_name, data_key), data.to_string())
+            .await;
+        Ok(())
+    }
+
+    async fn save_instance_metadata(
+        &self,
+        config_name: &str,
+        instances: Vec<ConfigInstance>,
+    ) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&instances)?;
+        self.insert(self.get_config_metadata_key(config_name), data.to_string())
+            .await;
+        Ok(())
+    }
+
+    async fn get_revsion(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
+        Ok(self
+            .get_optional_data(&self.get_revision_key(config_name, revision))
+            .await?)
+    }
+
+    async fn save_revision(
+        &self,
+        config_name: &str,
+        revision: &ConfigInstanceRevision,
+    ) -> Result<(), GenericStorageError> {
+        let revision_key = &revision.revision;
+        let data = serde_json::to_string(&revision)?;
+        self.insert(
+            self.get_revision_key(config_name, revision_key),
+            data.to_string(),
+        )
+        .await;
+        Ok(())
+    }
+
+    async fn prepare_config_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
+        // NOP for in memory storage
+        Ok(())
+    }
+
+    async fn prepare_revision_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
+        // NOP for memory storage
+        Ok(())
+    }
+
+    async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
+        let storage = self.storage.lock().await;
+        let data = storage.get(&self.get_users_key()).unwrap();
+        return Ok(serde_json::from_str(data)?);
+    }
+
+    async fn get_user_by_email(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        let users = self.get_users().await?;
+
+        for user in users {
+            if user.email == id {
+                return Ok(Some(user));
+            }
+        }
+
+        return Ok(None);
+    }
+
+    async fn get_user_by_uuid(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
+        let users = self.get_users().await?;
+
+        for user in users {
+            if user.uuid == uuid {
+                return Ok(Some(user));
+            }
+        }
+
+        return Ok(None);
+    }
+
+    async fn get_user_details(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
+        return Ok(self.get_optional_data(&self.get_user_key(uuid)).await?);
+    }
+
+    async fn save_user_details(
+        &self,
+        uuid: &str,
+        details: YakManUserDetails,
+    ) -> Result<(), GenericStorageError> {
+        let key = self.get_user_key(uuid);
+        self.insert(key, serde_json::to_string(&details)?).await;
+        return Ok(());
+    }
+
+    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
+        self.insert(self.get_users_key(), serde_json::to_string(&users)?)
+            .await;
+        Ok(())
+    }
+
+    async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
+        let configs_key = self.get_configs_key();
+        if !self.contains_key(&configs_key).await {
+            self.save_configs(vec![]).await?;
+            info!("Initialized Configs Key");
+        }
+
+        let projects_key = self.get_projects_key();
+        if !self.contains_key(&projects_key).await {
+            let projects: Vec<YakManProject> = vec![];
+            self.insert(projects_key, serde_json::to_string(&projects)?)
+                .await;
+            info!("Initialized Projects Key");
+        }
+
+        let labels_key = self.get_labels_key();
+        if !self.contains_key(&labels_key).await {
+            self.save_labels(vec![]).await?;
+            info!("Initialized Labels Key");
+        }
+
+        let users_key = self.get_users_key();
+        if !self.contains_key(&users_key).await {
+            let users: Vec<YakManUser> = vec![];
+            self.insert(users_key, serde_json::to_string(&users)?).await;
+            info!("Initialized Users Key");
+        }
+
+        Ok(())
+    }
+}
+
+// Helper functions
+impl InMemoryStorageAdapter {
+    async fn contains_key(&self, key: &str) -> bool {
+        let storage = self.storage.lock().await;
+        return storage.contains_key(key);
+    }
+
+    async fn insert(&self, key: String, value: String) {
+        self.storage.lock().await.insert(key, value);
+    }
+
+    async fn get_optional_data<T: DeserializeOwned>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>, GenericStorageError> {
+        let storage = self.storage.lock().await;
+        let data: Option<&String> = storage.get(key);
+
+        if let Some(data) = data {
+            return Ok(serde_json::from_str(data)?);
+        }
+
+        return Ok(None);
+    }
+
+    fn get_configs_key(&self) -> String {
+        format!("CONFIGS")
+    }
+
+    fn get_labels_key(&self) -> String {
+        format!("LABELS")
+    }
+
+    fn get_projects_key(&self) -> String {
+        format!("PROJECTS")
+    }
+
+    fn get_users_key(&self) -> String {
+        format!("USERS")
+    }
+
+    fn get_config_metadata_key(&self, config_name: &str) -> String {
+        format!("CONFIG_METADATA_{config_name}")
+    }
+
+    fn get_revision_key(&self, config_name: &str, revision: &str) -> String {
+        format!("REVISION_{config_name}_{revision}")
+    }
+
+    fn get_data_key(&self, config_name: &str, data_key: &str) -> String {
+        format!("CONFIG_DATA_{config_name}_{data_key}")
+    }
+
+    fn get_user_key(&self, uuid: &str) -> String {
+        format!("USERS_{uuid}")
+    }
+
+    pub async fn from_env() -> InMemoryStorageAdapter {
+        return InMemoryStorageAdapter {
+            storage: Arc::new(Mutex::new(HashMap::new())),
+        };
+    }
+}
