@@ -1,7 +1,7 @@
 import { trpc } from "$lib/trpc/client";
 import type { LayoutServerLoad } from "./$types";
 import { getYakManBaseApiUrl } from '$lib/trpc/helper';
-import type { GetUserRolesResponse } from "$lib/trpc/routes/oauth";
+import type { GetUserInfoResponse } from "$lib/trpc/routes/oauth";
 
 const BASE_URL = getYakManBaseApiUrl()
 
@@ -11,10 +11,10 @@ export const load: LayoutServerLoad = async (event) => {
         return { userRoles: null };
     }
 
-    let userRoles: GetUserRolesResponse | null = null;
+    let userRoles: GetUserInfoResponse | null = null;
     let tokenRefreshNeeded = false;
     try {
-        userRoles = await trpc(event).oauth.fetchUserRoles.query();
+        userRoles = await trpc(event).oauth.fetchUserInfo.query();
 
         if (
             userRoles.global_roles.length == 0 &&

@@ -3,16 +3,16 @@ import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 
 const BASE_URL = getYakManBaseApiUrl();
 
-export type GetUserRolesResponse = {
+export type GetUserInfoResponse = {
     profile_picture: string | null,
     global_roles: string[],
     roles: { [key: string]: string },
 };
 
 export const oauth = t.router({
-    fetchUserRoles: t.procedure
+    fetchUserInfo: t.procedure
         .query(async ({ ctx }) => {
-            const response = await fetch(`${BASE_URL}/oauth2/user-roles`, {
+            const response = await fetch(`${BASE_URL}/oauth2/user-info`, {
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
                 }
@@ -20,7 +20,7 @@ export const oauth = t.router({
             if (response.status != 200) {
                 throw new Error(await response.text())
             }
-            return await response.json() as GetUserRolesResponse;
+            return await response.json() as GetUserInfoResponse;
         })
 })
 

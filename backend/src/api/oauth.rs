@@ -171,16 +171,16 @@ pub async fn oauth_refresh(
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct GetUserRolesResponse {
+pub struct GetUserInfoResponse {
     pub profile_picture: Option<String>,
     pub global_roles: Vec<YakManRole>,
     pub roles: HashMap<String, YakManRole>,
 }
 
-/// Endpoint to check if a user is logged in and get user roles
-#[utoipa::path(responses((status = 200, body = GetUserRolesResponse)))]
-#[get("/oauth2/user-roles")]
-pub async fn get_user_roles(
+/// Endpoint to get the currently logged in user's metadata and roles
+#[utoipa::path(responses((status = 200, body = GetUserInfoResponse)))]
+#[get("/oauth2/user-info")]
+pub async fn get_user_info(
     details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
@@ -206,9 +206,9 @@ pub async fn get_user_roles(
     // TODO: fetch real profile picture
     let profile_picture = "https://lh3.googleusercontent.com/a/ACg8ocKyuO8Cp4A0EJZM8FJ1HADi6iWCg1S-nyZkWi5dxb_YZdM=s96-c".to_string();
 
-    return Ok(web::Json(GetUserRolesResponse {
+    return Ok(web::Json(GetUserInfoResponse {
+        profile_picture: Some(profile_picture),
         global_roles: global_roles,
         roles: roles,
-        profile_picture: Some(profile_picture),
     }));
 }

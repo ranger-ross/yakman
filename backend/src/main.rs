@@ -21,7 +21,7 @@ use adapters::{
     google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter,
 };
 use anyhow::Context;
-use api::oauth::{GetUserRolesResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
+use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
@@ -60,7 +60,7 @@ impl StateManager {
         api::oauth::oauth_init,
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
-        api::oauth::get_user_roles,
+        api::oauth::get_user_info,
         api::projects::get_projects,
         api::projects::create_project,
         api::configs::get_configs,
@@ -81,7 +81,7 @@ impl StateManager {
     components(
         schemas(
             YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
-            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserRolesResponse, 
+            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse, 
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse
         )
     ),
@@ -145,7 +145,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)
             .service(api::oauth::oauth_refresh)
-            .service(api::oauth::get_user_roles)
+            .service(api::oauth::get_user_info)
             // Projects
             .service(api::projects::get_projects)
             .service(api::projects::create_project)
