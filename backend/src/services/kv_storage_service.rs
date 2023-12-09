@@ -568,6 +568,10 @@ impl StorageService for KVStorageService {
         return self.adapter.get_user(id).await;
     }
 
+    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+        return self.adapter.get_user_by_uuid(uuid).await;
+    }
+
     async fn get_user_details(
         &self,
         uuid: &str,

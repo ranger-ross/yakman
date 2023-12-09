@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::LoginError, error::YakManApiError, middleware::roles::YakManRoleBinding,
-    model::YakManRole, StateManager,
+    auth::LoginError,
+    error::YakManApiError,
+    middleware::{roles::YakManRoleBinding, YakManPrinciple},
+    model::YakManRole,
+    StateManager,
 };
 use actix_web::{
     get, post,
@@ -183,6 +186,7 @@ pub struct GetUserInfoResponse {
 pub async fn get_user_info(
     details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
+    principle: YakManPrinciple,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
         .permissions
@@ -202,12 +206,17 @@ pub async fn get_user_info(
         })
         .collect();
 
-    let _storage = state.get_service();
-    // TODO: fetch real profile picture
-    let profile_picture = "https://lh3.googleusercontent.com/a/ACg8ocKyuO8Cp4A0EJZM8FJ1HADi6iWCg1S-nyZkWi5dxb_YZdM=s96-c".to_string();
+    let mut profile_picture = None; 
+
+    if let Some(user_uuid) = principle.user_uuid {
+        let storage = state.get_service();
+        if let Some(user) = storage.get_user_by_uuid(&user_uuid).await? {
+            profile_picture = user.profile_picture;
+        }
+    }
 
     return Ok(web::Json(GetUserInfoResponse {
-        profile_picture: Some(profile_picture),
+        profile_picture: profile_picture,
         global_roles: global_roles,
         roles: roles,
     }));
