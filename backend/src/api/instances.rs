@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::error::YakManApiError;
 use crate::middleware::YakManPrinciple;
+use crate::model::response::InstancePayload;
 use crate::model::{YakManLabel, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
@@ -141,7 +142,7 @@ async fn create_new_instance(
         )
         .await
     {
-        Ok(instance) => Ok(web::Json(instance)),
+        Ok(instance) => Ok(web::Json(InstancePayload { instance: instance })),
         Err(CreateConfigInstanceError::NoConfigFound) => {
             Err(YakManApiError::bad_request("Invalid config name"))
         }

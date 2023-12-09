@@ -5,6 +5,10 @@ import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 
 const BASE_URL = getYakManBaseApiUrl();
 
+type InstanceResponse = {
+    instance: string
+}
+
 export const instances = t.router({
     fetchConfigMetadata: t.procedure
         .input(z.string())
@@ -40,8 +44,10 @@ export const instances = t.router({
                 throw new Error(`failed to create config instance, http-status: [${response.status}]`);
             }
 
+            const data = await response.json() as InstanceResponse;
+
             return {
-                instance: await response.text()
+                instance: data.instance
             };
         }),
     updateConfigInstance: t.procedure
