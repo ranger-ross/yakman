@@ -8,6 +8,7 @@
     import type { YakManInstanceRevision } from "$lib/types/types";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { openGlobaModal } from "$lib/stores/global-modal-state";
 
     export let config: string | null = null;
     export let instance: string | null = null;
@@ -63,14 +64,35 @@
         }
     }
 
-    function deployRevision(revision: string) {
-        if (pendingRevision === revision)  {
-            goto(`/apply-changes/${config}/${instance}`)
+    async function deployRevision(revision: string) {
+        if (pendingRevision === revision) {
+            goto(`/apply-changes/${config}/${instance}`);
         } else {
-            alert('TODO: Implment ability to rollback to a revision')
+            openGlobaModal({
+                title: "Rollback Changes",
+                message:
+                    "Are you sure you want to rollback to this revision? " +
+                    "A clone of this revision will be created and approval will be needed",
+                async onConfirm() {
+                    try {
+                        await trpc(
+                            $page,
+                        ).revisions.rollbackInstanceRevision.mutate({
+                            configName: config!,
+                            instance: instance!,
+                            revision: revision,
+                        });
+                        goto(`/apply-changes/${config}/${instance}`);
+                    } catch (e) {
+                        console.error(
+                            "Error while rolling back reivision: ",
+                            e,
+                        );
+                    }
+                },
+            });
         }
     }
-
 </script>
 
 <div class="flex justify-between gap-2">

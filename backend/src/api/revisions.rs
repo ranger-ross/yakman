@@ -1,5 +1,6 @@
 use crate::error::{RollbackRevisionError, YakManApiError};
 use crate::middleware::YakManPrinciple;
+use crate::model::response::RevisionPayload;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, web, Responder};
@@ -189,11 +190,13 @@ async fn rollback_instance_revision(
 
     let rollback_by_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
-    service
+    let new_revision = service
         .rollback_instance_revision(&config_name, &instance, &revision, &rollback_by_uuid)
         .await?;
 
-    Ok(web::Json(()))
+    Ok(web::Json(RevisionPayload {
+        revision: new_revision
+    }))
 }
 
 impl From<RollbackRevisionError> for YakManApiError {

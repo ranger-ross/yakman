@@ -5,6 +5,10 @@ import type { YakManInstanceRevision } from "$lib/types/types";
 
 const BASE_URL = getYakManBaseApiUrl();
 
+type RevisionPayload = {
+    revision: string
+}
+
 export const revisions = t.router({
     fetchInstanceRevisions: t.procedure
         .input(z.object({
@@ -50,5 +54,23 @@ export const revisions = t.router({
             if (response.status != 200) {
                 throw new Error(`failed to apply revision: http-status [${response.status}]`);
             }
+        }),
+    rollbackInstanceRevision: t.procedure
+        .input(z.object({
+            configName: z.string(),
+            instance: z.string(),
+            revision: z.string(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/rollback`, {
+                headers: createYakManAuthHeaders(ctx.accessToken),
+                method: 'POST'
+            });
+
+            if (response.status != 200) {
+                throw new Error(`failed to rollback revision: http-status [${response.status}]`);
+            }
+
+            return await response.json() as RevisionPayload
         }),
 });

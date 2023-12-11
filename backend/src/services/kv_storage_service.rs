@@ -540,7 +540,7 @@ impl StorageService for KVStorageService {
         instance: &str,
         revision: &str,
         rollback_by_uuid: &str,
-    ) -> Result<(), RollbackRevisionError> {
+    ) -> Result<String, RollbackRevisionError> {
         let mut instances = self
             .adapter
             .get_instance_metadata(config_name)
@@ -583,7 +583,7 @@ impl StorageService for KVStorageService {
             .save_instance_metadata(config_name, instances)
             .await?;
         log::info!("Updated instance metadata for config: {config_name}");
-        return Ok(());
+        return Ok(revision_key);
     }
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError> {

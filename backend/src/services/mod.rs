@@ -119,7 +119,7 @@ pub trait StorageService: Sync + Send {
         instance: &str,
         revision: &str,
         rollback_by_uuid: &str,
-    ) -> Result<(), RollbackRevisionError>;
+    ) -> Result<String, RollbackRevisionError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
