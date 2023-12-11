@@ -7,9 +7,6 @@ redis: ## Starts Redis with Docker
 postgres: ## Starts Postgres with Docker
 	docker run -it --rm -e POSTGRES_PASSWORD=password -p 5432:5432 postgres
 
-postgres-connect: ## Connect to Postgres Docker container with psql
-	PGPASSWORD=password psql --host localhost --username postgres
-
 build-backend: ## Builds the backend dockerfile with tag local/yakman-backend
 	docker build . -f backend.Dockerfile -t local/yakman-backend
 

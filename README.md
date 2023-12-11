@@ -24,7 +24,7 @@ My goal with this project is to provide an Open Source storage agnostic config m
 - Update application configs quickly without restarting applications
 - Language/framework agnostic
 - Simple to setup with sane defaults
-- Storage engine agnostic, meaning you can use whatever storage system you already have (Blob storage, SQL, KV, ect)
+- Storage engine agnostic, meaning you can use whatever storage system you already have (Blob storage, KV, ect)
 - Cost effective
 - Avoid vendor lock in
 - Kubernetes first (however I would like to support Serverless projects/teams too)
