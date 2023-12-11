@@ -10,7 +10,6 @@ pub mod aws_s3;
 pub mod google_cloud_storage;
 pub mod errors;
 pub mod local_file;
-pub mod postgres;
 pub mod redis;
 pub mod in_memory;
 
