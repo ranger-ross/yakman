@@ -69,7 +69,7 @@
             goto(`/apply-changes/${config}/${instance}`);
         } else {
             openGlobaModal({
-                title: "Rollback Changes",
+                title: "Rollback to revision",
                 message:
                     "Are you sure you want to rollback to this revision? " +
                     "A clone of this revision will be created and approval will be needed",
