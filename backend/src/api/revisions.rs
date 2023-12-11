@@ -1,4 +1,4 @@
-use crate::error::YakManApiError;
+use crate::error::{RollbackRevisionError, YakManApiError};
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
@@ -156,4 +156,60 @@ async fn apply_instance_revision(
         Ok(_) => Ok(web::Json(())),
         Err(_) => Err(YakManApiError::server_error("failed to update instance")),
     };
+}
+
+/// Rollback an instance a previous revision (by cloning the revision)
+#[utoipa::path(responses((status = 200, body = String)))]
+#[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/rollback")]
+async fn rollback_instance_revision(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<(String, String, String)>,
+    state: web::Data<StateManager>,
+    principle: YakManPrinciple,
+) -> Result<impl Responder, YakManApiError> {
+    let (config_name, instance, revision) = path.into_inner();
+    let service = state.get_service();
+
+    let config = service
+        .get_config(&config_name)
+        .await?
+        .ok_or(RollbackRevisionError::InvalidConfig)?;
+
+    if !YakManRoleBinding::has_any_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+        ],
+        &config.project_uuid,
+        &auth_details.permissions,
+    ) {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let rollback_by_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
+
+    service
+        .rollback_instance_revision(&config_name, &instance, &revision, &rollback_by_uuid)
+        .await?;
+
+    Ok(web::Json(()))
+}
+
+impl From<RollbackRevisionError> for YakManApiError {
+    fn from(value: RollbackRevisionError) -> Self {
+        return match value {
+            RollbackRevisionError::InvalidConfig => YakManApiError::bad_request("Invalid Config"),
+            RollbackRevisionError::InvalidInstance => {
+                YakManApiError::bad_request("Invalid Config Instance")
+            }
+            RollbackRevisionError::InvalidRevision => {
+                YakManApiError::bad_request("Invalid Revision")
+            }
+            RollbackRevisionError::StorageError { message } => {
+                log::error!("Error while rolling back revision {message}");
+                YakManApiError::server_error("Storage error")
+            }
+        };
+    }
 }

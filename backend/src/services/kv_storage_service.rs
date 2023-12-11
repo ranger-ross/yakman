@@ -3,7 +3,8 @@ use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
+        CreateLabelError, CreateProjectError, DeleteConfigError, RollbackRevisionError,
+        SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
@@ -365,6 +366,7 @@ impl StorageService for KVStorageService {
         return Ok(Some(revisions));
     }
 
+    /// Returns a tuple of (data, content_type)
     async fn get_data_by_revision(
         &self,
         config_name: &str,
@@ -529,6 +531,58 @@ impl StorageService for KVStorageService {
             .save_instance_metadata(config_name, metadata)
             .await?;
 
+        return Ok(());
+    }
+
+    async fn rollback_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+        rollback_by_uuid: &str,
+    ) -> Result<(), RollbackRevisionError> {
+        let mut instances = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await?
+            .ok_or(RollbackRevisionError::InvalidConfig)?;
+
+        let instance = instances
+            .iter_mut()
+            .find(|inst| inst.instance == instance)
+            .ok_or(RollbackRevisionError::InvalidInstance)?;
+
+        let previous_revision = self
+            .adapter
+            .get_revsion(&config_name, &revision)
+            .await?
+            .ok_or(RollbackRevisionError::InvalidRevision)?;
+
+        let revision_key = short_sha(&Uuid::new_v4().to_string());
+
+        // Create revision
+        let now = Utc::now().timestamp_millis();
+        let revision = ConfigInstanceRevision {
+            revision: String::from(&revision_key),
+            data_key: previous_revision.data_key,
+            labels: previous_revision.labels.clone(),
+            timestamp_ms: now,
+            // TODO: Add a new submitted_by_uuid field for tracking how requested the changes, (rollback_by_uuid already in scope)
+            review_state: RevisionReviewState::Pending,
+            reviewed_by_uuid: None,
+            review_timestamp_ms: Some(now),
+            content_type: previous_revision.content_type,
+        };
+        self.adapter.save_revision(config_name, &revision).await?;
+
+        // Update instance data
+        instance.pending_revision = Some(String::from(&revision.revision));
+        instance.revisions.push(String::from(&revision.revision));
+
+        self.adapter
+            .save_instance_metadata(config_name, instances)
+            .await?;
+        log::info!("Updated instance metadata for config: {config_name}");
         return Ok(());
     }
 
