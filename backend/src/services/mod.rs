@@ -5,7 +5,7 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
-        UpdateConfigInstanceCurrentRevisionError,
+        UpdateConfigInstanceCurrentRevisionError, RollbackRevisionError,
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManLabel,
@@ -112,6 +112,14 @@ pub trait StorageService: Sync + Send {
         revision: &str,
         rejected_by_uuid: &str,
     ) -> Result<(), ApplyRevisionError>;
+
+    async fn rollback_instance_revision(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+        rollback_by_uuid: &str,
+    ) -> Result<String, RollbackRevisionError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 

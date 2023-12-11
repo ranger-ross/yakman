@@ -5,3 +5,8 @@ use utoipa::ToSchema;
 pub struct InstancePayload {
     pub instance: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct RevisionPayload {
+    pub revision: String,
+}

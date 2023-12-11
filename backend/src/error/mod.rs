@@ -246,6 +246,24 @@ impl From<GenericStorageError> for ApplyRevisionError {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum RollbackRevisionError {
+    #[error("Invalid config")]
+    InvalidConfig,
+    #[error("Invalid instance")]
+    InvalidInstance,
+    #[error("Invalid revision")]
+    InvalidRevision,
+    #[error("Error storing approval: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for RollbackRevisionError {
+    fn from(e: GenericStorageError) -> Self {
+        RollbackRevisionError::StorageError { message: e.message }
+    }
+}
+
 #[derive(Debug)]
 pub struct LabelAlreadyExistsError {
     pub description: String,
