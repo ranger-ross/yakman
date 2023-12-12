@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::LoginError,
+    auth::{LoginError, token::TokenService},
     error::YakManApiError,
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::YakManRole,

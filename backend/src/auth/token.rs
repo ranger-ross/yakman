@@ -15,8 +15,28 @@ use std::{
     string::FromUtf8Error,
 };
 use thiserror::Error;
+use mockall::automock;
 
-pub struct TokenService {
+#[automock]
+pub trait TokenService: Sync + Send  {
+    /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
+    fn create_acess_token_jwt(
+        &self,
+        username: &str,
+        user: &YakManUser,
+    ) -> Result<(String, i64), JwtCreateError>;
+
+    fn encrypt_refresh_token(&self, refresh_token: &str) -> String;
+
+    fn decrypt_refresh_token(
+        &self,
+        encoded_ciphertext: &str,
+    ) -> Result<String, RefreshTokenDecryptError>;
+
+    fn validate_access_token(&self, token: &str) -> Result<YakManJwtClaims, JwtValidationError>;
+}
+
+pub struct JwtTokenService {
     access_token_signing_key: String,
     refresh_token_shortcrypt: ShortCrypt,
 }
@@ -30,21 +50,23 @@ pub struct YakManJwtClaims {
     pub uuid: String,
 }
 
-impl TokenService {
-    pub fn from_env() -> Result<TokenService, JwtServiceCreateError> {
+impl JwtTokenService {
+    pub fn from_env() -> Result<JwtTokenService, JwtServiceCreateError> {
         let access_token_signing_key = env::var("YAKMAN_ACCESS_TOKEN_SIGNING_KEY")
             .map_err(|e| JwtServiceCreateError::FailedToLoadSigningKey(Box::new(e)))?;
         let refresh_token_encryption_key = env::var("YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY")
             .map_err(|e| JwtServiceCreateError::FailedToLoadEncryptionKey(Box::new(e)))?;
 
-        Ok(TokenService {
+        Ok(JwtTokenService {
             access_token_signing_key: String::from(access_token_signing_key),
             refresh_token_shortcrypt: ShortCrypt::new(refresh_token_encryption_key),
         })
     }
+}
 
+impl TokenService for JwtTokenService {
     /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
-    pub fn create_acess_token_jwt(
+    fn create_acess_token_jwt(
         &self,
         username: &str,
         user: &YakManUser,
@@ -75,13 +97,13 @@ impl TokenService {
         ));
     }
 
-    pub fn encrypt_refresh_token(&self, refresh_token: &str) -> String {
+    fn encrypt_refresh_token(&self, refresh_token: &str) -> String {
         return self
             .refresh_token_shortcrypt
             .encrypt_to_url_component(refresh_token);
     }
 
-    pub fn decrypt_refresh_token(
+    fn decrypt_refresh_token(
         &self,
         encoded_ciphertext: &str,
     ) -> Result<String, RefreshTokenDecryptError> {
@@ -91,7 +113,7 @@ impl TokenService {
         return Ok(String::from_utf8(decrypted_bytes)?);
     }
 
-    pub fn validate_access_token(
+    fn validate_access_token(
         &self,
         token: &str,
     ) -> Result<YakManJwtClaims, JwtValidationError> {
