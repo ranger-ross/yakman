@@ -26,6 +26,7 @@ use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OA
 use auth::token::TokenService;
 use dotenv::dotenv;
 use log::info;
+use model::response::RevisionPayload;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
     YakManConfig, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, YakManLabel, LabelType,
@@ -84,7 +85,7 @@ impl StateManager {
         schemas(
             YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
             YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse, 
-            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse
+            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload
         )
     ),
     tags(

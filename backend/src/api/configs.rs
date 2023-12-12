@@ -147,7 +147,7 @@ async fn create_config(
     };
 }
 
-/// Create hide a config instance from the UI and API (data not deleted)
+/// Hide a config instance from the UI and API (data not deleted)
 #[utoipa::path(request_body = DeleteConfigPayload, responses((status = 200, body = String)))]
 #[delete("/v1/configs")]
 async fn delete_config(
