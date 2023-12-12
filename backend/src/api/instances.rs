@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::error::YakManApiError;
 use crate::middleware::YakManPrinciple;
-use crate::model::response::InstancePayload;
+use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
@@ -123,23 +123,14 @@ async fn create_new_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    let creator_uuid = principle.user_uuid;
-    if creator_uuid.is_none() {
-        return Err(YakManApiError::forbidden());
-    }
+    let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
     // TODO: do validation
     // - labels are valid
     // - not a duplicate?
 
     match service
-        .create_config_instance(
-            &config_name,
-            labels,
-            &data,
-            content_type,
-            &creator_uuid.unwrap(),
-        )
+        .create_config_instance(&config_name, labels, &data, content_type, &creator_uuid)
         .await
     {
         Ok(instance) => Ok(web::Json(InstancePayload { instance: instance })),
@@ -152,8 +143,8 @@ async fn create_new_instance(
     }
 }
 
-/// Create a update config instance
-#[utoipa::path(responses((status = 200, body = String)))]
+/// Submit changes for an approval (creates a new revision)
+#[utoipa::path(responses((status = 200, body = RevisionPayload)))]
 #[post("/v1/configs/{config_name}/instances/{instance}")]
 async fn update_new_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -162,6 +153,7 @@ async fn update_new_instance(
     data: String,
     state: web::Data<StateManager>,
     req: HttpRequest,
+    principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();
@@ -191,13 +183,22 @@ async fn update_new_instance(
     // - labels are valid
     // - not a duplicate?
 
-    return match service
-        .save_config_instance(&config_name, &instance, labels, &data, content_type)
+    let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
+
+    let new_revsion = service
+        .submit_new_instance_revision(
+            &config_name,
+            &instance,
+            labels,
+            &data,
+            content_type,
+            &creator_uuid,
+        )
         .await
-    {
-        Ok(_) => Ok(web::Json(())),
-        Err(_) => Err(YakManApiError::server_error("failed to create instance")),
-    };
+        .map_err(|_| YakManApiError::server_error("failed to create instance"))?;
+    Ok(web::Json(RevisionPayload {
+        revision: new_revsion,
+    }))
 }
 
 fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<YakManLabel> {

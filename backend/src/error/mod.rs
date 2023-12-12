@@ -179,8 +179,10 @@ impl From<GenericStorageError> for CreateConfigInstanceError {
 
 #[derive(Error, Debug)]
 pub enum SaveConfigInstanceError {
-    #[error("No config found")]
-    NoConfigFound,
+    #[error("Invalid config")]
+    InvalidConfig,
+    #[error("Invalid instance")]
+    InvalidInstance,
     #[error("Error storing label: {message}")]
     StorageError { message: String },
 }

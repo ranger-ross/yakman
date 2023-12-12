@@ -160,7 +160,7 @@ async fn apply_instance_revision(
 }
 
 /// Rollback an instance a previous revision (by cloning the revision)
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = RevisionPayload)))]
 #[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/rollback")]
 async fn rollback_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,

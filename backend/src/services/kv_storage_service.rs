@@ -137,6 +137,8 @@ impl StorageService for KVStorageService {
                 review_state: RevisionReviewState::Approved,
                 reviewed_by_uuid: Some(creator_uuid.to_string()),
                 review_timestamp_ms: Some(now),
+                submitted_by_uuid: creator_uuid.to_string(),
+                submit_timestamp_ms: now,
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
             self.adapter.save_revision(config_name, &revision).await?;
@@ -291,51 +293,61 @@ impl StorageService for KVStorageService {
         return Ok(None);
     }
 
-    async fn save_config_instance(
+    async fn submit_new_instance_revision(
         &self,
         config_name: &str,
         instance: &str,
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
-    ) -> Result<(), SaveConfigInstanceError> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
-            let revision_key = short_sha(&Uuid::new_v4().to_string());
-            let data_key = Uuid::new_v4().to_string();
+        submitted_by_uuid: &str,
+    ) -> Result<String, SaveConfigInstanceError> {
+        let mut instances = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await?
+            .ok_or(SaveConfigInstanceError::InvalidConfig)?;
 
-            // Create new file with data
-            self.adapter
-                .save_instance_data(config_name, &data_key, data)
-                .await?;
+        let instance = instances
+            .iter_mut()
+            .find(|inst| inst.instance == instance)
+            .ok_or(SaveConfigInstanceError::InvalidInstance)?;
 
-            // Create revision
-            let now = Utc::now().timestamp_millis();
-            let revision = ConfigInstanceRevision {
-                revision: String::from(&revision_key),
-                data_key: String::from(&data_key),
-                labels: labels,
-                timestamp_ms: now,
-                review_state: RevisionReviewState::Pending,
-                reviewed_by_uuid: None,
-                review_timestamp_ms: Some(now),
-                content_type: content_type.unwrap_or(String::from("text/plain")),
-            };
-            self.adapter.save_revision(config_name, &revision).await?;
+        let revision_key = short_sha(&Uuid::new_v4().to_string());
+        let data_key = Uuid::new_v4().to_string();
 
-            // Update instance data
-            if let Some(instance) = instances.iter_mut().find(|inst| inst.instance == instance) {
-                instance.pending_revision = Some(String::from(&revision.revision));
-                instance.revisions.push(String::from(&revision.revision));
+        // Create new file with data
+        self.adapter
+            .save_instance_data(config_name, &data_key, data)
+            .await?;
 
-                self.adapter
-                    .save_instance_metadata(config_name, instances)
-                    .await?;
-                info!("Updated instance metadata for config: {config_name}");
-                return Ok(());
-            } // TODO: Throw a new custom for failed to update config metadata
-        }
+        // Create revision
+        let now = Utc::now().timestamp_millis();
+        let revision = ConfigInstanceRevision {
+            revision: String::from(&revision_key),
+            data_key: String::from(&data_key),
+            labels: labels,
+            timestamp_ms: now,
+            review_state: RevisionReviewState::Pending,
+            reviewed_by_uuid: None,
+            review_timestamp_ms: None,
+            submitted_by_uuid: submitted_by_uuid.to_string(),
+            submit_timestamp_ms: now,
+            content_type: content_type.unwrap_or(String::from("text/plain")),
+        };
+        self.adapter.save_revision(config_name, &revision).await?;
 
-        return Err(SaveConfigInstanceError::NoConfigFound);
+        // Update instance data
+        instance.pending_revision = Some(String::from(&revision.revision));
+        instance.revisions.push(String::from(&revision.revision));
+
+        self.adapter
+            .save_instance_metadata(config_name, instances)
+            .await?;
+
+        log::info!("Updated instance metadata for config: {config_name}");
+
+        return Ok(revision_key);
     }
 
     async fn get_instance_revisions(
@@ -567,10 +579,11 @@ impl StorageService for KVStorageService {
             data_key: previous_revision.data_key,
             labels: previous_revision.labels.clone(),
             timestamp_ms: now,
-            // TODO: Add a new submitted_by_uuid field for tracking how requested the changes, (rollback_by_uuid already in scope)
             review_state: RevisionReviewState::Pending,
             reviewed_by_uuid: None,
             review_timestamp_ms: Some(now),
+            submitted_by_uuid: rollback_by_uuid.to_string(),
+            submit_timestamp_ms: now,
             content_type: previous_revision.content_type,
         };
         self.adapter.save_revision(config_name, &revision).await?;
