@@ -74,14 +74,16 @@ pub trait StorageService: Sync + Send {
         revision: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError>;
 
-    async fn save_config_instance(
+    /// Creates a new revision pending approval
+    async fn submit_new_instance_revision(
         &self,
         config_name: &str,
         instance: &str,
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
-    ) -> Result<(), SaveConfigInstanceError>;
+        submitted_by_uuid: &str,
+    ) -> Result<String, SaveConfigInstanceError>;
 
     async fn get_instance_revisions(
         &self,

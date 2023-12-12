@@ -70,6 +70,8 @@ pub struct ConfigInstanceRevision {
     pub review_state: RevisionReviewState,
     pub reviewed_by_uuid: Option<String>,
     pub review_timestamp_ms: Option<i64>,
+    pub submitted_by_uuid: String,
+    pub submit_timestamp_ms: i64,
     pub content_type: String,
 }
 
