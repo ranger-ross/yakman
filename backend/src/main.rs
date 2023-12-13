@@ -24,14 +24,14 @@ use adapters::{
 use anyhow::Context;
 use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::oauth_service::OauthService;
-use auth::token::{YakManTokenService, TokenService};
+use auth::token::{TokenService, YakManTokenService};
 use dotenv::dotenv;
 use log::info;
 use model::response::RevisionPayload;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
-    YakManConfig, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, YakManLabel, LabelType,
-    YakManProject, YakManRole, YakManSettings, YakManUser,
+    ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, YakManConfig,
+    YakManLabel, YakManProject, YakManRole, YakManSettings, YakManUser,
 };
 use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -84,8 +84,8 @@ impl StateManager {
     ),
     components(
         schemas(
-            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings, 
-            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse, 
+            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings,
+            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse,
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload
         )
     ),
@@ -220,11 +220,11 @@ async fn create_service() -> impl StorageService {
                     .unwrap(),
             );
             KVStorageService { adapter: adapter }
-        },
+        }
         "IN_MEMORY" => {
             let adapter = Box::new(InMemoryStorageAdapter::new());
             KVStorageService { adapter: adapter }
-        },
+        }
         _ => panic!("Unsupported adapter {adapter_name}"),
     };
 }
@@ -304,7 +304,5 @@ mod test_utils {
                 YakManRole::Viewer,
             )]);
         }
-
     }
-
 }

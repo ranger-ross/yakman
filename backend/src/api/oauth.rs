@@ -206,7 +206,7 @@ pub async fn get_user_info(
         })
         .collect();
 
-    let mut profile_picture = None; 
+    let mut profile_picture = None;
 
     if let Some(user_uuid) = principle.user_uuid {
         let storage = state.get_service();

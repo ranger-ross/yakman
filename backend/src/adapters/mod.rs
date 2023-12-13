@@ -1,5 +1,5 @@
 use crate::model::{
-    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
 };
 use async_trait::async_trait;
@@ -7,11 +7,11 @@ use async_trait::async_trait;
 use self::errors::GenericStorageError;
 
 pub mod aws_s3;
-pub mod google_cloud_storage;
 pub mod errors;
+pub mod google_cloud_storage;
+pub mod in_memory;
 pub mod local_file;
 pub mod redis;
-pub mod in_memory;
 
 #[async_trait]
 pub trait KVStorageAdapter: Sync + Send {
@@ -80,10 +80,14 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
-    async fn get_user_by_email(&self, email: &str) -> Result<Option<YakManUser>, GenericStorageError>;
+    async fn get_user_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError>;
 
     /// This is for searching the main user list. It is reccomended to use `get_user_details` instead.
-    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError>;
+    async fn get_user_by_uuid(&self, uuid: &str)
+        -> Result<Option<YakManUser>, GenericStorageError>;
 
     async fn get_user_details(
         &self,

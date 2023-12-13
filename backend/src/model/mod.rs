@@ -38,7 +38,7 @@ pub struct YakManLabel {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ConfigInstance {
     pub config_name: String,
-    pub instance: String,   // Unique key
+    pub instance: String,         // Unique key
     pub labels: Vec<YakManLabel>, // These should match the labels in the current revision
     pub current_revision: String,
     pub pending_revision: Option<String>,
@@ -56,9 +56,9 @@ pub struct ConfigInstanceChange {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub enum RevisionReviewState {
-  Pending,
-  Approved,
-  Rejected
+    Pending,
+    Approved,
+    Rejected,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

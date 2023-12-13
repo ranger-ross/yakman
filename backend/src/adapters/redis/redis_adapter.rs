@@ -4,7 +4,7 @@ use std::env;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
-    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
 };
 use anyhow::Result;
@@ -163,7 +163,10 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_uuid(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {

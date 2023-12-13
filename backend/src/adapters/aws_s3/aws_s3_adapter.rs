@@ -4,7 +4,7 @@ use super::{
 };
 use crate::adapters::aws_s3::storage_types::RevisionJson;
 use crate::model::{
-    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
 };
 use async_trait::async_trait;
@@ -224,7 +224,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_uuid(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {

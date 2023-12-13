@@ -80,7 +80,9 @@ async fn get_revision_data(
         return Err(YakManApiError::forbidden());
     }
 
-    let data = service.get_data_by_revision(&config_name, &revision).await?;
+    let data = service
+        .get_data_by_revision(&config_name, &revision)
+        .await?;
 
     return match data {
         Some((data, content_type)) => Ok(HttpResponse::Ok().content_type(content_type).body(data)),

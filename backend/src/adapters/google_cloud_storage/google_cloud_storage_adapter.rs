@@ -4,9 +4,10 @@ use super::{
 };
 use crate::adapters::google_cloud_storage::storage_types::RevisionJson;
 use crate::model::{
-    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
 };
+use anyhow::Result;
 use async_trait::async_trait;
 use google_cloud_storage::{
     client::{Client, ClientConfig},
@@ -17,7 +18,6 @@ use google_cloud_storage::{
     },
 };
 use log::error;
-use anyhow::Result;
 
 #[derive(Clone)]
 pub struct GoogleCloudStorageAdapter {
@@ -230,7 +230,10 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_uuid(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {

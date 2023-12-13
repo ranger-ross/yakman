@@ -82,7 +82,10 @@ impl From<GenericStorageError> for YakManApiError {
 /// This function panics if YakManApiError cannot be serialized.
 /// In theory this should never happen because the error is a hardcoded string
 fn generic_yakman_server_error_response() -> String {
-    return serde_json::to_string(&YakManApiError::server_error("an internal server error occurred")).unwrap()
+    return serde_json::to_string(&YakManApiError::server_error(
+        "an internal server error occurred",
+    ))
+    .unwrap();
 }
 
 #[derive(Error, Debug)]
@@ -210,7 +213,6 @@ impl From<GenericStorageError> for ApproveRevisionError {
         ApproveRevisionError::StorageError { message: e.message }
     }
 }
-
 
 #[derive(Error, Debug)]
 pub enum ApplyRevisionError {

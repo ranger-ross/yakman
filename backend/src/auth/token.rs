@@ -6,6 +6,8 @@ use jwt::SignWithKey;
 use jwt::Token;
 use jwt::VerifyWithKey;
 use log::debug;
+#[cfg(test)]
+use mockall::automock;
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Sha256;
@@ -15,11 +17,9 @@ use std::{
     string::FromUtf8Error,
 };
 use thiserror::Error;
-#[cfg(test)]
-use mockall::automock;
 
 #[cfg_attr(test, automock)]
-pub trait TokenService: Sync + Send  {
+pub trait TokenService: Sync + Send {
     /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
     fn create_acess_token_jwt(
         &self,
@@ -114,10 +114,7 @@ impl TokenService for YakManTokenService {
         return Ok(String::from_utf8(decrypted_bytes)?);
     }
 
-    fn validate_access_token(
-        &self,
-        token: &str,
-    ) -> Result<YakManJwtClaims, JwtValidationError> {
+    fn validate_access_token(&self, token: &str) -> Result<YakManJwtClaims, JwtValidationError> {
         debug!("Validating token");
         let key: Hmac<Sha256> = Hmac::new_from_slice(self.access_token_signing_key.as_bytes())
             .map_err(|e| JwtValidationError::InvalidSecret(Box::new(e)))?;

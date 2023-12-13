@@ -6,11 +6,11 @@ use std::{
 
 use async_trait::async_trait;
 
-use log::{error, info};
 use crate::model::{
-    YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManProject, YakManUser,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
 };
+use log::{error, info};
 
 use crate::adapters::local_file::storage_types::RevisionJson;
 
@@ -291,7 +291,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(&self, uuid: &str) -> Result<Option<YakManUser>, GenericStorageError> {
+    async fn get_user_by_uuid(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {

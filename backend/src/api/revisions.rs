@@ -195,7 +195,7 @@ async fn rollback_instance_revision(
         .await?;
 
     Ok(web::Json(RevisionPayload {
-        revision: new_revision
+        revision: new_revision,
     }))
 }
 

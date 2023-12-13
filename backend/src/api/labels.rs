@@ -10,9 +10,7 @@ use log::error;
 /// List of all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
 #[get("/v1/labels")]
-pub async fn get_labels(
-    state: web::Data<StateManager>,
-) -> Result<impl Responder, YakManApiError> {
+pub async fn get_labels(state: web::Data<StateManager>) -> Result<impl Responder, YakManApiError> {
     let service = state.get_service();
     let data = service.get_labels().await?;
     return Ok(web::Json(data));
@@ -38,22 +36,26 @@ pub async fn create_label(
     }
 
     if !is_alphanumeric_kebab_case(&label_type.name) {
-        return Err(YakManApiError::bad_request("Invalid label name. Must be alphanumeric kebab case"));
+        return Err(YakManApiError::bad_request(
+            "Invalid label name. Must be alphanumeric kebab case",
+        ));
     }
 
     return match service.create_label(label_type).await {
         Ok(()) => Ok(web::Json(())),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {
-                 Err(YakManApiError::bad_request("Duplicate label"))
+                Err(YakManApiError::bad_request("Duplicate label"))
             }
             CreateLabelError::EmptyOptionsError => {
                 // TODO: This does not appear to be working
-                 Err(YakManApiError::bad_request("Label must have at least 1 option"))
+                Err(YakManApiError::bad_request(
+                    "Label must have at least 1 option",
+                ))
             }
-            CreateLabelError::InvalidPriorityError { prioity } => {
-                 Err(YakManApiError::bad_request(&format!("Invalid prioity: {prioity}")))
-            }
+            CreateLabelError::InvalidPriorityError { prioity } => Err(YakManApiError::bad_request(
+                &format!("Invalid prioity: {prioity}"),
+            )),
             CreateLabelError::StorageError { message } => {
                 error!("Failed to create label, error: {message}");
                 Err(YakManApiError::server_error("Failed to create label"))

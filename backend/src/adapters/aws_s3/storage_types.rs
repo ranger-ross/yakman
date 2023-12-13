@@ -1,4 +1,4 @@
-use crate::model::{YakManConfig, ConfigInstance, ConfigInstanceRevision, LabelType, YakManUser};
+use crate::model::{ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManUser};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

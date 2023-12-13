@@ -202,7 +202,7 @@ fn get_issuer_url() -> Result<IssuerUrl> {
     .with_context(|| "YAKMAN_OAUTH_ISSUER_URL is not a valid URL")?)
 }
 
-// TODO: Currently this is unused because `CoreProviderMetadata` auto-fetches it from the idp metadata. 
+// TODO: Currently this is unused because `CoreProviderMetadata` auto-fetches it from the idp metadata.
 // However, we should allow a way to override this in the future incase the idp does not support metadata endpoint for some reason
 #[allow(dead_code)]
 fn get_token_url() -> Result<TokenUrl> {

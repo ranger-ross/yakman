@@ -1,11 +1,11 @@
+pub mod admin;
 pub mod configs;
 pub mod data;
 pub mod instances;
 pub mod labels;
-pub mod revisions;
 pub mod oauth;
-pub mod admin;
 pub mod projects;
+pub mod revisions;
 
 fn is_alphanumeric_kebab_case(s: &str) -> bool {
     s.chars().all(|c| c == '-' || c.is_alphanumeric())
