@@ -4,6 +4,7 @@ use crate::services::StorageService;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use log::debug;
+#[cfg(test)]
 use mockall::automock;
 use oauth2::{
     AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
@@ -18,7 +19,7 @@ use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
 
-#[automock]
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait OauthService: Send + Sync {
     fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce);

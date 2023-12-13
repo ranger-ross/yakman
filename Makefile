@@ -4,8 +4,8 @@ help: ## Shows help
 redis: ## Starts Redis with Docker
 	docker run -it --rm -p 6379:6379 -v $(shell pwd)/testing-directory/redis:/data redis
 
-postgres: ## Starts Postgres with Docker
-	docker run -it --rm -e POSTGRES_PASSWORD=password -p 5432:5432 postgres
+mock-auth: ## Starts a mock OAuth server with Docker
+	docker compose -f mock-openid-connect-server/docker-compose.yaml up
 
 build-backend: ## Builds the backend dockerfile with tag local/yakman-backend
 	docker build . -f backend.Dockerfile -t local/yakman-backend

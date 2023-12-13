@@ -15,9 +15,10 @@ use std::{
     string::FromUtf8Error,
 };
 use thiserror::Error;
+#[cfg(test)]
 use mockall::automock;
 
-#[automock]
+#[cfg_attr(test, automock)]
 pub trait TokenService: Sync + Send  {
     /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
     fn create_acess_token_jwt(
