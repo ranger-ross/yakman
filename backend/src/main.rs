@@ -234,3 +234,77 @@ fn load_yak_man_settings() -> YakManSettings {
         version: "0.0.1".to_string(),
     };
 }
+
+/// Testing utilities and boilerplate setup code
+#[cfg(test)]
+mod test_utils {
+    use crate::{
+        adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
+        auth::{oauth_service::MockOauthService, token::MockTokenService},
+        services::kv_storage_service::KVStorageService,
+        StateManager,
+    };
+    use anyhow::Result;
+    use std::sync::Arc;
+
+    pub fn prepare_for_actix_test() -> Result<()> {
+        // TODO: Is using dotenv a good idea?
+        //       Maybe better to find a way to set specific vars for more reproduceable tests?
+        dotenv::dotenv()?;
+        let _ = env_logger::try_init();
+
+        Ok(())
+    }
+
+    pub async fn test_state_manager() -> Result<StateManager> {
+        let adapter = InMemoryStorageAdapter::new();
+        adapter.initialize_yakman_storage().await?;
+        let service: KVStorageService = KVStorageService {
+            adapter: Box::new(adapter),
+        };
+
+        let token_service = MockTokenService::new();
+        let oauth_service = MockOauthService::new();
+
+        return Ok(StateManager {
+            jwt_service: Arc::new(token_service),
+            oauth_service: Arc::new(oauth_service),
+            service: Arc::new(service),
+        });
+    }
+
+    /// Utility for stubbing roles extractor in tests
+    pub mod fake_roles {
+        #![allow(dead_code)]
+
+        use crate::{middleware::roles::YakManRoleBinding, model::YakManRole};
+        use actix_web::{dev::ServiceRequest, Error};
+        use anyhow::Result;
+
+        pub async fn admin_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Admin,
+            )]);
+        }
+
+        pub async fn approver_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Approver,
+            )]);
+        }
+
+        pub async fn operator_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Operator,
+            )]);
+        }
+
+        pub async fn viewer_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Viewer,
+            )]);
+        }
+
+    }
+
+}

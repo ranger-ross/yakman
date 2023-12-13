@@ -4,8 +4,7 @@ use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError,
-        UpdateConfigInstanceCurrentRevisionError, RollbackRevisionError,
+        CreateLabelError, CreateProjectError, DeleteConfigError, SaveConfigInstanceError, RollbackRevisionError,
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManLabel,

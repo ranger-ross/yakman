@@ -1,6 +1,5 @@
 extern crate dotenv;
 
-use crate::auth::token::TokenService;
 use crate::model::{YakManRole, YakManUserProjectRole};
 use crate::StateManager;
 use actix_web::{dev::ServiceRequest, web, Error};

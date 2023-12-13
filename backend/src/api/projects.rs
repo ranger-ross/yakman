@@ -115,30 +115,22 @@ async fn create_project(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use actix_web::{dev::ServiceRequest, test, web::Data, App, Error};
-    use actix_web_grants::GrantsMiddleware;
-
-    use crate::{
-        adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
-        auth::{oauth_service::MockOauthService, token::MockTokenService},
-        services::kv_storage_service::KVStorageService,
-    };
-    use anyhow::Result;
-
     use super::*;
+    use crate::test_utils::*;
+    use actix_web::{test, web::Data, App};
+    use actix_web_grants::GrantsMiddleware;
+    use anyhow::Result;
 
     #[actix_web::test]
     async fn create_project_should_create_project_if_request_is_valid() -> Result<()> {
-        prepare_for_test()?;
+        prepare_for_actix_test()?;
 
         let state = test_state_manager().await?;
 
         let app = test::init_service(
             App::new()
                 .app_data(Data::new(state))
-                .wrap(GrantsMiddleware::with_extractor(admin_role))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_project),
         )
         .await;
@@ -155,14 +147,14 @@ mod tests {
 
     #[actix_web::test]
     async fn create_project_should_return_bad_request_if_project_name_is_invalid() -> Result<()> {
-        prepare_for_test()?;
+        prepare_for_actix_test()?;
 
         let state = test_state_manager().await?;
 
         let app = test::init_service(
             App::new()
                 .app_data(Data::new(state))
-                .wrap(GrantsMiddleware::with_extractor(admin_role))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_project),
         )
         .await;
@@ -176,35 +168,5 @@ mod tests {
         let status = resp.status().as_u16();
         assert_eq!(400, status);
         Ok(())
-    }
-
-    pub async fn admin_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
-        return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
-            YakManRole::Admin,
-        )]);
-    }
-
-    fn prepare_for_test() -> Result<()> {
-        dotenv::dotenv()?;
-        env_logger::init();
-
-        Ok(())
-    }
-
-    async fn test_state_manager() -> Result<StateManager> {
-        let adapter = InMemoryStorageAdapter::new();
-        adapter.initialize_yakman_storage().await?;
-        let service: KVStorageService = KVStorageService {
-            adapter: Box::new(adapter),
-        };
-
-        let token_service = MockTokenService::new();
-        let oauth_service = MockOauthService::new();
-
-        return Ok(StateManager {
-            jwt_service: Arc::new(token_service),
-            oauth_service: Arc::new(oauth_service),
-            service: Arc::new(service),
-        });
     }
 }

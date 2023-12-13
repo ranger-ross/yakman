@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    auth::{LoginError, token::TokenService},
+    auth::LoginError,
     error::YakManApiError,
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::YakManRole,
@@ -74,7 +74,7 @@ pub async fn oauth_exchange(
     let service = state.get_oauth_service();
     let token_service = state.get_token_service();
 
-    let (username, user, refresh_token, picture) = match service
+    let (username, user, refresh_token, _picture) = match service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
