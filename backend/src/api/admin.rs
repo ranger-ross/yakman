@@ -5,7 +5,6 @@ use actix_web::Responder;
 use actix_web::{
     get, put,
     web::{self, Json},
-    HttpResponse,
 };
 use actix_web_grants::permissions::AuthDetails;
 use uuid::Uuid;

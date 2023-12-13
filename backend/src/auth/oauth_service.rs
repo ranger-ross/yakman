@@ -2,7 +2,10 @@ use super::{LoginError, RefreshTokenError};
 use crate::model::YakManUser;
 use crate::services::StorageService;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use log::debug;
+#[cfg(test)]
+use mockall::automock;
 use oauth2::{
     AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
     RedirectUrl, RefreshToken, Scope, TokenResponse, TokenUrl,
@@ -16,15 +19,33 @@ use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
 
-pub struct OauthService {
+#[cfg_attr(test, automock)]
+#[async_trait]
+pub trait OauthService: Send + Sync {
+    fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce);
+
+    async fn exchange_oauth_code(
+        &self,
+        code: String,
+        verifier: String,
+        nonce: String,
+    ) -> Result<(String, YakManUser, Option<RefreshToken>, Option<String>), LoginError>;
+
+    async fn refresh_token(
+        &self,
+        refresh_token: &str,
+    ) -> Result<(String, String), RefreshTokenError>;
+}
+
+pub struct YakManOauthService {
     pub storage: Arc<dyn StorageService>,
     client: CoreClient,
     scopes: Vec<Scope>,
     redirect_url: RedirectUrl,
 }
 
-impl OauthService {
-    pub async fn new(storage: Arc<dyn StorageService>) -> Result<OauthService> {
+impl YakManOauthService {
+    pub async fn new(storage: Arc<dyn StorageService>) -> Result<YakManOauthService> {
         let provider_metadata =
             CoreProviderMetadata::discover_async(get_issuer_url()?, async_http_client).await?;
 
@@ -42,15 +63,18 @@ impl OauthService {
             .map(|s| Scope::new(s))
             .collect();
 
-        return Ok(OauthService {
+        return Ok(YakManOauthService {
             storage: storage,
             client: client,
             scopes: scopes,
             redirect_url: get_redirect_url()?,
         });
     }
+}
 
-    pub fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
+#[async_trait]
+impl OauthService for YakManOauthService {
+    fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
         let (auth_url, csrf_token, nonce) = self
             .client
             .authorize_url(
@@ -65,7 +89,7 @@ impl OauthService {
         return (String::from(auth_url.as_str()), csrf_token, nonce);
     }
 
-    pub async fn exchange_oauth_code(
+    async fn exchange_oauth_code(
         &self,
         code: String,
         verifier: String,
@@ -131,7 +155,7 @@ impl OauthService {
         return Err(LoginError::UserNotRegistered);
     }
 
-    pub async fn refresh_token(
+    async fn refresh_token(
         &self,
         refresh_token: &str,
     ) -> Result<(String, String), RefreshTokenError> {

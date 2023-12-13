@@ -8,7 +8,7 @@ mod services;
 
 extern crate dotenv;
 
-use crate::auth::oauth_service::OauthService;
+use crate::auth::oauth_service::YakManOauthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
 use actix_middleware_etag::Etag;
@@ -23,7 +23,8 @@ use adapters::{
 };
 use anyhow::Context;
 use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
-use auth::token::TokenService;
+use auth::oauth_service::OauthService;
+use auth::token::{YakManTokenService, TokenService};
 use dotenv::dotenv;
 use log::info;
 use model::response::RevisionPayload;
@@ -40,18 +41,18 @@ use utoipa_swagger_ui::SwaggerUi;
 #[derive(Clone)]
 pub struct StateManager {
     service: Arc<dyn StorageService>,
-    oauth_service: Arc<OauthService>,
-    jwt_service: Arc<TokenService>,
+    oauth_service: Arc<dyn OauthService>,
+    jwt_service: Arc<dyn TokenService>,
 }
 
 impl StateManager {
     fn get_service(&self) -> &dyn StorageService {
         return self.service.as_ref();
     }
-    fn get_oauth_service(&self) -> &OauthService {
+    fn get_oauth_service(&self) -> &dyn OauthService {
         return self.oauth_service.as_ref();
     }
-    fn get_token_service(&self) -> &TokenService {
+    fn get_token_service(&self) -> &dyn TokenService {
         return self.jwt_service.as_ref();
     }
 }
@@ -118,8 +119,8 @@ async fn main() -> std::io::Result<()> {
 
     let arc = Arc::new(service);
 
-    let oauth_service = OauthService::new(arc.clone()).await.unwrap();
-    let jwt_service = TokenService::from_env()
+    let oauth_service = YakManOauthService::new(arc.clone()).await.unwrap();
+    let jwt_service = YakManTokenService::from_env()
         .map_err(|e| log::error!("{e}"))
         .expect("Failed to create jwt service");
 
@@ -203,7 +204,6 @@ async fn create_service() -> impl StorageService {
             );
             KVStorageService { adapter: adapter }
         }
-        // "POSTGRES" => Box::new(create_postgres_adapter()),
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
             KVStorageService { adapter: adapter }
@@ -222,7 +222,7 @@ async fn create_service() -> impl StorageService {
             KVStorageService { adapter: adapter }
         },
         "IN_MEMORY" => {
-            let adapter = Box::new(InMemoryStorageAdapter::from_env().await);
+            let adapter = Box::new(InMemoryStorageAdapter::new());
             KVStorageService { adapter: adapter }
         },
         _ => panic!("Unsupported adapter {adapter_name}"),
@@ -233,4 +233,78 @@ fn load_yak_man_settings() -> YakManSettings {
     return YakManSettings {
         version: "0.0.1".to_string(),
     };
+}
+
+/// Testing utilities and boilerplate setup code
+#[cfg(test)]
+mod test_utils {
+    use crate::{
+        adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
+        auth::{oauth_service::MockOauthService, token::MockTokenService},
+        services::kv_storage_service::KVStorageService,
+        StateManager,
+    };
+    use anyhow::Result;
+    use std::sync::Arc;
+
+    pub fn prepare_for_actix_test() -> Result<()> {
+        // TODO: Is using dotenv a good idea?
+        //       Maybe better to find a way to set specific vars for more reproduceable tests?
+        dotenv::dotenv()?;
+        let _ = env_logger::try_init();
+
+        Ok(())
+    }
+
+    pub async fn test_state_manager() -> Result<StateManager> {
+        let adapter = InMemoryStorageAdapter::new();
+        adapter.initialize_yakman_storage().await?;
+        let service: KVStorageService = KVStorageService {
+            adapter: Box::new(adapter),
+        };
+
+        let token_service = MockTokenService::new();
+        let oauth_service = MockOauthService::new();
+
+        return Ok(StateManager {
+            jwt_service: Arc::new(token_service),
+            oauth_service: Arc::new(oauth_service),
+            service: Arc::new(service),
+        });
+    }
+
+    /// Utility for stubbing roles extractor in tests
+    pub mod fake_roles {
+        #![allow(dead_code)]
+
+        use crate::{middleware::roles::YakManRoleBinding, model::YakManRole};
+        use actix_web::{dev::ServiceRequest, Error};
+        use anyhow::Result;
+
+        pub async fn admin_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Admin,
+            )]);
+        }
+
+        pub async fn approver_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Approver,
+            )]);
+        }
+
+        pub async fn operator_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Operator,
+            )]);
+        }
+
+        pub async fn viewer_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
+            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
+                YakManRole::Viewer,
+            )]);
+        }
+
+    }
+
 }

@@ -293,7 +293,7 @@ impl InMemoryStorageAdapter {
         format!("USERS_{uuid}")
     }
 
-    pub async fn from_env() -> InMemoryStorageAdapter {
+    pub fn new() -> InMemoryStorageAdapter {
         return InMemoryStorageAdapter {
             storage: Arc::new(Mutex::new(HashMap::new())),
         };

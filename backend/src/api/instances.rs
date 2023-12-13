@@ -5,7 +5,7 @@ use crate::middleware::YakManPrinciple;
 use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpRequest, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get config instances by config_name

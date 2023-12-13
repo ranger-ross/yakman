@@ -3,7 +3,7 @@ use crate::{
     api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding, StateManager,
 };
-use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web::{get, put, web, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
 

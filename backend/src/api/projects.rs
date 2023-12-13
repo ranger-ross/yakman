@@ -86,11 +86,15 @@ async fn create_project(
     }
 
     if project_name.is_empty() {
-        return Err(YakManApiError::bad_request("Invalid project name. Must not be empty"));
+        return Err(YakManApiError::bad_request(
+            "Invalid project name. Must not be empty",
+        ));
     }
 
     if !is_alphanumeric_kebab_case(&project_name) {
-        return Err(YakManApiError::bad_request("Invalid project name. Must be alphanumeric kebab case"));
+        return Err(YakManApiError::bad_request(
+            "Invalid project name. Must be alphanumeric kebab case",
+        ));
     }
 
     let service = state.get_service();
@@ -107,4 +111,62 @@ async fn create_project(
             }
         },
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+    use actix_web::{test, web::Data, App};
+    use actix_web_grants::GrantsMiddleware;
+    use anyhow::Result;
+
+    #[actix_web::test]
+    async fn create_project_should_create_project_if_request_is_valid() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_project),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri("/v1/projects")
+            .set_json(CreateProjectPayload {
+                project_name: "valid-project-name".to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn create_project_should_return_bad_request_if_project_name_is_invalid() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_project),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri("/v1/projects")
+            .set_json(CreateProjectPayload {
+                project_name: "this is not a valid name".to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        let status = resp.status().as_u16();
+        assert_eq!(400, status);
+        Ok(())
+    }
 }
