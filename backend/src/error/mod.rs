@@ -194,22 +194,6 @@ impl From<GenericStorageError> for SaveConfigInstanceError {
 }
 
 #[derive(Error, Debug)]
-pub enum UpdateConfigInstanceCurrentRevisionError {
-    #[error("No config found")]
-    NoConfigFound,
-    #[error("Revision not found")]
-    NoRevisionFound,
-    #[error("Error storing label: {message}")]
-    StorageError { message: String },
-}
-
-impl From<GenericStorageError> for UpdateConfigInstanceCurrentRevisionError {
-    fn from(e: GenericStorageError) -> Self {
-        UpdateConfigInstanceCurrentRevisionError::StorageError { message: e.message }
-    }
-}
-
-#[derive(Error, Debug)]
 pub enum ApproveRevisionError {
     #[error("Invalid config")]
     InvalidConfig,
