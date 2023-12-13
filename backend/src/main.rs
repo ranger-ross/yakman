@@ -24,7 +24,7 @@ use adapters::{
 use anyhow::Context;
 use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::oauth_service::OauthService;
-use auth::token::{JwtTokenService, TokenService};
+use auth::token::{YakManTokenService, TokenService};
 use dotenv::dotenv;
 use log::info;
 use model::response::RevisionPayload;
@@ -120,7 +120,7 @@ async fn main() -> std::io::Result<()> {
     let arc = Arc::new(service);
 
     let oauth_service = YakManOauthService::new(arc.clone()).await.unwrap();
-    let jwt_service = JwtTokenService::from_env()
+    let jwt_service = YakManTokenService::from_env()
         .map_err(|e| log::error!("{e}"))
         .expect("Failed to create jwt service");
 
