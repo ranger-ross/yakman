@@ -244,7 +244,9 @@ mod test_utils {
         services::kv_storage_service::KVStorageService,
         StateManager,
     };
-    use anyhow::Result;
+    use actix_web::{dev::ServiceResponse, body::to_bytes};
+    use anyhow::{Result, bail};
+    use serde_json::Value;
     use std::sync::Arc;
 
     pub fn prepare_for_actix_test() -> Result<()> {
@@ -271,6 +273,18 @@ mod test_utils {
             oauth_service: Arc::new(oauth_service),
             service: Arc::new(service),
         });
+    }
+
+    pub async fn body_to_json_value(res: ServiceResponse) -> Result<Value> {
+        let body = res.into_body();
+        let bytes = match to_bytes(body).await {
+            Ok(b) => b,
+            Err(_) => bail!("Failed to extract response data as bytes"),
+        };
+
+        let value_as_string = String::from_utf8(bytes.to_vec())?;
+
+        Ok(serde_json::from_str(&value_as_string)?)
     }
 
     /// Utility for stubbing roles extractor in tests
