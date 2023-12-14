@@ -195,7 +195,10 @@ async fn delete_config(
 mod tests {
 
     use super::*;
-    use crate::test_utils::*;
+    use crate::{
+        model::YakManUserProjectRole,
+        test_utils::{fake_roles::FakeRoleExtractor, *},
+    };
     use actix_web::{test, web::Data, App};
     use actix_web_grants::GrantsMiddleware;
     use anyhow::Result;
@@ -295,4 +298,41 @@ mod tests {
         Ok(())
     }
 
+    #[actix_web::test]
+    async fn get_configs_should_not_return_forbidden_if_user_does_not_have_access_to_project(
+    ) -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project with config
+        let project1_uuid = state.service.create_project("proj1").await?;
+        state
+            .service
+            .create_config("config1", &project1_uuid)
+            .await?;
+
+        let fake_role_extractor =
+            FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
+                YakManUserProjectRole {
+                    project_uuid: "other".to_string(), // fake, just some other project
+                    role: YakManRole::Operator,
+                },
+            )]);
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_role_extractor))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project1_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(403, resp.status().as_u16());
+
+        Ok(())
+    }
 }
