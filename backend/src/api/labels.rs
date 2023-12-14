@@ -161,4 +161,36 @@ mod tests {
 
         Ok(())
     }
+
+    #[actix_web::test]
+    async fn create_label_should_not_allow_invalid_label_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_label),
+        )
+        .await;
+
+        let mut bad_foo_label = foo_label();
+        bad_foo_label.name = "foo but not valid".to_string();
+
+        let req = test::TestRequest::put()
+            .uri("/v1/labels")
+            .set_json(bad_foo_label)
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_client_error());
+
+        // Make sure no labels were created
+        assert_eq!(0, state.service.get_labels().await?.len());
+
+        Ok(())
+    }
+
+
 }
