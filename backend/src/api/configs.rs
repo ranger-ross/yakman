@@ -190,3 +190,109 @@ async fn delete_config(
         },
     };
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::test_utils::*;
+    use actix_web::{test, web::Data, App};
+    use actix_web_grants::GrantsMiddleware;
+    use anyhow::Result;
+    use serde_json::Value;
+
+    #[actix_web::test]
+    async fn get_configs_should_return_configs() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project with 2 configs
+        let project_uuid = state.service.create_project("test").await?;
+        state
+            .service
+            .create_config("config1", &project_uuid)
+            .await?;
+        state
+            .service
+            .create_config("config2", &project_uuid)
+            .await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        let arr = value.as_array().unwrap();
+
+        assert_eq!(2, arr.len());
+
+        let first = &arr[0];
+        assert_eq!("config1", first["name"]);
+        assert_eq!(false, first["hidden"]);
+        assert_eq!(project_uuid.as_str(), first["project_uuid"]);
+
+        let second = &arr[1];
+        assert_eq!("config2", second["name"]);
+        assert_eq!(false, second["hidden"]);
+        assert_eq!(project_uuid.as_str(), second["project_uuid"]);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_configs_should_not_return_configs_for_other_projects() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test 2 project with 1 config each
+        let project1_uuid = state.service.create_project("proj1").await?;
+        state
+            .service
+            .create_config("config1", &project1_uuid)
+            .await?;
+        let project2_uuid = state.service.create_project("proj2").await?;
+        state
+            .service
+            .create_config("config2", &project2_uuid)
+            .await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project1_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        let arr = value.as_array().unwrap();
+
+        assert_eq!(1, arr.len());
+
+        let first = &arr[0];
+        assert_eq!("config1", first["name"]);
+        assert_eq!(false, first["hidden"]);
+        assert_eq!(project1_uuid.as_str(), first["project_uuid"]);
+
+        Ok(())
+    }
+
+}
