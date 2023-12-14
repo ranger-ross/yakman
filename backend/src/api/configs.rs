@@ -481,4 +481,36 @@ mod tests {
     }
 
 
+
+    #[actix_web::test]
+    async fn create_configs_should_block_duplicate_config_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+        state.service.create_config("foo-bar", &project_uuid).await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "foo-bar".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status());
+
+        Ok(())
+    }
+
+
 }
