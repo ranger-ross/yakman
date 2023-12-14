@@ -335,4 +335,54 @@ mod tests {
 
         Ok(())
     }
+
+
+    #[actix_web::test]
+    async fn get_configs_should_not_show_hidden_configs() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project with 2 configs
+        let project_uuid = state.service.create_project("test").await?;
+        state
+            .service
+            .create_config("config1", &project_uuid)
+            .await?;
+        state
+            .service
+            .create_config("config2", &project_uuid)
+            .await?;
+
+        // Hide config2
+        state.service.delete_config("config2").await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        let arr = value.as_array().unwrap();
+
+        assert_eq!(1, arr.len());
+
+        let first = &arr[0];
+        assert_eq!("config1", first["name"]);
+        assert_eq!(false, first["hidden"]);
+        assert_eq!(project_uuid.as_str(), first["project_uuid"]);
+
+        Ok(())
+    }
+
+
 }
