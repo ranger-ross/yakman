@@ -244,8 +244,8 @@ mod test_utils {
         services::kv_storage_service::KVStorageService,
         StateManager,
     };
-    use actix_web::{dev::ServiceResponse, body::to_bytes};
-    use anyhow::{Result, bail};
+    use actix_web::{body::to_bytes, dev::ServiceResponse};
+    use anyhow::{bail, Result};
     use serde_json::Value;
     use std::sync::Arc;
 
@@ -293,7 +293,29 @@ mod test_utils {
 
         use crate::{middleware::roles::YakManRoleBinding, model::YakManRole};
         use actix_web::{dev::ServiceRequest, Error};
+        use actix_web_grants::permissions::PermissionsExtractor;
         use anyhow::Result;
+        use std::future::ready;
+
+        pub struct FakeRoleExtractor {
+            role_bindings: Vec<YakManRoleBinding>,
+        }
+
+        impl FakeRoleExtractor {
+            pub fn new(role_bindings: Vec<YakManRoleBinding>) -> FakeRoleExtractor {
+                FakeRoleExtractor {
+                    role_bindings: role_bindings,
+                }
+            }
+        }
+
+        impl<'a> PermissionsExtractor<'a, ServiceRequest, YakManRoleBinding> for FakeRoleExtractor {
+            type Future = core::future::Ready<Result<Vec<YakManRoleBinding>, Error>>;
+
+            fn extract(&self, _request: &'a mut ServiceRequest) -> Self::Future {
+                return ready(Ok(self.role_bindings.clone()));
+            }
+        }
 
         pub async fn admin_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
             return Ok(vec![YakManRoleBinding::GlobalRoleBinding(

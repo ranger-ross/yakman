@@ -30,9 +30,7 @@ pub async fn get_projects(
             YakManRoleBinding::GlobalRoleBinding(_) => true,
             _ => false,
         })
-        .collect::<Vec<bool>>()
-        .len()
-        > 0;
+        .any(|v| v);
 
     let allowed_projects: HashSet<String> = auth_details
         .permissions
@@ -115,6 +113,8 @@ async fn create_project(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::YakManUserProjectRole;
+    use crate::test_utils::fake_roles::FakeRoleExtractor;
     use crate::test_utils::*;
     use actix_web::{test, web::Data, App};
     use actix_web_grants::GrantsMiddleware;
@@ -137,9 +137,7 @@ mod tests {
                 .service(get_projects),
         )
         .await;
-        let req = test::TestRequest::get()
-            .uri("/v1/projects")
-            .to_request();
+        let req = test::TestRequest::get().uri("/v1/projects").to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
@@ -152,6 +150,44 @@ mod tests {
         let second = &value.as_array().unwrap()[1];
         assert_eq!("bar", second["name"]);
         assert_eq!(project_bar_uuid, second["uuid"]);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_projects_should_not_return_projects_that_user_does_not_have() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        let _project_foo_uuid = state.service.create_project("foo").await?;
+        let project_bar_uuid = state.service.create_project("bar").await?;
+
+        let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
+            YakManUserProjectRole {
+                project_uuid: project_bar_uuid.clone(),
+                role: YakManRole::Admin,
+            },
+        )]);
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_extractor))
+                .service(get_projects),
+        )
+        .await;
+        let req = test::TestRequest::get().uri("/v1/projects").to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        assert_eq!(1, value.as_array().unwrap().len());
+
+        let first = &value.as_array().unwrap()[0];
+        assert_eq!("bar", first["name"]);
+        assert_eq!(project_bar_uuid, first["uuid"]);
 
         Ok(())
     }
@@ -204,7 +240,6 @@ mod tests {
         assert_eq!(400, status);
         Ok(())
     }
-
 
     #[actix_web::test]
     async fn create_project_should_return_bad_request_if_project_name_is_empty() -> Result<()> {
