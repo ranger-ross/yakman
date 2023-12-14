@@ -35,19 +35,16 @@ pub async fn get_projects(
     let allowed_projects: HashSet<String> = auth_details
         .permissions
         .into_iter()
-        .map(|p| match p {
+        .filter_map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(_) => None,
             YakManRoleBinding::ProjectRoleBinding(r) => Some(r.project_uuid),
         })
-        .filter(|p| p.is_some()) // TODO: use filter_map instead
-        .map(|p| p.unwrap())
         .collect();
 
     let service = state.get_service();
     let projects: Vec<YakManProject> = service
         .get_projects()
-        .await
-        .unwrap()
+        .await?
         .into_iter()
         .filter(|p| user_has_global_role || allowed_projects.contains(&p.uuid))
         .collect();
