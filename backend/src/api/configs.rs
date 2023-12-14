@@ -384,5 +384,101 @@ mod tests {
         Ok(())
     }
 
+    #[actix_web::test]
+    async fn create_configs_should_create_config_propertly() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "foo-bar".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status());
+
+
+        let config = state.service.get_config("foo-bar").await?;
+        assert!(config.is_some());
+        let config = config.unwrap();
+        assert_eq!("foo-bar", config.name);
+        assert_eq!(false, config.hidden);
+
+        Ok(())
+    }
+
+
+    #[actix_web::test]
+    async fn create_configs_should_block_invalid_config_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "this is an invalid config name".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status());
+
+        Ok(())
+    }
+
+
+    #[actix_web::test]
+    async fn create_configs_should_block_blank_config_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status());
+
+        Ok(())
+    }
+
 
 }
