@@ -190,3 +190,327 @@ async fn delete_config(
         },
     };
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::{
+        model::YakManUserProjectRole,
+        test_utils::{fake_roles::FakeRoleExtractor, *},
+    };
+    use actix_web::{test, web::Data, App};
+    use actix_web_grants::GrantsMiddleware;
+    use anyhow::Result;
+    use serde_json::Value;
+
+    #[actix_web::test]
+    async fn get_configs_should_return_configs() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project with 2 configs
+        let project_uuid = state.service.create_project("test").await?;
+        state
+            .service
+            .create_config("config1", &project_uuid)
+            .await?;
+        state
+            .service
+            .create_config("config2", &project_uuid)
+            .await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        let arr = value.as_array().unwrap();
+
+        assert_eq!(2, arr.len());
+
+        let first = &arr[0];
+        assert_eq!("config1", first["name"]);
+        assert_eq!(false, first["hidden"]);
+        assert_eq!(project_uuid.as_str(), first["project_uuid"]);
+
+        let second = &arr[1];
+        assert_eq!("config2", second["name"]);
+        assert_eq!(false, second["hidden"]);
+        assert_eq!(project_uuid.as_str(), second["project_uuid"]);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_configs_should_not_return_configs_for_other_projects() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test 2 project with 1 config each
+        let project1_uuid = state.service.create_project("proj1").await?;
+        state
+            .service
+            .create_config("config1", &project1_uuid)
+            .await?;
+        let project2_uuid = state.service.create_project("proj2").await?;
+        state
+            .service
+            .create_config("config2", &project2_uuid)
+            .await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project1_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        let arr = value.as_array().unwrap();
+
+        assert_eq!(1, arr.len());
+
+        let first = &arr[0];
+        assert_eq!("config1", first["name"]);
+        assert_eq!(false, first["hidden"]);
+        assert_eq!(project1_uuid.as_str(), first["project_uuid"]);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_configs_should_not_return_forbidden_if_user_does_not_have_access_to_project(
+    ) -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project with config
+        let project1_uuid = state.service.create_project("proj1").await?;
+        state
+            .service
+            .create_config("config1", &project1_uuid)
+            .await?;
+
+        let fake_role_extractor =
+            FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
+                YakManUserProjectRole {
+                    project_uuid: "other".to_string(), // fake, just some other project
+                    role: YakManRole::Operator,
+                },
+            )]);
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_role_extractor))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project1_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(403, resp.status().as_u16());
+
+        Ok(())
+    }
+
+
+    #[actix_web::test]
+    async fn get_configs_should_not_show_hidden_configs() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project with 2 configs
+        let project_uuid = state.service.create_project("test").await?;
+        state
+            .service
+            .create_config("config1", &project_uuid)
+            .await?;
+        state
+            .service
+            .create_config("config2", &project_uuid)
+            .await?;
+
+        // Hide config2
+        state.service.delete_config("config2").await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_configs),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/configs?project={project_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp).await?;
+
+        let arr = value.as_array().unwrap();
+
+        assert_eq!(1, arr.len());
+
+        let first = &arr[0];
+        assert_eq!("config1", first["name"]);
+        assert_eq!(false, first["hidden"]);
+        assert_eq!(project_uuid.as_str(), first["project_uuid"]);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn create_configs_should_create_config_propertly() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "foo-bar".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status());
+
+
+        let config = state.service.get_config("foo-bar").await?;
+        assert!(config.is_some());
+        let config = config.unwrap();
+        assert_eq!("foo-bar", config.name);
+        assert_eq!(false, config.hidden);
+
+        Ok(())
+    }
+
+
+    #[actix_web::test]
+    async fn create_configs_should_block_invalid_config_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "this is an invalid config name".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status());
+
+        Ok(())
+    }
+
+
+    #[actix_web::test]
+    async fn create_configs_should_block_blank_config_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status());
+
+        Ok(())
+    }
+
+
+
+    #[actix_web::test]
+    async fn create_configs_should_block_duplicate_config_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let state = test_state_manager().await?;
+
+        // Setup test project
+        let project_uuid = state.service.create_project("test").await?;
+        state.service.create_config("foo-bar", &project_uuid).await?;
+      
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(state.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_config),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/configs"))
+            .set_json(&CreateConfigPayload {
+                config_name: "foo-bar".to_string(),
+                project_uuid: project_uuid
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status());
+
+        Ok(())
+    }
+
+
+}

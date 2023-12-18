@@ -244,7 +244,9 @@ mod test_utils {
         services::kv_storage_service::KVStorageService,
         StateManager,
     };
-    use anyhow::Result;
+    use actix_web::{body::to_bytes, dev::ServiceResponse};
+    use anyhow::{bail, Result};
+    use serde_json::Value;
     use std::sync::Arc;
 
     pub fn prepare_for_actix_test() -> Result<()> {
@@ -273,13 +275,47 @@ mod test_utils {
         });
     }
 
+    pub async fn body_to_json_value(res: ServiceResponse) -> Result<Value> {
+        let body = res.into_body();
+        let bytes = match to_bytes(body).await {
+            Ok(b) => b,
+            Err(_) => bail!("Failed to extract response data as bytes"),
+        };
+
+        let value_as_string = String::from_utf8(bytes.to_vec())?;
+
+        Ok(serde_json::from_str(&value_as_string)?)
+    }
+
     /// Utility for stubbing roles extractor in tests
     pub mod fake_roles {
         #![allow(dead_code)]
 
         use crate::{middleware::roles::YakManRoleBinding, model::YakManRole};
         use actix_web::{dev::ServiceRequest, Error};
+        use actix_web_grants::permissions::PermissionsExtractor;
         use anyhow::Result;
+        use std::future::ready;
+
+        pub struct FakeRoleExtractor {
+            role_bindings: Vec<YakManRoleBinding>,
+        }
+
+        impl FakeRoleExtractor {
+            pub fn new(role_bindings: Vec<YakManRoleBinding>) -> FakeRoleExtractor {
+                FakeRoleExtractor {
+                    role_bindings: role_bindings,
+                }
+            }
+        }
+
+        impl<'a> PermissionsExtractor<'a, ServiceRequest, YakManRoleBinding> for FakeRoleExtractor {
+            type Future = core::future::Ready<Result<Vec<YakManRoleBinding>, Error>>;
+
+            fn extract(&self, _request: &'a mut ServiceRequest) -> Self::Future {
+                return ready(Ok(self.role_bindings.clone()));
+            }
+        }
 
         pub async fn admin_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
             return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
