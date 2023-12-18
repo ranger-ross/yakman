@@ -250,9 +250,6 @@ mod test_utils {
     use std::sync::Arc;
 
     pub fn prepare_for_actix_test() -> Result<()> {
-        // TODO: Is using dotenv a good idea?
-        //       Maybe better to find a way to set specific vars for more reproduceable tests?
-        dotenv::dotenv()?;
         let _ = env_logger::try_init();
 
         Ok(())
