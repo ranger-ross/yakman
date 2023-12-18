@@ -24,3 +24,6 @@ jobs:
 
     - run: cargo build
       working-directory: backend
+
+    - run: cargo test
+      working-directory: backend
