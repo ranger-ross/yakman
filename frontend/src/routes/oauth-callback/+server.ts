@@ -49,7 +49,7 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
 
     }
 
-    cookies.delete('oidc_nonce')
+    cookies.delete('oidc_nonce', { path: '/' })
 
     return json({
         data: "SUCCESS"
