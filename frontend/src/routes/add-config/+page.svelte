@@ -11,7 +11,13 @@
     export let data: PageData;
 
     let name = "";
-    let selectedProjectUuid = data.projects[0].uuid;
+    let defaultProjectUuid = $page.url.searchParams.get("project");
+    // TODO: Find a way to bind this state to the current URL query
+    let selectedProjectUuid =
+        !!defaultProjectUuid &&
+        data.projects.some((p) => p.uuid === defaultProjectUuid)
+            ? defaultProjectUuid
+            : data.projects[0].uuid;
 
     async function onCreateConfig() {
         try {

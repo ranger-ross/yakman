@@ -1,3 +1,4 @@
+
 <script lang="ts">
     import { goto } from "$app/navigation";
     import ProfileIcon from "$lib/icons/ProfileIcon.svelte";
@@ -24,7 +25,6 @@
 
     <YakManPopoverMenu
         options={[
-            { text: "Add Config", value: "AddConfig" },
             { text: "Add Label", value: "AddLabel" },
             ...(isAdmin
                 ? [
@@ -37,8 +37,6 @@
         on:select={(value) => {
             const selection = value.detail;
             switch (true) {
-                case selection === "AddConfig":
-                    return goto(`/add-config`);
                 case selection === "AddLabel":
                     return goto(`/add-label`);
                 case selection === "AddProject":
