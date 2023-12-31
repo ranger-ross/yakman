@@ -5,7 +5,6 @@ use crate::{
 };
 use actix_web::{get, put, web, Responder};
 use actix_web_grants::permissions::AuthDetails;
-use log::error;
 
 /// Get all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
@@ -47,17 +46,11 @@ pub async fn create_label(
             CreateLabelError::DuplicateLabelError { name: _ } => {
                 Err(YakManApiError::bad_request("Duplicate label"))
             }
-            CreateLabelError::EmptyOptionsError => {
-                // TODO: This does not appear to be working
-                Err(YakManApiError::bad_request(
-                    "Label must have at least 1 option",
-                ))
-            }
-            CreateLabelError::InvalidPriorityError { prioity } => Err(YakManApiError::bad_request(
-                &format!("Invalid prioity: {prioity}"),
+            CreateLabelError::EmptyOptionsError => Err(YakManApiError::bad_request(
+                "Label must have at least 1 option",
             )),
             CreateLabelError::StorageError { message } => {
-                error!("Failed to create label, error: {message}");
+                log::error!("Failed to create label, error: {message}");
                 Err(YakManApiError::server_error("Failed to create label"))
             }
         },
@@ -78,7 +71,6 @@ mod tests {
         LabelType {
             name: "foo".to_string(),
             description: "my foo label".to_string(),
-            priority: 1,
             options: vec!["foo-1".to_string(), "foo-2".to_string()],
         }
     }
@@ -87,7 +79,6 @@ mod tests {
         LabelType {
             name: "bar".to_string(),
             description: "my bar label".to_string(),
-            priority: 2,
             options: vec!["bar-1".to_string(), "bar-2".to_string()],
         }
     }
@@ -116,11 +107,9 @@ mod tests {
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("foo", first["name"]);
-        assert_eq!(1, first["priority"]);
 
         let second = &value.as_array().unwrap()[1];
         assert_eq!("bar", second["name"]);
-        assert_eq!(2, second["priority"]);
 
         Ok(())
     }
@@ -155,7 +144,6 @@ mod tests {
 
         let label = &labels[0];
         assert_eq!("foo", label.name);
-        assert_eq!(1, label.priority);
         assert_eq!("my foo label", label.description);
         assert_eq!(vec!["foo-1", "foo-2"], label.options);
 
@@ -191,6 +179,4 @@ mod tests {
 
         Ok(())
     }
-
-
 }

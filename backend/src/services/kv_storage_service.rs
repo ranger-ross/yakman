@@ -71,34 +71,25 @@ impl StorageService for KVStorageService {
         return Ok(self.adapter.get_labels().await?);
     }
 
-    async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError> {
-        if label.options.len() == 0 {
+    async fn create_label(&self, mut label: LabelType) -> Result<(), CreateLabelError> {
+        let santized_options = label
+            .options
+            .into_iter()
+            .filter_map(|opt| if !opt.is_empty() { Some(opt) } else { None })
+            .collect::<Vec<String>>();
+
+        if santized_options.len() == 0 {
             return Err(CreateLabelError::EmptyOptionsError);
         }
 
-        let mut labels = self.adapter.get_labels().await?;
+        label.options = santized_options;
 
-        let mut max_prioity: Option<i32> = None;
+        let mut labels = self.adapter.get_labels().await?;
 
         // Prevent duplicates
         for lbl in &labels {
             if &lbl.name == &label.name {
                 return Err(CreateLabelError::duplicate_label(&label.name));
-            }
-            if max_prioity.is_none() || lbl.priority > max_prioity.unwrap() {
-                max_prioity = Some(lbl.priority);
-            }
-        }
-
-        if let Some(max_prioity) = max_prioity {
-            if max_prioity < label.priority - 1 {
-                return Err(CreateLabelError::invalid_priority_error(label.priority));
-            }
-        }
-
-        for lbl in labels.iter_mut() {
-            if lbl.priority >= label.priority {
-                lbl.priority += 1;
             }
         }
 
