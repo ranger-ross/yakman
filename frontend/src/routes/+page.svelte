@@ -14,7 +14,8 @@
 	import { page } from "$app/stores";
 	import { trpc } from "$lib/trpc/client";
 	import YakManModal from "$lib/components/YakManModal.svelte";
-    import KebabMenuIcon from "$lib/icons/KebabMenuIcon.svelte";
+	import KebabMenuIcon from "$lib/icons/KebabMenuIcon.svelte";
+	import YakManButton from "$lib/components/YakManButton.svelte";
 
 	export let data: PageData;
 
@@ -119,15 +120,24 @@
 				</div>
 			</div>
 		{:else}
-			<YakManSelect
-				bind:value={selectedProjectUuid}
-				label="Project"
-				on:change={onProjectChange}
-			>
-				{#each projects as project}
-					<option value={project.uuid}>{project.name}</option>
-				{/each}
-			</YakManSelect>
+			<div class="flex items-end gap-2">
+				<YakManSelect
+					bind:value={selectedProjectUuid}
+					label="Project"
+					on:change={onProjectChange}
+				>
+					{#each projects as project}
+						<option value={project.uuid}>{project.name}</option>
+					{/each}
+				</YakManSelect>
+
+				<a
+					tabindex="-1"
+					href={`/add-config?project=${selectedProjectUuid}`}
+				>
+					<YakManButton>Add Config</YakManButton>
+				</a>
+			</div>
 
 			{#if data.configs.length == 0}
 				<div class="bg-white border-2 border-gray-200 m-2 p-4">
