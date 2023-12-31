@@ -16,7 +16,6 @@ pub struct YakManProject {
 pub struct YakManConfig {
     pub name: String, // Unique key
     pub project_uuid: String,
-    pub description: String,
     #[serde(default)]
     pub hidden: bool,
 }
