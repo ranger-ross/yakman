@@ -40,6 +40,7 @@ pub trait TokenService: Sync + Send {
 pub struct YakManTokenService {
     access_token_signing_key: String,
     refresh_token_shortcrypt: ShortCrypt,
+    access_token_time_to_live_seconds: i64,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -58,9 +59,18 @@ impl YakManTokenService {
         let refresh_token_encryption_key = env::var("YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY")
             .map_err(|e| JwtServiceCreateError::FailedToLoadEncryptionKey(Box::new(e)))?;
 
+        let default_access_token_ttl_seconds: i64 = 60 * 60;
+        let access_token_time_to_live_seconds = env::var("YAKMAN_ACCESS_TOKEN_TTL_SECONDS")
+            .map(|v| {
+                v.parse::<i64>()
+                    .unwrap_or_else(|_| default_access_token_ttl_seconds)
+            })
+            .unwrap_or_else(|_| default_access_token_ttl_seconds);
+
         Ok(YakManTokenService {
             access_token_signing_key: String::from(access_token_signing_key),
             refresh_token_shortcrypt: ShortCrypt::new(refresh_token_encryption_key),
+            access_token_time_to_live_seconds: access_token_time_to_live_seconds,
         })
     }
 }
@@ -75,7 +85,7 @@ impl TokenService for YakManTokenService {
         let key: Hmac<Sha256> = Hmac::new_from_slice(self.access_token_signing_key.as_bytes())
             .map_err(|e| JwtCreateError::InvalidSecret(Box::new(e)))?;
 
-        let token_time_to_live_seconds = 60 * 60; // TODO: Make overridable
+        let token_time_to_live_seconds = self.access_token_time_to_live_seconds;
         let now = Utc::now().timestamp_millis() / 1000;
 
         let header: Header = Default::default();
