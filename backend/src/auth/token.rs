@@ -61,11 +61,8 @@ impl YakManTokenService {
 
         let default_access_token_ttl_seconds: i64 = 60 * 60;
         let access_token_time_to_live_seconds = env::var("YAKMAN_ACCESS_TOKEN_TTL_SECONDS")
-            .map(|v| {
-                v.parse::<i64>()
-                    .unwrap_or_else(|_| default_access_token_ttl_seconds)
-            })
-            .unwrap_or_else(|_| default_access_token_ttl_seconds);
+            .map(|v| v.parse::<i64>().unwrap_or(default_access_token_ttl_seconds))
+            .unwrap_or(default_access_token_ttl_seconds);
 
         Ok(YakManTokenService {
             access_token_signing_key: String::from(access_token_signing_key),
