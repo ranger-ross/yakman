@@ -12,7 +12,6 @@
 
     let name = "";
     let defaultProjectUuid = $page.url.searchParams.get("project");
-    // TODO: Find a way to bind this state to the current URL query
     let selectedProjectUuid =
         !!defaultProjectUuid &&
         data.projects.some((p) => p.uuid === defaultProjectUuid)
