@@ -201,7 +201,6 @@ impl StorageService for KVStorageService {
 
         configs.push(YakManConfig {
             name: String::from(config_name),
-            description: String::from(""), // TODO: support descriptions?
             project_uuid: String::from(project_uuid),
             hidden: false,
         });
