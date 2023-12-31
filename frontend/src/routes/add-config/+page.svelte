@@ -12,11 +12,10 @@
 
     let name = "";
     let defaultProjectUuid = $page.url.searchParams.get("project");
-    let selectedProjectUuid =
-        !!defaultProjectUuid &&
-        data.projects.some((p) => p.uuid === defaultProjectUuid)
-            ? defaultProjectUuid
-            : data.projects[0].uuid;
+    let defaultProject =
+        data.projects.find((p) => p.uuid === defaultProjectUuid) ??
+        data.projects[0];
+    let selectedProjectUuid = defaultProject.uuid;
 
     async function onCreateConfig() {
         try {
