@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::error::YakManApiError;
+use crate::error::{SaveConfigInstanceError, YakManApiError};
 use crate::middleware::YakManPrinciple;
 use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
@@ -190,7 +190,16 @@ async fn update_new_instance(
             &creator_uuid,
         )
         .await
-        .map_err(|_| YakManApiError::server_error("failed to create instance"))?;
+        .map_err(|e| match e {
+            SaveConfigInstanceError::InvalidConfig => YakManApiError::bad_request("invalid config"),
+            SaveConfigInstanceError::InvalidInstance => {
+                YakManApiError::bad_request("invalid instance")
+            }
+            SaveConfigInstanceError::InvalidLabel => YakManApiError::bad_request("invalid label"),
+            SaveConfigInstanceError::StorageError { message: _ } => {
+                YakManApiError::server_error("failed to create instance")
+            }
+        })?;
     Ok(web::Json(RevisionPayload {
         revision: new_revsion,
     }))
