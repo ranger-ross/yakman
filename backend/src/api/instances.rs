@@ -178,10 +178,6 @@ async fn update_new_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    // TODO: do validation
-    // - labels are valid
-    // - not a duplicate?
-
     let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
     let new_revsion = service

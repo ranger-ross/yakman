@@ -183,6 +183,8 @@ pub enum SaveConfigInstanceError {
     InvalidConfig,
     #[error("Invalid instance")]
     InvalidInstance,
+    #[error("Invalid label")]
+    InvalidLabel,
     #[error("Error storing label: {message}")]
     StorageError { message: String },
 }

@@ -114,16 +114,8 @@ impl StorageService for KVStorageService {
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
-            // Validate labels exist
-            let all_labels = self.get_labels().await?;
-            for label in &labels {
-                if let Some(label_type) = all_labels.iter().find(|l| l.name == label.label_type) {
-                    if !label_type.options.iter().any(|opt| opt == &label.value) {
-                        return Err(CreateConfigInstanceError::InvalidLabel);
-                    }
-                } else {
-                    return Err(CreateConfigInstanceError::InvalidLabel);
-                }
+            if !self.validate_labels(&labels).await? {
+                return Err(CreateConfigInstanceError::InvalidLabel);
             }
 
             // Create new file with data
@@ -314,6 +306,10 @@ impl StorageService for KVStorageService {
             .iter_mut()
             .find(|inst| inst.instance == instance)
             .ok_or(SaveConfigInstanceError::InvalidInstance)?;
+
+        if !self.validate_labels(&labels).await? {
+            return Err(SaveConfigInstanceError::InvalidLabel);
+        }
 
         let revision_key = short_sha(&Uuid::new_v4().to_string());
         let data_key = Uuid::new_v4().to_string();
@@ -683,6 +679,24 @@ impl KVStorageService {
             None => self.adapter.get_configs().await?,
         };
         return Ok(configs);
+    }
+
+    /// Returns true if all labels exist and have valid values
+    async fn validate_labels(
+        &self,
+        labels: &Vec<YakManLabel>,
+    ) -> Result<bool, GenericStorageError> {
+        let all_labels = self.get_labels().await?;
+        for label in labels {
+            if let Some(label_type) = all_labels.iter().find(|l| l.name == label.label_type) {
+                if !label_type.options.iter().any(|opt| opt == &label.value) {
+                    return Ok(false);
+                }
+            } else {
+                return Ok(false);
+            }
+        }
+        return Ok(true);
     }
 }
 
