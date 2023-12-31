@@ -125,10 +125,6 @@ async fn create_new_instance(
 
     let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
-    // TODO: do validation
-    // - labels are valid
-    // - not a duplicate?
-
     match service
         .create_config_instance(&config_name, labels, &data, content_type, &creator_uuid)
         .await
@@ -136,6 +132,9 @@ async fn create_new_instance(
         Ok(instance) => Ok(web::Json(InstancePayload { instance: instance })),
         Err(CreateConfigInstanceError::NoConfigFound) => {
             Err(YakManApiError::bad_request("Invalid config name"))
+        }
+        Err(CreateConfigInstanceError::InvalidLabel) => {
+            Err(YakManApiError::bad_request("Invalid label"))
         }
         Err(CreateConfigInstanceError::StorageError { message: _ }) => {
             Err(YakManApiError::server_error("Failed to create config"))

@@ -165,6 +165,8 @@ impl From<GenericStorageError> for CreateLabelError {
 pub enum CreateConfigInstanceError {
     #[error("No config found")]
     NoConfigFound,
+    #[error("Invalid label")]
+    InvalidLabel,
     #[error("Error storing label: {message}")]
     StorageError { message: String },
 }

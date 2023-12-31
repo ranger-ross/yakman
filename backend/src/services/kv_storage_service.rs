@@ -114,6 +114,18 @@ impl StorageService for KVStorageService {
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
+            // Validate labels exist
+            let all_labels = self.get_labels().await?;
+            for label in &labels {
+                if let Some(label_type) = all_labels.iter().find(|l| l.name == label.label_type) {
+                    if !label_type.options.iter().any(|opt| opt == &label.value) {
+                        return Err(CreateConfigInstanceError::InvalidLabel);
+                    }
+                } else {
+                    return Err(CreateConfigInstanceError::InvalidLabel);
+                }
+            }
+
             // Create new file with data
             self.adapter
                 .save_instance_data(config_name, &data_key, data)
