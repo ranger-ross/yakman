@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::error::YakManApiError;
+use crate::error::{SaveConfigInstanceError, YakManApiError};
 use crate::middleware::YakManPrinciple;
 use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
@@ -125,10 +125,6 @@ async fn create_new_instance(
 
     let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
-    // TODO: do validation
-    // - labels are valid
-    // - not a duplicate?
-
     match service
         .create_config_instance(&config_name, labels, &data, content_type, &creator_uuid)
         .await
@@ -136,6 +132,9 @@ async fn create_new_instance(
         Ok(instance) => Ok(web::Json(InstancePayload { instance: instance })),
         Err(CreateConfigInstanceError::NoConfigFound) => {
             Err(YakManApiError::bad_request("Invalid config name"))
+        }
+        Err(CreateConfigInstanceError::InvalidLabel) => {
+            Err(YakManApiError::bad_request("Invalid label"))
         }
         Err(CreateConfigInstanceError::StorageError { message: _ }) => {
             Err(YakManApiError::server_error("Failed to create config"))
@@ -179,10 +178,6 @@ async fn update_new_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    // TODO: do validation
-    // - labels are valid
-    // - not a duplicate?
-
     let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
     let new_revsion = service
@@ -195,7 +190,16 @@ async fn update_new_instance(
             &creator_uuid,
         )
         .await
-        .map_err(|_| YakManApiError::server_error("failed to create instance"))?;
+        .map_err(|e| match e {
+            SaveConfigInstanceError::InvalidConfig => YakManApiError::bad_request("invalid config"),
+            SaveConfigInstanceError::InvalidInstance => {
+                YakManApiError::bad_request("invalid instance")
+            }
+            SaveConfigInstanceError::InvalidLabel => YakManApiError::bad_request("invalid label"),
+            SaveConfigInstanceError::StorageError { message: _ } => {
+                YakManApiError::server_error("failed to create instance")
+            }
+        })?;
     Ok(web::Json(RevisionPayload {
         revision: new_revsion,
     }))
