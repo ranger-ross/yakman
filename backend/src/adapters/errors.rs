@@ -1,5 +1,6 @@
 use std::string::FromUtf8Error;
 
+use actix_web::error;
 use aws_sdk_s3::error::SdkError;
 use thiserror::Error;
 
@@ -51,3 +52,5 @@ impl From<FromUtf8Error> for GenericStorageError {
         )
     }
 }
+
+impl error::ResponseError for GenericStorageError {}

@@ -3,7 +3,6 @@ extern crate dotenv;
 use crate::model::{YakManRole, YakManUserProjectRole};
 use crate::StateManager;
 use actix_web::{dev::ServiceRequest, web, Error};
-use log::info;
 
 use super::token::extract_access_token;
 
@@ -100,31 +99,32 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
         Ok(claims) => {
             let uuid = claims.uuid;
 
-            let details = state
+            if let Some(details) = state
                 .get_service()
                 .get_user_details(&uuid)
-                .await
-                .unwrap()
-                .unwrap(); // TODO: handle these unwraps
+                .await?
+            {
+                let mut global_roles: Vec<YakManRoleBinding> = details
+                    .global_roles
+                    .iter()
+                    .map(|p| YakManRoleBinding::GlobalRoleBinding(p.clone()))
+                    .collect();
 
-            let mut global_roles: Vec<YakManRoleBinding> = details
-                .global_roles
-                .iter()
-                .map(|p| YakManRoleBinding::GlobalRoleBinding(p.clone()))
-                .collect();
+                role_bindings.append(&mut global_roles);
 
-            role_bindings.append(&mut global_roles);
+                let mut project_role_bindings: Vec<YakManRoleBinding> = details
+                    .roles
+                    .into_iter()
+                    .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                    .collect();
 
-            let mut project_role_bindings: Vec<YakManRoleBinding> = details
-                .roles
-                .into_iter()
-                .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
-                .collect();
-
-            role_bindings.append(&mut project_role_bindings);
+                role_bindings.append(&mut project_role_bindings);
+            } else {
+                log::info!("user details not found");
+            }
         }
         Err(e) => {
-            info!("token invalid {e:?}");
+            log::info!("token invalid {e:?}");
         }
     }
 
