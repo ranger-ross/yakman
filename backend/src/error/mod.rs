@@ -143,8 +143,6 @@ pub enum CreateLabelError {
     DuplicateLabelError { name: String },
     #[error("Labels must have at least one option")]
     EmptyOptionsError,
-    #[error("Label prioity is invalid: {prioity}")]
-    InvalidPriorityError { prioity: i32 },
     #[error("Error storing label: {message}")]
     StorageError { message: String },
 }
@@ -154,9 +152,6 @@ impl CreateLabelError {
         CreateLabelError::DuplicateLabelError {
             name: String::from(name),
         }
-    }
-    pub fn invalid_priority_error(prioity: i32) -> CreateLabelError {
-        CreateLabelError::InvalidPriorityError { prioity: prioity }
     }
 }
 

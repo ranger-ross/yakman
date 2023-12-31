@@ -24,7 +24,6 @@ pub struct YakManConfig {
 pub struct LabelType {
     pub name: String, // Unique key
     pub description: String,
-    pub priority: i32,
     pub options: Vec<String>,
 }
 

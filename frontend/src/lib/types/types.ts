@@ -19,7 +19,6 @@ export type YakManConfig = z.infer<typeof YakManConfigSchema>;
 export const YakManLabelTypeSchema = z.object({
     name: z.string(),
     description: z.string(),
-    priority: z.number().int(),
     options: z.array(z.string()),
 });
 

@@ -8,7 +8,6 @@
     import { goto } from "$app/navigation";
 
     let name = "";
-    let prioity = "";
     let description = "";
     let options = "";
 
@@ -17,7 +16,6 @@
             const label: YakManLabelType = {
                 name: name,
                 description: description,
-                priority: parseInt(prioity),
                 options: options.split(",").filter((o) => !!o || o.length == 0),
             };
 
@@ -41,9 +39,6 @@
             />
         </div>
         <div class="mb-3">
-            <YakManInput label="Prioity" bind:value={prioity} placeholder="1" />
-        </div>
-        <div class="mb-3">
             <YakManInput
                 label="Description"
                 bind:value={description}
@@ -57,6 +52,11 @@
                 placeholder="dev,prod"
             />
         </div>
-        <YakManButton on:click={onCreateLabel}>Create</YakManButton>
+        <YakManButton
+            on:click={onCreateLabel}
+            disabled={name.length === 0 || options.length == 0}
+        >
+            Create
+        </YakManButton>
     </YakManCard>
 </div>
