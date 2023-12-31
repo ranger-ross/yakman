@@ -59,10 +59,11 @@ impl YakManTokenService {
         let refresh_token_encryption_key = env::var("YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY")
             .map_err(|e| JwtServiceCreateError::FailedToLoadEncryptionKey(Box::new(e)))?;
 
-        let default_access_token_ttl_seconds: i64 = 60 * 60;
         let access_token_time_to_live_seconds = env::var("YAKMAN_ACCESS_TOKEN_TTL_SECONDS")
-            .map(|v| v.parse::<i64>().unwrap_or(default_access_token_ttl_seconds))
-            .unwrap_or(default_access_token_ttl_seconds);
+            .map(|v| v.parse::<i64>().ok())
+            .ok()
+            .flatten()
+            .unwrap_or(60 * 60);
 
         Ok(YakManTokenService {
             access_token_signing_key: String::from(access_token_signing_key),
