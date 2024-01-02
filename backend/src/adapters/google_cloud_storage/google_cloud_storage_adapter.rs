@@ -2,7 +2,7 @@ use super::{
     storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
     GenericStorageError, KVStorageAdapter,
 };
-use crate::adapters::google_cloud_storage::storage_types::RevisionJson;
+use crate::{adapters::google_cloud_storage::storage_types::RevisionJson, model::YakManApiKey};
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
@@ -281,6 +281,14 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         let data_file_path = self.get_user_file_path();
         self.put_object(&data_file_path, data).await?;
         Ok(())
+    }
+
+    async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
+        todo!();
+    }
+
+    async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+        todo!();
     }
 }
 

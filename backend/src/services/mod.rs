@@ -9,7 +9,7 @@ use crate::{
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManLabel,
-        YakManProject, YakManUser, YakManUserDetails,
+        YakManProject, YakManUser, YakManUserDetails, YakManApiKey,
     },
 };
 use async_trait::async_trait;
@@ -145,6 +145,10 @@ pub trait StorageService: Sync + Send {
     ) -> Result<(), GenericStorageError>;
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
+    
+    async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
+
+    async fn save_api_key(&self, api_Key: YakManApiKey) -> Result<(), GenericStorageError>;
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError>;
 }

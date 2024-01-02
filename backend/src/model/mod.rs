@@ -74,6 +74,16 @@ pub struct ConfigInstanceRevision {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct YakManApiKey {
+    pub id: String,
+    pub hash: String,
+    pub project_uuid: String,
+    pub role: YakManRole,
+    pub created_at: i64,
+    pub created_by_uuid: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct YakManSettings {
     pub version: String,
 }

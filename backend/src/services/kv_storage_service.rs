@@ -9,7 +9,7 @@ use crate::{
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
         RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManRole, YakManUser,
-        YakManUserDetails,
+        YakManUserDetails, YakManApiKey,
     },
 };
 use async_trait::async_trait;
@@ -661,6 +661,22 @@ impl StorageService for KVStorageService {
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         return self.adapter.save_users(users).await;
+    }
+
+    async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
+        return self.adapter.get_api_keys().await;
+    }
+
+    async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError> {
+        let mut api_keys = self.get_api_keys().await?; 
+
+        if let Some(index) = api_keys.iter().position(|k| k.id == api_key.id) {
+            api_keys[index] = api_key;
+        } else {
+            api_keys.push(api_key);
+        }
+
+        return self.adapter.save_api_keys(api_keys).await;
     }
 }
 

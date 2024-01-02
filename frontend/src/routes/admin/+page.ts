@@ -3,6 +3,7 @@ import type { PageLoad } from "../$types";
 
 export const load: PageLoad = async (event) => {
     return {
-        users: await trpc(event).admin.fetchUsers.query()
+        users: await trpc(event).admin.fetchUsers.query(),
+        apiKeys: await trpc(event).admin.fetchApiKeys.query()
     }
 };

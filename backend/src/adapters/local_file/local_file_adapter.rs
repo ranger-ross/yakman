@@ -8,14 +8,14 @@ use async_trait::async_trait;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails,
+    YakManUserDetails, YakManApiKey,
 };
 use log::{error, info};
 
 use crate::adapters::local_file::storage_types::RevisionJson;
 
 use super::{
-    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
+    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson, ApiKeysJson},
     GenericStorageError, KVStorageAdapter,
 };
 
@@ -241,6 +241,14 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
                 .expect("Failed to create users file");
         }
 
+        let api_key_file = self.get_api_key_file_path();
+        if !Path::new(&api_key_file).is_file() {
+            self.save_api_keys(vec![])
+                .await
+                .expect("Failed to create api-key file");
+        }
+
+
         Ok(())
     }
 
@@ -346,6 +354,21 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Write::write_all(&mut data_file, data.as_bytes())?;
         Ok(())
     }
+
+    async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
+        let path = self.get_api_key_file_path();
+        let data = fs::read_to_string(path)?;
+        let data: ApiKeysJson = serde_json::from_str(&data)?;
+        return Ok(data.api_keys);
+    }
+
+    async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&ApiKeysJson { api_keys: api_keys })?;
+        let data_file_path = self.get_api_key_file_path();
+        let mut data_file = File::create(&data_file_path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+        Ok(())
+    }
 }
 
 // Helper functions
@@ -369,6 +392,11 @@ impl LocalFileStorageAdapter {
     fn get_configs_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/configs.json");
+    }
+
+    fn get_api_key_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/api-keys.json");
     }
 
     fn get_user_file_path(&self) -> String {

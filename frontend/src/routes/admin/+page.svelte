@@ -45,4 +45,29 @@
         <br />
         <YakManButton on:click={createUser}>Create user</YakManButton>
     </YakManCard>
+
+    <YakManCard>
+        <h2 class="text-xl font-bold">Api Keys</h2>
+
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <th>ID</th>
+                <th>Project UUID</th>
+                <th>Role</th>
+                <th>Created At</th>
+                <th>Created By</th>
+            </thead>
+            <tbody>
+                {#each data.apiKeys ?? [] as apiKey}
+                    <tr>
+                        <td>{apiKey.id}</td>
+                        <td>{apiKey.project_uuid}</td>
+                        <td>{apiKey.role}</td>
+                        <td>{apiKey.created_at}</td>
+                        <td>{apiKey.created_by_uuid}</td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    </YakManCard>
 </div>

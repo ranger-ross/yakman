@@ -156,6 +156,7 @@ async fn main() -> std::io::Result<()> {
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)
+            .service(api::admin::get_api_keys)
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)

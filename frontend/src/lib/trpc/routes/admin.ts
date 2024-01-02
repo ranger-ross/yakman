@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { t } from "../t";
-import type { YakManUser } from "$lib/types/types";
+import type { YakManApiKey, YakManUser } from "$lib/types/types";
 import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 
 const BASE_URL = getYakManBaseApiUrl();
@@ -33,7 +33,14 @@ export const admin = t.router({
             if (response.status != 200) {
                 throw new Error(await response.text())
             }
-        })
+        }),
+    fetchApiKeys: t.procedure
+        .query(async ({ ctx }): Promise<YakManApiKey[]> => {
+            const response = await fetch(`${BASE_URL}/admin/v1/api-keys`, {
+                headers: createYakManAuthHeaders(ctx.accessToken)
+            });
+            return await response.json();
+        }),
 });
 
 

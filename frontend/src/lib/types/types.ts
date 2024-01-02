@@ -72,3 +72,13 @@ export const YakManUserSchema = z.object({
 
 export type YakManUser = z.infer<typeof YakManUserSchema>;
 
+export const YakManApiKeySchema = z.object({
+    id: z.string(),
+    project_uuid: z.string(),
+    role: z.string(),
+    created_at: z.number().int(),
+    created_by_uuid: z.string(),
+});
+
+export type YakManApiKey = z.infer<typeof YakManApiKeySchema>;
+
