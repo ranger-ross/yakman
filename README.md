@@ -47,26 +47,30 @@ First you will need Cargo, Node 20, and PNPM installed:
 
 1. Create a `.env` file with the following values in the root of the project
     ```sh
+    YAKMAN_HOST=127.0.0.1
+    YAKMAN_PORT=8000
     YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
     RUST_LOG=info
-    YAKMAN_TOKEN_SECRET=12345
-    YAKMAN_DEFAULT_ADMIN_USER_EMAIL=<your-email>
+    
+    YAKMAN_ACCESS_TOKEN_SIGNING_KEY=12345
+    YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY='a secret key12345678123456781231'
+    YAKMAN_DEFAULT_ADMIN_USER_EMAIL=john.smith@gmail.com
 
-    # Google OAuth
-    YAKMAN_OAUTH_PROVIDER=GOOGLE
-    YAKMAN_OAUTH_REDIRECT_URL=http://127.0.0.1:8080/oauth-callback
-    YAKMAN_OAUTH_TOKEN_URL=https://www.googleapis.com/oauth2/v3/token
-    YAKMAN_OAUTH_ISSUER_URL=https://accounts.google.com
+    # Mock OAuth server (docker)
+    YAKMAN_OAUTH_TOKEN_URL=http://localhost:4011/connect/token
+    YAKMAN_OAUTH_AUTH_URL=http://localhost:4011/connect/authorize
+    YAKMAN_OAUTH_REDIRECT_URL=http://localhost:5173/oauth-callback
+    YAKMAN_OAUTH_ISSUER_URL=http://localhost:4011
+    YAKMAN_OAUTH_CLIENT_ID=yakman-mock-client-id
+    YAKMAN_OAUTH_CLIENT_SECRET=yakman-mock-client-secret
     YAKMAN_OAUTH_SCOPES=email,profile,openid
-    # Be sure to add values for these
-    YAKMAN_OAUTH_CLIENT_ID=
-    YAKMAN_OAUTH_CLIENT_SECRET=
     ```
 1. Create  a `.env` file with the following values at `./frontend/.env`
    ```sh
    YAKMAN_API_URL=http://127.0.0.1:8000
    ```
 1. Run `make install` to install the PNPM dependencies for the frontend
+1. Run `make mock-auth` to start a mock OAuth server to login.
 1. Run `make fd` to start the frontend server. (where 'fd' stands for 'frontend-dev')
 1. Run `make bd` to start the backend server. (where 'bd' stands for 'backend-dev')
 
