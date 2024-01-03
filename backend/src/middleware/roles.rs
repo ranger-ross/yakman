@@ -103,7 +103,12 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
                     None => return Ok(vec![]),
                 };
 
-                if let Some(api_key) = state.get_service().get_api_key(&key_id).await.unwrap() {
+                if let Some(api_key) = state
+                    .get_service()
+                    .get_api_key_by_id(&key_id)
+                    .await
+                    .unwrap()
+                {
                     Ok(vec![YakManRoleBinding::ProjectRoleBinding(
                         YakManUserProjectRole {
                             project_uuid: api_key.project_uuid,

@@ -73,7 +73,7 @@ pub struct ConfigInstanceRevision {
     pub content_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct YakManApiKey {
     pub id: String,
     pub hash: String,

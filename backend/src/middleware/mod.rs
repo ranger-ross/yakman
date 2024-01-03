@@ -81,10 +81,14 @@ where
                 let token_service = state.get_token_service();
 
                 if token_service.is_api_key(&token) {
-                    let api_keys = state.get_service().get_api_keys().await.unwrap();
                     let hash = sha256::digest(&token);
 
-                    if let Some(api_key) = api_keys.iter().find(|key| key.hash == hash) {
+                    if let Some(api_key) = state
+                        .get_service()
+                        .get_api_key_by_hash(&hash)
+                        .await
+                        .unwrap()
+                    {
                         api_key_id = Some(api_key.id.to_string());
                     }
                 } else {

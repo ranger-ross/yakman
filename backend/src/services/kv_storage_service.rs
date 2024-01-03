@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::StorageService;
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
@@ -15,10 +17,15 @@ use crate::{
 use async_trait::async_trait;
 use chrono::Utc;
 use log::info;
+use moka::sync::{Cache, CacheBuilder};
 use uuid::Uuid;
 
 pub struct KVStorageService {
     pub adapter: Box<dyn KVStorageAdapter>,
+    /// The cache key is the ID as a string
+    pub api_key_id_cache: Cache<String, YakManApiKey>,
+    /// The cache key is the token hash as a string
+    pub api_key_hash_cache: Cache<String, YakManApiKey>,
 }
 
 #[async_trait]
@@ -664,12 +671,35 @@ impl StorageService for KVStorageService {
     }
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
-        return self.adapter.get_api_keys().await;
+        let api_keys = self.adapter.get_api_keys().await?;
+
+        // Update caches
+        for key in &api_keys {
+            self.api_key_id_cache
+                .insert(key.id.to_string(), key.clone());
+            self.api_key_hash_cache
+                .insert(key.hash.to_string(), key.clone());
+        }
+
+        return Ok(api_keys);
     }
 
-    async fn get_api_key(&self, id: &str) -> Result<Option<YakManApiKey>, GenericStorageError> {
-        let api_keys = self.get_api_keys().await?;
+    async fn get_api_key_by_id(&self, id: &str) -> Result<Option<YakManApiKey>, GenericStorageError> {
+        if let Some(key) = self.api_key_id_cache.get(id) {
+            return Ok(Some(key));
+        }
+
+        let api_keys: Vec<YakManApiKey> = self.get_api_keys().await?;
         return Ok(api_keys.into_iter().find(|key| key.id == id));
+    }
+
+    async fn get_api_key_by_hash(&self, hash: &str) -> Result<Option<YakManApiKey>, GenericStorageError> {
+        if let Some(key) = self.api_key_hash_cache.get(hash) {
+            return Ok(Some(key));
+        }
+
+        let api_keys: Vec<YakManApiKey> = self.get_api_keys().await?;
+        return Ok(api_keys.into_iter().find(|key| key.hash == hash));
     }
 
     async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError> {
@@ -686,6 +716,21 @@ impl StorageService for KVStorageService {
 }
 
 impl KVStorageService {
+    pub fn new(adapter: Box<dyn KVStorageAdapter>) -> KVStorageService {
+        let api_key_id_cache = CacheBuilder::new(10_000)
+            .time_to_live(Duration::from_secs(60))
+            .build();
+        let api_key_hash_cache = CacheBuilder::new(10_000)
+            .time_to_live(Duration::from_secs(60))
+            .build();
+
+        KVStorageService {
+            adapter: adapter,
+            api_key_id_cache,
+            api_key_hash_cache,
+        }
+    }
+
     /// Gets all configs including hidden configs
     async fn get_all_configs(
         &self,

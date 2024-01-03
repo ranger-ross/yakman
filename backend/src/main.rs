@@ -204,15 +204,15 @@ async fn create_service() -> impl StorageService {
                     .context("Failed to initialize Redis adapter")
                     .unwrap(),
             );
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "S3" => {
             let adapter = Box::new(AwsS3StorageAdapter::from_env().await);
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "GOOGLE_CLOUD_STORAGE" => {
             let adapter = Box::new(
@@ -221,11 +221,11 @@ async fn create_service() -> impl StorageService {
                     .context("Failed to initialize Google Cloud Storage adapter")
                     .unwrap(),
             );
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "IN_MEMORY" => {
             let adapter = Box::new(InMemoryStorageAdapter::new());
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
     };
