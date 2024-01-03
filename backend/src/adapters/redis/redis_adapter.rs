@@ -4,8 +4,8 @@ use std::env;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails, YakManApiKey,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
+    YakManUser, YakManUserDetails,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -203,11 +203,15 @@ impl KVStorageAdapter for RedisStorageAdapter {
     }
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
-        todo!();
+        let mut connection = self.get_connection()?;
+        let data: String = connection.get(self.get_api_keys_key())?;
+        return Ok(serde_json::from_str(&data)?);
     }
 
     async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
-        todo!();
+        let mut connection = self.get_connection()?;
+        let _: () = connection.set(self.get_api_keys_key(), serde_json::to_string(&api_keys)?)?;
+        Ok(())
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
@@ -237,6 +241,13 @@ impl KVStorageAdapter for RedisStorageAdapter {
             let users: Vec<YakManUser> = vec![];
             let _: () = connection.set(users_key, serde_json::to_string(&users)?)?;
             info!("Initialized Users Redis Key");
+        }
+
+        let api_key_key = self.get_users_key();
+        if !connection.exists(&api_key_key)? {
+            let api_keys: Vec<YakManApiKey> = vec![];
+            let _: () = connection.set(api_key_key, serde_json::to_string(&api_keys)?)?;
+            info!("Initialized ApiKeys Redis Key");
         }
 
         Ok(())
@@ -326,6 +337,10 @@ impl RedisStorageAdapter {
 
     fn get_users_key(&self) -> String {
         format!("{REDIS_PREFIX}_USERS")
+    }
+
+    fn get_api_keys_key(&self) -> String {
+        return format!("{REDIS_PREFIX}_API_KEYS");
     }
 
     fn get_config_metadata_key(&self, config_name: &str) -> String {
