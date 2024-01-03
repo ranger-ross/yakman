@@ -41,6 +41,30 @@ export const admin = t.router({
             });
             return await response.json();
         }),
+    createApiKey: t.procedure
+        .input(z.object({
+            projectUuid: z.string(),
+            role: z.string()
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const response = await fetch(`${BASE_URL}/admin/v1/api-keys`, {
+                method: 'PUT',
+                headers: {
+                    ...createYakManAuthHeaders(ctx.accessToken),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'project_uuid': input.projectUuid,
+                    'role': input.role
+                })
+            });
+            if (response.status != 200) {
+                throw new Error(await response.text())
+            }
+            const json = await response.json();
+
+            return json.api_key as string
+        }),
 });
 
 

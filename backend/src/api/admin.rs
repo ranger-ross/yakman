@@ -1,4 +1,5 @@
 use crate::error::YakManApiError;
+use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
@@ -9,6 +10,8 @@ use actix_web::{
 };
 use actix_web_grants::permissions::AuthDetails;
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 /// Gets users
@@ -71,18 +74,6 @@ pub async fn get_api_keys(
 
     let mut api_keys = state.get_service().get_api_keys().await?;
 
-    // let now = Utc::now().timestamp_millis();
-    // let ak = YakManApiKey {
-    //     id: Uuid::new_v4().to_string(),
-    //     hash: "5fd924625f6ab16a19cc9807c7c506ae1813490e4ba675f843d5a10e0baacdb8".to_string(),
-    //     project_uuid: "6a4ced76-f65c-43aa-9d33-5027c79bda71".to_string(),
-    //     role: YakManRole::Viewer,
-    //     created_at: now,
-    //     created_by_uuid: "fda58896-e0ac-49e9-8a46-8973610db9ae".to_string(),
-    // };
-
-    // state.service.save_api_key(ak).await.unwrap();
-
     // Avoid exposing the hash outside of the API
     api_keys = api_keys
         .into_iter()
@@ -95,4 +86,68 @@ pub async fn get_api_keys(
     return Ok(web::Json(api_keys));
 }
 
-// TODO: Create API test to make sure that api key hashes are not leaked
+const API_KEY_PREFIX: &str = "YM-";
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct CreateApiKeyRequest {
+    pub project_uuid: String,
+    pub role: YakManRole,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct CreateApiKeyResponse {
+    pub api_key: String,
+}
+
+/// Create an api key
+#[utoipa::path(responses((status = 200, body = CreateApiKeyResponse)))]
+#[put("/admin/v1/api-keys")]
+pub async fn create_api_keys(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    state: web::Data<StateManager>,
+    principle: YakManPrinciple,
+    request: web::Json<CreateApiKeyRequest>,
+) -> Result<impl Responder, YakManApiError> {
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+
+    if !is_admin {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let user_uuid = match &principle.user_uuid {
+        Some(uuid) => uuid,
+        None => return Err(YakManApiError::forbidden()),
+    };
+
+    let projects = state.get_service().get_projects().await?;
+    if !projects
+        .iter()
+        .any(|p| p.uuid == request.project_uuid.to_string())
+    {
+        return Err(YakManApiError::bad_request("Invalid project"));
+    }
+
+    let now = Utc::now().timestamp_millis();
+    let new_api_key = format!("{API_KEY_PREFIX}{}", Uuid::new_v4().to_string());
+
+    let ak = YakManApiKey {
+        id: Uuid::new_v4().to_string(),
+        hash: sha256::digest(&new_api_key),
+        project_uuid: request.project_uuid.to_string(),
+        role: request.role.clone(),
+        created_at: now,
+        created_by_uuid: user_uuid.to_string(),
+    };
+
+    state.service.save_api_key(ak).await.unwrap();
+
+    return Ok(web::Json(CreateApiKeyResponse {
+        api_key: new_api_key,
+    }));
+}
+
+#[cfg(test)]
+mod tests {
+
+    // TODO: Create API test to make sure that api key hashes are not leaked
+}
