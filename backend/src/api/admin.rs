@@ -138,7 +138,7 @@ pub async fn create_api_keys(
         created_by_uuid: user_uuid.to_string(),
     };
 
-    state.service.save_api_key(ak).await.unwrap();
+    state.service.save_api_key(ak).await?;
 
     return Ok(web::Json(CreateApiKeyResponse {
         api_key: new_api_key,
