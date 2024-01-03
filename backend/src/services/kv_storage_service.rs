@@ -684,7 +684,10 @@ impl StorageService for KVStorageService {
         return Ok(api_keys);
     }
 
-    async fn get_api_key_by_id(&self, id: &str) -> Result<Option<YakManApiKey>, GenericStorageError> {
+    async fn get_api_key_by_id(
+        &self,
+        id: &str,
+    ) -> Result<Option<YakManApiKey>, GenericStorageError> {
         if let Some(key) = self.api_key_id_cache.get(id) {
             return Ok(Some(key));
         }
@@ -693,7 +696,10 @@ impl StorageService for KVStorageService {
         return Ok(api_keys.into_iter().find(|key| key.id == id));
     }
 
-    async fn get_api_key_by_hash(&self, hash: &str) -> Result<Option<YakManApiKey>, GenericStorageError> {
+    async fn get_api_key_by_hash(
+        &self,
+        hash: &str,
+    ) -> Result<Option<YakManApiKey>, GenericStorageError> {
         if let Some(key) = self.api_key_hash_cache.get(hash) {
             return Ok(Some(key));
         }
@@ -709,6 +715,16 @@ impl StorageService for KVStorageService {
             api_keys[index] = api_key;
         } else {
             api_keys.push(api_key);
+        }
+
+        return self.adapter.save_api_keys(api_keys).await;
+    }
+
+    async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError> {
+        let mut api_keys = self.get_api_keys().await?;
+
+        if let Some(index) = api_keys.iter().position(|k| k.id == id) {
+            api_keys.remove(index);
         }
 
         return self.adapter.save_api_keys(api_keys).await;

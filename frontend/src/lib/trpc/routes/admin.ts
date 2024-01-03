@@ -65,6 +65,22 @@ export const admin = t.router({
 
             return json.api_key as string
         }),
+    deleteApiKey: t.procedure
+        .input(z.object({
+            id: z.string(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const response = await fetch(`${BASE_URL}/admin/v1/api-keys/${input.id}`, {
+                method: 'DELETE',
+                headers: {
+                    ...createYakManAuthHeaders(ctx.accessToken),
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.status != 200) {
+                throw new Error(await response.text())
+            }
+        }),
 });
 
 

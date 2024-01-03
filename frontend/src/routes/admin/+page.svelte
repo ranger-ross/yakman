@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
+    import { goto, invalidateAll } from "$app/navigation";
     import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
@@ -44,6 +44,13 @@
         });
         newApiKey = apiKey;
     }
+
+    async function deleteApiKey(id: string) {
+        await trpc($page).admin.deleteApiKey.mutate({
+            id: id,
+        });
+        invalidateAll();
+    }
 </script>
 
 <div class="container mx-auto">
@@ -65,7 +72,7 @@
 
         <table class="min-w-full divide-y divide-gray-200">
             <thead>
-                {#each ["ID", "Project", "Role", "Created By", "Created At"] as col}
+                {#each ["ID", "Project", "Role", "Created By", "Created At", ""] as col}
                     <th class="text-left">{col}</th>
                 {/each}
             </thead>
@@ -79,6 +86,13 @@
                         <td>
                             {apiKey.createdAt.toLocaleDateString()}
                             {apiKey.createdAt.toLocaleTimeString()}
+                        </td>
+                        <td>
+                            <YakManButton
+                                on:click={() => deleteApiKey(apiKey.id)}
+                            >
+                                Delete
+                            </YakManButton>
                         </td>
                     </tr>
                 {/each}

@@ -4,7 +4,7 @@ use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
-use actix_web::Responder;
+use actix_web::{delete, Responder};
 use actix_web::{
     get, put,
     web::{self, Json},
@@ -143,6 +143,26 @@ pub async fn create_api_keys(
     return Ok(web::Json(CreateApiKeyResponse {
         api_key: new_api_key,
     }));
+}
+
+/// Revoke an API key
+#[utoipa::path(responses((status = 200, body = String)))]
+#[delete("/admin/v1/api-keys/{id}")]
+pub async fn delete_api_key(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    state: web::Data<StateManager>,
+    path: web::Path<String>,
+) -> Result<impl Responder, YakManApiError> {
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+
+    if !is_admin {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let id = path.into_inner();
+    state.get_service().delete_api_key(&id).await?;
+
+    return Ok(web::Json(()));
 }
 
 #[cfg(test)]

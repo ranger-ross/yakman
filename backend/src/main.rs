@@ -158,6 +158,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::admin::create_yakman_user)
             .service(api::admin::get_api_keys)
             .service(api::admin::create_api_keys)
+            .service(api::admin::delete_api_key)
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)
@@ -260,9 +261,7 @@ mod test_utils {
     pub async fn test_state_manager() -> Result<StateManager> {
         let adapter = InMemoryStorageAdapter::new();
         adapter.initialize_yakman_storage().await?;
-        let service: KVStorageService = KVStorageService {
-            adapter: Box::new(adapter),
-        };
+        let service: KVStorageService = KVStorageService::new(Box::new(adapter));
 
         let token_service = MockTokenService::new();
         let oauth_service = MockOauthService::new();
