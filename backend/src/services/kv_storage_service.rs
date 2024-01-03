@@ -8,8 +8,8 @@ use crate::{
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
-        RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManRole, YakManUser,
-        YakManUserDetails, YakManApiKey,
+        RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManProject, YakManRole,
+        YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -667,8 +667,13 @@ impl StorageService for KVStorageService {
         return self.adapter.get_api_keys().await;
     }
 
+    async fn get_api_key(&self, id: &str) -> Result<Option<YakManApiKey>, GenericStorageError> {
+        let api_keys = self.get_api_keys().await?;
+        return Ok(api_keys.into_iter().find(|key| key.id == id));
+    }
+
     async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError> {
-        let mut api_keys = self.get_api_keys().await?; 
+        let mut api_keys = self.get_api_keys().await?;
 
         if let Some(index) = api_keys.iter().position(|k| k.id == api_key.id) {
             api_keys[index] = api_key;

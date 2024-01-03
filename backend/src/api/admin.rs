@@ -1,3 +1,4 @@
+use crate::auth::token::API_KEY_PREFIX;
 use crate::error::YakManApiError;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
@@ -85,8 +86,6 @@ pub async fn get_api_keys(
 
     return Ok(web::Json(api_keys));
 }
-
-const API_KEY_PREFIX: &str = "YM-";
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateApiKeyRequest {

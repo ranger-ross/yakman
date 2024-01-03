@@ -18,6 +18,7 @@ use self::token::extract_access_token;
 #[derive(Debug, Clone)]
 pub struct YakManPrinciple {
     pub user_uuid: Option<String>,
+    pub api_key_id: Option<String>,
 }
 
 impl FromRequest for YakManPrinciple {
@@ -74,19 +75,32 @@ where
 
         Box::pin(async move {
             let mut user_uuid: Option<String> = None;
+            let mut api_key_id: Option<String> = None;
             let state = req.app_data::<web::Data<StateManager>>().unwrap();
             if let Some(token) = extract_access_token(&req) {
-                match state.get_token_service().validate_access_token(&token) {
-                    Ok(claims) => {
-                        let uuid = claims.uuid;
-                        user_uuid = Some(uuid);
+                let token_service = state.get_token_service();
+
+                if token_service.is_api_key(&token) {
+                    let api_keys = state.get_service().get_api_keys().await.unwrap();
+                    let hash = sha256::digest(&token);
+
+                    if let Some(api_key) = api_keys.iter().find(|key| key.hash == hash) {
+                        api_key_id = Some(api_key.id.to_string());
                     }
-                    Err(_) => (),
+                } else {
+                    match token_service.validate_access_token(&token) {
+                        Ok(claims) => {
+                            let uuid = claims.uuid;
+                            user_uuid = Some(uuid);
+                        }
+                        Err(_) => (),
+                    }
                 }
             }
 
             req.extensions_mut().insert(YakManPrinciple {
                 user_uuid: user_uuid,
+                api_key_id: api_key_id,
             });
 
             let res = svc.call(req).await?;

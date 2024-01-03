@@ -148,7 +148,9 @@ pub trait StorageService: Sync + Send {
     
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 
-    async fn save_api_key(&self, api_Key: YakManApiKey) -> Result<(), GenericStorageError>;
+    async fn get_api_key(&self, id: &str) -> Result<Option<YakManApiKey>, GenericStorageError>;
+
+    async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError>;
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError>;
 }

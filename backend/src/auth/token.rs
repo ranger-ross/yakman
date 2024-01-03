@@ -18,6 +18,8 @@ use std::{
 };
 use thiserror::Error;
 
+pub const API_KEY_PREFIX: &str = "YM-";
+
 #[cfg_attr(test, automock)]
 pub trait TokenService: Sync + Send {
     /// Creates a JWT token and returns the token as a string and the expiration timestamp in unix milliseconds
@@ -35,6 +37,8 @@ pub trait TokenService: Sync + Send {
     ) -> Result<String, RefreshTokenDecryptError>;
 
     fn validate_access_token(&self, token: &str) -> Result<YakManJwtClaims, JwtValidationError>;
+
+    fn is_api_key(&self, token: &str) -> bool;
 }
 
 pub struct YakManTokenService {
@@ -138,6 +142,11 @@ impl TokenService for YakManTokenService {
 
         return Ok(claims);
     }
+
+    fn is_api_key(&self, token: &str) -> bool {
+        return token.starts_with(API_KEY_PREFIX);
+    }
+
 }
 
 #[derive(Error, Debug)]

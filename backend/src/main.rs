@@ -138,10 +138,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
-            .wrap(YakManPrincipleTransformer)
             .wrap(Etag::default())
             .wrap(Logger::new("%s %r"))
             .wrap(GrantsMiddleware::with_extractor(extract_roles))
+            .wrap(YakManPrincipleTransformer)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
