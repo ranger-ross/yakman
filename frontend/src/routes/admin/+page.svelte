@@ -109,6 +109,9 @@
 
         <YakManSelect label="Role" bind:value={newApiKeyRole}>
             <option value="Viewer">Viewer</option>
+            <option value="Operator">Operator</option>
+            <option value="Approver">Approver</option>
+            <option value="Admin">Admin</option>
         </YakManSelect>
 
         <div class="mt-2">
