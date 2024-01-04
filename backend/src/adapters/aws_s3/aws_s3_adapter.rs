@@ -1,8 +1,8 @@
 use super::{
-    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson},
+    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson, ApiKeysJson},
     GenericStorageError, KVStorageAdapter,
 };
-use crate::adapters::aws_s3::storage_types::RevisionJson;
+use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
@@ -190,6 +190,13 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
                 .expect("Failed to create users file");
         }
 
+        let api_key_file = self.get_api_key_file_path();
+        if !self.object_exists(&api_key_file).await {
+            self.save_api_keys(vec![])
+                .await
+                .expect("Failed to create api-key file");
+        }
+
         Ok(())
     }
 
@@ -276,6 +283,20 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         self.put_object(&data_file_path, data).await?;
         Ok(())
     }
+
+    async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
+        let path = self.get_api_key_file_path();
+        let data = self.get_object(&path).await?;
+        let user_data: ApiKeysJson = serde_json::from_str(&data)?;
+        return Ok(user_data.api_keys);
+    }
+
+    async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&ApiKeysJson { api_keys: api_keys })?;
+        let data_file_path = self.get_api_key_file_path();
+        self.put_object(&data_file_path, data).await?;
+        Ok(())
+    }
 }
 
 // Helper functions
@@ -308,6 +329,11 @@ impl AwsS3StorageAdapter {
     fn get_instance_revisions_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instance-revisions");
+    }
+
+    fn get_api_key_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/api-keys.json");
     }
 
     fn get_config_instance_dir(&self) -> String {

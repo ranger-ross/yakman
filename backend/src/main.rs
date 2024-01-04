@@ -138,10 +138,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
-            .wrap(YakManPrincipleTransformer)
             .wrap(Etag::default())
             .wrap(Logger::new("%s %r"))
             .wrap(GrantsMiddleware::with_extractor(extract_roles))
+            .wrap(YakManPrincipleTransformer)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
@@ -156,6 +156,9 @@ async fn main() -> std::io::Result<()> {
             // Admin
             .service(api::admin::get_yakman_users)
             .service(api::admin::create_yakman_user)
+            .service(api::admin::get_api_keys)
+            .service(api::admin::create_api_key)
+            .service(api::admin::delete_api_key)
             // Configs
             .service(api::configs::get_configs)
             .service(api::configs::create_config)
@@ -202,15 +205,15 @@ async fn create_service() -> impl StorageService {
                     .context("Failed to initialize Redis adapter")
                     .unwrap(),
             );
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "LOCAL_FILE_SYSTEM" => {
             let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "S3" => {
             let adapter = Box::new(AwsS3StorageAdapter::from_env().await);
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "GOOGLE_CLOUD_STORAGE" => {
             let adapter = Box::new(
@@ -219,11 +222,11 @@ async fn create_service() -> impl StorageService {
                     .context("Failed to initialize Google Cloud Storage adapter")
                     .unwrap(),
             );
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         "IN_MEMORY" => {
             let adapter = Box::new(InMemoryStorageAdapter::new());
-            KVStorageService { adapter: adapter }
+            KVStorageService::new(adapter)
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
     };
@@ -258,9 +261,7 @@ mod test_utils {
     pub async fn test_state_manager() -> Result<StateManager> {
         let adapter = InMemoryStorageAdapter::new();
         adapter.initialize_yakman_storage().await?;
-        let service: KVStorageService = KVStorageService {
-            adapter: Box::new(adapter),
-        };
+        let service: KVStorageService = KVStorageService::new(Box::new(adapter));
 
         let token_service = MockTokenService::new();
         let oauth_service = MockOauthService::new();

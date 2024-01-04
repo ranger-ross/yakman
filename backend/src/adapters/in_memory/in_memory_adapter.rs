@@ -5,8 +5,8 @@ use futures_util::lock::Mutex;
 use serde::de::DeserializeOwned;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
+    YakManUser, YakManUserDetails,
 };
 use log::info;
 
@@ -204,6 +204,18 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         Ok(())
     }
 
+    async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
+        let storage = self.storage.lock().await;
+        let data = storage.get(&self.get_api_keys_key()).unwrap();
+        return Ok(serde_json::from_str(data)?);
+    }
+
+    async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+        self.insert(self.get_api_keys_key(), serde_json::to_string(&api_keys)?)
+            .await;
+        Ok(())
+    }
+
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let configs_key = self.get_configs_key();
         if !self.contains_key(&configs_key).await {
@@ -230,6 +242,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
             let users: Vec<YakManUser> = vec![];
             self.insert(users_key, serde_json::to_string(&users)?).await;
             info!("Initialized Users Key");
+        }
+
+        let api_key_key = self.get_api_keys_key();
+        if !self.contains_key(&api_key_key).await {
+            let api_keys: Vec<YakManApiKey> = vec![];
+            self.insert(api_key_key, serde_json::to_string(&api_keys)?)
+                .await;
+            info!("Initialized API keys");
         }
 
         Ok(())
@@ -275,6 +295,10 @@ impl InMemoryStorageAdapter {
 
     fn get_users_key(&self) -> String {
         format!("USERS")
+    }
+
+    fn get_api_keys_key(&self) -> String {
+        return format!("API_KEYS");
     }
 
     fn get_config_metadata_key(&self, config_name: &str) -> String {

@@ -76,12 +76,27 @@ where
             let mut user_uuid: Option<String> = None;
             let state = req.app_data::<web::Data<StateManager>>().unwrap();
             if let Some(token) = extract_access_token(&req) {
-                match state.get_token_service().validate_access_token(&token) {
-                    Ok(claims) => {
-                        let uuid = claims.uuid;
-                        user_uuid = Some(uuid);
+                let token_service = state.get_token_service();
+
+                if token_service.is_api_key(&token) {
+                    let hash = sha256::digest(&token);
+
+                    if let Some(api_key) = state
+                        .get_service()
+                        .get_api_key_by_hash(&hash)
+                        .await
+                        .unwrap()
+                    {
+                        user_uuid = Some(api_key.id.to_string());
                     }
-                    Err(_) => (),
+                } else {
+                    match token_service.validate_access_token(&token) {
+                        Ok(claims) => {
+                            let uuid = claims.uuid;
+                            user_uuid = Some(uuid);
+                        }
+                        Err(_) => (),
+                    }
                 }
             }
 

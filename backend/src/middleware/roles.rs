@@ -1,10 +1,11 @@
 extern crate dotenv;
 
+use super::token::extract_access_token;
+use super::YakManPrinciple;
 use crate::model::{YakManRole, YakManUserProjectRole};
 use crate::StateManager;
+use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
-
-use super::token::extract_access_token;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum YakManRoleBinding {
@@ -86,24 +87,47 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
     let mut role_bindings: Vec<YakManRoleBinding> = vec![];
 
     let state = req.app_data::<web::Data<StateManager>>().unwrap();
+    let token_service = state.get_token_service();
     let token: Option<String> = extract_access_token(req);
 
-    if token.is_none() {
-        return Ok(vec![]);
+    let token = match token {
+        Some(token) => token,
+        None => return Ok(vec![]),
+    };
+
+    if token_service.is_api_key(&token) {
+        return match req.extensions().get::<YakManPrinciple>() {
+            Some(principle) => {
+                let key_id = match &principle.user_uuid {
+                    Some(key_id) => key_id,
+                    None => return Ok(vec![]),
+                };
+
+                if let Some(api_key) = state
+                    .get_service()
+                    .get_api_key_by_id(&key_id)
+                    .await
+                    .unwrap()
+                {
+                    Ok(vec![YakManRoleBinding::ProjectRoleBinding(
+                        YakManUserProjectRole {
+                            project_uuid: api_key.project_uuid,
+                            role: api_key.role,
+                        },
+                    )])
+                } else {
+                    Ok(vec![])
+                }
+            }
+            None => Ok(vec![]),
+        };
     }
 
-    match state
-        .get_token_service()
-        .validate_access_token(&token.unwrap())
-    {
+    match token_service.validate_access_token(&token) {
         Ok(claims) => {
             let uuid = claims.uuid;
 
-            if let Some(details) = state
-                .get_service()
-                .get_user_details(&uuid)
-                .await?
-            {
+            if let Some(details) = state.get_service().get_user_details(&uuid).await? {
                 let mut global_roles: Vec<YakManRoleBinding> = details
                     .global_roles
                     .iter()
