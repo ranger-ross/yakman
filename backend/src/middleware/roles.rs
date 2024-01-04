@@ -98,7 +98,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
     if token_service.is_api_key(&token) {
         return match req.extensions().get::<YakManPrinciple>() {
             Some(principle) => {
-                let key_id = match &principle.api_key_id {
+                let key_id = match &principle.user_uuid {
                     Some(key_id) => key_id,
                     None => return Ok(vec![]),
                 };

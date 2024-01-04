@@ -672,15 +672,7 @@ impl StorageService for KVStorageService {
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
         let api_keys = self.adapter.get_api_keys().await?;
-
-        // Update caches
-        for key in &api_keys {
-            self.api_key_id_cache
-                .insert(key.id.to_string(), key.clone());
-            self.api_key_hash_cache
-                .insert(key.hash.to_string(), key.clone());
-        }
-
+        self.put_api_keys_cache(&api_keys);
         return Ok(api_keys);
     }
 
@@ -717,6 +709,8 @@ impl StorageService for KVStorageService {
             api_keys.push(api_key);
         }
 
+        self.put_api_keys_cache(&api_keys);
+
         return self.adapter.save_api_keys(api_keys).await;
     }
 
@@ -727,11 +721,22 @@ impl StorageService for KVStorageService {
             api_keys.remove(index);
         }
 
+        self.put_api_keys_cache(&api_keys);
         return self.adapter.save_api_keys(api_keys).await;
     }
 }
 
 impl KVStorageService {
+    fn put_api_keys_cache(&self, api_keys: &Vec<YakManApiKey>) {
+        // Update caches
+        for key in api_keys {
+            self.api_key_id_cache
+                .insert(key.id.to_string(), key.clone());
+            self.api_key_hash_cache
+                .insert(key.hash.to_string(), key.clone());
+        }
+    }
+
     pub fn new(adapter: Box<dyn KVStorageAdapter>) -> KVStorageService {
         let api_key_id_cache = CacheBuilder::new(10_000)
             .time_to_live(Duration::from_secs(60))
