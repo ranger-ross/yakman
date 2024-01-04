@@ -1,0 +1,87 @@
+# This is a mock OAuth server for local development
+# Git Repository: https://github.com/Soluto/oidc-server-mock
+
+version: '3'
+services:
+  backend:
+    image: ghcr.io/ranger-ross/yakman-backend:0.0.1-alpha
+    network_mode: "host"
+    env_file:
+      - .env.backend
+    environment:
+      - YAKMAN_ADAPTER=IN_MEMORY
+      - YAKMAN_HOST=0.0.0.0
+      - YAKMAN_PORT=8000
+    depends_on:
+      - oidc-server-mock
+  frontend:
+    image: ghcr.io/ranger-ross/yakman-frontend:0.0.1-alpha
+    network_mode: "host"
+    environment:
+      - YAKMAN_API_URL=http://localhost:8000
+      - ORIGIN=http://localhost:3000
+
+  # This is a simple mock oauth/openid connect server.
+  # In the real world you should use an identity provider
+  oidc-server-mock:
+    image: ghcr.io/soluto/oidc-server-mock:latest
+    ports:
+      - '4011:80'
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      SERVER_OPTIONS_INLINE: |
+        {
+          "AccessTokenJwtType": "JWT",
+          "Discovery": {
+            "ShowKeySet": true
+          },
+          "Authentication": {
+            "CookieSameSiteMode": "Lax",
+            "CheckSessionCookieSameSiteMode": "Lax"
+          }
+        }
+      LOGIN_OPTIONS_INLINE: |
+        {
+          "AllowRememberLogin": false
+        }
+      LOGOUT_OPTIONS_INLINE: |
+        {
+          "AutomaticRedirectAfterSignOut": true
+        }
+      API_SCOPES_INLINE: |
+        - Name: some-app-scope-1
+        - Name: some-app-scope-2
+      API_RESOURCES_INLINE: |
+        - Name: some-app
+          Scopes:
+            - some-app-scope-1
+            - some-app-scope-2
+      USERS_CONFIGURATION_INLINE: |
+        [
+          {
+            "SubjectId":"1",
+            "Username":"User1",
+            "Password":"pwd",
+            "Claims": [
+              {
+                "Type": "name",
+                "Value": "John Smith",
+                "ValueType": "string"
+              },
+              {
+                "Type": "email",
+                "Value": "john.smith@gmail.com",
+                "ValueType": "string"
+              }
+            ]
+          }
+        ]
+      CLIENTS_CONFIGURATION_PATH: /tmp/config/clients-config.json
+      ASPNET_SERVICES_OPTIONS_INLINE: |
+        { 
+          "ForwardedHeadersOptions": { 
+            "ForwardedHeaders" : "All"
+          }
+        }
+    volumes:
+      - .:/tmp/config:ro
