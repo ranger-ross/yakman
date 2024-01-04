@@ -74,14 +74,3 @@ First you will need Cargo, Node 20, and PNPM installed:
 1. Run `make fd` to start the frontend server. (where 'fd' stands for 'frontend-dev')
 1. Run `make bd` to start the backend server. (where 'bd' stands for 'backend-dev')
 
-### Run the project(s) in docker (release mode)
-
-Of course to do this you will need Docker installed
-
-1. Setup the `.env` file in step 1 of the dev mode section above
-   - Note: The frontend application will run on port 3000, so you will want to change the port in the oauth redirect env var.  
-1. Run `make build-backend` to build the backend docker image
-1. Run `make build-frontend` to build the frontend docker image
-1. Run `docker compose up` to start the application 
-
-
