@@ -27,35 +27,35 @@ impl YakManApiError {
     pub fn bad_request(reason: &str) -> YakManApiError {
         YakManApiError {
             status: StatusCode::BAD_REQUEST,
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp_millis(),
             message: String::from(reason),
         }
     }
     pub fn unauthorized() -> YakManApiError {
         YakManApiError {
             status: StatusCode::UNAUTHORIZED,
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp_millis(),
             message: String::from("unauthorized"),
         }
     }
     pub fn forbidden() -> YakManApiError {
         YakManApiError {
             status: StatusCode::FORBIDDEN,
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp_millis(),
             message: String::from("forbidden"),
         }
     }
     pub fn not_found<'a>(message: impl Into<Option<&'a str>>) -> YakManApiError {
         YakManApiError {
             status: StatusCode::FORBIDDEN,
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp_millis(),
             message: String::from(message.into().unwrap_or("not found")),
         }
     }
     pub fn server_error(message: &str) -> YakManApiError {
         YakManApiError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp_millis(),
             message: String::from(message),
         }
     }
@@ -73,7 +73,7 @@ impl From<GenericStorageError> for YakManApiError {
     fn from(err: GenericStorageError) -> Self {
         YakManApiError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp_millis(),
             message: err.to_string(),
         }
     }
