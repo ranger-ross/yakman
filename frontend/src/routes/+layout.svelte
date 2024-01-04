@@ -10,9 +10,8 @@
 
 	export let data;
 
-	const userRoles = data.userRoles;
-
 	$: {
+		const userRoles = data.userRoles;
 		if (userRoles) {
 			roles.set({
 				globalRoles: userRoles.global_roles,
