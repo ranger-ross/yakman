@@ -146,7 +146,6 @@ impl TokenService for YakManTokenService {
     fn is_api_key(&self, token: &str) -> bool {
         return token.starts_with(API_KEY_PREFIX);
     }
-
 }
 
 #[derive(Error, Debug)]
@@ -190,5 +189,29 @@ impl From<FromUtf8Error> for RefreshTokenDecryptError {
 impl From<&str> for RefreshTokenDecryptError {
     fn from(value: &str) -> Self {
         RefreshTokenDecryptError::FailedToDecrypt(value.to_string())
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_be_able_to_encrypt_and_decrypt_properly() {
+        let service = YakManTokenService {
+            access_token_signing_key: String::from("123"),
+            refresh_token_shortcrypt: ShortCrypt::new("a secret key12345678123456781231"),
+            access_token_time_to_live_seconds: 100,
+        };
+
+        let raw_token = "123";
+
+        let encrypted = service.encrypt_refresh_token(raw_token);
+        assert_ne!(raw_token, encrypted);
+        assert_eq!("5NvfK", encrypted);
+
+        let decrypted = service.decrypt_refresh_token(&encrypted).unwrap();
+        assert_eq!(raw_token, decrypted);
     }
 }

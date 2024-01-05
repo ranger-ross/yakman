@@ -108,7 +108,7 @@ pub async fn oauth_exchange(
     Ok(web::Json(OAuthExchangeResponse {
         access_token: access_token_jwt,
         access_token_expire_timestamp: expire_timestamp,
-        refresh_token: refresh_token.map(|t| t.secret().clone()),
+        refresh_token: refresh_token.map(|t| token_service.encrypt_refresh_token(t.secret())),
     }))
 }
 
@@ -135,16 +135,15 @@ pub async fn oauth_refresh(
     let token_service = state.get_token_service();
 
     let encrypted_refresh_token = &payload.refresh_token;
+    log::info!("{encrypted_refresh_token}");
     let refresh_token = match token_service.decrypt_refresh_token(encrypted_refresh_token) {
         Ok(refresh_token) => refresh_token,
-        Err(_) => {
-            return Err(YakManApiError::unauthorized().set_message("no refresh_token not valid"))
-        }
+        Err(_) => return Err(YakManApiError::unauthorized().set_message("refresh_token not valid")),
     };
     let (_access_token, username) = match oauth_service.refresh_token(&refresh_token).await {
         Ok(token) => token,
         Err(e) => {
-            error!("Could not refresh token {e}");
+            log::error!("Could not refresh token {e}");
             return Err(YakManApiError::unauthorized().set_message("Could not refresh token"));
         }
     };
@@ -162,7 +161,7 @@ pub async fn oauth_refresh(
         match token_service.create_acess_token_jwt(&username, &user) {
             Ok(data) => data,
             Err(e) => {
-                error!("Failed to create token {e}");
+                log::error!("Failed to create token {e}");
                 return Err(YakManApiError::server_error("Failed to create token"));
             }
         };
