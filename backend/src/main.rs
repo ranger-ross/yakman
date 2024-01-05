@@ -12,6 +12,7 @@ use crate::auth::oauth_service::YakManOauthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
 use actix_middleware_etag::Etag;
+use actix_web::middleware::Compress;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
 use adapters::in_memory::InMemoryStorageAdapter;
@@ -139,6 +140,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(state.clone())
             .wrap(Etag::default())
+            .wrap(Compress::default())
             .wrap(Logger::new("%s %r"))
             .wrap(GrantsMiddleware::with_extractor(extract_roles))
             .wrap(YakManPrincipleTransformer)
