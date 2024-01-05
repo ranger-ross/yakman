@@ -2,6 +2,7 @@ import { z } from "zod";
 import { t } from "../t";
 import type { YakManProject } from "$lib/types/types";
 import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
+import { convertYakManErrorToTRPCError } from "$lib/utils/error-helpers";
 
 const BASE_URL = getYakManBaseApiUrl();
 
@@ -11,6 +12,9 @@ export const projects = t.router({
             const response = await fetch(`${BASE_URL}/v1/projects`, {
                 headers: createYakManAuthHeaders(ctx.accessToken)
             });
+            if (response.status != 200) {
+                throw convertYakManErrorToTRPCError(await response.text(), response.status)
+            }
             return await response.json();
         }),
 
@@ -28,7 +32,7 @@ export const projects = t.router({
                 })
             });
             if (response.status != 200) {
-                throw new Error(await response.text())
+                throw convertYakManErrorToTRPCError(await response.text(), response.status)
             }
 
             return {

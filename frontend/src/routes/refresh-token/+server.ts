@@ -26,14 +26,14 @@ export const POST: RequestHandler = async function ({ cookies, fetch }) {
 
     if (response.status == 401) {
         error(401, {
-                    message: 'NAV_TO_LOGIN'
-                });
+            message: 'NAV_TO_LOGIN'
+        });
     }
 
     if (response.status != 200) {
         error(401, {
-                    message: await response.text()
-                });
+            message: await response.text()
+        });
     }
 
     const { access_token, access_token_expire_timestamp } = await response.json() as OAuthRefreshTokenResponse

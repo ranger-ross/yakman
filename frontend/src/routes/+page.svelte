@@ -19,7 +19,7 @@
 
 	export let data: PageData;
 
-	const projects: YakManProject[] = data.projects;
+	const projects: YakManProject[] = data.projects ?? [];
 
 	let projectUuidFromQuery = $page.url.searchParams.get("project");
 	let selectedProjectUuid = projectUuidFromQuery ?? projects[0]?.uuid;
