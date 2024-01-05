@@ -19,12 +19,14 @@
 
 	export let data: PageData;
 
-	const projects: YakManProject[] = data.projects;
+	const projects: YakManProject[] = data.projects ?? [];
 
 	let projectUuidFromQuery = $page.url.searchParams.get("project");
 	let selectedProjectUuid = projectUuidFromQuery ?? projects[0]?.uuid;
 
-	let selectedProject = projects.find((p) => p.uuid === selectedProjectUuid);
+	console.log(projects)
+
+	let selectedProject = !!projects ? projects.find((p) => p.uuid === selectedProjectUuid) : null;
 
 	let configToDelete: YakManConfig | null = null;
 

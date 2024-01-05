@@ -6,7 +6,8 @@
 	import YakManModal from "$lib/components/YakManModal.svelte";
 	import { globalModalState } from "$lib/stores/global-modal-state";
 	import { goto } from "$app/navigation";
-    import { userInfo } from "$lib/stores/user-info";
+	import { userInfo } from "$lib/stores/user-info";
+	import YakManCard from "$lib/components/YakManCard.svelte";
 
 	export let data;
 
@@ -18,7 +19,7 @@
 				roles: userRoles.roles,
 			});
 			userInfo.set({
-				profilePictureUrl: userRoles.profile_picture				
+				profilePictureUrl: userRoles.profile_picture,
 			});
 		}
 	}
@@ -52,6 +53,14 @@
 	</YakManModal>
 
 	<main>
-		<slot />
+		{#if data.tokenRefreshNeeded}
+			<div class="container mx-auto">
+				<YakManCard>
+					<p class="text-center">Refreshing session...</p>
+				</YakManCard>
+			</div>
+		{:else}
+			<slot />
+		{/if}
 	</main>
 </div>

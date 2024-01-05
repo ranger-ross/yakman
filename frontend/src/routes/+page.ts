@@ -1,14 +1,25 @@
 import { trpc } from "$lib/trpc/client";
 import type { PageLoad } from "./$types";
+import type { YakManProject } from "$lib/types/types";
+import { TRPCClientError } from '@trpc/client';
 
 export const load: PageLoad = async (event) => {
-    const projects = await trpc(event).projects.fetchProjects.query();
-
+    let projects: YakManProject[] = [];
+    try {
+        projects = await trpc(event).projects.fetchProjects.query();
+    } catch (e) {
+        // If non-internal server error, assume the token just needs to be refreshed.
+        if (e instanceof TRPCClientError && e.data.code !== "INTERNAL_SERVER_ERROR") {
+            projects = []
+        } else {
+            throw e;
+        }
+    }
     const projectUuidQueryParam = event.url.searchParams.get('project');
 
     const selectedProject = !!projectUuidQueryParam ? projects.find(p => p.uuid === projectUuidQueryParam) : projects[0];
 
-    const configs = await trpc(event).configs.fetchConfigs.query(selectedProject?.uuid);
+    const configs = (await trpc(event).configs.fetchConfigs.query(selectedProject?.uuid)) ?? [];
 
     const formattedConfigs = [];
 
@@ -24,5 +35,6 @@ export const load: PageLoad = async (event) => {
         projects: projects,
         configs: formattedConfigs
     };
+
 }
 
