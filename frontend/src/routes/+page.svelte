@@ -24,7 +24,7 @@
 	let projectUuidFromQuery = $page.url.searchParams.get("project");
 	let selectedProjectUuid = projectUuidFromQuery ?? projects[0]?.uuid;
 
-	let selectedProject = !!projects ? projects.find((p) => p.uuid === selectedProjectUuid) : null;
+	let selectedProject = projects.find((p) => p.uuid === selectedProjectUuid);
 
 	let configToDelete: YakManConfig | null = null;
 
