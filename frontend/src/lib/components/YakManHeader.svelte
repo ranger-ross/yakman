@@ -1,4 +1,3 @@
-
 <script lang="ts">
     import { goto } from "$app/navigation";
     import ProfileIcon from "$lib/icons/ProfileIcon.svelte";
@@ -16,6 +15,11 @@
     userInfo.subscribe((value) => {
         profilePictureUrl = value.profilePictureUrl ?? null;
     });
+
+    async function onLogout() {
+        await fetch("/session/logout", { method: "POST" });
+        goto(`/login`);
+    }
 </script>
 
 <div
@@ -44,7 +48,7 @@
                 case selection === "Admin":
                     return goto(`/admin`);
                 case selection === "Logout":
-                    return goto(`/login`); // TODO: Actually logout user
+                    return onLogout();
             }
         }}
     >

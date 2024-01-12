@@ -43,7 +43,7 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
     if (refresh_token) {
         cookies.set('refresh_token', refresh_token, {
             httpOnly: true,
-            path: '/refresh-token',
+            path: '/session',
             maxAge: Date.now() + (1000 * 60 * 60 * 24 * 356) // TODO: Dynamically set from metadata
         })
 
@@ -55,5 +55,3 @@ export const POST: RequestHandler = async function ({ request, cookies, fetch })
         data: "SUCCESS"
     });
 }
-
-
