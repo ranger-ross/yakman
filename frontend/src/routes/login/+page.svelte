@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
-    import { trpc } from "$lib/trpc/client";
     import { onMount } from "svelte";
 
     const LOCAL_STORAGE_OAUTH2_VERIFER_KEY = "oauth2-verifier";

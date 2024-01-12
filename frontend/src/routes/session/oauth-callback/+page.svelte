@@ -13,7 +13,7 @@
         const state = urlParams.get("state");
 
         try {
-            const response = await fetch("/oauth-callback", {
+            await fetch("/session/oauth-callback", {
                 method: "POST",
                 body: JSON.stringify({
                     code: code!,

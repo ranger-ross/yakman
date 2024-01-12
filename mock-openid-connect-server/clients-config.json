@@ -5,8 +5,8 @@
       "yakman-mock-client-secret"
     ],
     "RedirectUris": [
-      "http://localhost:5173/oauth-callback",
-      "http://localhost:3000/oauth-callback"
+      "http://localhost:5173/session/oauth-callback",
+      "http://localhost:3000/session/oauth-callback"
     ],
     "Description": "Testing client",
     "AllowedGrantTypes": [

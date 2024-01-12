@@ -59,7 +59,7 @@ First you will need Cargo, Node 20, and PNPM installed:
     # Mock OAuth server (docker)
     YAKMAN_OAUTH_TOKEN_URL=http://localhost:4011/connect/token
     YAKMAN_OAUTH_AUTH_URL=http://localhost:4011/connect/authorize
-    YAKMAN_OAUTH_REDIRECT_URL=http://localhost:5173/oauth-callback
+    YAKMAN_OAUTH_REDIRECT_URL=http://localhost:5173/session/oauth-callback
     YAKMAN_OAUTH_ISSUER_URL=http://localhost:4011
     YAKMAN_OAUTH_CLIENT_ID=yakman-mock-client-id
     YAKMAN_OAUTH_CLIENT_SECRET=yakman-mock-client-secret

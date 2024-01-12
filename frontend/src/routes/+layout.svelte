@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import YakManHeader from "$lib/components/YakManHeader.svelte";
 	import { onMount } from "svelte";
 	import { roles } from "$lib/stores/roles";
@@ -8,8 +8,13 @@
 	import { goto } from "$app/navigation";
 	import { userInfo } from "$lib/stores/user-info";
 	import YakManCard from "$lib/components/YakManCard.svelte";
+	import { page } from "$app/stores"
 
 	export let data;
+
+	const pagesWithNoRefreshTokenNeeded: string[] = [
+		'/session/oauth-callback'
+	]
 
 	$: {
 		const userRoles = data.userRoles;
@@ -25,8 +30,8 @@
 	}
 
 	onMount(() => {
-		if (data.tokenRefreshNeeded) {
-			fetch("/refresh-token", {
+		if (data.tokenRefreshNeeded && !pagesWithNoRefreshTokenNeeded.includes($page.url.pathname)) {
+			fetch("/session/refresh-token", {
 				method: "POST",
 			}).then((response) => {
 				if (response.status === 200) {
@@ -53,7 +58,7 @@
 	</YakManModal>
 
 	<main>
-		{#if data.tokenRefreshNeeded}
+		{#if data.tokenRefreshNeeded && !pagesWithNoRefreshTokenNeeded.includes($page.url.pathname)}
 			<div class="container mx-auto">
 				<YakManCard>
 					<p class="text-center">Refreshing session...</p>
