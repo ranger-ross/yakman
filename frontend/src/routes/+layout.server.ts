@@ -1,25 +1,26 @@
 import { trpc } from "$lib/trpc/client";
 import type { LayoutServerLoad } from "./$types";
-import { getYakManBaseApiUrl } from '$lib/trpc/helper';
 import type { GetUserInfoResponse } from "$lib/trpc/routes/oauth";
+import { hasRoles } from "$lib/utils/role-utils";
 
-const BASE_URL = getYakManBaseApiUrl()
+const noRoles: GetUserInfoResponse = {
+    global_roles: [],
+    roles: {},
+    profile_picture: null
+}
 
 export const load: LayoutServerLoad = async (event) => {
     const route = event.route.id;
     if (route === '/login') {
-        return { userRoles: null };
+        return { userRoles: noRoles };
     }
 
-    let userRoles: GetUserInfoResponse | null = null;
+    let userRoles: GetUserInfoResponse = noRoles;
     let tokenRefreshNeeded = false;
     try {
         userRoles = await trpc(event).oauth.fetchUserInfo.query();
 
-        if (
-            userRoles.global_roles.length == 0 &&
-            Object.keys(userRoles.roles).length == 0
-        ) {
+        if (!hasRoles(userRoles.global_roles, userRoles.roles)) {
             throw new Error("no user roles found");
         }
     } catch (e) {
@@ -31,6 +32,5 @@ export const load: LayoutServerLoad = async (event) => {
         userRoles: userRoles,
         tokenRefreshNeeded: tokenRefreshNeeded,
     };
-
 };
 
