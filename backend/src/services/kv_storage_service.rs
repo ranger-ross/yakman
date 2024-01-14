@@ -116,7 +116,7 @@ impl StorageService for KVStorageService {
         creator_uuid: &str,
     ) -> Result<String, CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
-            let instance = short_sha(&Uuid::new_v4().to_string());
+            let instance = generate_instance_id();
             let revision_key: String = generate_revision_id();
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
@@ -787,6 +787,10 @@ impl KVStorageService {
     }
 }
 
+fn generate_instance_id() -> String {
+    return format!("i{}", short_sha(&Uuid::new_v4().to_string()));
+}
+
 fn generate_revision_id() -> String {
     return format!("r{}", short_sha(&Uuid::new_v4().to_string()));
 }
@@ -818,6 +822,15 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_instance_id() {
+        for _i in 0..10 {
+            let result = generate_instance_id();
+            assert_eq!(13, result.len());
+            assert!(result.starts_with('i'));
+        }
+    }
+
+    #[test]
     fn test_generate_revision_id() {
         for _i in 0..10 {
             let result = generate_revision_id();
@@ -825,4 +838,5 @@ mod tests {
             assert!(result.starts_with('r'));
         }
     }
+
 }
