@@ -62,6 +62,12 @@ pub trait StorageService: Sync + Send {
         instance: &str,
     ) -> Result<Option<ConfigInstance>, GenericStorageError>;
 
+    async fn delete_instance(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<(), GenericStorageError>;
+
     async fn get_config_data(
         &self,
         config_name: &str,

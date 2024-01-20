@@ -724,6 +724,31 @@ impl StorageService for KVStorageService {
         self.put_api_keys_cache(&api_keys);
         return self.adapter.save_api_keys(api_keys).await;
     }
+
+    async fn delete_instance(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<(), GenericStorageError> {
+        let instances = self
+            .adapter
+            .get_instance_metadata(config_name)
+            .await?
+            .unwrap(); // TODO: better error handling
+
+        let remaining_instances = instances
+            .into_iter()
+            .filter(|i| i.instance != instance)
+            .collect();
+
+        self.adapter
+            .save_instance_metadata(config_name, remaining_instances)
+            .await?;
+
+        // TODO: remove instance and instance revisions directories
+
+        todo!();
+    }
 }
 
 impl KVStorageService {
@@ -838,5 +863,4 @@ mod tests {
             assert!(result.starts_with('r'));
         }
     }
-
 }
