@@ -4,12 +4,12 @@ use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, RollbackRevisionError,
-        SaveConfigInstanceError, DeleteConfigInstanceError,
+        CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
+        RollbackRevisionError, SaveConfigInstanceError,
     },
     model::{
-        ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManLabel,
-        YakManProject, YakManUser, YakManUserDetails, YakManApiKey,
+        ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
+        YakManProject, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -151,15 +151,21 @@ pub trait StorageService: Sync + Send {
     ) -> Result<(), GenericStorageError>;
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
-    
+
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 
-    async fn get_api_key_by_id(&self, id: &str) -> Result<Option<YakManApiKey>, GenericStorageError>;
+    async fn get_api_key_by_id(
+        &self,
+        id: &str,
+    ) -> Result<Option<YakManApiKey>, GenericStorageError>;
 
-    async fn get_api_key_by_hash(&self, hash: &str) -> Result<Option<YakManApiKey>, GenericStorageError>;
+    async fn get_api_key_by_hash(
+        &self,
+        hash: &str,
+    ) -> Result<Option<YakManApiKey>, GenericStorageError>;
 
     async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError>;
-    
+
     async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError>;
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError>;

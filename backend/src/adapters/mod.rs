@@ -1,6 +1,6 @@
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails, YakManApiKey,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
+    YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
 
