@@ -113,7 +113,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
-    async fn get_revsion(
+    async fn get_revision(
         &self,
         config_name: &str,
         revision: &str,
@@ -132,6 +132,16 @@ impl KVStorageAdapter for RedisStorageAdapter {
         let revision_key = &revision.revision;
         let data = serde_json::to_string(&revision)?;
         let _: () = connection.set(self.get_revision_key(config_name, revision_key), data)?;
+        Ok(())
+    }
+
+    async fn delete_revision(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<(), GenericStorageError> {
+        let mut connection = self.get_connection()?;
+        let _: () = connection.del(&self.get_revision_key(config_name, revision))?;
         Ok(())
     }
 

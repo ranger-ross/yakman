@@ -12,6 +12,7 @@ use async_trait::async_trait;
 use google_cloud_storage::{
     client::{Client, ClientConfig},
     http::objects::{
+        delete::DeleteObjectRequest,
         download::Range,
         get::GetObjectRequest,
         upload::{Media, UploadObjectRequest, UploadType},
@@ -111,7 +112,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         Ok(())
     }
 
-    async fn get_revsion(
+    async fn get_revision(
         &self,
         config_name: &str,
         revision: &str,
@@ -141,6 +142,17 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         })?;
         let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
         self.put_object(&revision_file_path, revision_data).await?;
+        return Ok(());
+    }
+
+    async fn delete_revision(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<(), GenericStorageError> {
+        let revisions_path = self.get_instance_revisions_path();
+        let revision_file_path = format!("{revisions_path}/{config_name}/{revision}");
+        self.delete_object(&revision_file_path).await?;
         return Ok(());
     }
 
@@ -367,6 +379,17 @@ impl GoogleCloudStorageAdapter {
             .clone()
             .upload_object(&request, data, &upload_type)
             .await?;
+
+        return Ok(());
+    }
+
+    async fn delete_object(&self, path: &str) -> Result<(), GenericStorageError> {
+        let request = DeleteObjectRequest {
+            bucket: self.bucket.to_string(),
+            object: path.to_string(),
+            ..Default::default()
+        };
+        self.client.clone().delete_object(&request).await?;
 
         return Ok(());
     }

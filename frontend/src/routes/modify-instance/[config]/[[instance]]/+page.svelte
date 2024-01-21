@@ -41,7 +41,7 @@
     async function saveChanges() {
         // Remove any non-selected labels
         const filtedSelectedLabels = Object.fromEntries(
-            Object.entries(selectedLabels).filter(([_, v]) => v != null)
+            Object.entries(selectedLabels).filter(([_, v]) => v != null),
         ) as { [labelName: string]: string };
 
         try {
@@ -56,7 +56,7 @@
                 goto(`/apply-changes/${config}/${instance}`);
             } else {
                 const result = await trpc(
-                    $page
+                    $page,
                 ).instances.createConfigInstance.mutate({
                     configName: config,
                     contentType: contentType,
@@ -68,6 +68,21 @@
         } catch (e) {
             console.error(e);
         }
+    }
+
+    function onDeleteClicked() {
+        openGlobaModal({
+            title: "Are you sure you want to delete this instance?",
+            message: "This cannot be undone.",
+            async onConfirm() {
+                await trpc($page).instances.deleteConfigInstance.mutate({
+                    configName: config,
+                    instance: instance,
+                });
+
+                goto("/");
+            },
+        });
     }
 
     let hasChanges = false;
@@ -99,13 +114,20 @@
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1 class="text-lg font-bold mb-4">
-            {#if editMode}
-                Edit Config Instance {config} -> {instance}
-            {:else}
-                Create Config Instance
-            {/if}
-        </h1>
+        <div class="flex justify-between">
+            <h1 class="text-lg font-bold mb-4">
+                {#if editMode}
+                    Edit Config Instance {config} -> {instance}
+                {:else}
+                    Create Config Instance
+                {/if}
+            </h1>
+            <div>
+                <YakManButton variant="danger" on:click={onDeleteClicked}>
+                    Delete
+                </YakManButton>
+            </div>
+        </div>
 
         <div class="h-56">
             <label class="block text-gray-700 text-sm font-bold mb-2">

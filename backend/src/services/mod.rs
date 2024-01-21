@@ -5,7 +5,7 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreateProjectError, DeleteConfigError, RollbackRevisionError,
-        SaveConfigInstanceError,
+        SaveConfigInstanceError, DeleteConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManLabel,
@@ -61,6 +61,12 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         instance: &str,
     ) -> Result<Option<ConfigInstance>, GenericStorageError>;
+
+    async fn delete_instance(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> Result<(), DeleteConfigInstanceError>;
 
     async fn get_config_data(
         &self,

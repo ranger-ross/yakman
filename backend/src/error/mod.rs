@@ -251,6 +251,22 @@ impl From<GenericStorageError> for RollbackRevisionError {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum DeleteConfigInstanceError {
+    #[error("Invalid config")]
+    InvalidConfig,
+    #[error("Invalid instance")]
+    InvalidInstance,
+    #[error("Error storing approval: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for DeleteConfigInstanceError {
+    fn from(e: GenericStorageError) -> Self {
+        DeleteConfigInstanceError::StorageError { message: e.message }
+    }
+}
+
 #[derive(Debug)]
 pub struct LabelAlreadyExistsError {
     pub description: String,
