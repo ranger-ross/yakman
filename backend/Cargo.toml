@@ -18,8 +18,8 @@ thiserror = "1.0"
 anyhow = "1.0"
 derive_more = "0.99.17"
 utoipa = { version = "4", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
-actix-middleware-etag = "0.2.0"
+utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
+actix-middleware-etag = "0.3.0"
 log = "0.4"
 env_logger = "0.11"
 oauth2 = "4.4.2"
@@ -29,8 +29,8 @@ actix-web-grants = "3.0.2"
 jwt = "0.16.0"
 hmac = { version = "0.12", features = ["reset"] }
 sha2 = "0.10"
-aws-config = "0.56.1"
-aws-sdk-s3 = "0.33.0"
+aws-config = "1.1"
+aws-sdk-s3 = "1.12"
 bytes = "1.5.0"
 tokio = "1.35"
 sha256 = "1.5"
@@ -39,7 +39,7 @@ short-crypt = "1.0.28"
 openidconnect = "3.4.0"
 base64 = "0.21"
 google-cloud-storage = "0.15"
-moka = { version = "0.12.2", features = ["sync"] }
+moka = { version = "0.12", features = ["sync"] }
 
 [dev-dependencies]
 mockall = "0.12"
