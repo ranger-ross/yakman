@@ -8,20 +8,20 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 serde = {version = "1.0", features = ["derive"]}
-serde_json = "1.0.108"
-redis = { version = "0.23.3", features = ["r2d2"] }
+serde_json = "1.0"
+redis = { version = "0.24", features = ["r2d2"] }
 r2d2 = "0.8.10"
 async-trait = {version = "0.1.77"}
-uuid = {version = "1.5.0", features = ["v4"]}
+uuid = {version = "1.7", features = ["v4"]}
 chrono = "0.4.31"
-thiserror = "1.0.50"
+thiserror = "1.0"
 anyhow = "1.0"
 derive_more = "0.99.17"
 utoipa = { version = "4", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
 actix-middleware-etag = "0.2.0"
 log = "0.4"
-env_logger = "0.10.1"
+env_logger = "0.11"
 oauth2 = "4.4.2"
 dotenv = "0.15.0"
 reqwest = { version = "0.11", features = ["json"] }
@@ -32,14 +32,14 @@ sha2 = "0.10"
 aws-config = "0.56.1"
 aws-sdk-s3 = "0.33.0"
 bytes = "1.5.0"
-tokio = "1.33.0"
-sha256 = "1.4.0"
-futures-util = "0.3.29"
+tokio = "1.35"
+sha256 = "1.5"
+futures-util = "0.3"
 short-crypt = "1.0.28"
 openidconnect = "3.4.0"
-base64 = "0.21.5"
-google-cloud-storage = "0.14"
+base64 = "0.21"
+google-cloud-storage = "0.15"
 moka = { version = "0.12.2", features = ["sync"] }
 
 [dev-dependencies]
-mockall = "0.12.0"
+mockall = "0.12"
