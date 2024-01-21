@@ -8,6 +8,7 @@ use crate::model::{
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
+use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
 use log::error;
 use s3::primitives::ByteStream;
@@ -424,7 +425,7 @@ impl AwsS3StorageAdapter {
     }
 
     pub async fn from_env() -> AwsS3StorageAdapter {
-        let config = ::aws_config::load_from_env().await;
+        let config = ::aws_config::load_defaults(BehaviorVersion::latest()).await;
         let client = s3::Client::new(&config);
 
         let bucket = std::env::var("YAKMAN_AWS_S3_BUCKET")
