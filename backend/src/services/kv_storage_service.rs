@@ -5,8 +5,8 @@ use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, RollbackRevisionError,
-        SaveConfigInstanceError,
+        CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
+        RollbackRevisionError, SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
@@ -729,17 +729,17 @@ impl StorageService for KVStorageService {
         &self,
         config_name: &str,
         instance: &str,
-    ) -> Result<(), GenericStorageError> {
+    ) -> Result<(), DeleteConfigInstanceError> {
         let instances = self
             .adapter
             .get_instance_metadata(config_name)
             .await?
-            .unwrap(); // TODO: better error handling
+            .ok_or(DeleteConfigInstanceError::InvalidConfig)?;
 
         let config_instance = instances
             .iter()
             .find(|i| i.instance == instance)
-            .unwrap() // TODO: better error handling
+            .ok_or(DeleteConfigInstanceError::InvalidInstance)?
             .clone();
 
         let remaining_instances = instances

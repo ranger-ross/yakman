@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::error::{SaveConfigInstanceError, YakManApiError};
+use crate::error::{DeleteConfigInstanceError, SaveConfigInstanceError, YakManApiError};
 use crate::middleware::YakManPrinciple;
 use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
@@ -235,21 +235,20 @@ async fn delete_instance(
     }
 
     service
-        .delete_instance(
-            &config_name,
-            &instance
-        )
-        .await?;
-        // .map_err(|e| match e {
-        //     SaveConfigInstanceError::InvalidConfig => YakManApiError::bad_request("invalid config"),
-        //     SaveConfigInstanceError::InvalidInstance => {
-        //         YakManApiError::bad_request("invalid instance")
-        //     }
-        //     SaveConfigInstanceError::InvalidLabel => YakManApiError::bad_request("invalid label"),
-        //     SaveConfigInstanceError::StorageError { message: _ } => {
-        //         YakManApiError::server_error("failed to create instance")
-        //     }
-        // })?;
+        .delete_instance(&config_name, &instance)
+        .await
+        .map_err(|e| match e {
+            DeleteConfigInstanceError::InvalidConfig => {
+                YakManApiError::bad_request("invalid config")
+            }
+            DeleteConfigInstanceError::InvalidInstance => {
+                YakManApiError::bad_request("invalid instance")
+            }
+            DeleteConfigInstanceError::StorageError { message } => {
+                log::error!("Failed to delete instance: {message}");
+                YakManApiError::server_error("failed to delete instance")
+            }
+        })?;
     Ok(web::Json(()))
 }
 
