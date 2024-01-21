@@ -138,6 +138,14 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(());
     }
 
+    async fn delete_revision(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
+    }
+
     async fn get_instance_data(
         &self,
         config_name: &str,

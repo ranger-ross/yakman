@@ -135,6 +135,14 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
+    async fn delete_revision(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
+    }
+
     async fn prepare_config_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP for Redis
         Ok(())

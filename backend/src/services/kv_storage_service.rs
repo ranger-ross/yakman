@@ -736,6 +736,12 @@ impl StorageService for KVStorageService {
             .await?
             .unwrap(); // TODO: better error handling
 
+        let config_instance = instances
+            .iter()
+            .find(|i| i.instance == instance)
+            .unwrap() // TODO: better error handling
+            .clone();
+
         let remaining_instances = instances
             .into_iter()
             .filter(|i| i.instance != instance)
@@ -745,9 +751,13 @@ impl StorageService for KVStorageService {
             .save_instance_metadata(config_name, remaining_instances)
             .await?;
 
-        // TODO: remove instance and instance revisions directories
+        for revision in config_instance.revisions {
+            if let Err(e) = self.adapter.delete_revision(config_name, &revision).await {
+                log::error!("Failed to delete revision ({revision}) {e:?}");
+            }
+        }
 
-        todo!();
+        return Ok(());
     }
 }
 

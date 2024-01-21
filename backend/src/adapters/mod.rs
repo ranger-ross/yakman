@@ -68,6 +68,13 @@ pub trait KVStorageAdapter: Sync + Send {
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError>;
 
+    /// This does not delete the revision data because it might be shared across revisions.
+    async fn delete_revision(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<(), GenericStorageError>;
+
     async fn prepare_config_instance_storage(
         &self,
         config_name: &str,

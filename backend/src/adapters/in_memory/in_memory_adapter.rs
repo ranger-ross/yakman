@@ -138,6 +138,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         Ok(())
     }
 
+    async fn delete_revision(
+        &self,
+        config_name: &str,
+        revision: &str,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
+    }
+
     async fn prepare_config_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
         // NOP for in memory storage
         Ok(())
