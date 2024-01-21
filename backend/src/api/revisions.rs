@@ -4,7 +4,7 @@ use crate::model::response::RevisionPayload;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, post, web, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use serde::Deserialize;
 
 /// Get all of the revisions for a config
@@ -28,7 +28,7 @@ async fn get_instance_revisions(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }
@@ -66,7 +66,7 @@ async fn review_pending_instance_revision(
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }
@@ -139,7 +139,7 @@ async fn apply_instance_revision(
             YakManRole::Operator,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }
@@ -183,7 +183,7 @@ async fn rollback_instance_revision(
             YakManRole::Operator,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }

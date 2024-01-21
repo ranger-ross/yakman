@@ -9,7 +9,7 @@ use actix_web::{
     get, put,
     web::{self, Json},
 };
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -22,7 +22,7 @@ pub async fn get_yakman_users(
     auth_details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -40,7 +40,7 @@ pub async fn create_yakman_user(
     payload: Json<CreateYakManUserPayload>,
     state: web::Data<StateManager>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -67,7 +67,7 @@ pub async fn get_api_keys(
     auth_details: AuthDetails<YakManRoleBinding>,
     state: web::Data<StateManager>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -107,7 +107,7 @@ pub async fn create_api_key(
     principle: YakManPrinciple,
     request: web::Json<CreateApiKeyRequest>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -153,7 +153,7 @@ pub async fn delete_api_key(
     state: web::Data<StateManager>,
     path: web::Path<String>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());

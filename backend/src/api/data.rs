@@ -2,7 +2,7 @@ use crate::error::YakManApiError;
 use crate::model::YakManRole;
 use crate::{middleware::roles::YakManRoleBinding, StateManager};
 use actix_web::{get, web, HttpResponse, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
@@ -31,7 +31,7 @@ async fn get_instance_data(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {
@@ -73,7 +73,7 @@ async fn get_revision_data(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {

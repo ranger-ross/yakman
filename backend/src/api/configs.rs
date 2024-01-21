@@ -10,7 +10,7 @@ use crate::{
     StateManager,
 };
 use actix_web::{delete, get, put, web, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use log::error;
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -36,7 +36,7 @@ pub async fn get_configs(
             YakManRole::Operator,
             YakManRole::Viewer,
         ],
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if let Some(project_uuid) = &project_uuid {
@@ -49,7 +49,7 @@ pub async fn get_configs(
                     YakManRole::Viewer,
                 ],
                 project_uuid,
-                &auth_details.permissions,
+                &auth_details.authorities,
             )
         {
             return Err(YakManApiError::forbidden());
@@ -57,10 +57,10 @@ pub async fn get_configs(
     }
 
     let allowed_projects: HashSet<String> = auth_details
-        .permissions
-        .into_iter()
+        .authorities
+        .iter()
         .filter_map(|p| match p {
-            YakManRoleBinding::ProjectRoleBinding(role) => Some(role.project_uuid),
+            YakManRoleBinding::ProjectRoleBinding(role) => Some(role.project_uuid.clone()),
             _ => None,
         })
         .collect();
@@ -95,7 +95,7 @@ async fn create_config(
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }
@@ -162,7 +162,7 @@ async fn delete_config(
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin],
         &project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }

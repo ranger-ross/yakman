@@ -12,7 +12,7 @@ use actix_web::{
     web::{self, Json},
     Responder,
 };
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use log::error;
 use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
@@ -188,7 +188,7 @@ pub async fn get_user_info(
     principle: YakManPrinciple,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
-        .permissions
+        .authorities
         .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(role) => Some(role.to_owned()),
@@ -197,10 +197,10 @@ pub async fn get_user_info(
         .collect();
 
     let roles: HashMap<String, YakManRole> = details
-        .permissions
-        .into_iter()
+        .authorities
+        .iter()
         .filter_map(|p| match p {
-            YakManRoleBinding::ProjectRoleBinding(role) => Some((role.project_uuid, role.role)),
+            YakManRoleBinding::ProjectRoleBinding(role) => Some((role.project_uuid.clone(), role.role.clone())),
             _ => None,
         })
         .collect();
