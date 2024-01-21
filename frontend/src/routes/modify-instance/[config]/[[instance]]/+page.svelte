@@ -71,7 +71,13 @@
     }
 
     function onDeleteClicked() {
-        console.log("todo: delete");
+        openGlobaModal({
+            title: "Are you sure you want to delete this instance?",
+            message: "This cannot be undone.",
+            onConfirm() {
+                console.log("todo: delete");
+            },
+        });
     }
 
     let hasChanges = false;
