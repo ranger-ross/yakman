@@ -143,7 +143,9 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         config_name: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        todo!();
+        self.remove(&self.get_revision_key(config_name, revision))
+            .await;
+        Ok(())
     }
 
     async fn prepare_config_instance_storage(&self, _: &str) -> Result<(), GenericStorageError> {
@@ -273,6 +275,10 @@ impl InMemoryStorageAdapter {
 
     async fn insert(&self, key: String, value: String) {
         self.storage.lock().await.insert(key, value);
+    }
+
+    async fn remove(&self, key: &str) {
+        self.storage.lock().await.remove(key);
     }
 
     async fn get_optional_data<T: DeserializeOwned>(
