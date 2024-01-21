@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::{self, remove_file, File},
     io::Write,
     path::Path,
 };
@@ -7,15 +7,15 @@ use std::{
 use async_trait::async_trait;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails, YakManApiKey,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
+    YakManUser, YakManUserDetails,
 };
 use log::{error, info};
 
 use crate::adapters::local_file::storage_types::RevisionJson;
 
 use super::{
-    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson, ApiKeysJson},
+    storage_types::{ApiKeysJson, ConfigJson, InstanceJson, LabelJson, UsersJson},
     GenericStorageError, KVStorageAdapter,
 };
 
@@ -114,6 +114,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
+    // TODO: fix typo
     async fn get_revsion(
         &self,
         config_name: &str,
@@ -153,7 +154,9 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_name: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        todo!();
+        let revisions_path = self.get_instance_revisions_path();
+        remove_file(format!("{revisions_path}/{config_name}/{revision}"))?;
+        return Ok(());
     }
 
     async fn get_instance_data(
@@ -255,7 +258,6 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
                 .await
                 .expect("Failed to create api-key file");
         }
-
 
         Ok(())
     }

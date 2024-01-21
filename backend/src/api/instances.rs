@@ -212,8 +212,6 @@ async fn delete_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     state: web::Data<StateManager>,
-    req: HttpRequest,
-    principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
     let service = state.get_service();

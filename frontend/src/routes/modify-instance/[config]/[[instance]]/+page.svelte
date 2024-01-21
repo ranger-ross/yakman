@@ -74,8 +74,13 @@
         openGlobaModal({
             title: "Are you sure you want to delete this instance?",
             message: "This cannot be undone.",
-            onConfirm() {
-                console.log("todo: delete");
+            async onConfirm() {
+                await trpc($page).instances.deleteConfigInstance.mutate({
+                    configName: config,
+                    instance: instance,
+                });
+
+                goto("/");
             },
         });
     }

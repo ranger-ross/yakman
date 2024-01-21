@@ -76,6 +76,21 @@ export const instances = t.router({
             if (response.status != 200) {
                 throw new Error(`failed to update config instance, http-status: [${response.status}]`);
             }
+        }),
+    deleteConfigInstance: t.procedure
+        .input(z.object({
+            configName: z.string(),
+            instance: z.string(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}`, {
+                headers: createYakManAuthHeaders(ctx.accessToken),
+                method: 'DELETE'
+            });
+
+            if (response.status != 200) {
+                throw new Error(`failed to delete config instance, http-status: [${response.status}]`);
+            }
         })
 });
 

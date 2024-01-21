@@ -76,6 +76,7 @@ impl StateManager {
         api::instances::get_instance,
         api::instances::create_new_instance,
         api::instances::update_new_instance,
+        api::instances::delete_instance,
         api::data::get_instance_data,
         api::data::get_revision_data,
         api::revisions::get_instance_revisions,
@@ -173,6 +174,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::instances::get_instance)
             .service(api::instances::create_new_instance)
             .service(api::instances::update_new_instance)
+            .service(api::instances::delete_instance)
             // Data
             .service(api::data::get_instance_data)
             .service(api::data::get_revision_data)
