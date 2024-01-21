@@ -19,7 +19,7 @@ anyhow = "1.0"
 derive_more = "0.99.17"
 utoipa = { version = "4", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
-actix-middleware-etag = "0.2.0"
+actix-middleware-etag = "0.3.0"
 log = "0.4"
 env_logger = "0.11"
 oauth2 = "4.4.2"
