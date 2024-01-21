@@ -39,7 +39,7 @@ short-crypt = "1.0.28"
 openidconnect = "3.4.0"
 base64 = "0.21"
 google-cloud-storage = "0.15"
-moka = { version = "0.12.2", features = ["sync"] }
+moka = { version = "0.12", features = ["sync"] }
 
 [dev-dependencies]
 mockall = "0.12"
