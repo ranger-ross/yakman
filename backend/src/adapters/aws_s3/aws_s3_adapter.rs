@@ -1,12 +1,12 @@
 use super::{
-    storage_types::{ConfigJson, InstanceJson, LabelJson, UsersJson, ApiKeysJson},
+    storage_types::{ApiKeysJson, ConfigJson, InstanceJson, LabelJson, UsersJson},
     GenericStorageError, KVStorageAdapter,
 };
-use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
     YakManUserDetails,
 };
+use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
 use aws_sdk_s3 as s3;
 use log::error;
@@ -143,7 +143,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         config_name: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        todo!();
+        let revisions_path = self.get_instance_revisions_path();
+        let revision_file_path = format!("{revisions_path}/{config_name}/{revision}");
+        self.delete_object(&revision_file_path).await?;
+        return Ok(());
     }
 
     async fn get_instance_data(
@@ -365,6 +368,16 @@ impl AwsS3StorageAdapter {
             .bucket(&self.bucket)
             .key(path)
             .body(ByteStream::from(bytes::Bytes::from(data)))
+            .send()
+            .await?;
+        return Ok(());
+    }
+
+    async fn delete_object(&self, path: &str) -> Result<(), GenericStorageError> {
+        self.client
+            .delete_object()
+            .bucket(&self.bucket)
+            .key(path)
             .send()
             .await?;
         return Ok(());
