@@ -375,7 +375,7 @@ impl StorageService for KVStorageService {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.adapter.get_revsion(config_name, &rev).await? {
+            if let Some(revision) = self.adapter.get_revision(config_name, &rev).await? {
                 revisions.push(revision);
             }
         }
@@ -389,7 +389,7 @@ impl StorageService for KVStorageService {
         config_name: &str,
         revision: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError> {
-        if let Some(revision_data) = self.adapter.get_revsion(config_name, revision).await? {
+        if let Some(revision_data) = self.adapter.get_revision(config_name, revision).await? {
             let key = &revision_data.data_key;
             return Ok(Some((
                 self.adapter.get_instance_data(config_name, key).await?,
@@ -426,7 +426,7 @@ impl StorageService for KVStorageService {
             return Err(ApproveRevisionError::InvalidRevision);
         }
 
-        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+        let mut revision_data = match self.adapter.get_revision(config_name, revision).await.ok() {
             Some(Some(revision_data)) => revision_data,
             None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
@@ -476,7 +476,7 @@ impl StorageService for KVStorageService {
             return Err(ApplyRevisionError::InvalidRevision);
         }
 
-        let revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+        let revision_data = match self.adapter.get_revision(config_name, revision).await.ok() {
             Some(Some(revision_data)) => revision_data,
             None | Some(None) => return Err(ApplyRevisionError::InvalidRevision),
         };
@@ -524,7 +524,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApplyRevisionError::InvalidInstance),
         };
 
-        let mut revision_data = match self.adapter.get_revsion(config_name, revision).await.ok() {
+        let mut revision_data = match self.adapter.get_revision(config_name, revision).await.ok() {
             Some(Some(revision_data)) => revision_data,
             None | Some(None) => return Err(ApplyRevisionError::InvalidRevision),
         };
@@ -571,7 +571,7 @@ impl StorageService for KVStorageService {
 
         let previous_revision = self
             .adapter
-            .get_revsion(&config_name, &revision)
+            .get_revision(&config_name, &revision)
             .await?
             .ok_or(RollbackRevisionError::InvalidRevision)?;
 

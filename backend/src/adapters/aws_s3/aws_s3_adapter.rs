@@ -105,7 +105,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         Ok(())
     }
 
-    async fn get_revsion(
+    async fn get_revision(
         &self,
         config_name: &str,
         revision: &str,

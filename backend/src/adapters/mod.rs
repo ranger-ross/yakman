@@ -56,7 +56,7 @@ pub trait KVStorageAdapter: Sync + Send {
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError>;
 
-    async fn get_revsion(
+    async fn get_revision(
         &self,
         config_name: &str,
         revision: &str,
