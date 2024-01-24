@@ -22,7 +22,7 @@ dependencies:
     version: 2.6.0
   trpc-sveltekit:
     specifier: 3.5.22
-    version: 3.5.22(@sveltejs/adapter-node@2.1.1)(@trpc/client@10.45.0)(@trpc/server@10.45.0)(ws@8.14.2)
+    version: 3.5.22(@sveltejs/adapter-node@2.1.2)(@trpc/client@10.45.0)(@trpc/server@10.45.0)(ws@8.14.2)
   zod:
     specifier: 3.22.4
     version: 3.22.4
@@ -38,8 +38,8 @@ devDependencies:
     specifier: 3.1.1
     version: 3.1.1(@sveltejs/kit@2.4.1)
   '@sveltejs/adapter-node':
-    specifier: 2.1.1
-    version: 2.1.1(@sveltejs/kit@2.4.1)
+    specifier: 2.1.2
+    version: 2.1.2(@sveltejs/kit@2.4.1)
   '@sveltejs/kit':
     specifier: 2.4.1
     version: 2.4.1(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.9)(vite@5.0.12)
@@ -492,8 +492,8 @@ packages:
       import-meta-resolve: 4.0.0
     dev: true
 
-  /@sveltejs/adapter-node@2.1.1(@sveltejs/kit@2.4.1):
-    resolution: {integrity: sha512-ypAqdvjoyfOEgucDbY3P6DM6nLEQ7OwiWMfyITKF8svffe9FIx1ow6uELJd1BzbCrouYndkQfc5m6ihj0xxqTg==}
+  /@sveltejs/adapter-node@2.1.2(@sveltejs/kit@2.4.1):
+    resolution: {integrity: sha512-ZfVY5buBclWHoBT+RbkMUViJGEIZ3IfT/0Hvhlgp+qC3LRZwp+wS1Zsw5dgkB2sFDZXctbLNXJtwlkjSp1mw0g==}
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
     dependencies:
@@ -1618,7 +1618,7 @@ packages:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
 
-  /trpc-sveltekit@3.5.22(@sveltejs/adapter-node@2.1.1)(@trpc/client@10.45.0)(@trpc/server@10.45.0)(ws@8.14.2):
+  /trpc-sveltekit@3.5.22(@sveltejs/adapter-node@2.1.2)(@trpc/client@10.45.0)(@trpc/server@10.45.0)(ws@8.14.2):
     resolution: {integrity: sha512-qFgtor6rGt+dOvLIvrk2325F/AVQ6tv/ZUzZ4PNuyUSFFYbendt/WlunrFgDDdR4vq6RWzLsh6mowcGyi++i4A==}
     peerDependencies:
       '@sveltejs/adapter-node': '>=1.2'
@@ -1626,7 +1626,7 @@ packages:
       '@trpc/server': '>=10'
       ws: '>=8'
     dependencies:
-      '@sveltejs/adapter-node': 2.1.1(@sveltejs/kit@2.4.1)
+      '@sveltejs/adapter-node': 2.1.2(@sveltejs/kit@2.4.1)
       '@trpc/client': 10.45.0(@trpc/server@10.45.0)
       '@trpc/server': 10.45.0
       ws: 8.14.2
