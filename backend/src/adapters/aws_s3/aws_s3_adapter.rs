@@ -4,7 +4,7 @@ use super::{
 };
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails,
+    YakManUserDetails, YakManPassword,
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
@@ -309,6 +309,15 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         self.put_object(&data_file_path, data).await?;
         Ok(())
     }
+
+    async fn save_password(&self, email_hash: &str, password: YakManPassword) {
+        todo!()
+    }
+
+    async fn get_password(&self, email_hash: &str) -> Result<Option<YakManPassword>, GenericStorageError> {
+        todo!();
+    }
+
 }
 
 // Helper functions

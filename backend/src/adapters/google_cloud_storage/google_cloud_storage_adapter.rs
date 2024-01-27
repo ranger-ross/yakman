@@ -4,7 +4,7 @@ use super::{
 };
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails,
+    YakManUserDetails, YakManPassword,
 };
 use crate::{adapters::google_cloud_storage::storage_types::RevisionJson, model::YakManApiKey};
 use anyhow::Result;
@@ -315,6 +315,15 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         self.put_object(&data_file_path, data).await?;
         Ok(())
     }
+
+    async fn save_password(&self, email_hash: &str, password: YakManPassword) {
+        todo!()
+    }
+
+    async fn get_password(&self, email_hash: &str) -> Result<Option<YakManPassword>, GenericStorageError> {
+        todo!();
+    }
+
 }
 
 // Helper functions

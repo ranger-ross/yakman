@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
-    YakManUser, YakManUserDetails,
+    YakManUser, YakManUserDetails, YakManPassword,
 };
 use log::info;
 
@@ -224,6 +224,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         self.insert(self.get_api_keys_key(), serde_json::to_string(&api_keys)?)
             .await;
         Ok(())
+    }
+
+    async fn save_password(&self, email_hash: &str, password: YakManPassword) {
+        todo!()
+    }
+
+    async fn get_password(&self, email_hash: &str) -> Result<Option<YakManPassword>, GenericStorageError> {
+        todo!();
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {

@@ -8,7 +8,7 @@ use async_trait::async_trait;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
-    YakManUser, YakManUserDetails,
+    YakManUser, YakManUserDetails, YakManPassword,
 };
 use log::{error, info};
 
@@ -378,6 +378,16 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Write::write_all(&mut data_file, data.as_bytes())?;
         Ok(())
     }
+
+    async fn save_password(&self, email_hash: &str, password: YakManPassword) {
+        todo!()
+    }
+
+    async fn get_password(&self, email_hash: &str) -> Result<Option<YakManPassword>, GenericStorageError> {
+        todo!();
+    }
+
+
 }
 
 // Helper functions
