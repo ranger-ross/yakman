@@ -74,6 +74,8 @@
         openGlobaModal({
             title: "Are you sure you want to delete this instance?",
             message: "This cannot be undone.",
+            confirmButtonVariant: "danger",
+            confirmButtonText: "Delete",
             async onConfirm() {
                 await trpc($page).instances.deleteConfigInstance.mutate({
                     configName: config,
@@ -122,11 +124,13 @@
                     Create Config Instance
                 {/if}
             </h1>
-            <div>
-                <YakManButton variant="danger" on:click={onDeleteClicked}>
-                    Delete
-                </YakManButton>
-            </div>
+            {#if editMode}
+                <div>
+                    <YakManButton variant="danger" on:click={onDeleteClicked}>
+                        Delete
+                    </YakManButton>
+                </div>
+            {/if}
         </div>
 
         <div class="h-56">
