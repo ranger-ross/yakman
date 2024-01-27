@@ -5,6 +5,10 @@
     export let isStaticBackdrop: boolean = false;
     export let title = "";
     export let onConfirm = () => {};
+    export let confirmButtonVariant: "primary" | "secondary" | "danger" = "primary";
+    export let confirmButtonText: string = 'Confirm';
+
+    console.log(confirmButtonVariant)
 
     let containerClass: string;
     let modalClass: string;
@@ -65,7 +69,10 @@
                 <div
                     class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
                 >
-                    <YakManButton on:click={onConfirm}>Confirm</YakManButton>
+                    <YakManButton
+                        variant={confirmButtonVariant}
+                        on:click={onConfirm}>{confirmButtonText}</YakManButton
+                    >
                     <YakManButton
                         variant="secondary"
                         on:click={() => {

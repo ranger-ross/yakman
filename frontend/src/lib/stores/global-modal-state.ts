@@ -6,14 +6,18 @@ type GlobalModalState = {
     message: string,
     isStaticBackdrop: boolean,
     onConfirm: () => void,
+    confirmButtonVariant: "primary" | "secondary" | "danger"
+    confirmButtonText: string,
 };
 
-const closedState = {
+const closedState: GlobalModalState = {
     open: false,
     title: "",
     message: "",
     isStaticBackdrop: false,
     onConfirm: () => { },
+    confirmButtonVariant: "primary",
+    confirmButtonText: "Confirm"
 };
 
 export const globalModalState = writable<GlobalModalState>(closedState);
@@ -24,10 +28,12 @@ type OpenGlobalModal = {
     message: string,
     isStaticBackdrop?: boolean,
     onConfirm: () => void,
-    autoCloseOnConfirm?: boolean
+    autoCloseOnConfirm?: boolean,
+    confirmButtonVariant?: "primary" | "secondary" | "danger"
+    confirmButtonText: string,
 };
 
-export function openGlobaModal({ title, message, onConfirm, isStaticBackdrop = false, autoCloseOnConfirm = true }: OpenGlobalModal) {
+export function openGlobaModal({ title, message, onConfirm, isStaticBackdrop = false, autoCloseOnConfirm = true, confirmButtonVariant = "primary", confirmButtonText = "Confirm" }: OpenGlobalModal) {
     globalModalState.set({
         open: true,
         title: title,
@@ -39,5 +45,7 @@ export function openGlobaModal({ title, message, onConfirm, isStaticBackdrop = f
             }
             onConfirm();
         },
+        confirmButtonVariant,
+        confirmButtonText,
     });
 }

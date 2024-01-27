@@ -53,6 +53,8 @@
 		open={$globalModalState.open}
 		isStaticBackdrop={$globalModalState.isStaticBackdrop}
 		onConfirm={$globalModalState.onConfirm}
+		confirmButtonVariant={$globalModalState.confirmButtonVariant}
+		confirmButtonText={$globalModalState.confirmButtonText}
 	>
 		<p class="text-gray-800">{$globalModalState.message}</p>
 	</YakManModal>
