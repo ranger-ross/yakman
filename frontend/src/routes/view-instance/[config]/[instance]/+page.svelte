@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from "$app/stores";
+    import { replaceState } from "$app/navigation";
     import LabelPill from "$lib/components/LabelPill.svelte";
     import MonacoEditor from "$lib/components/MonacoEditor.svelte";
     import YakManButton from "$lib/components/YakManButton.svelte";
@@ -15,13 +16,17 @@
     export let data: PageData;
     $: editorLanguage = contentTypeToMonacoLanguage(data.data?.contentType);
 
-    let selectedHistoryTab: "Changelog" | "Revisions" = "Changelog";
+    function onTabChange(option: string) {
+        replaceState(`?tab=${option}`, {});
+    }
+
+    let selectedHistoryTab: "Changelog" | "Revisions" = data.tab ?? "Changelog";
 
     let sortedRevisions =
         data.revisions.sort((a, b) => b.timestamp_ms - a.timestamp_ms) ?? [];
     let sortedChangelog =
         data.instance?.changelog.sort(
-            (a, b) => b.timestamp_ms - a.timestamp_ms
+            (a, b) => b.timestamp_ms - a.timestamp_ms,
         ) ?? [];
 </script>
 
@@ -34,7 +39,10 @@
                     <h1 class="text-md text-gray-700">{instance}</h1>
                 </div>
                 <div>
-                    <a tabindex="-1" href={`/modify-instance/${config}/${instance}`}>
+                    <a
+                        tabindex="-1"
+                        href={`/modify-instance/${config}/${instance}`}
+                    >
                         <YakManButton>Edit</YakManButton>
                     </a>
                 </div>
@@ -80,6 +88,7 @@
         <YakManSegmentSelect
             bind:selectedOption={selectedHistoryTab}
             options={["Changelog", "Revisions"]}
+            on:select={(event) => onTabChange(event.detail)}
         />
 
         {#if selectedHistoryTab == "Changelog"}
