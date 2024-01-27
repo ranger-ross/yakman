@@ -33,7 +33,14 @@ export const load: PageLoad = async (event) => {
     return {
         data: data,
         instance: instanceMetadata,
-        revisions: revisions
+        revisions: revisions,
+        tab: getTab(event.url.searchParams)
     };
 };
 
+function getTab(searchParams: URLSearchParams): "Changelog" | "Revisions" | null {
+    let tab = searchParams.get('tab');
+    if (['Changelog', 'Revisions'].includes(tab as string))
+        return tab as "Changelog" | "Revisions"
+    return null;
+}

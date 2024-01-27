@@ -8,8 +8,6 @@
     export let confirmButtonVariant: "primary" | "secondary" | "danger" = "primary";
     export let confirmButtonText: string = 'Confirm';
 
-    console.log(confirmButtonVariant)
-
     let containerClass: string;
     let modalClass: string;
 
