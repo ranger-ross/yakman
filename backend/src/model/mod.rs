@@ -151,3 +151,9 @@ pub struct YakManUserDetails {
     pub global_roles: Vec<YakManRole>,
     pub roles: Vec<YakManUserProjectRole>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManPassword {
+    pub hash: String,
+    pub timestamp: i32,
+}

@@ -1,6 +1,6 @@
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
-    YakManUser, YakManUserDetails,
+    YakManUser, YakManUserDetails, YakManPassword,
 };
 use async_trait::async_trait;
 
@@ -112,6 +112,10 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 
     async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError>;
+
+    async fn save_password(&self, email_hash: &str, password: YakManPassword);
+
+    async fn get_password(&self, email_hash: &str) -> Result<Option<YakManPassword>, GenericStorageError>;
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError>;
 }
