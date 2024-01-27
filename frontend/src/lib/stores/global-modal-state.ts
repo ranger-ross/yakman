@@ -30,7 +30,7 @@ type OpenGlobalModal = {
     onConfirm: () => void,
     autoCloseOnConfirm?: boolean,
     confirmButtonVariant?: "primary" | "secondary" | "danger"
-    confirmButtonText: string,
+    confirmButtonText?: string,
 };
 
 export function openGlobaModal({ title, message, onConfirm, isStaticBackdrop = false, autoCloseOnConfirm = true, confirmButtonVariant = "primary", confirmButtonText = "Confirm" }: OpenGlobalModal) {
