@@ -685,7 +685,7 @@ impl StorageService for KVStorageService {
         //     .unwrap();
 
         // let now = Utc::now().timestamp_millis();
-        // let new_password = format!("new-long-{}", now);
+        // let new_password = format!("new-loAng-{}", now);
 
         // let reset = self
         //     .reset_password_with_link(reset_link, &new_password)
@@ -828,29 +828,26 @@ impl StorageService for KVStorageService {
             None => todo!("better error"),
         };
 
-        let id = Uuid::new_v4().to_string();
+        let id = short_sha(&Uuid::new_v4().to_string());
+        let id_hash = sha256::digest(&id);
 
         let email = user.email;
         let email_hash = sha256::digest(&email);
-        let nonce = Uuid::new_v4().to_string();
-        let nonce_hash = sha256::digest(&nonce);
 
         let expiration = Utc::now() + chrono::Duration::days(2);
 
         let password_reset_link = YakManPasswordResetLink {
             email_hash,
-            nonce: nonce_hash,
             expiration_timestamp_ms: expiration.timestamp_millis(),
         };
 
         self.adapter
-            .save_password_reset_link(&id, password_reset_link)
+            .save_password_reset_link(&id_hash, password_reset_link)
             .await?;
 
         return Ok(YakManPublicPasswordResetLink {
             id,
             user_uuid: user_uuid.to_string(),
-            nonce,
         });
     }
 
@@ -861,19 +858,14 @@ impl StorageService for KVStorageService {
     ) -> Result<(), ResetPasswordError> {
         let now = Utc::now().timestamp_millis();
 
-        let password_reset_link = match self.adapter.get_password_reset_link(&reset_link.id).await?
+        let id = sha256::digest(&reset_link.id);
+        let password_reset_link = match self.adapter.get_password_reset_link(&id).await?
         {
             Some(password_reset_link) => password_reset_link,
             None => {
                 return Err(ResetPasswordError::ResetLinkNotFound);
             }
         };
-
-        // Validate nonce
-        let nonce_hash = sha256::digest(&reset_link.nonce);
-        if &nonce_hash != &password_reset_link.nonce {
-            return Err(ResetPasswordError::InvalidNonce);
-        }
 
         // Validate user_uuid match email hash from storage
         let user = match self.get_user_by_uuid(&reset_link.user_uuid).await? {
@@ -906,7 +898,7 @@ impl StorageService for KVStorageService {
             .await?;
 
         self.adapter
-            .delete_password_reset_link(&reset_link.id)
+            .delete_password_reset_link(&id)
             .await?;
 
         Ok(())

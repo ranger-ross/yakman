@@ -288,8 +288,6 @@ impl std::error::Error for LabelAlreadyExistsError {
 pub enum ResetPasswordError {
     #[error("Reset link not valid")]
     ResetLinkNotFound,
-    #[error("Invalid nonce")]
-    InvalidNonce,
     #[error("Invalid user")]
     InvalidUser,
     #[error("Invalid email")]

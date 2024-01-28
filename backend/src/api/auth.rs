@@ -76,9 +76,6 @@ impl From<ResetPasswordError> for YakManApiError {
             ResetPasswordError::ResetLinkNotFound => {
                 return YakManApiError::not_found("reset link not found")
             }
-            ResetPasswordError::InvalidNonce => {
-                return YakManApiError::bad_request("Invalid nonce")
-            }
             ResetPasswordError::InvalidUser => {
                 return YakManApiError::bad_request("Invalid user id")
             }
