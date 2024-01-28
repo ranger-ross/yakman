@@ -59,7 +59,7 @@ pub struct PasswordResetPayload {
 /// Setup new user after set password link
 #[utoipa::path(responses((status = 200)))]
 #[post("/auth/reset-password")]
-pub async fn auth_reset_password(
+pub async fn reset_password(
     payload: Json<PasswordResetPayload>,
     state: web::Data<StateManager>,
 ) -> Result<impl Responder, YakManApiError> {
