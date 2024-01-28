@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use super::{password::{hash_password, is_valid_password}, StorageService};
+use super::{
+    password::{hash_password, validate_password},
+    StorageService,
+};
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
@@ -887,8 +890,7 @@ impl StorageService for KVStorageService {
             todo!("throw validation error");
         }
 
-        
-        if !is_valid_password(password) {
+        if let Err(err) = validate_password(password) {
             todo!("throw validation error");
         }
 
