@@ -5,7 +5,7 @@ use crate::{
     StateManager,
 };
 use actix_web::{
-    post,
+    get, post,
     web::{self, Json},
     HttpResponse, Responder,
 };
@@ -49,6 +49,41 @@ pub async fn create_password_reset_link(
         Ok(reset_link) => return Ok(web::Json(reset_link)),
         Err(err) => {
             log::error!("failed to create password reset link: {}", err);
+            return Err(YakManApiError::server_error("internal server error"));
+        }
+    };
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ValidatePasswordResetLink {
+    pub id: String,
+    pub user_uuid: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ValidatePasswordResetLinkResponse {
+    pub valid: bool,
+}
+
+/// Validates a password reset link is valid
+#[utoipa::path(responses((status = 200, body = String)))]
+#[post("/auth/validate-reset-password-link")]
+pub async fn validate_password_reset_link(
+    payload: Json<ValidatePasswordResetLink>,
+    state: web::Data<StateManager>,
+) -> Result<impl Responder, YakManApiError> {
+    match state
+        .get_service()
+        .validate_password_reset_link(&payload.id, &payload.user_uuid)
+        .await
+    {
+        Ok(is_valid) => {
+            return Ok(web::Json(ValidatePasswordResetLinkResponse {
+                valid: is_valid,
+            }))
+        }
+        Err(err) => {
+            log::error!("Failed to validate password reset link: {}", err);
             return Err(YakManApiError::server_error("internal server error"));
         }
     };

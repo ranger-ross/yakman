@@ -54,34 +54,38 @@
             <div>
                 <h1 class="text-lg font-bold mb-2">Reset Password</h1>
 
-                {#if !data.id && !data.userUuid}
-                    <p>Error</p>
-                {:else}
-                    <YakManInput
-                        placeholder="New password"
-                        bind:value={password}
-                        type="password"
-                    />
-                    <YakManInput
-                        placeholder="Enter password again"
-                        bind:value={confirmPassword}
-                        type="password"
-                    />
-
-                    {#if !!passwordError}
-                        <div class="text-red-600 font-semibold">
-                            {passwordError}
-                        </div>
+                {#if data.isValidLink}
+                    {#if !data.id && !data.userUuid}
+                        <p>Error</p>
                     {:else}
-                        <div class="mb-6"></div>
-                    {/if}
+                        <YakManInput
+                            placeholder="New password"
+                            bind:value={password}
+                            type="password"
+                        />
+                        <YakManInput
+                            placeholder="Enter password again"
+                            bind:value={confirmPassword}
+                            type="password"
+                        />
 
-                    <YakManButton
-                        on:click={resetPassword}
-                        disabled={isResetDisabled}
-                    >
-                        Reset Password
-                    </YakManButton>
+                        {#if !!passwordError}
+                            <div class="text-red-600 font-semibold">
+                                {passwordError}
+                            </div>
+                        {:else}
+                            <div class="mb-6"></div>
+                        {/if}
+
+                        <YakManButton
+                            on:click={resetPassword}
+                            disabled={isResetDisabled}
+                        >
+                            Reset Password
+                        </YakManButton>
+                    {/if}
+                {:else}
+                    <p>Invalid password reset link</p>
                 {/if}
             </div>
         </div>

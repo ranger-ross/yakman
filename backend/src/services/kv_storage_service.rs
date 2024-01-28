@@ -859,8 +859,7 @@ impl StorageService for KVStorageService {
         let now = Utc::now().timestamp_millis();
 
         let id = sha256::digest(&reset_link.id);
-        let password_reset_link = match self.adapter.get_password_reset_link(&id).await?
-        {
+        let password_reset_link = match self.adapter.get_password_reset_link(&id).await? {
             Some(password_reset_link) => password_reset_link,
             None => {
                 return Err(ResetPasswordError::ResetLinkNotFound);
@@ -897,11 +896,37 @@ impl StorageService for KVStorageService {
             )
             .await?;
 
-        self.adapter
-            .delete_password_reset_link(&id)
-            .await?;
+        self.adapter.delete_password_reset_link(&id).await?;
 
         Ok(())
+    }
+
+    async fn validate_password_reset_link(
+        &self,
+        id: &str,
+        user_uuid: &str,
+    ) -> Result<bool, GenericStorageError> {
+        let id = sha256::digest(id);
+        let password_reset_link = match self.adapter.get_password_reset_link(&id).await? {
+            Some(password_reset_link) => password_reset_link,
+            None => return Ok(false),
+        };
+
+        let now = Utc::now().timestamp_millis();
+
+        // Validate expiration
+        if password_reset_link.expiration_timestamp_ms < now {
+            return Ok(false);
+        }
+
+        // Validate user_uuid match email hash from storage
+        let user = match self.get_user_by_uuid(user_uuid).await? {
+            Some(user) => user,
+            None => return Ok(false),
+        };
+
+        let email_hash = sha256::digest(&user.email);
+        return Ok(&email_hash == &password_reset_link.email_hash);
     }
 }
 
