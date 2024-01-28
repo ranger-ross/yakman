@@ -1,7 +1,10 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManInput from "$lib/components/YakManInput.svelte";
+    import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
 
     export let data: PageData;
@@ -37,14 +40,21 @@
         isResetDisabled = passwordError != null || password.length === 0;
     }
 
-    // TODO: Verify the id and user id are valid and show and error if they are not
-
-    function resetPassword() {
+    async function resetPassword() {
         if (isResetDisabled) {
             return;
         }
 
-        console.warn("TODO: send password reset request");
+        try {
+            await trpc($page).auth.resetPassword.mutate({
+                id: data.id,
+                userUuid: data.userUuid,
+                password,
+            });
+            goto("/");
+        } catch (e) {
+            console.error("failed to reset password", e);
+        }
     }
 </script>
 

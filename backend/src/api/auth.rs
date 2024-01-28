@@ -5,7 +5,7 @@ use crate::{
     StateManager,
 };
 use actix_web::{
-    get, post,
+    post,
     web::{self, Json},
     HttpResponse, Responder,
 };
