@@ -1,5 +1,7 @@
 use crate::{
-    error::YakManApiError, middleware::YakManPrinciple, model::YakManPublicPasswordResetLink,
+    error::{ResetPasswordError, YakManApiError},
+    middleware::YakManPrinciple,
+    model::YakManPublicPasswordResetLink,
     StateManager,
 };
 use actix_web::{
@@ -64,8 +66,35 @@ pub async fn auth_reset_password(
     state
         .get_service()
         .reset_password_with_link(payload.reset_link.clone(), &payload.password)
-        .await
-        .unwrap(); // TODO: Handle error
+        .await?;
+    return Ok(web::Json(()));
+}
 
-    Ok(web::Json(()))
+impl From<ResetPasswordError> for YakManApiError {
+    fn from(value: ResetPasswordError) -> Self {
+        match value {
+            ResetPasswordError::ResetLinkNotFound => {
+                return YakManApiError::not_found("reset link not found")
+            }
+            ResetPasswordError::InvalidNonce => {
+                return YakManApiError::bad_request("Invalid nonce")
+            }
+            ResetPasswordError::InvalidUser => {
+                return YakManApiError::bad_request("Invalid user id")
+            }
+            ResetPasswordError::InvalidEmail => {
+                return YakManApiError::bad_request("Invalid email")
+            }
+            ResetPasswordError::ResetLinkExpired => {
+                return YakManApiError::bad_request("Reset link expired")
+            }
+            ResetPasswordError::PasswordValidationError { error } => {
+                return YakManApiError::bad_request(&error.to_string())
+            }
+            ResetPasswordError::StorageError { message } => {
+                log::error!("Failed to reset password: {}", message);
+                return YakManApiError::server_error("storage error");
+            }
+        }
+    }
 }

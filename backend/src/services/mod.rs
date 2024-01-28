@@ -6,7 +6,7 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
-        RollbackRevisionError, SaveConfigInstanceError,
+        RollbackRevisionError, SaveConfigInstanceError, ResetPasswordError,
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
@@ -176,7 +176,7 @@ pub trait StorageService: Sync + Send {
         &self,
         reset_link: YakManPublicPasswordResetLink,
         password: &str,
-    ) -> Result<(), GenericStorageError>;
+    ) -> Result<(), ResetPasswordError>;
 
     async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError>;
 

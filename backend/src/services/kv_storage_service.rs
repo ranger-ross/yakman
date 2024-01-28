@@ -9,7 +9,7 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
-        RollbackRevisionError, SaveConfigInstanceError,
+        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
@@ -858,40 +858,40 @@ impl StorageService for KVStorageService {
         &self,
         reset_link: YakManPublicPasswordResetLink,
         password: &str,
-    ) -> Result<(), GenericStorageError> {
+    ) -> Result<(), ResetPasswordError> {
         let now = Utc::now().timestamp_millis();
 
-        let password_reset_link = self
-            .adapter
-            .get_password_reset_link(&reset_link.id)
-            .await
-            .unwrap() // TODO: Handle errors
-            .unwrap();
+        let password_reset_link = match self.adapter.get_password_reset_link(&reset_link.id).await?
+        {
+            Some(password_reset_link) => password_reset_link,
+            None => {
+                return Err(ResetPasswordError::ResetLinkNotFound);
+            }
+        };
 
         // Validate nonce
         let nonce_hash = sha256::digest(&reset_link.nonce);
         if &nonce_hash != &password_reset_link.nonce {
-            todo!("throw validation error");
+            return Err(ResetPasswordError::InvalidNonce);
         }
 
         // Validate user_uuid match email hash from storage
-        let user = self
-            .get_user_by_uuid(&reset_link.user_uuid)
-            .await
-            .unwrap()
-            .unwrap();
+        let user = match self.get_user_by_uuid(&reset_link.user_uuid).await? {
+            Some(user) => user,
+            None => return Err(ResetPasswordError::InvalidUser),
+        };
         let email_hash = sha256::digest(&user.email);
         if &email_hash != &password_reset_link.email_hash {
-            todo!("throw validation error");
+            return Err(ResetPasswordError::InvalidEmail);
         }
 
         // Validate expiration
         if password_reset_link.expiration_timestamp_ms < now {
-            todo!("throw validation error");
+            return Err(ResetPasswordError::ResetLinkExpired);
         }
 
         if let Err(err) = validate_password(password) {
-            todo!("throw validation error");
+            return Err(ResetPasswordError::PasswordValidationError { error: err });
         }
 
         let password_hash = hash_password(password).unwrap();
@@ -903,13 +903,11 @@ impl StorageService for KVStorageService {
                     timestamp: now,
                 },
             )
-            .await
-            .unwrap();
+            .await?;
 
         self.adapter
             .delete_password_reset_link(&reset_link.id)
-            .await
-            .unwrap(); // TODO: handle error
+            .await?;
 
         Ok(())
     }
