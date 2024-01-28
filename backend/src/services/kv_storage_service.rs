@@ -11,7 +11,8 @@ use crate::{
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
         RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
-        YakManProject, YakManRole, YakManUser, YakManUserDetails,
+        YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink, YakManRole,
+        YakManUser, YakManUserDetails,
     },
 };
 use argon2::{
@@ -800,6 +801,41 @@ impl StorageService for KVStorageService {
         }
 
         return Ok(());
+    }
+
+    async fn create_password_reset_link(
+        &self,
+        user_uuid: &str,
+    ) -> Result<YakManPublicPasswordResetLink, GenericStorageError> {
+        let user = match self.get_user_by_uuid(user_uuid).await? {
+            Some(user) => user,
+            None => todo!("better error"),
+        };
+
+        let id = Uuid::new_v4().to_string();
+
+        let email = user.email;
+        let email_hash = sha256::digest(&email);
+        let nonce = Uuid::new_v4().to_string();
+        let nonce_hash = sha256::digest(&nonce);
+
+        let expiration = Utc::now() + chrono::Duration::days(2);
+
+        let password_reset_link = YakManPasswordResetLink {
+            email_hash,
+            nonce: nonce_hash,
+            expiration_timestamp_ms: expiration.timestamp_millis(),
+        };
+
+        self.adapter
+            .save_password_reset_link(&id, password_reset_link)
+            .await?;
+
+        return Ok(YakManPublicPasswordResetLink {
+            id,
+            user_uuid: user_uuid.to_string(),
+            nonce,
+        });
     }
 }
 

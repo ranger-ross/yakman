@@ -163,6 +163,15 @@ pub struct YakManPasswordResetLink {
     pub email_hash: String,
     pub expiration_timestamp_ms: i64,
     /// This nonce makes it more difficult to contruct a password reset link
-    /// by someone that has read access to the data storage system
+    /// by someone that has read access to the data storage system.
+    /// This is stored as a hash so it cannot be taken from the storage system.
+    pub nonce: String,
+}
+
+/// Public response when creating a password reset link
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManPublicPasswordResetLink {
+    pub id: String,
+    pub user_uuid: String,
     pub nonce: String,
 }
