@@ -5,7 +5,7 @@ use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManProject, YakManUser, YakManUserDetails,
+    YakManProject, YakManUser, YakManUserDetails, YakManPasswordResetLink,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -236,6 +236,21 @@ impl KVStorageAdapter for RedisStorageAdapter {
         &self,
         email_hash: &str,
     ) -> Result<Option<YakManPassword>, GenericStorageError> {
+        todo!();
+    }
+
+    async fn get_password_reset_link(
+        &self,
+        id: &str,
+    ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
+        todo!();
+    }
+
+    async fn save_password_reset_link(
+        &self,
+        id: &str,
+        link: YakManPasswordResetLink,
+    ) -> Result<(), GenericStorageError> {
         todo!();
     }
 

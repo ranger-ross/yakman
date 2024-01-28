@@ -157,3 +157,12 @@ pub struct YakManPassword {
     pub hash: String,
     pub timestamp: i64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManPasswordResetLink {
+    pub email_hash: String,
+    pub expiration_timestamp_ms: i64,
+    /// This nonce makes it more difficult to contruct a password reset link
+    /// by someone that has read access to the data storage system
+    pub nonce: String,
+}

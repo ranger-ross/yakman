@@ -8,7 +8,7 @@ use async_trait::async_trait;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManProject, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
 };
 use log::{error, info};
 
@@ -412,6 +412,21 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         }
 
         return Ok(None);
+    }
+
+    async fn get_password_reset_link(
+        &self,
+        id: &str,
+    ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
+        todo!();
+    }
+
+    async fn save_password_reset_link(
+        &self,
+        id: &str,
+        link: YakManPasswordResetLink,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
     }
 }
 

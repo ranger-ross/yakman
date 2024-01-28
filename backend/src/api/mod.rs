@@ -6,6 +6,7 @@ pub mod labels;
 pub mod oauth;
 pub mod projects;
 pub mod revisions;
+pub mod auth;
 
 fn is_alphanumeric_kebab_case(s: &str) -> bool {
     s.chars().all(|c| c == '-' || c.is_alphanumeric())
