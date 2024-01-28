@@ -15,6 +15,7 @@
     let newApiKeyProject = data.projects[0].uuid;
     let newApiKeyRole = "Viewer";
     let newApiKey: string | null = null;
+    let resetPasswordLink: string | null = null;
 
     async function createUser() {
         console.log("createUser");
@@ -49,14 +50,14 @@
     async function resetPassword() {
         console.log(resetPasswordUserUuid);
 
-        const {id, user_uuid} = await trpc($page).auth.createResetPasswordLink.mutate({
+        const { id, user_uuid } = await trpc(
+            $page,
+        ).auth.createResetPasswordLink.mutate({
             userUuid: resetPasswordUserUuid,
         });
 
         const origin = $page.url.origin;
-        const link = `${origin}/session/reset-password?id=${id}&user_uuid=${user_uuid}`;
-
-        console.log(link);
+        resetPasswordLink = `${origin}/session/reset-password?id=${id}&user_uuid=${user_uuid}`;
     }
 
     async function deleteApiKey(id: string) {
@@ -82,10 +83,18 @@
     </YakManCard>
 
     <YakManCard extraClasses="mt-2">
+        <h2 class="text-xl font-bold mt-2">Reset Password</h2>
         <YakManInput
             placeholder="User UUID"
             bind:value={resetPasswordUserUuid}
         />
+
+        {#if resetPasswordLink}
+            <div class="text-lg my-3">
+                {resetPasswordLink}
+            </div>
+        {/if}
+
         <YakManButton on:click={resetPassword}>Reset Password</YakManButton>
     </YakManCard>
 
