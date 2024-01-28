@@ -7,8 +7,8 @@ use std::{
 use async_trait::async_trait;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManProject,
-    YakManUser, YakManUserDetails, YakManPassword,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    YakManProject, YakManUser, YakManUserDetails,
 };
 use log::{error, info};
 
@@ -223,6 +223,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             ));
         }
 
+        let password_dir = self.get_password_dir();
+        if !Path::new(&password_dir).is_dir() {
+            log::info!("Creating {}", password_dir);
+            fs::create_dir(&password_dir)
+                .expect(&format!("Failed to create password dir: {}", password_dir));
+        }
+
         let project_file = self.get_projects_file_path();
         if !Path::new(&project_file).is_file() {
             self.save_projects(vec![])
@@ -379,15 +386,35 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
-    async fn save_password(&self, email_hash: &str, password: YakManPassword) {
-        todo!()
+    async fn save_password(
+        &self,
+        email_hash: &str,
+        password: YakManPassword,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_password_dir();
+        let path = format!("{dir}/{email_hash}.json");
+        let data: String = serde_json::to_string(&password)?;
+        let mut data_file = File::create(&path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+        return Ok(());
     }
 
-    async fn get_password(&self, email_hash: &str) -> Result<Option<YakManPassword>, GenericStorageError> {
-        todo!();
+    async fn get_password(
+        &self,
+        email_hash: &str,
+    ) -> Result<Option<YakManPassword>, GenericStorageError> {
+        let dir = self.get_password_dir();
+        let path = format!("{dir}/{email_hash}.json");
+
+        if let Ok(content) = fs::read_to_string(&path) {
+            let data: YakManPassword = serde_json::from_str(&content)?;
+            return Ok(Some(data));
+        } else {
+            log::error!("Failed to load password file for email: {email_hash}");
+        }
+
+        return Ok(None);
     }
-
-
 }
 
 // Helper functions
@@ -436,6 +463,11 @@ impl LocalFileStorageAdapter {
     fn get_user_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/users");
+    }
+
+    fn get_password_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/passwords");
     }
 
     fn get_config_instance_metadata_dir(&self) -> String {
