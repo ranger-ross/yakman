@@ -7,7 +7,7 @@ use crate::{
 use actix_web::{
     post,
     web::{self, Json},
-    Responder,
+    HttpResponse, Responder,
 };
 pub use serde::Deserialize;
 use serde::Serialize;
@@ -57,7 +57,7 @@ pub struct PasswordResetPayload {
 }
 
 /// Setup new user after set password link
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200)))]
 #[post("/auth/reset-password")]
 pub async fn auth_reset_password(
     payload: Json<PasswordResetPayload>,
@@ -67,7 +67,7 @@ pub async fn auth_reset_password(
         .get_service()
         .reset_password_with_link(payload.reset_link.clone(), &payload.password)
         .await?;
-    return Ok(web::Json(()));
+    return Ok(HttpResponse::Ok().finish());
 }
 
 impl From<ResetPasswordError> for YakManApiError {
