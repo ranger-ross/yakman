@@ -10,9 +10,13 @@ use crate::{
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
-        RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManProject, YakManRole,
-        YakManUser, YakManUserDetails,
+        RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
+        YakManProject, YakManRole, YakManUser, YakManUserDetails,
     },
+};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -605,7 +609,8 @@ impl StorageService for KVStorageService {
     }
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError> {
-        info!("initializing local storage adapter");
+        log::info!("initializing local storage adapter");
+        let now = Utc::now().timestamp_millis();
 
         self.adapter.initialize_yakman_storage().await?;
 
@@ -631,6 +636,43 @@ impl StorageService for KVStorageService {
                 .await?;
 
             self.adapter.save_users(vec![admin_user]).await?;
+        }
+
+        // Set the default admin password
+        if let Ok(email) = std::env::var("YAKMAN_DEFAULT_ADMIN_USER_EMAIL") {
+            if let Ok(default_password) = std::env::var("YAKMAN_DEFAULT_ADMIN_USER_PASSWORD") {
+                let email_hash = sha256::digest(&email);
+
+                // Don't set the password if it already exists
+                match self.adapter.get_password(&email_hash).await {
+                    Ok(None) => {
+                        log::info!("Saving default admin password");
+                        // Example from: https://docs.rs/argon2/latest/argon2
+                        let salt = SaltString::generate(&mut OsRng);
+                        let argon2 = Argon2::default();
+                        let password_hash = argon2
+                            .hash_password(default_password.as_bytes(), &salt)
+                            .map_err(|e| {
+                                GenericStorageError::new(
+                                    "Failed to hash default password".to_string(),
+                                    e.to_string(),
+                                )
+                            })?
+                            .to_string();
+
+                        self.adapter
+                            .save_password(
+                                &email_hash,
+                                YakManPassword {
+                                    hash: password_hash,
+                                    timestamp: now,
+                                },
+                            )
+                            .await?;
+                    }
+                    _ => {}
+                }
+            }
         }
 
         Ok(())

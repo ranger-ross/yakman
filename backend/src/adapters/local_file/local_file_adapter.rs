@@ -409,8 +409,6 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         if let Ok(content) = fs::read_to_string(&path) {
             let data: YakManPassword = serde_json::from_str(&content)?;
             return Ok(Some(data));
-        } else {
-            log::error!("Failed to load password file for email: {email_hash}");
         }
 
         return Ok(None);

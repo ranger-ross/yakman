@@ -155,5 +155,5 @@ pub struct YakManUserDetails {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct YakManPassword {
     pub hash: String,
-    pub timestamp: i32,
+    pub timestamp: i64,
 }
