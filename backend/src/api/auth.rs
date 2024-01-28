@@ -1,7 +1,7 @@
 use crate::{
     error::{ResetPasswordError, YakManApiError},
-    middleware::YakManPrinciple,
-    model::YakManPublicPasswordResetLink,
+    middleware::{roles::YakManRoleBinding, YakManPrinciple},
+    model::{YakManPublicPasswordResetLink, YakManRole},
     StateManager,
 };
 use actix_web::{
@@ -9,6 +9,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse, Responder,
 };
+use actix_web_grants::permissions::AuthDetails;
 pub use serde::Deserialize;
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -25,6 +26,7 @@ pub async fn create_password_reset_link(
     payload: Json<CreatePasswordResetLink>,
     state: web::Data<StateManager>,
     principle: YakManPrinciple,
+    auth_details: AuthDetails<YakManRoleBinding>,
 ) -> Result<impl Responder, YakManApiError> {
     let target_user_uuid = &payload.user_uuid;
 
@@ -34,7 +36,9 @@ pub async fn create_password_reset_link(
     };
 
     if &user_uuid != target_user_uuid {
-        todo!("need to verify current user is global admin");
+        if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions) {
+            return Err(YakManApiError::forbidden());
+        }
     }
 
     match state
