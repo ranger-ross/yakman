@@ -1,4 +1,7 @@
-use crate::{error::YakManApiError, middleware::YakManPrinciple, StateManager};
+use crate::{
+    error::YakManApiError, middleware::YakManPrinciple, model::YakManPublicPasswordResetLink,
+    StateManager,
+};
 use actix_web::{
     post,
     web::{self, Json},
@@ -17,11 +20,11 @@ pub struct CreatePasswordResetLink {
 #[utoipa::path(responses((status = 200, body = String)))]
 #[post("/auth/create-reset-password-link")]
 pub async fn create_password_reset_link(
-    payload: Json<PasswordResetPayload>,
+    payload: Json<CreatePasswordResetLink>,
     state: web::Data<StateManager>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
-    let target_user_uuid = &payload.password_reset_id;
+    let target_user_uuid = &payload.user_uuid;
 
     let user_uuid = match principle.user_uuid {
         Some(user_id) => user_id,
@@ -47,7 +50,8 @@ pub async fn create_password_reset_link(
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PasswordResetPayload {
-    pub password_reset_id: String,
+    pub reset_link: YakManPublicPasswordResetLink,
+    pub password: String,
 }
 
 /// Setup new user after set password link
@@ -57,7 +61,11 @@ pub async fn auth_reset_password(
     payload: Json<PasswordResetPayload>,
     state: web::Data<StateManager>,
 ) -> Result<impl Responder, YakManApiError> {
-    todo!();
+    state
+        .get_service()
+        .reset_password_with_link(payload.reset_link.clone(), &payload.password)
+        .await
+        .unwrap(); // TODO: Handle error
 
     Ok(web::Json(()))
 }

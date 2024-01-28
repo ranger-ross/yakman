@@ -450,6 +450,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Write::write_all(&mut data_file, data.as_bytes())?;
         return Ok(());
     }
+
+    async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        remove_file(path)?;
+        Ok(())
+    }
 }
 
 // Helper functions

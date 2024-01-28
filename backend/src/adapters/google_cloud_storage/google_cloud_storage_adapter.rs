@@ -345,6 +345,13 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     ) -> Result<(), GenericStorageError> {
         todo!();
     }
+
+    async fn delete_password_reset_link(
+        &self,
+        id: &str,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
+    }
 }
 
 // Helper functions

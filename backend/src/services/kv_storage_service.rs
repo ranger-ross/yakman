@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use super::StorageService;
+use super::{password::{hash_password, is_valid_password}, StorageService};
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
@@ -676,6 +676,19 @@ impl StorageService for KVStorageService {
             }
         }
 
+        // let reset_link = self
+        //     .create_password_reset_link("fda58896-e0ac-49e9-8a46-8973610db9ae")
+        //     .await
+        //     .unwrap();
+
+        // let now = Utc::now().timestamp_millis();
+        // let new_password = format!("new-long-{}", now);
+
+        // let reset = self
+        //     .reset_password_with_link(reset_link, &new_password)
+        //     .await
+        //     .unwrap();
+
         Ok(())
     }
 
@@ -836,6 +849,67 @@ impl StorageService for KVStorageService {
             user_uuid: user_uuid.to_string(),
             nonce,
         });
+    }
+
+    async fn reset_password_with_link(
+        &self,
+        reset_link: YakManPublicPasswordResetLink,
+        password: &str,
+    ) -> Result<(), GenericStorageError> {
+        let now = Utc::now().timestamp_millis();
+
+        let password_reset_link = self
+            .adapter
+            .get_password_reset_link(&reset_link.id)
+            .await
+            .unwrap() // TODO: Handle errors
+            .unwrap();
+
+        // Validate nonce
+        let nonce_hash = sha256::digest(&reset_link.nonce);
+        if &nonce_hash != &password_reset_link.nonce {
+            todo!("throw validation error");
+        }
+
+        // Validate user_uuid match email hash from storage
+        let user = self
+            .get_user_by_uuid(&reset_link.user_uuid)
+            .await
+            .unwrap()
+            .unwrap();
+        let email_hash = sha256::digest(&user.email);
+        if &email_hash != &password_reset_link.email_hash {
+            todo!("throw validation error");
+        }
+
+        // Validate expiration
+        if password_reset_link.expiration_timestamp_ms < now {
+            todo!("throw validation error");
+        }
+
+        
+        if !is_valid_password(password) {
+            todo!("throw validation error");
+        }
+
+        let password_hash = hash_password(password).unwrap();
+        self.adapter
+            .save_password(
+                &email_hash,
+                YakManPassword {
+                    hash: password_hash,
+                    timestamp: now,
+                },
+            )
+            .await
+            .unwrap();
+
+        self.adapter
+            .delete_password_reset_link(&reset_link.id)
+            .await
+            .unwrap(); // TODO: handle error
+
+        Ok(())
     }
 }
 

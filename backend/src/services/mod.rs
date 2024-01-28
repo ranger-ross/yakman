@@ -1,4 +1,5 @@
 pub mod kv_storage_service;
+pub mod password;
 
 use crate::{
     adapters::errors::GenericStorageError,
@@ -9,7 +10,7 @@ use crate::{
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManProject, YakManUser, YakManUserDetails, YakManPublicPasswordResetLink,
+        YakManProject, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -170,6 +171,12 @@ pub trait StorageService: Sync + Send {
         &self,
         user_uuid: &str,
     ) -> Result<YakManPublicPasswordResetLink, GenericStorageError>;
+
+    async fn reset_password_with_link(
+        &self,
+        reset_link: YakManPublicPasswordResetLink,
+        password: &str,
+    ) -> Result<(), GenericStorageError>;
 
     async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError>;
 

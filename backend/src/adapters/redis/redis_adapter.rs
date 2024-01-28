@@ -254,6 +254,13 @@ impl KVStorageAdapter for RedisStorageAdapter {
         todo!();
     }
 
+    async fn delete_password_reset_link(
+        &self,
+        id: &str,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
+    }
+
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
 

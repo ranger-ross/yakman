@@ -256,6 +256,13 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         todo!();
     }
 
+    async fn delete_password_reset_link(
+        &self,
+        id: &str,
+    ) -> Result<(), GenericStorageError> {
+        todo!();
+    }
+
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let configs_key = self.get_configs_key();
         if !self.contains_key(&configs_key).await {
