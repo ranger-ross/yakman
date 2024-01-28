@@ -10,11 +10,12 @@ export const auth = t.router({
         .input(z.object({
             userUuid: z.string(),
         }))
-        .query(async ({ ctx, input }) => {
+        .mutation(async ({ ctx, input }) => {
             const response = await fetch(`${BASE_URL}/auth/create-reset-password-link`, {
                 method: "POST",
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     user_uuid: input.userUuid

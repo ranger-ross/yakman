@@ -62,6 +62,7 @@ impl StateManager {
 #[openapi(
     paths(
         api::auth::reset_password,
+        api::auth::create_password_reset_link,
         api::oauth::oauth_init,
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
@@ -151,6 +152,7 @@ async fn main() -> std::io::Result<()> {
             )
             // Auth
             .service(api::auth::reset_password)
+            .service(api::auth::create_password_reset_link)
             // OAuth
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)
