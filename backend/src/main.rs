@@ -40,16 +40,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(Clone)]
-pub struct StateManager {
-    service: Arc<dyn StorageService>,
-}
-
-impl StateManager {
-    #[deprecated]
-    fn get_service(&self) -> &dyn StorageService {
-        return self.service.as_ref();
-    }
-}
+pub struct StateManager {}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -122,9 +113,8 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed to create jwt service"),
     );
 
-    let state = web::Data::new(StateManager {
-        service: storage_service.clone(),
-    });
+    // todo: remove
+    let state = web::Data::new(StateManager {});
 
     let openapi = ApiDoc::openapi();
 
@@ -254,7 +244,7 @@ mod test_utils {
     use crate::{
         adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
         auth::{oauth_service::MockOAuthService, token::MockTokenService},
-        services::kv_storage_service::KVStorageService,
+        services::{kv_storage_service::KVStorageService, StorageService},
         StateManager,
     };
     use actix_web::{body::to_bytes, dev::ServiceResponse};
@@ -266,6 +256,13 @@ mod test_utils {
         let _ = env_logger::try_init();
 
         Ok(())
+    }
+
+    pub async fn test_storage_service() -> Result<Arc<dyn StorageService>> {
+        let adapter = InMemoryStorageAdapter::new();
+        adapter.initialize_yakman_storage().await?;
+        let service: KVStorageService = KVStorageService::new(Box::new(adapter));
+        return Ok(Arc::new(service));
     }
 
     pub async fn test_state_manager() -> Result<StateManager> {

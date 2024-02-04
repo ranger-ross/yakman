@@ -1,19 +1,21 @@
-use crate::model::{
-    request::{CreateConfigPayload, DeleteConfigPayload},
-    YakManRole,
-};
 use crate::{
     api::is_alphanumeric_kebab_case,
     error::YakManApiError,
     error::{CreateConfigError, DeleteConfigError},
     middleware::roles::YakManRoleBinding,
-    StateManager,
+};
+use crate::{
+    model::{
+        request::{CreateConfigPayload, DeleteConfigPayload},
+        YakManRole,
+    },
+    services::StorageService,
 };
 use actix_web::{delete, get, put, web, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 #[derive(Deserialize)]
 pub struct GetConfigsQuery {
@@ -26,7 +28,7 @@ pub struct GetConfigsQuery {
 pub async fn get_configs(
     auth_details: AuthDetails<YakManRoleBinding>,
     query: web::Query<GetConfigsQuery>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let project_uuid = query.project.to_owned();
     let has_global_role = YakManRoleBinding::has_any_global_role(
@@ -65,8 +67,7 @@ pub async fn get_configs(
         })
         .collect();
 
-    let service = state.get_service();
-    let data = service.get_visible_configs(project_uuid).await?;
+    let data = storage_service.get_visible_configs(project_uuid).await?;
 
     if has_global_role {
         return Ok(web::Json(data));
@@ -86,7 +87,7 @@ pub async fn get_configs(
 async fn create_config(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateConfigPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
@@ -112,9 +113,7 @@ async fn create_config(
         ));
     }
 
-    let service = state.get_service();
-
-    let projects = match service.get_projects().await {
+    let projects = match storage_service.get_projects().await {
         Ok(p) => p,
         Err(e) => {
             error!("Failed to load projects, error: {e:?}");
@@ -130,8 +129,9 @@ async fn create_config(
         return Err(YakManApiError::bad_request("Project does not exist"));
     }
 
-    let result: Result<(), CreateConfigError> =
-        service.create_config(&config_name, &project_uuid).await;
+    let result: Result<(), CreateConfigError> = storage_service
+        .create_config(&config_name, &project_uuid)
+        .await;
 
     return match result {
         Ok(()) => Ok(web::Json(config_name)),
@@ -153,7 +153,7 @@ async fn create_config(
 async fn delete_config(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<DeleteConfigPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
@@ -173,9 +173,7 @@ async fn delete_config(
         ));
     }
 
-    let service = state.get_service();
-
-    let result: Result<(), DeleteConfigError> = service.delete_config(&config_name).await;
+    let result: Result<(), DeleteConfigError> = storage_service.delete_config(&config_name).await;
 
     return match result {
         Ok(()) => Ok(web::Json(())),

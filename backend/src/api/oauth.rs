@@ -9,7 +9,7 @@ use crate::{
     error::YakManApiError,
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::YakManRole,
-    StateManager,
+    services::StorageService,
 };
 use actix_web::{
     get, post,
@@ -129,12 +129,10 @@ pub struct OAuthRefreshTokenResponse {
 #[post("/oauth2/refresh")]
 pub async fn oauth_refresh(
     payload: Json<OAuthRefreshTokenPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     token_service: web::Data<Arc<YakManTokenService>>,
     oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let storage = state.get_service();
-
     let encrypted_refresh_token = &payload.refresh_token;
     log::info!("{encrypted_refresh_token}");
     let refresh_token = match token_service.decrypt_refresh_token(encrypted_refresh_token) {
@@ -149,7 +147,7 @@ pub async fn oauth_refresh(
         }
     };
 
-    let user = match storage.get_user_by_email(&username).await {
+    let user = match storage_service.get_user_by_email(&username).await {
         Ok(Some(user)) => user,
         Ok(None) => return Err(YakManApiError::forbidden().set_message("User not found")),
         Err(e) => {
@@ -185,8 +183,8 @@ pub struct GetUserInfoResponse {
 #[get("/oauth2/user-info")]
 pub async fn get_user_info(
     details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
     principle: YakManPrinciple,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
         .permissions
@@ -209,8 +207,7 @@ pub async fn get_user_info(
     let mut profile_picture = None;
 
     if let Some(user_uuid) = principle.user_uuid {
-        let storage = state.get_service();
-        if let Some(user) = storage.get_user_details(&user_uuid).await? {
+        if let Some(user) = storage_service.get_user_details(&user_uuid).await? {
             profile_picture = user.profile_picture;
         }
     }

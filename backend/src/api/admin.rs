@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use crate::auth::token::API_KEY_PREFIX;
 use crate::error::YakManApiError;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
-use crate::{middleware::roles::YakManRoleBinding, StateManager};
+use crate::services::StorageService;
+use crate::middleware::roles::YakManRoleBinding;
 use actix_web::{delete, Responder};
 use actix_web::{
     get, put,
@@ -20,7 +23,7 @@ use uuid::Uuid;
 #[get("/admin/v1/users")]
 pub async fn get_yakman_users(
     auth_details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
@@ -28,7 +31,7 @@ pub async fn get_yakman_users(
         return Err(YakManApiError::forbidden());
     }
 
-    let users = state.get_service().get_users().await?;
+    let users = storage_service.get_users().await?;
     return Ok(web::Json(users));
 }
 
@@ -38,7 +41,7 @@ pub async fn get_yakman_users(
 pub async fn create_yakman_user(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: Json<CreateYakManUserPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
@@ -46,7 +49,7 @@ pub async fn create_yakman_user(
         return Err(YakManApiError::forbidden());
     }
 
-    let mut users = state.get_service().get_users().await.unwrap();
+    let mut users = storage_service.get_users().await.unwrap();
     let user = payload.into_inner();
 
     users.push(YakManUser {
@@ -55,7 +58,7 @@ pub async fn create_yakman_user(
         role: user.role,
     });
 
-    state.get_service().save_users(users).await.unwrap();
+    storage_service.save_users(users).await.unwrap();
 
     Ok(web::Json(()))
 }
@@ -65,7 +68,7 @@ pub async fn create_yakman_user(
 #[get("/admin/v1/api-keys")]
 pub async fn get_api_keys(
     auth_details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
 
@@ -73,7 +76,7 @@ pub async fn get_api_keys(
         return Err(YakManApiError::forbidden());
     }
 
-    let mut api_keys = state.get_service().get_api_keys().await?;
+    let mut api_keys = storage_service.get_api_keys().await?;
 
     // Avoid exposing the hash outside of the API
     api_keys = api_keys
@@ -103,7 +106,7 @@ pub struct CreateApiKeyResponse {
 #[put("/admin/v1/api-keys")]
 pub async fn create_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
     request: web::Json<CreateApiKeyRequest>,
 ) -> Result<impl Responder, YakManApiError> {
@@ -118,7 +121,7 @@ pub async fn create_api_key(
         None => return Err(YakManApiError::forbidden()),
     };
 
-    let projects = state.get_service().get_projects().await?;
+    let projects = storage_service.get_projects().await?;
     if !projects
         .iter()
         .any(|p| p.uuid == request.project_uuid.to_string())
@@ -138,7 +141,7 @@ pub async fn create_api_key(
         created_by_uuid: user_uuid.to_string(),
     };
 
-    state.service.save_api_key(ak).await?;
+    storage_service.save_api_key(ak).await?;
 
     return Ok(web::Json(CreateApiKeyResponse {
         api_key: new_api_key,
@@ -150,7 +153,7 @@ pub async fn create_api_key(
 #[delete("/admin/v1/api-keys/{id}")]
 pub async fn delete_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     path: web::Path<String>,
 ) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
@@ -160,7 +163,7 @@ pub async fn delete_api_key(
     }
 
     let id = path.into_inner();
-    state.get_service().delete_api_key(&id).await?;
+    storage_service.delete_api_key(&id).await?;
 
     return Ok(web::Json(()));
 }
@@ -237,9 +240,9 @@ mod tests {
 
         let state = test_state_manager().await?;
 
-        let project_uuid = state.get_service().create_project("foo").await?;
+        let project_uuid = storage_service.create_project("foo").await?;
 
-        let api_keys = state.get_service().get_api_keys().await?;
+        let api_keys = storage_service.get_api_keys().await?;
         assert_eq!(0, api_keys.len());
 
         let app = test::init_service(
@@ -272,7 +275,7 @@ mod tests {
         assert!(!value["api_key"].is_null());
         assert!(value["api_key"].is_string());
 
-        let api_keys = state.get_service().get_api_keys().await?;
+        let api_keys = storage_service.get_api_keys().await?;
         assert_eq!(1, api_keys.len());
 
         let api_key = &api_keys[0];
@@ -296,7 +299,7 @@ mod tests {
         state.service.save_api_key(fake_api_key.clone()).await?;
 
         // Validate the api key was saved so after we delete it, we can make sure the list count changes
-        let api_keys = state.get_service().get_api_keys().await?;
+        let api_keys = storage_service.get_api_keys().await?;
         assert_eq!(1, api_keys.len());
 
         let app = test::init_service(
@@ -312,7 +315,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let api_keys = state.get_service().get_api_keys().await?;
+        let api_keys = storage_service.get_api_keys().await?;
         assert_eq!(0, api_keys.len());
 
         Ok(())

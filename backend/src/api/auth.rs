@@ -1,11 +1,11 @@
 use crate::auth::token::TokenService;
+use crate::services::StorageService;
 use crate::{
     auth::token::YakManTokenService,
     error::{CreatePasswordResetLinkError, ResetPasswordError, YakManApiError},
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::{YakManPublicPasswordResetLink, YakManRole},
     services::password::verify_password,
-    StateManager,
 };
 use actix_web::{
     post,
@@ -36,12 +36,13 @@ pub struct LoginResponse {
 #[post("/auth/login")]
 pub async fn login(
     payload: web::Form<LoginRequest>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     token_service: web::Data<Arc<YakManTokenService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let storage = state.get_service();
-
-    let password = match storage.get_password_by_email(&payload.username).await {
+    let password = match storage_service
+        .get_password_by_email(&payload.username)
+        .await
+    {
         Ok(Some(password)) => password,
         _ => return Err(YakManApiError::unauthorized()),
     };
@@ -50,10 +51,11 @@ pub async fn login(
         _ => return Err(YakManApiError::unauthorized()),
     };
 
-    let user: crate::model::YakManUser = match storage.get_user_by_email(&payload.username).await {
-        Ok(Some(user)) => user,
-        _ => return Err(YakManApiError::unauthorized()),
-    };
+    let user: crate::model::YakManUser =
+        match storage_service.get_user_by_email(&payload.username).await {
+            Ok(Some(user)) => user,
+            _ => return Err(YakManApiError::unauthorized()),
+        };
 
     let (access_token_jwt, expire_timestamp) =
         match token_service.create_acess_token_jwt(&user.email, &user) {
@@ -81,7 +83,7 @@ pub struct CreatePasswordResetLink {
 #[post("/auth/create-reset-password-link")]
 pub async fn create_password_reset_link(
     payload: Json<CreatePasswordResetLink>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
     auth_details: AuthDetails<YakManRoleBinding>,
 ) -> Result<impl Responder, YakManApiError> {
@@ -98,11 +100,7 @@ pub async fn create_password_reset_link(
         }
     }
 
-    match state
-        .get_service()
-        .create_password_reset_link(&user_uuid)
-        .await
-    {
+    match storage_service.create_password_reset_link(&user_uuid).await {
         Ok(reset_link) => return Ok(web::Json(reset_link)),
         Err(CreatePasswordResetLinkError::InvalidUser) => {
             return Err(YakManApiError::bad_request("Invalid user"))
@@ -130,10 +128,9 @@ pub struct ValidatePasswordResetLinkResponse {
 #[post("/auth/validate-reset-password-link")]
 pub async fn validate_password_reset_link(
     payload: Json<ValidatePasswordResetLink>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    match state
-        .get_service()
+    match storage_service
         .validate_password_reset_link(&payload.id, &payload.user_uuid)
         .await
     {
@@ -160,10 +157,9 @@ pub struct PasswordResetPayload {
 #[post("/auth/reset-password")]
 pub async fn reset_password(
     payload: Json<PasswordResetPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    state
-        .get_service()
+    storage_service
         .reset_password_with_link(payload.reset_link.clone(), &payload.password)
         .await?;
     return Ok(HttpResponse::Ok().finish());
