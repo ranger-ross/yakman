@@ -6,9 +6,10 @@ use crate::middleware::YakManPrinciple;
 use crate::model::response::RevisionPayload;
 use crate::model::YakManRole;
 use crate::services::StorageService;
-use actix_web::{get, post, web, Responder};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 /// Get all of the revisions for a config
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
@@ -48,8 +49,8 @@ async fn get_instance_revisions(
     return Err(YakManApiError::not_found("revision not found"));
 }
 
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-enum ReviewResult {
+#[derive(Debug, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum ReviewResult {
     Approve,
     ApproveAndApply,
     Reject,
@@ -128,7 +129,7 @@ async fn review_pending_instance_revision(
 }
 
 /// Applies an approved revision
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/apply")]
 async fn apply_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -166,7 +167,7 @@ async fn apply_instance_revision(
         .apply_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
         .await
     {
-        Ok(_) => Ok(web::Json(())),
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(_) => Err(YakManApiError::server_error("failed to update instance")),
     };
 }

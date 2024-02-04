@@ -23,7 +23,7 @@ pub struct GetConfigsQuery {
 }
 
 /// List of all configs
-#[utoipa::path(responses((status = 200, body = Vec<Config>)))]
+#[utoipa::path(responses((status = 200, body = Vec<YakManConfig>)))]
 #[get("/v1/configs")]
 pub async fn get_configs(
     auth_details: AuthDetails<YakManRoleBinding>,

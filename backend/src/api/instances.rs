@@ -93,7 +93,7 @@ async fn get_instance(
 }
 
 /// Create a new config instance
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = InstancePayload)))]
 #[put("/v1/configs/{config_name}/instances")]
 async fn create_new_instance(
     auth_details: AuthDetails<YakManRoleBinding>,

@@ -160,7 +160,7 @@ pub struct YakManPasswordResetLink {
 }
 
 /// Public response when creating a password reset link
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct YakManPublicPasswordResetLink {
     pub id: String,
     pub user_uuid: String,

@@ -9,18 +9,16 @@ pub mod projects;
 pub mod revisions;
 pub mod yakman;
 
-use self::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
+use self::{admin::{CreateApiKeyRequest, CreateApiKeyResponse}, auth::{CreatePasswordResetLink, LoginRequest, PasswordResetPayload, ValidatePasswordResetLink}, oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse, OAuthRefreshTokenPayload}, revisions::ReviewResult, yakman::YakManSettingsResponse};
 use crate::model::{
-    request::{CreateConfigPayload, CreateProjectPayload},
-    response::RevisionPayload,
-    ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, YakManConfig,
-    YakManLabel, YakManProject, YakManRole, YakManUser,
+    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload}, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManPublicPasswordResetLink, YakManRole, YakManUser
 };
 use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
     App,
 };
 use utoipa::OpenApi;
+use oauth2::PkceCodeVerifier;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -52,13 +50,21 @@ use utoipa::OpenApi;
         revisions::review_pending_instance_revision,
         revisions::apply_instance_revision,
         revisions::rollback_instance_revision,
-
+        admin::get_yakman_users,
+        admin::create_yakman_user,
+        admin::get_api_keys,
+        admin::create_api_key,
+        admin::delete_api_key,
     ),
     components(
         schemas(
             YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange,
             YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse,
-            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload
+            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload, OAuthRefreshTokenPayload,
+            CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
+            DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
+            CreateApiKeyResponse
+            
         )
     ),
     tags(
@@ -70,9 +76,15 @@ use utoipa::OpenApi;
         (name = "instances", description = "Config Instance management endpoints"),
         (name = "data", description = "Config data fetching endpoints"),
         (name = "revisions", description = "Config Instance Revision management endpoints"),
+        (name = "yakman", description = "YakMan settings"),
+        (name = "admin", description = "YakMan management (admins only) endpoints"),
     )
 )]
 pub struct YakManApiDoc;
+
+fn t(x: CreateApiKeyRequest) {
+    
+}
 
 pub fn register_routes<T>(app: App<T>) -> App<T>
 where

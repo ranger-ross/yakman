@@ -10,7 +10,7 @@ pub struct YakManSettingsResponse {
 }
 
 /// Get YakMan application configurations
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = YakManSettingsResponse)))]
 #[get("/yakman/settings")]
 pub async fn yakman_settings() -> Result<impl Responder, YakManApiError> {
     let enable_oauth = settings::is_oauth_enabled();

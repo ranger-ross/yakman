@@ -7,7 +7,7 @@ use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 use crate::services::StorageService;
-use actix_web::{delete, Responder};
+use actix_web::{delete, HttpResponse, Responder};
 use actix_web::{
     get, put,
     web::{self, Json},
@@ -15,6 +15,7 @@ use actix_web::{
 use actix_web_grants::permissions::AuthDetails;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use utoipa::openapi::security::Http;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -149,7 +150,7 @@ pub async fn create_api_key(
 }
 
 /// Revoke an API key
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[delete("/admin/v1/api-keys/{id}")]
 pub async fn delete_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -165,7 +166,7 @@ pub async fn delete_api_key(
     let id = path.into_inner();
     storage_service.delete_api_key(&id).await?;
 
-    return Ok(web::Json(()));
+    return Ok(HttpResponse::Ok().finish());
 }
 
 #[cfg(test)]
