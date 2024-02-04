@@ -21,7 +21,7 @@ use std::sync::Arc;
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait OauthService: Send + Sync {
+pub trait OAuthService: Send + Sync {
     fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce);
 
     async fn exchange_oauth_code(
@@ -37,15 +37,15 @@ pub trait OauthService: Send + Sync {
     ) -> Result<(String, String), RefreshTokenError>;
 }
 
-pub struct YakManOauthService {
+pub struct YakManOAuthService {
     pub storage: Arc<dyn StorageService>,
     client: CoreClient,
     scopes: Vec<Scope>,
     redirect_url: RedirectUrl,
 }
 
-impl YakManOauthService {
-    pub async fn new(storage: Arc<dyn StorageService>) -> Result<YakManOauthService> {
+impl YakManOAuthService {
+    pub async fn new(storage: Arc<dyn StorageService>) -> Result<YakManOAuthService> {
         let provider_metadata =
             CoreProviderMetadata::discover_async(get_issuer_url()?, async_http_client).await?;
 
@@ -63,7 +63,7 @@ impl YakManOauthService {
             .map(|s| Scope::new(s))
             .collect();
 
-        return Ok(YakManOauthService {
+        return Ok(YakManOAuthService {
             storage: storage,
             client: client,
             scopes: scopes,
@@ -73,7 +73,7 @@ impl YakManOauthService {
 }
 
 #[async_trait]
-impl OauthService for YakManOauthService {
+impl OAuthService for YakManOAuthService {
     fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
         let (auth_url, csrf_token, nonce) = self
             .client
@@ -187,6 +187,38 @@ impl OauthService for YakManOauthService {
             .to_string();
 
         return Ok((String::from(access_token), username));
+    }
+}
+
+/// Service when OAuth is disabled
+pub struct OAuthDisabledService;
+
+impl OAuthDisabledService {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl OAuthService for OAuthDisabledService {
+    fn init_oauth(&self, _challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
+        todo!("DISABLED");
+    }
+
+    async fn exchange_oauth_code(
+        &self,
+        _code: String,
+        _verifier: String,
+        _nonce: String,
+    ) -> Result<(String, YakManUser, Option<RefreshToken>, Option<String>), LoginError> {
+        todo!("DISABLED");
+    }
+
+    async fn refresh_token(
+        &self,
+        _refresh_token: &str,
+    ) -> Result<(String, String), RefreshTokenError> {
+        todo!("DISABLED");
     }
 }
 
