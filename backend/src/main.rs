@@ -33,7 +33,7 @@ use model::response::RevisionPayload;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
     ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, YakManConfig,
-    YakManLabel, YakManProject, YakManRole, YakManSettings, YakManUser,
+    YakManLabel, YakManProject, YakManRole, YakManUser,
 };
 use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
@@ -92,7 +92,7 @@ impl StateManager {
     ),
     components(
         schemas(
-            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings,
+            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange,
             YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse,
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload
         )
@@ -115,9 +115,6 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     env_logger::init();
-
-    let settings = load_yak_man_settings();
-    info!("Settings {settings:?}");
 
     let service = create_service().await;
 
@@ -256,12 +253,6 @@ async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuth
         return Arc::new(oauth_service);
     }
     return Arc::new(OAuthDisabledService::new());
-}
-
-fn load_yak_man_settings() -> YakManSettings {
-    return YakManSettings {
-        version: "0.0.1".to_string(),
-    };
 }
 
 /// Testing utilities and boilerplate setup code
