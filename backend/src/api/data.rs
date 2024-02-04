@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::error::YakManApiError;
+use crate::middleware::roles::YakManRoleBinding;
 use crate::model::YakManRole;
 use crate::services::StorageService;
-use crate::middleware::roles::YakManRoleBinding;
 use actix_web::{get, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 

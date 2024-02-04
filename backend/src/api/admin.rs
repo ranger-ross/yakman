@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::auth::token::API_KEY_PREFIX;
 use crate::error::YakManApiError;
+use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
 use crate::services::StorageService;
-use crate::middleware::roles::YakManRoleBinding;
 use actix_web::{delete, Responder};
 use actix_web::{
     get, put,
