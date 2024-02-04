@@ -194,14 +194,14 @@ mod tests {
     {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         let fake_api_key = fake_api_key();
-        state.service.save_api_key(fake_api_key.clone()).await?;
+        storage_service.save_api_key(fake_api_key.clone()).await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(get_api_keys),
         )
@@ -238,7 +238,7 @@ mod tests {
     async fn create_api_keys_should_create_the_api_key_properly() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         let project_uuid = storage_service.create_project("foo").await?;
 
@@ -247,7 +247,7 @@ mod tests {
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .wrap_fn(|req, srv| {
                     req.extensions_mut().insert(YakManPrinciple {
@@ -293,10 +293,10 @@ mod tests {
     async fn delete_api_keys_should_delete_the_api_key_properly() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         let fake_api_key = fake_api_key();
-        state.service.save_api_key(fake_api_key.clone()).await?;
+        storage_service.save_api_key(fake_api_key.clone()).await?;
 
         // Validate the api key was saved so after we delete it, we can make sure the list count changes
         let api_keys = storage_service.get_api_keys().await?;
@@ -304,7 +304,7 @@ mod tests {
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(delete_api_key),
         )

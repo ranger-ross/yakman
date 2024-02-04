@@ -39,9 +39,6 @@ use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-#[derive(Clone)]
-pub struct StateManager {}
-
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -113,9 +110,6 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed to create jwt service"),
     );
 
-    // todo: remove
-    let state = web::Data::new(StateManager {});
-
     let openapi = ApiDoc::openapi();
 
     let (host, port) = yakman_host_port_from_env();
@@ -123,7 +117,6 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(state.clone())
             .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
@@ -243,9 +236,11 @@ async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuth
 mod test_utils {
     use crate::{
         adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
-        auth::{oauth_service::MockOAuthService, token::MockTokenService},
+        auth::{
+            oauth_service::{MockOAuthService, OAuthService},
+            token::{MockTokenService, TokenService},
+        },
         services::{kv_storage_service::KVStorageService, StorageService},
-        StateManager,
     };
     use actix_web::{body::to_bytes, dev::ServiceResponse};
     use anyhow::{bail, Result};
@@ -265,19 +260,14 @@ mod test_utils {
         return Ok(Arc::new(service));
     }
 
-    pub async fn test_state_manager() -> Result<StateManager> {
-        let adapter = InMemoryStorageAdapter::new();
-        adapter.initialize_yakman_storage().await?;
-        let service: KVStorageService = KVStorageService::new(Box::new(adapter));
+    #[allow(dead_code)]
+    pub async fn test_oauth_service() -> Result<Arc<dyn OAuthService>> {
+        return Ok(Arc::new(MockOAuthService::new()));
+    }
 
-        let token_service = MockTokenService::new();
-        let oauth_service = MockOAuthService::new();
-
-        return Ok(StateManager {
-            jwt_service: Arc::new(token_service),
-            oauth_service: Arc::new(oauth_service),
-            service: Arc::new(service),
-        });
+    #[allow(dead_code)]
+    pub async fn test_token_service() -> Result<Arc<dyn TokenService>> {
+        return Ok(Arc::new(MockTokenService::new()));
     }
 
     pub async fn body_to_json_value(res: ServiceResponse) -> Result<Value> {

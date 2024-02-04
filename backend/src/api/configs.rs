@@ -206,22 +206,20 @@ mod tests {
     async fn get_configs_should_return_configs() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project with 2 configs
-        let project_uuid = state.service.create_project("test").await?;
-        state
-            .service
+        let project_uuid = storage_service.create_project("test").await?;
+        storage_service
             .create_config("config1", &project_uuid)
             .await?;
-        state
-            .service
+        storage_service
             .create_config("config2", &project_uuid)
             .await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(get_configs),
         )
@@ -255,23 +253,21 @@ mod tests {
     async fn get_configs_should_not_return_configs_for_other_projects() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test 2 project with 1 config each
-        let project1_uuid = state.service.create_project("proj1").await?;
-        state
-            .service
+        let project1_uuid = storage_service.create_project("proj1").await?;
+        storage_service
             .create_config("config1", &project1_uuid)
             .await?;
-        let project2_uuid = state.service.create_project("proj2").await?;
-        state
-            .service
+        let project2_uuid = storage_service.create_project("proj2").await?;
+        storage_service
             .create_config("config2", &project2_uuid)
             .await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(get_configs),
         )
@@ -301,12 +297,11 @@ mod tests {
     ) -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project with config
-        let project1_uuid = state.service.create_project("proj1").await?;
-        state
-            .service
+        let project1_uuid = storage_service.create_project("proj1").await?;
+        storage_service
             .create_config("config1", &project1_uuid)
             .await?;
 
@@ -320,7 +315,7 @@ mod tests {
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_role_extractor))
                 .service(get_configs),
         )
@@ -338,25 +333,23 @@ mod tests {
     async fn get_configs_should_not_show_hidden_configs() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project with 2 configs
-        let project_uuid = state.service.create_project("test").await?;
-        state
-            .service
+        let project_uuid = storage_service.create_project("test").await?;
+        storage_service
             .create_config("config1", &project_uuid)
             .await?;
-        state
-            .service
+        storage_service
             .create_config("config2", &project_uuid)
             .await?;
 
         // Hide config2
-        state.service.delete_config("config2").await?;
+        storage_service.delete_config("config2").await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(get_configs),
         )
@@ -385,14 +378,14 @@ mod tests {
     async fn create_configs_should_create_config_propertly() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = state.service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test").await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_config),
         )
@@ -407,7 +400,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(200, resp.status());
 
-        let config = state.service.get_config("foo-bar").await?;
+        let config = storage_service.get_config("foo-bar").await?;
         assert!(config.is_some());
         let config = config.unwrap();
         assert_eq!("foo-bar", config.name);
@@ -420,14 +413,14 @@ mod tests {
     async fn create_configs_should_block_invalid_config_names() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = state.service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test").await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_config),
         )
@@ -449,14 +442,14 @@ mod tests {
     async fn create_configs_should_block_blank_config_names() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = state.service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test").await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_config),
         )
@@ -478,18 +471,17 @@ mod tests {
     async fn create_configs_should_block_duplicate_config_names() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = state.service.create_project("test").await?;
-        state
-            .service
+        let project_uuid = storage_service.create_project("test").await?;
+        storage_service
             .create_config("foo-bar", &project_uuid)
             .await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_config),
         )

@@ -90,14 +90,14 @@ mod tests {
     async fn get_labels_should_return_labels() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
-        state.service.create_label(foo_label()).await?;
-        state.service.create_label(bar_label()).await?;
+        storage_service.create_label(foo_label()).await?;
+        storage_service.create_label(bar_label()).await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(get_labels),
         )
@@ -121,14 +121,14 @@ mod tests {
     async fn create_label_should_create_labels_properly() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         // Make sure we are starting with no labels
-        assert_eq!(0, state.service.get_labels().await?.len());
+        assert_eq!(0, storage_service.get_labels().await?.len());
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_label),
         )
@@ -140,7 +140,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let labels = state.service.get_labels().await?;
+        let labels = storage_service.get_labels().await?;
 
         // Make sure only 1 label was created
         assert_eq!(1, labels.len());
@@ -157,11 +157,11 @@ mod tests {
     async fn create_label_should_not_allow_invalid_label_names() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state.clone()))
+                .app_data(Data::new(storage_service.clone()))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_label),
         )
@@ -178,7 +178,7 @@ mod tests {
         assert!(resp.status().is_client_error());
 
         // Make sure no labels were created
-        assert_eq!(0, state.service.get_labels().await?.len());
+        assert_eq!(0, storage_service.get_labels().await?.len());
 
         Ok(())
     }
