@@ -45,32 +45,28 @@ Hopefully this will get better with time.
 
 First you will need Cargo, Node 20, and PNPM installed:
 
+1. Create a `testing-directory/local-files` dir the the project root (git ignored)
 1. Create a `.env` file with the following values in the root of the project
     ```sh
-    YAKMAN_HOST=127.0.0.1
-    YAKMAN_PORT=8000
-    YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
+    # Log Level
     RUST_LOG=info
-    
+
+    # Token Secrets
     YAKMAN_ACCESS_TOKEN_SIGNING_KEY=12345
     YAKMAN_REFRESH_TOKEN_ENCRYPTION_KEY='a secret key12345678123456781231'
-    YAKMAN_DEFAULT_ADMIN_USER_EMAIL=john.smith@gmail.com
 
-    # Mock OAuth server (docker)
-    YAKMAN_OAUTH_TOKEN_URL=http://localhost:4011/connect/token
-    YAKMAN_OAUTH_AUTH_URL=http://localhost:4011/connect/authorize
-    YAKMAN_OAUTH_REDIRECT_URL=http://localhost:5173/session/oauth-callback
-    YAKMAN_OAUTH_ISSUER_URL=http://localhost:4011
-    YAKMAN_OAUTH_CLIENT_ID=yakman-mock-client-id
-    YAKMAN_OAUTH_CLIENT_SECRET=yakman-mock-client-secret
-    YAKMAN_OAUTH_SCOPES=email,profile,openid
+    # Default User
+    YAKMAN_DEFAULT_ADMIN_USER_EMAIL=test@null.com
+    YAKMAN_DEFAULT_ADMIN_USER_PASSWORD=YakMaster123
+
+    # Adapter
+    YAKMAN_ADAPTER=LOCAL_FILE_SYSTEM
+    LOCAL_FILE_SYSTEM_DIRECTORY=<path-to-project-directory>/testing-directory/local-files
     ```
 1. Create  a `.env` file with the following values at `./frontend/.env`
    ```sh
    YAKMAN_API_URL=http://127.0.0.1:8000
    ```
 1. Run `make install` to install the PNPM dependencies for the frontend
-1. Run `make mock-auth` to start a mock OAuth server to login.
 1. Run `make fd` to start the frontend server. (where 'fd' stands for 'frontend-dev')
 1. Run `make bd` to start the backend server. (where 'bd' stands for 'backend-dev')
-
