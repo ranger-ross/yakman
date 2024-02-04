@@ -1,6 +1,6 @@
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManProject, YakManUser, YakManUserDetails, YakManPasswordResetLink,
+    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
 
@@ -135,10 +135,7 @@ pub trait KVStorageAdapter: Sync + Send {
         link: YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError>;
 
-    async fn delete_password_reset_link(
-        &self,
-        id: &str,
-    ) -> Result<(), GenericStorageError>;
+    async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError>;
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError>;
 }
