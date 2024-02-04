@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManProject, YakManUser, YakManUserDetails, YakManPasswordResetLink,
+    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
 };
 use log::info;
 
@@ -231,21 +231,30 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         email_hash: &str,
         password: YakManPassword,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        self.insert(
+            self.get_password_key(&email_hash),
+            serde_json::to_string(&password)?,
+        )
+        .await;
+        Ok(())
     }
 
     async fn get_password(
         &self,
         email_hash: &str,
     ) -> Result<Option<YakManPassword>, GenericStorageError> {
-        todo!();
+        return Ok(self
+            .get_optional_data(&self.get_password_key(email_hash))
+            .await?);
     }
 
     async fn get_password_reset_link(
         &self,
         id: &str,
     ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
-        todo!();
+        return Ok(self
+            .get_optional_data(&self.get_password_reset_link_key(id))
+            .await?);
     }
 
     async fn save_password_reset_link(
@@ -253,14 +262,17 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         id: &str,
         link: YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError> {
-        todo!();
+        self.insert(
+            self.get_password_reset_link_key(&id),
+            serde_json::to_string(&link)?,
+        )
+        .await;
+        Ok(())
     }
 
-    async fn delete_password_reset_link(
-        &self,
-        id: &str,
-    ) -> Result<(), GenericStorageError> {
-        todo!();
+    async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
+        self.remove(&self.get_password_reset_link_key(&id)).await;
+        Ok(())
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
@@ -366,6 +378,14 @@ impl InMemoryStorageAdapter {
 
     fn get_user_key(&self, uuid: &str) -> String {
         format!("USERS_{uuid}")
+    }
+
+    fn get_password_key(&self, email_hash: &str) -> String {
+        return format!("PASSWORDS_{email_hash}");
+    }
+
+    fn get_password_reset_link_key(&self, id: &str) -> String {
+        return format!("PASSWORD_RESET_LINK_{id}");
     }
 
     pub fn new() -> InMemoryStorageAdapter {
