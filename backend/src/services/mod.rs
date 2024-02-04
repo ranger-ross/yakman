@@ -5,12 +5,14 @@ use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
+        DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
+        SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManProject, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails, YakManPassword,
+        YakManPassword, YakManProject, YakManPublicPasswordResetLink, YakManUser,
+        YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -177,7 +179,7 @@ pub trait StorageService: Sync + Send {
     async fn create_password_reset_link(
         &self,
         user_uuid: &str,
-    ) -> Result<YakManPublicPasswordResetLink, GenericStorageError>;
+    ) -> Result<YakManPublicPasswordResetLink, CreatePasswordResetLinkError>;
 
     async fn reset_password_with_link(
         &self,

@@ -1,5 +1,5 @@
 use crate::{
-    error::{ResetPasswordError, YakManApiError},
+    error::{CreatePasswordResetLinkError, ResetPasswordError, YakManApiError},
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::{YakManPublicPasswordResetLink, YakManRole},
     StateManager,
@@ -100,8 +100,11 @@ pub async fn create_password_reset_link(
         .await
     {
         Ok(reset_link) => return Ok(web::Json(reset_link)),
-        Err(err) => {
-            log::error!("failed to create password reset link: {}", err);
+        Err(CreatePasswordResetLinkError::InvalidUser) => {
+            return Err(YakManApiError::bad_request("Invalid user"))
+        }
+        Err(CreatePasswordResetLinkError::StorageError { message }) => {
+            log::error!("failed to create password reset link: {}", message);
             return Err(YakManApiError::server_error("internal server error"));
         }
     };

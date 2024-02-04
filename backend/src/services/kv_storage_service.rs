@@ -8,8 +8,9 @@ use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
+        DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
+        SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
@@ -679,19 +680,6 @@ impl StorageService for KVStorageService {
             }
         }
 
-        // let reset_link = self
-        //     .create_password_reset_link("fda58896-e0ac-49e9-8a46-8973610db9ae")
-        //     .await
-        //     .unwrap();
-
-        // let now = Utc::now().timestamp_millis();
-        // let new_password = format!("new-loAng-{}", now);
-
-        // let reset = self
-        //     .reset_password_with_link(reset_link, &new_password)
-        //     .await
-        //     .unwrap();
-
         Ok(())
     }
 
@@ -830,10 +818,10 @@ impl StorageService for KVStorageService {
     async fn create_password_reset_link(
         &self,
         user_uuid: &str,
-    ) -> Result<YakManPublicPasswordResetLink, GenericStorageError> {
+    ) -> Result<YakManPublicPasswordResetLink, CreatePasswordResetLinkError> {
         let user = match self.get_user_by_uuid(user_uuid).await? {
             Some(user) => user,
-            None => todo!("better error"),
+            None => return Err(CreatePasswordResetLinkError::InvalidUser),
         };
 
         let id = short_sha(&Uuid::new_v4().to_string());

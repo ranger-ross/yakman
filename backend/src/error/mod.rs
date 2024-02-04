@@ -4,7 +4,10 @@ use derive_more::Display;
 use reqwest::StatusCode;
 use serde::Serialize;
 
-use crate::{adapters::errors::GenericStorageError, services::password::{PasswordHashError, PasswordStrengthError}};
+use crate::{
+    adapters::errors::GenericStorageError,
+    services::password::{PasswordHashError, PasswordStrengthError},
+};
 use std::fmt;
 use thiserror::Error;
 
@@ -297,13 +300,27 @@ pub enum ResetPasswordError {
     #[error("Invalid password: {error}")]
     PasswordValidationError { error: PasswordStrengthError },
     #[error("Password could not be hashed")]
-    PasswordHashError  { error: PasswordHashError },
+    PasswordHashError { error: PasswordHashError },
     #[error("Storage Error: {message}")]
     StorageError { message: String },
 }
 
 impl From<GenericStorageError> for ResetPasswordError {
     fn from(e: GenericStorageError) -> Self {
-        ResetPasswordError::StorageError { message: e.message }
+        Self::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum CreatePasswordResetLinkError {
+    #[error("Invalid user")]
+    InvalidUser,
+    #[error("Storage Error: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for CreatePasswordResetLinkError {
+    fn from(e: GenericStorageError) -> Self {
+        Self::StorageError { message: e.message }
     }
 }
