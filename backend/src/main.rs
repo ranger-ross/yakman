@@ -9,6 +9,7 @@ mod settings;
 
 extern crate dotenv;
 
+use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
@@ -24,71 +25,13 @@ use adapters::{
     google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter,
 };
 use anyhow::Context;
-use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::oauth_service::{OAuthDisabledService, OAuthService};
 use auth::token::YakManTokenService;
 use dotenv::dotenv;
-use model::response::RevisionPayload;
-use model::{
-    request::{CreateConfigPayload, CreateProjectPayload},
-    ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, YakManConfig,
-    YakManLabel, YakManProject, YakManRole, YakManUser,
-};
 use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        api::yakman::yakman_settings,
-        api::auth::login,
-        api::auth::reset_password,
-        api::auth::create_password_reset_link,
-        api::auth::validate_password_reset_link,
-        api::oauth::oauth_init,
-        api::oauth::oauth_exchange,
-        api::oauth::oauth_refresh,
-        api::oauth::get_user_info,
-        api::projects::get_projects,
-        api::projects::create_project,
-        api::configs::get_configs,
-        api::configs::create_config,
-        api::configs::delete_config,
-        api::labels::get_labels,
-        api::labels::create_label,
-        api::instances::get_instances_by_config_name,
-        api::instances::get_instance,
-        api::instances::create_new_instance,
-        api::instances::update_new_instance,
-        api::instances::delete_instance,
-        api::data::get_instance_data,
-        api::data::get_revision_data,
-        api::revisions::get_instance_revisions,
-        api::revisions::review_pending_instance_revision,
-        api::revisions::apply_instance_revision,
-        api::revisions::rollback_instance_revision,
-    ),
-    components(
-        schemas(
-            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange,
-            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse,
-            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload
-        )
-    ),
-    tags(
-        (name = "api::oauth", description = "OAuth endpoints"),
-        (name = "api::auth", description = "Authentication endpoints (non-oauth)"),
-        (name = "api::projects", description = "Project management endpoints"),
-        (name = "api::configs", description = "Config management endpoints"),
-        (name = "api::labels", description = "Label management endpoints"),
-        (name = "api::instances", description = "Config Instance management endpoints"),
-        (name = "api::data", description = "Config data fetching endpoints"),
-        (name = "api::revisions", description = "Config Instance Revision management endpoints"),
-    )
-)]
-struct ApiDoc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -110,13 +53,13 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed to create jwt service"),
     );
 
-    let openapi = ApiDoc::openapi();
+    let openapi = YakManApiDoc::openapi();
 
     let (host, port) = yakman_host_port_from_env();
     log::info!("Launching YakMan Backend on {host}:{port}");
 
     HttpServer::new(move || {
-        App::new()
+        let app = App::new()
             .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
@@ -127,49 +70,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(YakManPrincipleTransformer)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
-            )
-            // YakMan
-            .service(api::yakman::yakman_settings)
-            // Auth
-            .service(api::auth::login)
-            .service(api::auth::reset_password)
-            .service(api::auth::create_password_reset_link)
-            .service(api::auth::validate_password_reset_link)
-            // OAuth
-            .service(api::oauth::oauth_init)
-            .service(api::oauth::oauth_exchange)
-            .service(api::oauth::oauth_refresh)
-            .service(api::oauth::get_user_info)
-            // Projects
-            .service(api::projects::get_projects)
-            .service(api::projects::create_project)
-            // Admin
-            .service(api::admin::get_yakman_users)
-            .service(api::admin::create_yakman_user)
-            .service(api::admin::get_api_keys)
-            .service(api::admin::create_api_key)
-            .service(api::admin::delete_api_key)
-            // Configs
-            .service(api::configs::get_configs)
-            .service(api::configs::create_config)
-            .service(api::configs::delete_config)
-            // Labels
-            .service(api::labels::get_labels)
-            .service(api::labels::create_label)
-            // Instances
-            .service(api::instances::get_instances_by_config_name)
-            .service(api::instances::get_instance)
-            .service(api::instances::create_new_instance)
-            .service(api::instances::update_new_instance)
-            .service(api::instances::delete_instance)
-            // Data
-            .service(api::data::get_instance_data)
-            .service(api::data::get_revision_data)
-            // Revisions
-            .service(api::revisions::get_instance_revisions)
-            .service(api::revisions::review_pending_instance_revision)
-            .service(api::revisions::apply_instance_revision)
-            .service(api::revisions::rollback_instance_revision)
+            );
+
+        return api::register_routes(app);
     })
     .bind((host, port))?
     .run()

@@ -6,7 +6,7 @@ use crate::{
     api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding,
 };
-use actix_web::{get, put, web, Responder};
+use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get all labels
@@ -20,7 +20,7 @@ pub async fn get_labels(
 }
 
 /// Create a new label
-#[utoipa::path(request_body = LabelType, responses((status = 200, body = String)))]
+#[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
 #[put("/v1/labels")]
 pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -44,7 +44,7 @@ pub async fn create_label(
     }
 
     return match storage_service.create_label(label_type).await {
-        Ok(()) => Ok(web::Json(())),
+        Ok(()) => Ok(HttpResponse::Ok().finish()),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {
                 Err(YakManApiError::bad_request("Duplicate label"))

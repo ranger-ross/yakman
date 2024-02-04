@@ -7,7 +7,7 @@ use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
 use crate::services::StorageService;
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding};
-use actix_web::{delete, get, post, put, web, HttpRequest, Responder};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
 /// Get config instances by config_name
@@ -93,7 +93,7 @@ async fn get_instance(
 }
 
 /// Create a new config instance
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = InstancePayload)))]
 #[put("/v1/configs/{config_name}/instances")]
 async fn create_new_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -209,7 +209,7 @@ async fn update_new_instance(
 }
 
 /// Delete a config instance
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
 #[delete("/v1/configs/{config_name}/instances/{instance}")]
 async fn delete_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -251,7 +251,7 @@ async fn delete_instance(
                 YakManApiError::server_error("failed to delete instance")
             }
         })?;
-    Ok(web::Json(()))
+    Ok(HttpResponse::Ok().finish())
 }
 
 fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<YakManLabel> {

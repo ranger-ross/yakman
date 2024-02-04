@@ -11,7 +11,7 @@ use crate::{
     },
     services::StorageService,
 };
-use actix_web::{delete, get, put, web, Responder};
+use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use log::error;
 use serde::Deserialize;
@@ -23,7 +23,7 @@ pub struct GetConfigsQuery {
 }
 
 /// List of all configs
-#[utoipa::path(responses((status = 200, body = Vec<Config>)))]
+#[utoipa::path(responses((status = 200, body = Vec<YakManConfig>)))]
 #[get("/v1/configs")]
 pub async fn get_configs(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -134,7 +134,7 @@ async fn create_config(
         .await;
 
     return match result {
-        Ok(()) => Ok(web::Json(config_name)),
+        Ok(()) => Ok(web::Json(config_name)), // todo: maybe add a wrapper type?
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");
@@ -148,7 +148,7 @@ async fn create_config(
 }
 
 /// Hide a config instance from the UI and API (data not deleted)
-#[utoipa::path(request_body = DeleteConfigPayload, responses((status = 200, body = String)))]
+#[utoipa::path(request_body = DeleteConfigPayload, responses((status = 200, body = (), content_type = [])))]
 #[delete("/v1/configs")]
 async fn delete_config(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -176,7 +176,7 @@ async fn delete_config(
     let result: Result<(), DeleteConfigError> = storage_service.delete_config(&config_name).await;
 
     return match result {
-        Ok(()) => Ok(web::Json(())),
+        Ok(()) => Ok(HttpResponse::Ok().finish()),
         Err(e) => match e {
             DeleteConfigError::StorageError { message } => {
                 error!("Failed to create config {config_name}, error: {message}");
