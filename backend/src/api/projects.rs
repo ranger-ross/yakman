@@ -52,7 +52,7 @@ pub async fn get_projects(
 }
 
 /// Create a new project
-#[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = String)))]
+#[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = (), content_type = [])))]
 #[put("/v1/projects")]
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,

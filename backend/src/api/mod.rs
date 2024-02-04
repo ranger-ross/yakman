@@ -9,16 +9,31 @@ pub mod projects;
 pub mod revisions;
 pub mod yakman;
 
-use self::{admin::{CreateApiKeyRequest, CreateApiKeyResponse}, auth::{CreatePasswordResetLink, LoginRequest, PasswordResetPayload, ValidatePasswordResetLink}, oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse, OAuthRefreshTokenPayload}, revisions::ReviewResult, yakman::YakManSettingsResponse};
+use self::{
+    admin::{CreateApiKeyRequest, CreateApiKeyResponse},
+    auth::{
+        CreatePasswordResetLink, LoginRequest, PasswordResetPayload, ValidatePasswordResetLink,
+    },
+    oauth::{
+        GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse,
+        OAuthRefreshTokenPayload,
+    },
+    revisions::ReviewResult,
+    yakman::YakManSettingsResponse,
+};
 use crate::model::{
-    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload}, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManPublicPasswordResetLink, YakManRole, YakManUser
+    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload},
+    response::{InstancePayload, RevisionPayload},
+    ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, RevisionReviewState,
+    YakManConfig, YakManLabel, YakManProject, YakManPublicPasswordResetLink, YakManRole,
+    YakManUser,
 };
 use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
     App,
 };
-use utoipa::OpenApi;
 use oauth2::PkceCodeVerifier;
+use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -64,7 +79,6 @@ use oauth2::PkceCodeVerifier;
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse
-            
         )
     ),
     tags(
@@ -82,9 +96,7 @@ use oauth2::PkceCodeVerifier;
 )]
 pub struct YakManApiDoc;
 
-fn t(x: CreateApiKeyRequest) {
-    
-}
+fn t(x: CreateApiKeyRequest) {}
 
 pub fn register_routes<T>(app: App<T>) -> App<T>
 where

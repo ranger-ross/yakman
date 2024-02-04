@@ -15,7 +15,6 @@ use actix_web::{
 use actix_web_grants::permissions::AuthDetails;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use utoipa::openapi::security::Http;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -37,7 +36,7 @@ pub async fn get_yakman_users(
 }
 
 /// Create YakMan user
-#[utoipa::path(request_body = YakManUser, responses((status = 200, body = String)))]
+#[utoipa::path(request_body = YakManUser, responses((status = 200, body = (), content_type = [])))]
 #[put("/admin/v1/users")]
 pub async fn create_yakman_user(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -61,7 +60,7 @@ pub async fn create_yakman_user(
 
     storage_service.save_users(users).await.unwrap();
 
-    Ok(web::Json(()))
+    Ok(HttpResponse::Ok().finish())
 }
 
 /// Get Api Keys
@@ -150,7 +149,7 @@ pub async fn create_api_key(
 }
 
 /// Revoke an API key
-#[utoipa::path(responses((status = 200, body = ())))]
+#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
 #[delete("/admin/v1/api-keys/{id}")]
 pub async fn delete_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
