@@ -42,15 +42,11 @@ use utoipa_swagger_ui::SwaggerUi;
 #[derive(Clone)]
 pub struct StateManager {
     service: Arc<dyn StorageService>,
-    oauth_service: Arc<dyn OAuthService>,
 }
 
 impl StateManager {
     fn get_service(&self) -> &dyn StorageService {
         return self.service.as_ref();
-    }
-    fn get_oauth_service(&self) -> &dyn OAuthService {
-        return self.oauth_service.as_ref();
     }
 }
 
@@ -127,10 +123,7 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed to create jwt service"),
     );
 
-    let state = web::Data::new(StateManager {
-        service: arc,
-        oauth_service: oauth_service,
-    });
+    let state = web::Data::new(StateManager { service: arc });
 
     let openapi = ApiDoc::openapi();
 
@@ -141,6 +134,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(state.clone())
             .app_data(web::Data::new(jwt_service.clone()))
+            .app_data(web::Data::new(oauth_service.clone()))
             .wrap(Etag::default())
             .wrap(Compress::default())
             .wrap(Logger::new("%s %r"))

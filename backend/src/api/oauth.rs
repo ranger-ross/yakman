@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     auth::{
+        oauth_service::OAuthService,
         token::{TokenService, YakManTokenService},
         LoginError,
     },
@@ -40,10 +41,9 @@ pub struct OAuthInitResponse {
 #[post("/oauth2/init")]
 pub async fn oauth_init(
     payload: Json<OAuthInitPayload>,
-    state: web::Data<StateManager>,
+    oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let service = state.get_oauth_service();
-    let (redirect_uri, csrf_token, nonce) = service.init_oauth(payload.challenge.clone());
+    let (redirect_uri, csrf_token, nonce) = oauth_service.init_oauth(payload.challenge.clone());
 
     Ok(web::Json(OAuthInitResponse {
         redirect_uri: redirect_uri,
@@ -72,12 +72,10 @@ pub struct OAuthExchangeResponse {
 #[post("/oauth2/exchange")]
 pub async fn oauth_exchange(
     payload: Json<OAuthExchangePayload>,
-    state: web::Data<StateManager>,
     token_service: web::Data<Arc<YakManTokenService>>,
+    oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let service = state.get_oauth_service();
-
-    let (username, user, refresh_token, _picture) = match service
+    let (username, user, refresh_token, _picture) = match oauth_service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -133,8 +131,8 @@ pub async fn oauth_refresh(
     payload: Json<OAuthRefreshTokenPayload>,
     state: web::Data<StateManager>,
     token_service: web::Data<Arc<YakManTokenService>>,
+    oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let oauth_service = state.get_oauth_service();
     let storage = state.get_service();
 
     let encrypted_refresh_token = &payload.refresh_token;
