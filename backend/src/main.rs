@@ -26,38 +26,18 @@ use adapters::{
 use anyhow::Context;
 use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::oauth_service::{OAuthDisabledService, OAuthService};
-use auth::token::{TokenService, YakManTokenService};
+use auth::token::YakManTokenService;
 use dotenv::dotenv;
-use log::info;
 use model::response::RevisionPayload;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
     ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType, YakManConfig,
-    YakManLabel, YakManProject, YakManRole, YakManSettings, YakManUser,
+    YakManLabel, YakManProject, YakManRole, YakManUser,
 };
 use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-#[derive(Clone)]
-pub struct StateManager {
-    service: Arc<dyn StorageService>,
-    oauth_service: Arc<dyn OAuthService>,
-    jwt_service: Arc<dyn TokenService>,
-}
-
-impl StateManager {
-    fn get_service(&self) -> &dyn StorageService {
-        return self.service.as_ref();
-    }
-    fn get_oauth_service(&self) -> &dyn OAuthService {
-        return self.oauth_service.as_ref();
-    }
-    fn get_token_service(&self) -> &dyn TokenService {
-        return self.jwt_service.as_ref();
-    }
-}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -92,7 +72,7 @@ impl StateManager {
     ),
     components(
         schemas(
-            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange, YakManSettings,
+            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceChange,
             YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse,
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload
         )
@@ -116,37 +96,30 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    let settings = load_yak_man_settings();
-    info!("Settings {settings:?}");
+    let storage_service = create_service().await;
 
-    let service = create_service().await;
-
-    service
+    storage_service
         .initialize_storage()
         .await
         .expect("Failed to initialize storage");
 
-    let arc = Arc::new(service);
-
-    let oauth_service = create_oauth_service(arc.clone()).await;
-    let jwt_service = YakManTokenService::from_env()
-        .map_err(|e| log::error!("{e}"))
-        .expect("Failed to create jwt service");
-
-    let state = web::Data::new(StateManager {
-        service: arc,
-        oauth_service: oauth_service,
-        jwt_service: Arc::new(jwt_service),
-    });
+    let oauth_service = create_oauth_service(storage_service.clone()).await;
+    let jwt_service = Arc::new(
+        YakManTokenService::from_env()
+            .map_err(|e| log::error!("{e}"))
+            .expect("Failed to create jwt service"),
+    );
 
     let openapi = ApiDoc::openapi();
 
     let (host, port) = yakman_host_port_from_env();
-    info!("Launching YakMan Backend on {host}:{port}");
+    log::info!("Launching YakMan Backend on {host}:{port}");
 
     HttpServer::new(move || {
         App::new()
-            .app_data(state.clone())
+            .app_data(web::Data::new(storage_service.clone()))
+            .app_data(web::Data::new(jwt_service.clone()))
+            .app_data(web::Data::new(oauth_service.clone()))
             .wrap(Etag::default())
             .wrap(Compress::default())
             .wrap(Logger::new("%s %r"))
@@ -212,10 +185,10 @@ fn yakman_host_port_from_env() -> (String, u16) {
     (host, port)
 }
 
-async fn create_service() -> impl StorageService {
+async fn create_service() -> Arc<dyn StorageService> {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
 
-    return match adapter_name.as_str() {
+    return Arc::new(match adapter_name.as_str() {
         "REDIS" => {
             let adapter = Box::new(
                 RedisStorageAdapter::from_env()
@@ -247,7 +220,7 @@ async fn create_service() -> impl StorageService {
             KVStorageService::new(adapter)
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
-    };
+    });
 }
 
 async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuthService> {
@@ -258,20 +231,16 @@ async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuth
     return Arc::new(OAuthDisabledService::new());
 }
 
-fn load_yak_man_settings() -> YakManSettings {
-    return YakManSettings {
-        version: "0.0.1".to_string(),
-    };
-}
-
 /// Testing utilities and boilerplate setup code
 #[cfg(test)]
 mod test_utils {
     use crate::{
         adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
-        auth::{oauth_service::MockOAuthService, token::MockTokenService},
-        services::kv_storage_service::KVStorageService,
-        StateManager,
+        auth::{
+            oauth_service::{MockOAuthService, OAuthService},
+            token::{MockTokenService, TokenService},
+        },
+        services::{kv_storage_service::KVStorageService, StorageService},
     };
     use actix_web::{body::to_bytes, dev::ServiceResponse};
     use anyhow::{bail, Result};
@@ -284,19 +253,21 @@ mod test_utils {
         Ok(())
     }
 
-    pub async fn test_state_manager() -> Result<StateManager> {
+    pub async fn test_storage_service() -> Result<Arc<dyn StorageService>> {
         let adapter = InMemoryStorageAdapter::new();
         adapter.initialize_yakman_storage().await?;
         let service: KVStorageService = KVStorageService::new(Box::new(adapter));
+        return Ok(Arc::new(service));
+    }
 
-        let token_service = MockTokenService::new();
-        let oauth_service = MockOAuthService::new();
+    #[allow(dead_code)]
+    pub async fn test_oauth_service() -> Result<Arc<dyn OAuthService>> {
+        return Ok(Arc::new(MockOAuthService::new()));
+    }
 
-        return Ok(StateManager {
-            jwt_service: Arc::new(token_service),
-            oauth_service: Arc::new(oauth_service),
-            service: Arc::new(service),
-        });
+    #[allow(dead_code)]
+    pub async fn test_token_service() -> Result<Arc<dyn TokenService>> {
+        return Ok(Arc::new(MockTokenService::new()));
     }
 
     pub async fn body_to_json_value(res: ServiceResponse) -> Result<Value> {

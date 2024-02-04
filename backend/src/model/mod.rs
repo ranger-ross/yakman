@@ -83,11 +83,6 @@ pub struct YakManApiKey {
     pub created_by_uuid: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct YakManSettings {
-    pub version: String,
-}
-
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]
 pub enum YakManRole {
     Admin,

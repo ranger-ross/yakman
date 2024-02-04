@@ -1,9 +1,12 @@
 extern crate dotenv;
 
+use std::sync::Arc;
+
 use super::token::extract_access_token;
 use super::YakManPrinciple;
+use crate::auth::token::{TokenService, YakManTokenService};
 use crate::model::{YakManRole, YakManUserProjectRole};
-use crate::StateManager;
+use crate::services::StorageService;
 use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
 
@@ -86,8 +89,10 @@ impl YakManRoleBinding {
 pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
     let mut role_bindings: Vec<YakManRoleBinding> = vec![];
 
-    let state = req.app_data::<web::Data<StateManager>>().unwrap();
-    let token_service = state.get_token_service();
+    let token_service = req
+        .app_data::<web::Data<Arc<YakManTokenService>>>()
+        .unwrap();
+
     let token: Option<String> = extract_access_token(req);
 
     let token = match token {
@@ -103,12 +108,11 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
                     None => return Ok(vec![]),
                 };
 
-                if let Some(api_key) = state
-                    .get_service()
-                    .get_api_key_by_id(&key_id)
-                    .await
-                    .unwrap()
-                {
+                let storage_service = req
+                    .app_data::<web::Data<Arc<dyn StorageService>>>()
+                    .unwrap();
+
+                if let Some(api_key) = storage_service.get_api_key_by_id(&key_id).await.unwrap() {
                     Ok(vec![YakManRoleBinding::ProjectRoleBinding(
                         YakManUserProjectRole {
                             project_uuid: api_key.project_uuid,
@@ -127,7 +131,11 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
         Ok(claims) => {
             let uuid = claims.uuid;
 
-            if let Some(details) = state.get_service().get_user_details(&uuid).await? {
+            let storage_service = req
+                .app_data::<web::Data<Arc<dyn StorageService>>>()
+                .unwrap();
+
+            if let Some(details) = storage_service.get_user_details(&uuid).await? {
                 let mut global_roles: Vec<YakManRoleBinding> = details
                     .global_roles
                     .iter()

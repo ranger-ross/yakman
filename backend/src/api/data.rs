@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use crate::error::YakManApiError;
+use crate::middleware::roles::YakManRoleBinding;
 use crate::model::YakManRole;
-use crate::{middleware::roles::YakManRoleBinding, StateManager};
+use crate::services::StorageService;
 use actix_web::{get, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
@@ -10,12 +13,11 @@ use actix_web_grants::permissions::AuthDetails;
 async fn get_instance_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
-    let service = state.get_service();
 
-    let config = match service.get_config(&config_name).await {
+    let config = match storage_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -38,7 +40,9 @@ async fn get_instance_data(
         return Err(YakManApiError::forbidden());
     }
 
-    let data = service.get_config_data(&config_name, &instance).await?;
+    let data = storage_service
+        .get_config_data(&config_name, &instance)
+        .await?;
 
     return match data {
         Some((data, content_type)) => Ok(HttpResponse::Ok().content_type(content_type).body(data)),
@@ -52,12 +56,11 @@ async fn get_instance_data(
 async fn get_revision_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, _, revision) = path.into_inner();
-    let service = state.get_service();
 
-    let config = match service.get_config(&config_name).await {
+    let config = match storage_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -80,7 +83,7 @@ async fn get_revision_data(
         return Err(YakManApiError::forbidden());
     }
 
-    let data = service
+    let data = storage_service
         .get_data_by_revision(&config_name, &revision)
         .await?;
 

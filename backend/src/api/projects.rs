@@ -1,11 +1,11 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     api::is_alphanumeric_kebab_case,
     error::{CreateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{request::CreateProjectPayload, YakManProject, YakManRole},
-    StateManager,
+    services::StorageService,
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
@@ -17,7 +17,7 @@ use log::error;
 #[get("/v1/projects")]
 pub async fn get_projects(
     auth_details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     if auth_details.permissions.len() == 0 {
         return Err(YakManApiError::forbidden());
@@ -41,8 +41,7 @@ pub async fn get_projects(
         })
         .collect();
 
-    let service = state.get_service();
-    let projects: Vec<YakManProject> = service
+    let projects: Vec<YakManProject> = storage_service
         .get_projects()
         .await?
         .into_iter()
@@ -58,7 +57,7 @@ pub async fn get_projects(
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateProjectPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
@@ -91,9 +90,7 @@ async fn create_project(
         ));
     }
 
-    let service = state.get_service();
-
-    return match service.create_project(&project_name).await {
+    return match storage_service.create_project(&project_name).await {
         Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
@@ -113,7 +110,7 @@ mod tests {
     use crate::model::YakManUserProjectRole;
     use crate::test_utils::fake_roles::FakeRoleExtractor;
     use crate::test_utils::*;
-    use actix_web::{test, web::Data, App};
+    use actix_web::{test, App};
     use actix_web_grants::GrantsMiddleware;
     use anyhow::Result;
     use serde_json::Value;
@@ -122,14 +119,14 @@ mod tests {
     async fn get_projects_should_return_projects() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = state.service.create_project("foo").await?;
-        let project_bar_uuid = state.service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo").await?;
+        let project_bar_uuid = storage_service.create_project("bar").await?;
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(web::Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(get_projects),
         )
@@ -155,10 +152,10 @@ mod tests {
     async fn get_projects_should_not_return_projects_that_user_does_not_have() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
+        let storage_service = test_storage_service().await?;
 
-        let _project_foo_uuid = state.service.create_project("foo").await?;
-        let project_bar_uuid = state.service.create_project("bar").await?;
+        let _project_foo_uuid = storage_service.create_project("foo").await?;
+        let project_bar_uuid = storage_service.create_project("bar").await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
@@ -169,7 +166,7 @@ mod tests {
 
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(web::Data::new(storage_service))
                 .wrap(GrantsMiddleware::with_extractor(fake_extractor))
                 .service(get_projects),
         )
@@ -193,11 +190,9 @@ mod tests {
     async fn create_project_should_create_project_if_request_is_valid() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
-
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(web::Data::new(test_storage_service().await?))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_project),
         )
@@ -217,11 +212,9 @@ mod tests {
     async fn create_project_should_return_bad_request_if_project_name_is_invalid() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
-
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(web::Data::new(test_storage_service().await?))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_project),
         )
@@ -242,11 +235,9 @@ mod tests {
     async fn create_project_should_return_bad_request_if_project_name_is_empty() -> Result<()> {
         prepare_for_actix_test()?;
 
-        let state = test_state_manager().await?;
-
         let app = test::init_service(
             App::new()
-                .app_data(Data::new(state))
+                .app_data(web::Data::new(test_storage_service().await?))
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .service(create_project),
         )

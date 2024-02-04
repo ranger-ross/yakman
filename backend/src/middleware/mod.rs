@@ -9,9 +9,13 @@ use futures_util::future::{self, err, ok, LocalBoxFuture};
 use std::{
     future::{ready, Ready},
     rc::Rc,
+    sync::Arc,
 };
 
-use crate::StateManager;
+use crate::{
+    auth::token::{TokenService, YakManTokenService},
+    services::StorageService,
+};
 
 use self::token::extract_access_token;
 
@@ -74,18 +78,20 @@ where
 
         Box::pin(async move {
             let mut user_uuid: Option<String> = None;
-            let state = req.app_data::<web::Data<StateManager>>().unwrap();
             if let Some(token) = extract_access_token(&req) {
-                let token_service = state.get_token_service();
+                let token_service = req
+                    .app_data::<web::Data<Arc<YakManTokenService>>>()
+                    .unwrap();
 
                 if token_service.is_api_key(&token) {
                     let hash = sha256::digest(&token);
 
-                    if let Some(api_key) = state
-                        .get_service()
-                        .get_api_key_by_hash(&hash)
-                        .await
-                        .unwrap()
+                    let storage_service = req
+                        .app_data::<web::Data<Arc<dyn StorageService>>>()
+                        .unwrap();
+
+                    // todo: handle unwrap??
+                    if let Some(api_key) = storage_service.get_api_key_by_hash(&hash).await.unwrap()
                     {
                         user_uuid = Some(api_key.id.to_string());
                     }

@@ -1,11 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    auth::LoginError,
+    auth::{
+        oauth_service::OAuthService,
+        token::{TokenService, YakManTokenService},
+        LoginError,
+    },
     error::YakManApiError,
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::YakManRole,
-    StateManager,
+    services::StorageService,
 };
 use actix_web::{
     get, post,
@@ -37,10 +41,9 @@ pub struct OAuthInitResponse {
 #[post("/oauth2/init")]
 pub async fn oauth_init(
     payload: Json<OAuthInitPayload>,
-    state: web::Data<StateManager>,
+    oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let service = state.get_oauth_service();
-    let (redirect_uri, csrf_token, nonce) = service.init_oauth(payload.challenge.clone());
+    let (redirect_uri, csrf_token, nonce) = oauth_service.init_oauth(payload.challenge.clone());
 
     Ok(web::Json(OAuthInitResponse {
         redirect_uri: redirect_uri,
@@ -69,12 +72,10 @@ pub struct OAuthExchangeResponse {
 #[post("/oauth2/exchange")]
 pub async fn oauth_exchange(
     payload: Json<OAuthExchangePayload>,
-    state: web::Data<StateManager>,
+    token_service: web::Data<Arc<YakManTokenService>>,
+    oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let service = state.get_oauth_service();
-    let token_service = state.get_token_service();
-
-    let (username, user, refresh_token, _picture) = match service
+    let (username, user, refresh_token, _picture) = match oauth_service
         .exchange_oauth_code(
             String::from(payload.code.to_string()),
             String::from(payload.verifier.secret()),
@@ -128,12 +129,10 @@ pub struct OAuthRefreshTokenResponse {
 #[post("/oauth2/refresh")]
 pub async fn oauth_refresh(
     payload: Json<OAuthRefreshTokenPayload>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+    token_service: web::Data<Arc<YakManTokenService>>,
+    oauth_service: web::Data<Arc<dyn OAuthService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let oauth_service = state.get_oauth_service();
-    let storage = state.get_service();
-    let token_service = state.get_token_service();
-
     let encrypted_refresh_token = &payload.refresh_token;
     log::info!("{encrypted_refresh_token}");
     let refresh_token = match token_service.decrypt_refresh_token(encrypted_refresh_token) {
@@ -148,7 +147,7 @@ pub async fn oauth_refresh(
         }
     };
 
-    let user = match storage.get_user_by_email(&username).await {
+    let user = match storage_service.get_user_by_email(&username).await {
         Ok(Some(user)) => user,
         Ok(None) => return Err(YakManApiError::forbidden().set_message("User not found")),
         Err(e) => {
@@ -184,8 +183,8 @@ pub struct GetUserInfoResponse {
 #[get("/oauth2/user-info")]
 pub async fn get_user_info(
     details: AuthDetails<YakManRoleBinding>,
-    state: web::Data<StateManager>,
     principle: YakManPrinciple,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
         .permissions
@@ -208,8 +207,7 @@ pub async fn get_user_info(
     let mut profile_picture = None;
 
     if let Some(user_uuid) = principle.user_uuid {
-        let storage = state.get_service();
-        if let Some(user) = storage.get_user_details(&user_uuid).await? {
+        if let Some(user) = storage_service.get_user_details(&user_uuid).await? {
             profile_picture = user.profile_picture;
         }
     }
