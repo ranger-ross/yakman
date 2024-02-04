@@ -269,7 +269,7 @@ fn load_yak_man_settings() -> YakManSettings {
 mod test_utils {
     use crate::{
         adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
-        auth::{oauth_service::OAuthService, token::MockTokenService},
+        auth::{oauth_service::MockOAuthService, token::MockTokenService},
         services::kv_storage_service::KVStorageService,
         StateManager,
     };
@@ -290,7 +290,7 @@ mod test_utils {
         let service: KVStorageService = KVStorageService::new(Box::new(adapter));
 
         let token_service = MockTokenService::new();
-        let oauth_service = OAuthService::new();
+        let oauth_service = MockOAuthService::new();
 
         return Ok(StateManager {
             jwt_service: Arc::new(token_service),
