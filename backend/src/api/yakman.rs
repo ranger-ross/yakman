@@ -1,6 +1,5 @@
 use crate::{error::YakManApiError, settings};
 use actix_web::{get, web, Responder};
-pub use serde::Deserialize;
 use serde::Serialize;
 use utoipa::ToSchema;
 
