@@ -2,6 +2,7 @@ use crate::{
     error::{CreatePasswordResetLinkError, ResetPasswordError, YakManApiError},
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::{YakManPublicPasswordResetLink, YakManRole},
+    services::password::verify_password,
     StateManager,
 };
 use actix_web::{
@@ -41,10 +42,10 @@ pub async fn login(
         Ok(Some(password)) => password,
         _ => return Err(YakManApiError::unauthorized()),
     };
-    match token_service.verify_password(&payload.password, password) {
+    match verify_password(&payload.password, password) {
         Ok(true) => {}
         _ => return Err(YakManApiError::unauthorized()),
-    }
+    };
 
     let user: crate::model::YakManUser = match storage.get_user_by_email(&payload.username).await {
         Ok(Some(user)) => user,

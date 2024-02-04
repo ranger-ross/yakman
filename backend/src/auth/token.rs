@@ -1,8 +1,3 @@
-use crate::model::YakManPassword;
-use crate::model::YakManUser;
-use argon2::Argon2;
-use argon2::PasswordHash;
-use argon2::PasswordVerifier;
 use chrono::Utc;
 use hmac::{Hmac, Mac};
 use jwt::Header;
@@ -21,6 +16,8 @@ use std::{
     string::FromUtf8Error,
 };
 use thiserror::Error;
+
+use crate::model::YakManUser;
 
 pub const API_KEY_PREFIX: &str = "YM-";
 
@@ -43,13 +40,6 @@ pub trait TokenService: Sync + Send {
     fn validate_access_token(&self, token: &str) -> Result<YakManJwtClaims, JwtValidationError>;
 
     fn is_api_key(&self, token: &str) -> bool;
-
-    /// For non-oauth users
-    fn verify_password(
-        &self,
-        password: &str,
-        record: YakManPassword,
-    ) -> Result<bool, argon2::password_hash::Error>;
 }
 
 pub struct YakManTokenService {
@@ -156,17 +146,6 @@ impl TokenService for YakManTokenService {
 
     fn is_api_key(&self, token: &str) -> bool {
         return token.starts_with(API_KEY_PREFIX);
-    }
-
-    fn verify_password(
-        &self,
-        password: &str,
-        record: YakManPassword,
-    ) -> Result<bool, argon2::password_hash::Error> {
-        let parsed_hash = PasswordHash::new(&record.hash)?;
-        return Ok(Argon2::default()
-            .verify_password(password.as_bytes(), &parsed_hash)
-            .is_ok());
     }
 }
 

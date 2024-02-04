@@ -2,8 +2,10 @@ use std::fmt;
 
 use argon2::{
     password_hash::{rand_core::OsRng, Error, PasswordHasher, SaltString},
-    Argon2,
+    Argon2, PasswordHash, PasswordVerifier,
 };
+
+use crate::model::YakManPassword;
 
 #[derive(Debug)]
 pub struct PasswordHashError {
@@ -20,6 +22,16 @@ pub fn hash_password(password: &str) -> Result<String, PasswordHashError> {
         .to_string();
 
     return Ok(password_hash);
+}
+
+pub fn verify_password(
+    password: &str,
+    record: YakManPassword,
+) -> Result<bool, argon2::password_hash::Error> {
+    let parsed_hash = PasswordHash::new(&record.hash)?;
+    return Ok(Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok());
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -131,13 +143,36 @@ mod tests {
         assert_ne!(hashed_password.len(), 0);
     }
 
-    // #[test]
-    // fn test_hash_password_success_mult() {
-    //     let password = "test_passwordA1";
-    //     let result = hash_password(password).unwrap();
+    #[test]
+    fn test_verify_password_valid() {
+        let password = "correct_password";
+        let yakman_password = YakManPassword {
+            hash: hash_password(password).unwrap(),
+            timestamp: 0,
+        };
 
-    //     for x in 0..19 {
-    //         assert_eq!(result, hash_password(password).unwrap())
-    //     }
-    // }
+        assert!(verify_password(password, yakman_password).unwrap());
+    }
+
+    #[test]
+    fn test_verify_password_invalid() {
+        let password = "incorrect_password";
+        let yakman_password = YakManPassword {
+            hash: hash_password("correct_password").unwrap(),
+            timestamp: 0,
+        };
+
+        assert!(!verify_password(password, yakman_password).unwrap());
+    }
+
+    #[test]
+    fn test_verify_password_invalid_hash_format() {
+        let password = "correct_password";
+        let yakman_password = YakManPassword {
+            hash: "invalid_hash_format".to_string(),
+            timestamp: 0,
+        };
+
+        assert!(verify_password(password, yakman_password).is_err());
+    }
 }
