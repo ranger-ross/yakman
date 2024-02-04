@@ -5,10 +5,11 @@ mod error;
 mod middleware;
 mod model;
 mod services;
+mod settings;
 
 extern crate dotenv;
 
-use crate::auth::oauth_service::YakManOauthService;
+use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
 use actix_middleware_etag::Etag;
@@ -24,7 +25,7 @@ use adapters::{
 };
 use anyhow::Context;
 use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
-use auth::oauth_service::OauthService;
+use auth::oauth_service::{OAuthDisabledService, OAuthService};
 use auth::token::{TokenService, YakManTokenService};
 use dotenv::dotenv;
 use log::info;
@@ -42,7 +43,7 @@ use utoipa_swagger_ui::SwaggerUi;
 #[derive(Clone)]
 pub struct StateManager {
     service: Arc<dyn StorageService>,
-    oauth_service: Arc<dyn OauthService>,
+    oauth_service: Arc<dyn OAuthService>,
     jwt_service: Arc<dyn TokenService>,
 }
 
@@ -50,7 +51,7 @@ impl StateManager {
     fn get_service(&self) -> &dyn StorageService {
         return self.service.as_ref();
     }
-    fn get_oauth_service(&self) -> &dyn OauthService {
+    fn get_oauth_service(&self) -> &dyn OAuthService {
         return self.oauth_service.as_ref();
     }
     fn get_token_service(&self) -> &dyn TokenService {
@@ -127,14 +128,14 @@ async fn main() -> std::io::Result<()> {
 
     let arc = Arc::new(service);
 
-    let oauth_service = YakManOauthService::new(arc.clone()).await.unwrap();
+    let oauth_service = create_oauth_service(arc.clone()).await;
     let jwt_service = YakManTokenService::from_env()
         .map_err(|e| log::error!("{e}"))
         .expect("Failed to create jwt service");
 
     let state = web::Data::new(StateManager {
         service: arc,
-        oauth_service: Arc::new(oauth_service),
+        oauth_service: oauth_service,
         jwt_service: Arc::new(jwt_service),
     });
 
@@ -249,6 +250,14 @@ async fn create_service() -> impl StorageService {
     };
 }
 
+async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuthService> {
+    if settings::is_oauth_enabled() {
+        let oauth_service = YakManOAuthService::new(storage.clone()).await.unwrap();
+        return Arc::new(oauth_service);
+    }
+    return Arc::new(OAuthDisabledService::new());
+}
+
 fn load_yak_man_settings() -> YakManSettings {
     return YakManSettings {
         version: "0.0.1".to_string(),
@@ -260,7 +269,7 @@ fn load_yak_man_settings() -> YakManSettings {
 mod test_utils {
     use crate::{
         adapters::{in_memory::InMemoryStorageAdapter, KVStorageAdapter},
-        auth::{oauth_service::MockOauthService, token::MockTokenService},
+        auth::{oauth_service::OAuthService, token::MockTokenService},
         services::kv_storage_service::KVStorageService,
         StateManager,
     };
@@ -281,7 +290,7 @@ mod test_utils {
         let service: KVStorageService = KVStorageService::new(Box::new(adapter));
 
         let token_service = MockTokenService::new();
-        let oauth_service = MockOauthService::new();
+        let oauth_service = OAuthService::new();
 
         return Ok(StateManager {
             jwt_service: Arc::new(token_service),
