@@ -3,8 +3,8 @@ use super::{
     GenericStorageError, KVStorageAdapter,
 };
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManProject,
-    YakManUser, YakManUserDetails, YakManPasswordResetLink,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
@@ -315,21 +315,33 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         email_hash: &str,
         password: YakManPassword,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let dir = self.get_password_dir();
+        let path = format!("{dir}/{email_hash}.json");
+        let data = serde_json::to_string(&password)?;
+        self.put_object(&path, data).await?;
+        Ok(())
     }
 
     async fn get_password(
         &self,
         email_hash: &str,
     ) -> Result<Option<YakManPassword>, GenericStorageError> {
-        todo!();
+        let dir = self.get_password_dir();
+        let path = format!("{dir}/{email_hash}.json");
+        let data = self.get_object(&path).await?;
+        let password: YakManPassword = serde_json::from_str(&data)?;
+        return Ok(Some(password)); // TODO: Handle missing Option type properly (password not found)
     }
 
     async fn get_password_reset_link(
         &self,
         id: &str,
     ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
-        todo!();
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        let data = self.get_object(&path).await?;
+        let link: YakManPasswordResetLink = serde_json::from_str(&data)?;
+        return Ok(Some(link)); // TODO: Handle missing Option type properly (link not found)
     }
 
     async fn save_password_reset_link(
@@ -337,14 +349,18 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         id: &str,
         link: YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError> {
-        todo!();
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        let data = serde_json::to_string(&link)?;
+        self.put_object(&path, data).await?;
+        Ok(())
     }
 
-    async fn delete_password_reset_link(
-        &self,
-        id: &str,
-    ) -> Result<(), GenericStorageError> {
-        todo!();
+    async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        self.delete_object(&path).await?;
+        Ok(())
     }
 }
 
@@ -398,6 +414,16 @@ impl AwsS3StorageAdapter {
     fn get_config_instance_metadata_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instance-metadata");
+    }
+
+    fn get_password_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/passwords");
+    }
+
+    fn get_password_reset_link_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/password-reset-links");
     }
 
     async fn put_object(&self, path: &str, data: String) -> Result<(), GenericStorageError> {
