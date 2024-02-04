@@ -5,7 +5,7 @@ use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManProject, YakManUser, YakManUserDetails, YakManPasswordResetLink,
+    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -229,21 +229,30 @@ impl KVStorageAdapter for RedisStorageAdapter {
         email_hash: &str,
         password: YakManPassword,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let mut connection = self.get_connection()?;
+        let _: () = connection.set(
+            self.get_password_key(email_hash),
+            serde_json::to_string(&password)?,
+        )?;
+        Ok(())
     }
 
     async fn get_password(
         &self,
         email_hash: &str,
     ) -> Result<Option<YakManPassword>, GenericStorageError> {
-        todo!();
+        return Ok(self
+            .get_optional_data(&self.get_password_key(email_hash))
+            .await?);
     }
 
     async fn get_password_reset_link(
         &self,
         id: &str,
     ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
-        todo!();
+        return Ok(self
+            .get_optional_data(&self.get_password_reset_link_key(id))
+            .await?);
     }
 
     async fn save_password_reset_link(
@@ -251,14 +260,18 @@ impl KVStorageAdapter for RedisStorageAdapter {
         id: &str,
         link: YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError> {
-        todo!();
+        let mut connection = self.get_connection()?;
+        let _: () = connection.set(
+            self.get_password_reset_link_key(id),
+            serde_json::to_string(&link)?,
+        )?;
+        Ok(())
     }
 
-    async fn delete_password_reset_link(
-        &self,
-        id: &str,
-    ) -> Result<(), GenericStorageError> {
-        todo!();
+    async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
+        let mut connection = self.get_connection()?;
+        let _: () = connection.del(self.get_password_reset_link_key(id))?;
+        Ok(())
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
@@ -404,6 +417,14 @@ impl RedisStorageAdapter {
 
     fn get_user_key(&self, uuid: &str) -> String {
         format!("{REDIS_PREFIX}_USERS_{uuid}")
+    }
+
+    fn get_password_key(&self, email_hash: &str) -> String {
+        return format!("{REDIS_PREFIX}_PASSWORDS_{email_hash}");
+    }
+
+    fn get_password_reset_link_key(&self, id: &str) -> String {
+        return format!("{REDIS_PREFIX}_PASSWORD_RESET_LINK_{id}");
     }
 }
 
