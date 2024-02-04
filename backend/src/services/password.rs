@@ -80,7 +80,6 @@ pub fn validate_password(password: &str) -> Result<(), PasswordStrengthError> {
     return Ok(());
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -122,7 +121,6 @@ mod tests {
         assert_eq!(result, Err(PasswordStrengthError::MissingDigit));
     }
 
-
     #[test]
     fn test_hash_password_success() {
         let password = "test_passwordA1";
@@ -133,4 +131,13 @@ mod tests {
         assert_ne!(hashed_password.len(), 0);
     }
 
+    // #[test]
+    // fn test_hash_password_success_mult() {
+    //     let password = "test_passwordA1";
+    //     let result = hash_password(password).unwrap();
+
+    //     for x in 0..19 {
+    //         assert_eq!(result, hash_password(password).unwrap())
+    //     }
+    // }
 }

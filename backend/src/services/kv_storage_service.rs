@@ -819,6 +819,14 @@ impl StorageService for KVStorageService {
         return Ok(());
     }
 
+    async fn get_password_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<YakManPassword>, GenericStorageError> {
+        let email_hash = sha256::digest(email);
+        return self.adapter.get_password(&email_hash).await;
+    }
+
     async fn create_password_reset_link(
         &self,
         user_uuid: &str,

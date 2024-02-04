@@ -10,7 +10,7 @@ use crate::{
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManProject, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails,
+        YakManProject, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails, YakManPassword,
     },
 };
 use async_trait::async_trait;
@@ -168,6 +168,11 @@ pub trait StorageService: Sync + Send {
     async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError>;
 
     async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError>;
+
+    async fn get_password_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<YakManPassword>, GenericStorageError>;
 
     async fn create_password_reset_link(
         &self,

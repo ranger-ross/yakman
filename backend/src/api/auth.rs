@@ -6,13 +6,66 @@ use crate::{
 };
 use actix_web::{
     post,
-    web::{self, Json},
+    web::{self, Json, UrlEncoded},
     HttpResponse, Responder,
 };
 use actix_web_grants::permissions::AuthDetails;
 pub use serde::Deserialize;
 use serde::Serialize;
-use utoipa::ToSchema;
+use utoipa::{openapi::security::Http, ToSchema};
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LoginResponse {
+    pub access_token: String,
+    pub access_token_expire_timestamp: i64,
+    pub refresh_token: Option<String>,
+}
+
+/// Login for non-oauth users
+#[utoipa::path(responses((status = 200, body = String)))]
+#[post("/auth/login")]
+pub async fn login(
+    payload: web::Form<LoginRequest>,
+    state: web::Data<StateManager>,
+) -> Result<impl Responder, YakManApiError> {
+    let token_service = state.get_token_service();
+    let storage = state.get_service();
+
+    let password = match storage.get_password_by_email(&payload.username).await {
+        Ok(Some(password)) => password,
+        _ => return Err(YakManApiError::unauthorized()),
+    };
+    match token_service.verify_password(&payload.password, password) {
+        Ok(true) => {}
+        _ => return Err(YakManApiError::unauthorized()),
+    }
+
+    let user: crate::model::YakManUser = match storage.get_user_by_email(&payload.username).await {
+        Ok(Some(user)) => user,
+        _ => return Err(YakManApiError::unauthorized()),
+    };
+
+    let (access_token_jwt, expire_timestamp) =
+        match token_service.create_acess_token_jwt(&user.email, &user) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("Failed to create token {e}");
+                return Err(YakManApiError::server_error("Failed to create token"));
+            }
+        };
+
+    return Ok(web::Json(LoginResponse {
+        access_token: access_token_jwt,
+        access_token_expire_timestamp: expire_timestamp,
+        refresh_token: None, // TODO: Support refresh token
+    }));
+}
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreatePasswordResetLink {

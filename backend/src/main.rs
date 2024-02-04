@@ -61,6 +61,7 @@ impl StateManager {
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        api::auth::login,
         api::auth::reset_password,
         api::auth::create_password_reset_link,
         api::auth::validate_password_reset_link,
@@ -153,6 +154,7 @@ async fn main() -> std::io::Result<()> {
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
             // Auth
+            .service(api::auth::login)
             .service(api::auth::reset_password)
             .service(api::auth::create_password_reset_link)
             .service(api::auth::validate_password_reset_link)

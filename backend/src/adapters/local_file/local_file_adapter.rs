@@ -313,8 +313,6 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn get_user_by_email(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
-        log::error!("{:?}", users);
-
         for user in users {
             if user.email == id {
                 return Ok(Some(user));
