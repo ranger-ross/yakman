@@ -893,7 +893,8 @@ impl StorageService for KVStorageService {
             return Err(ResetPasswordError::PasswordValidationError { error: err });
         }
 
-        let password_hash = hash_password(password).unwrap();
+        let password_hash = hash_password(password)
+            .map_err(|err| ResetPasswordError::PasswordHashError { error: err })?;
         self.adapter
             .save_password(
                 &email_hash,

@@ -180,6 +180,10 @@ impl From<ResetPasswordError> for YakManApiError {
             ResetPasswordError::PasswordValidationError { error } => {
                 return YakManApiError::bad_request(&error.to_string())
             }
+            ResetPasswordError::PasswordHashError { error } => {
+                log::warn!("password could not be hashed {:?}", error);
+                return YakManApiError::bad_request("Password invalid");
+            }
             ResetPasswordError::StorageError { message } => {
                 log::error!("Failed to reset password: {}", message);
                 return YakManApiError::server_error("storage error");

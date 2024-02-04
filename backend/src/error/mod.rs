@@ -4,7 +4,7 @@ use derive_more::Display;
 use reqwest::StatusCode;
 use serde::Serialize;
 
-use crate::{adapters::errors::GenericStorageError, services::password::PasswordStrengthError};
+use crate::{adapters::errors::GenericStorageError, services::password::{PasswordHashError, PasswordStrengthError}};
 use std::fmt;
 use thiserror::Error;
 
@@ -296,6 +296,8 @@ pub enum ResetPasswordError {
     ResetLinkExpired,
     #[error("Invalid password: {error}")]
     PasswordValidationError { error: PasswordStrengthError },
+    #[error("Password could not be hashed")]
+    PasswordHashError  { error: PasswordHashError },
     #[error("Storage Error: {message}")]
     StorageError { message: String },
 }
