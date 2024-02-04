@@ -1,7 +1,10 @@
 extern crate dotenv;
 
+use std::sync::Arc;
+
 use super::token::extract_access_token;
 use super::YakManPrinciple;
+use crate::auth::token::{TokenService, YakManTokenService};
 use crate::model::{YakManRole, YakManUserProjectRole};
 use crate::StateManager;
 use actix_web::HttpMessage;
@@ -87,7 +90,10 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
     let mut role_bindings: Vec<YakManRoleBinding> = vec![];
 
     let state = req.app_data::<web::Data<StateManager>>().unwrap();
-    let token_service = state.get_token_service();
+    let token_service = req
+        .app_data::<web::Data<Arc<YakManTokenService>>>()
+        .unwrap();
+
     let token: Option<String> = extract_access_token(req);
 
     let token = match token {

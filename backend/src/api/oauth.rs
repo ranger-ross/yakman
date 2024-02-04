@@ -1,7 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    auth::LoginError,
+    auth::{
+        token::{TokenService, YakManTokenService},
+        LoginError,
+    },
     error::YakManApiError,
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::YakManRole,
@@ -70,9 +73,9 @@ pub struct OAuthExchangeResponse {
 pub async fn oauth_exchange(
     payload: Json<OAuthExchangePayload>,
     state: web::Data<StateManager>,
+    token_service: web::Data<Arc<YakManTokenService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let service = state.get_oauth_service();
-    let token_service = state.get_token_service();
 
     let (username, user, refresh_token, _picture) = match service
         .exchange_oauth_code(
@@ -129,10 +132,10 @@ pub struct OAuthRefreshTokenResponse {
 pub async fn oauth_refresh(
     payload: Json<OAuthRefreshTokenPayload>,
     state: web::Data<StateManager>,
+    token_service: web::Data<Arc<YakManTokenService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let oauth_service = state.get_oauth_service();
     let storage = state.get_service();
-    let token_service = state.get_token_service();
 
     let encrypted_refresh_token = &payload.refresh_token;
     log::info!("{encrypted_refresh_token}");

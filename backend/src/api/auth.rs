@@ -1,4 +1,6 @@
+use crate::auth::token::TokenService;
 use crate::{
+    auth::token::YakManTokenService,
     error::{CreatePasswordResetLinkError, ResetPasswordError, YakManApiError},
     middleware::{roles::YakManRoleBinding, YakManPrinciple},
     model::{YakManPublicPasswordResetLink, YakManRole},
@@ -13,6 +15,7 @@ use actix_web::{
 use actix_web_grants::permissions::AuthDetails;
 pub use serde::Deserialize;
 use serde::Serialize;
+use std::sync::Arc;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -34,8 +37,8 @@ pub struct LoginResponse {
 pub async fn login(
     payload: web::Form<LoginRequest>,
     state: web::Data<StateManager>,
+    token_service: web::Data<Arc<YakManTokenService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let token_service = state.get_token_service();
     let storage = state.get_service();
 
     let password = match storage.get_password_by_email(&payload.username).await {

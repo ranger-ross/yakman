@@ -26,9 +26,8 @@ use adapters::{
 use anyhow::Context;
 use api::oauth::{GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse};
 use auth::oauth_service::{OAuthDisabledService, OAuthService};
-use auth::token::{TokenService, YakManTokenService};
+use auth::token::YakManTokenService;
 use dotenv::dotenv;
-use log::info;
 use model::response::RevisionPayload;
 use model::{
     request::{CreateConfigPayload, CreateProjectPayload},
@@ -44,7 +43,6 @@ use utoipa_swagger_ui::SwaggerUi;
 pub struct StateManager {
     service: Arc<dyn StorageService>,
     oauth_service: Arc<dyn OAuthService>,
-    jwt_service: Arc<dyn TokenService>,
 }
 
 impl StateManager {
@@ -53,9 +51,6 @@ impl StateManager {
     }
     fn get_oauth_service(&self) -> &dyn OAuthService {
         return self.oauth_service.as_ref();
-    }
-    fn get_token_service(&self) -> &dyn TokenService {
-        return self.jwt_service.as_ref();
     }
 }
 
@@ -126,24 +121,26 @@ async fn main() -> std::io::Result<()> {
     let arc = Arc::new(service);
 
     let oauth_service = create_oauth_service(arc.clone()).await;
-    let jwt_service = YakManTokenService::from_env()
-        .map_err(|e| log::error!("{e}"))
-        .expect("Failed to create jwt service");
+    let jwt_service = Arc::new(
+        YakManTokenService::from_env()
+            .map_err(|e| log::error!("{e}"))
+            .expect("Failed to create jwt service"),
+    );
 
     let state = web::Data::new(StateManager {
         service: arc,
         oauth_service: oauth_service,
-        jwt_service: Arc::new(jwt_service),
     });
 
     let openapi = ApiDoc::openapi();
 
     let (host, port) = yakman_host_port_from_env();
-    info!("Launching YakMan Backend on {host}:{port}");
+    log::info!("Launching YakMan Backend on {host}:{port}");
 
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .app_data(web::Data::new(jwt_service.clone()))
             .wrap(Etag::default())
             .wrap(Compress::default())
             .wrap(Logger::new("%s %r"))
