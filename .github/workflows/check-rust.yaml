@@ -19,6 +19,9 @@ jobs:
       with:
         workspaces: backend
 
+    - run: cargo fmt --check
+      working-directory: backend
+
     - run: cargo check
       working-directory: backend
 

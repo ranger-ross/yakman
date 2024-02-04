@@ -21,3 +21,9 @@ bd: ## (backend-dev) Start the backend in dev mode
 
 fd: ## (frontend-dev) Start the fronend in dev mode
 	@cd frontend && pnpm run dev
+
+bf: ## cargo fmt
+	@cd backend && cargo fmt
+
+bfc: ## cargo fmt --check
+	@cd backend && cargo fmt --check
