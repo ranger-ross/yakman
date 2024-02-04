@@ -9,6 +9,8 @@ import { projects } from './routes/projects';
 import { revisions } from './routes/revisions';
 import { data } from './routes/data';
 import { admin } from './routes/admin';
+import { auth } from './routes/auth';
+import { yakman } from './routes/yakman';
 
 export const router = t.router({
     oauth: oauth,
@@ -19,6 +21,8 @@ export const router = t.router({
     revisions: revisions,
     data: data,
     admin: admin,
+    auth: auth,
+    yakman: yakman,
 });
 
 export type Router = typeof router;

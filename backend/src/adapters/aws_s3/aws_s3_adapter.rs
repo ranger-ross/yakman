@@ -3,14 +3,13 @@ use super::{
     GenericStorageError, KVStorageAdapter,
 };
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManProject, YakManUser,
-    YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
-use log::error;
 use s3::primitives::ByteStream;
 use tokio::io::AsyncReadExt;
 
@@ -25,7 +24,10 @@ pub struct AwsS3StorageAdapter {
 impl KVStorageAdapter for AwsS3StorageAdapter {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
         let path = self.get_projects_file_path();
-        let content = self.get_object(&path).await?;
+        let content = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
         let data: Vec<YakManProject> = serde_json::from_str(&content)?;
         return Ok(data);
     }
@@ -39,7 +41,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let path = self.get_configs_file_path();
-        let content = self.get_object(&path).await?;
+        let content = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
         let v: ConfigJson = serde_json::from_str(&content)?;
         return Ok(v.configs);
     }
@@ -65,7 +70,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
         let path = self.get_labels_file_path();
-        let content = self.get_object(&path).await?;
+        let content = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
         let v: LabelJson = serde_json::from_str(&content)?;
         return Ok(v.labels);
     }
@@ -83,7 +91,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_dir}/{config_name}.json");
-        if let Some(content) = self.get_object(&instance_file).await.ok() {
+        if let Some(content) = self.get_object_as_option(&instance_file).await? {
             let v: InstanceJson = serde_json::from_str(&content)?;
             return Ok(Some(v.instances));
         }
@@ -114,11 +122,9 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         let dir = self.get_instance_revisions_path();
         let path = format!("{dir}/{config_name}/{revision}");
 
-        if let Ok(content) = self.get_object(&path).await {
+        if let Some(content) = self.get_object_as_option(&path).await? {
             let data: RevisionJson = serde_json::from_str(&content)?;
             return Ok(Some(data.revision));
-        } else {
-            error!("Failed to load revision file: {revision}");
         }
 
         return Ok(None);
@@ -157,7 +163,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     ) -> Result<String, GenericStorageError> {
         let instance_dir = self.get_config_instance_dir();
         let instance_path = format!("{instance_dir}/{config_name}/{data_key}");
-        return Ok(self.get_object(&instance_path).await?);
+        return Ok(self
+            .get_object_as_option(&instance_path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?);
     }
 
     async fn save_instance_data(
@@ -226,7 +235,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError> {
         let path = self.get_user_file_path();
-        let data = self.get_object(&path).await?;
+        let data = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
         let user_data: UsersJson = serde_json::from_str(&data)?;
         return Ok(user_data.users);
     }
@@ -265,11 +277,9 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         let dir = self.get_user_dir();
         let path = format!("{dir}/{uuid}.json");
 
-        if let Ok(content) = self.get_object(&path).await {
+        if let Some(content) = self.get_object_as_option(&path).await? {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
-        } else {
-            error!("Failed to load user file: {uuid}");
         }
 
         return Ok(None);
@@ -298,7 +308,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {
         let path = self.get_api_key_file_path();
-        let data = self.get_object(&path).await?;
+        let data = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
         let user_data: ApiKeysJson = serde_json::from_str(&data)?;
         return Ok(user_data.api_keys);
     }
@@ -307,6 +320,63 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         let data = serde_json::to_string(&ApiKeysJson { api_keys: api_keys })?;
         let data_file_path = self.get_api_key_file_path();
         self.put_object(&data_file_path, data).await?;
+        Ok(())
+    }
+
+    async fn save_password(
+        &self,
+        email_hash: &str,
+        password: YakManPassword,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_password_dir();
+        let path = format!("{dir}/{email_hash}.json");
+        let data = serde_json::to_string(&password)?;
+        self.put_object(&path, data).await?;
+        Ok(())
+    }
+
+    async fn get_password(
+        &self,
+        email_hash: &str,
+    ) -> Result<Option<YakManPassword>, GenericStorageError> {
+        let dir = self.get_password_dir();
+        let path = format!("{dir}/{email_hash}.json");
+        if let Some(data) = self.get_object_as_option(&path).await? {
+            let password: YakManPassword = serde_json::from_str(&data)?;
+            return Ok(Some(password));
+        }
+        return Ok(None);
+    }
+
+    async fn get_password_reset_link(
+        &self,
+        id: &str,
+    ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        if let Some(data) = self.get_object_as_option(&path).await? {
+            let link: YakManPasswordResetLink = serde_json::from_str(&data)?;
+            return Ok(Some(link));
+        }
+        return Ok(None);
+    }
+
+    async fn save_password_reset_link(
+        &self,
+        id: &str,
+        link: YakManPasswordResetLink,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        let data = serde_json::to_string(&link)?;
+        self.put_object(&path, data).await?;
+        Ok(())
+    }
+
+    async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
+        let dir = self.get_password_reset_link_dir();
+        let path = format!("{dir}/{id}.json");
+        self.delete_object(&path).await?;
         Ok(())
     }
 }
@@ -363,6 +433,16 @@ impl AwsS3StorageAdapter {
         return format!("{yakman_dir}/instance-metadata");
     }
 
+    fn get_password_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/passwords");
+    }
+
+    fn get_password_reset_link_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/password-reset-links");
+    }
+
     async fn put_object(&self, path: &str, data: String) -> Result<(), GenericStorageError> {
         self.client
             .put_object()
@@ -408,20 +488,41 @@ impl AwsS3StorageAdapter {
         };
     }
 
-    async fn get_object(&self, path: &str) -> Result<String, GenericStorageError> {
+    async fn get_object_as_option(
+        &self,
+        path: &str,
+    ) -> Result<Option<String>, GenericStorageError> {
         let response = self
             .client
             .get_object()
             .bucket(&self.bucket)
             .key(path)
             .send()
-            .await?;
+            .await;
+
+        let response = match response {
+            Ok(r) => r,
+            Err(e) => match &e {
+                s3::error::SdkError::ServiceError(inner) => match inner.err() {
+                    s3::operation::get_object::GetObjectError::NoSuchKey(_) => return Ok(None),
+                    _ => return Err(e.into()),
+                },
+                _ => return Err(e.into()),
+            },
+        };
 
         let mut body = response.body.into_async_read();
         let mut string = String::new();
         body.read_to_string(&mut string).await?;
 
-        return Ok(string);
+        return Ok(Some(string));
+    }
+
+    fn not_found() -> GenericStorageError {
+        GenericStorageError::new(
+            "object found".to_string(),
+            "AWS adapter could not find key".to_string(),
+        )
     }
 
     pub async fn from_env() -> AwsS3StorageAdapter {

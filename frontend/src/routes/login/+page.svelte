@@ -2,10 +2,21 @@
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import { onMount } from "svelte";
+    import type { PageData } from "./$types";
+    import YakManInput from "$lib/components/YakManInput.svelte";
+
+    export let data: PageData;
+
+    const enableOauth = data.settings.enable_oauth;
 
     const LOCAL_STORAGE_OAUTH2_VERIFER_KEY = "oauth2-verifier";
 
     let redirectUri: string;
+
+    // Non OAuth login
+    let error: string | null = data.error;
+    let email = "";
+    let password = "";
 
     // GENERATING CODE VERIFIER
     function dec2hex(dec: number) {
@@ -44,27 +55,29 @@
     }
 
     onMount(async () => {
-        let verifier = generateCodeVerifier();
-        let challenge = await generateCodeChallengeFromVerifier(verifier);
+        if (enableOauth) {
+            let verifier = generateCodeVerifier();
+            let challenge = await generateCodeChallengeFromVerifier(verifier);
 
-        localStorage.setItem(LOCAL_STORAGE_OAUTH2_VERIFER_KEY, verifier);
+            localStorage.setItem(LOCAL_STORAGE_OAUTH2_VERIFER_KEY, verifier);
 
-        const response = await fetch(`/login/init`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                challenge: {
-                    challenge: challenge,
-                    codeChallengeMethod: "S256",
+            const response = await fetch(`/login/init`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            }),
-        });
+                body: JSON.stringify({
+                    challenge: {
+                        challenge: challenge,
+                        codeChallengeMethod: "S256",
+                    },
+                }),
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        redirectUri = data.redirectUrl;
+            redirectUri = data.redirectUrl;
+        }
     });
 </script>
 
@@ -72,9 +85,44 @@
     <YakManCard>
         <div class="flex flex-col items-center gap-4">
             <h1 class="text-xl font-bold">Login</h1>
-            <a href={redirectUri}>
-                <YakManButton>Login with SSO</YakManButton>
-            </a>
+            {#if enableOauth}
+                <a href={redirectUri}>
+                    <YakManButton>Login with SSO</YakManButton>
+                </a>
+            {:else}
+                <form method="POST">
+                    <div>
+                        <YakManInput
+                            required
+                            name="username"
+                            label="Email"
+                            bind:value={email}
+                        />
+                    </div>
+                    <div class="mt-2">
+                        <YakManInput
+                            required
+                            name="password"
+                            label="Password"
+                            type="password"
+                            bind:value={password}
+                        />
+                    </div>
+                    <div class="mt-2">
+                        {#if error}
+                            <p class="text-red-600 font-semibold">
+                                {error}
+                            </p>
+                        {/if}
+                        <YakManButton
+                            type="submit"
+                            disabled={email.length == 0 || password.length == 0}
+                        >
+                            Login
+                        </YakManButton>
+                    </div>
+                </form>
+            {/if}
         </div>
     </YakManCard>
 </div>

@@ -1,15 +1,18 @@
 pub mod kv_storage_service;
+pub mod password;
 
 use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
-        RollbackRevisionError, SaveConfigInstanceError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
+        DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
+        SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManProject, YakManUser, YakManUserDetails,
+        YakManPassword, YakManProject, YakManPublicPasswordResetLink, YakManUser,
+        YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -167,6 +170,28 @@ pub trait StorageService: Sync + Send {
     async fn save_api_key(&self, api_key: YakManApiKey) -> Result<(), GenericStorageError>;
 
     async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError>;
+
+    async fn get_password_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<YakManPassword>, GenericStorageError>;
+
+    async fn create_password_reset_link(
+        &self,
+        user_uuid: &str,
+    ) -> Result<YakManPublicPasswordResetLink, CreatePasswordResetLinkError>;
+
+    async fn reset_password_with_link(
+        &self,
+        reset_link: YakManPublicPasswordResetLink,
+        password: &str,
+    ) -> Result<(), ResetPasswordError>;
+
+    async fn validate_password_reset_link(
+        &self,
+        id: &str,
+        user_uuid: &str,
+    ) -> Result<bool, GenericStorageError>;
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError>;
 }

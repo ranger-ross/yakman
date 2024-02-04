@@ -61,6 +61,11 @@ impl StateManager {
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        api::yakman::yakman_settings,
+        api::auth::login,
+        api::auth::reset_password,
+        api::auth::create_password_reset_link,
+        api::auth::validate_password_reset_link,
         api::oauth::oauth_init,
         api::oauth::oauth_exchange,
         api::oauth::oauth_refresh,
@@ -93,6 +98,7 @@ impl StateManager {
     ),
     tags(
         (name = "api::oauth", description = "OAuth endpoints"),
+        (name = "api::auth", description = "Authentication endpoints (non-oauth)"),
         (name = "api::projects", description = "Project management endpoints"),
         (name = "api::configs", description = "Config management endpoints"),
         (name = "api::labels", description = "Label management endpoints"),
@@ -148,6 +154,13 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
+            // YakMan
+            .service(api::yakman::yakman_settings)
+            // Auth
+            .service(api::auth::login)
+            .service(api::auth::reset_password)
+            .service(api::auth::create_password_reset_link)
+            .service(api::auth::validate_password_reset_link)
             // OAuth
             .service(api::oauth::oauth_init)
             .service(api::oauth::oauth_exchange)

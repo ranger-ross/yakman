@@ -4,7 +4,10 @@ use derive_more::Display;
 use reqwest::StatusCode;
 use serde::Serialize;
 
-use crate::adapters::errors::GenericStorageError;
+use crate::{
+    adapters::errors::GenericStorageError,
+    services::password::{PasswordHashError, PasswordStrengthError},
+};
 use std::fmt;
 use thiserror::Error;
 
@@ -281,5 +284,43 @@ impl fmt::Display for LabelAlreadyExistsError {
 impl std::error::Error for LabelAlreadyExistsError {
     fn description(&self) -> &str {
         &self.description
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum ResetPasswordError {
+    #[error("Reset link not valid")]
+    ResetLinkNotFound,
+    #[error("Invalid user")]
+    InvalidUser,
+    #[error("Invalid email")]
+    InvalidEmail,
+    #[error("Password reset link expired")]
+    ResetLinkExpired,
+    #[error("Invalid password: {error}")]
+    PasswordValidationError { error: PasswordStrengthError },
+    #[error("Password could not be hashed")]
+    PasswordHashError { error: PasswordHashError },
+    #[error("Storage Error: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for ResetPasswordError {
+    fn from(e: GenericStorageError) -> Self {
+        Self::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum CreatePasswordResetLinkError {
+    #[error("Invalid user")]
+    InvalidUser,
+    #[error("Storage Error: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for CreatePasswordResetLinkError {
+    fn from(e: GenericStorageError) -> Self {
+        Self::StorageError { message: e.message }
     }
 }

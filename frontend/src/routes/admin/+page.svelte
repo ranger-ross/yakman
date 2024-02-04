@@ -11,9 +11,11 @@
     export let data: PageData;
 
     let newUsername = "";
+    let resetPasswordUserUuid = "";
     let newApiKeyProject = data.projects[0].uuid;
     let newApiKeyRole = "Viewer";
     let newApiKey: string | null = null;
+    let resetPasswordLink: string | null = null;
 
     async function createUser() {
         console.log("createUser");
@@ -45,6 +47,19 @@
         newApiKey = apiKey;
     }
 
+    async function resetPassword() {
+        console.log(resetPasswordUserUuid);
+
+        const { id, user_uuid } = await trpc(
+            $page,
+        ).auth.createResetPasswordLink.mutate({
+            userUuid: resetPasswordUserUuid,
+        });
+
+        const origin = $page.url.origin;
+        resetPasswordLink = `${origin}/session/reset-password?id=${id}&user_uuid=${user_uuid}`;
+    }
+
     async function deleteApiKey(id: string) {
         await trpc($page).admin.deleteApiKey.mutate({
             id: id,
@@ -65,6 +80,22 @@
         <YakManInput placeholder="Username" bind:value={newUsername} />
         <br />
         <YakManButton on:click={createUser}>Create user</YakManButton>
+    </YakManCard>
+
+    <YakManCard extraClasses="mt-2">
+        <h2 class="text-xl font-bold mt-2">Reset Password</h2>
+        <YakManInput
+            placeholder="User UUID"
+            bind:value={resetPasswordUserUuid}
+        />
+
+        {#if resetPasswordLink}
+            <div class="text-lg my-3">
+                {resetPasswordLink}
+            </div>
+        {/if}
+
+        <YakManButton on:click={resetPassword}>Reset Password</YakManButton>
     </YakManCard>
 
     <YakManCard extraClasses="mt-2">

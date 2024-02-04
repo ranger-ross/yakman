@@ -151,3 +151,22 @@ pub struct YakManUserDetails {
     pub global_roles: Vec<YakManRole>,
     pub roles: Vec<YakManUserProjectRole>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManPassword {
+    pub hash: String,
+    pub timestamp: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManPasswordResetLink {
+    pub email_hash: String,
+    pub expiration_timestamp_ms: i64,
+}
+
+/// Public response when creating a password reset link
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManPublicPasswordResetLink {
+    pub id: String,
+    pub user_uuid: String,
+}

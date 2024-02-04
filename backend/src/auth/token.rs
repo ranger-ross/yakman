@@ -1,4 +1,3 @@
-use crate::model::YakManUser;
 use chrono::Utc;
 use hmac::{Hmac, Mac};
 use jwt::Header;
@@ -17,6 +16,8 @@ use std::{
     string::FromUtf8Error,
 };
 use thiserror::Error;
+
+use crate::model::YakManUser;
 
 pub const API_KEY_PREFIX: &str = "YM-";
 

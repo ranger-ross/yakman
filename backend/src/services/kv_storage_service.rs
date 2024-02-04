@@ -1,18 +1,27 @@
 use std::time::Duration;
 
-use super::StorageService;
+use super::{
+    password::{hash_password, validate_password},
+    StorageService,
+};
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError,
-        RollbackRevisionError, SaveConfigInstanceError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
+        DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
+        SaveConfigInstanceError,
     },
     model::{
         ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
-        RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManProject, YakManRole,
+        RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
+        YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink, YakManRole,
         YakManUser, YakManUserDetails,
     },
+};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    Argon2,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -605,7 +614,8 @@ impl StorageService for KVStorageService {
     }
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError> {
-        info!("initializing local storage adapter");
+        log::info!("initializing local storage adapter");
+        let now = Utc::now().timestamp_millis();
 
         self.adapter.initialize_yakman_storage().await?;
 
@@ -631,6 +641,43 @@ impl StorageService for KVStorageService {
                 .await?;
 
             self.adapter.save_users(vec![admin_user]).await?;
+        }
+
+        // Set the default admin password
+        if let Ok(email) = std::env::var("YAKMAN_DEFAULT_ADMIN_USER_EMAIL") {
+            if let Ok(default_password) = std::env::var("YAKMAN_DEFAULT_ADMIN_USER_PASSWORD") {
+                let email_hash = sha256::digest(&email);
+
+                // Don't set the password if it already exists
+                match self.adapter.get_password(&email_hash).await {
+                    Ok(None) => {
+                        log::info!("Saving default admin password");
+                        // Example from: https://docs.rs/argon2/latest/argon2
+                        let salt = SaltString::generate(&mut OsRng);
+                        let argon2 = Argon2::default();
+                        let password_hash = argon2
+                            .hash_password(default_password.as_bytes(), &salt)
+                            .map_err(|e| {
+                                GenericStorageError::new(
+                                    "Failed to hash default password".to_string(),
+                                    e.to_string(),
+                                )
+                            })?
+                            .to_string();
+
+                        self.adapter
+                            .save_password(
+                                &email_hash,
+                                YakManPassword {
+                                    hash: password_hash,
+                                    timestamp: now,
+                                },
+                            )
+                            .await?;
+                    }
+                    _ => {}
+                }
+            }
         }
 
         Ok(())
@@ -758,6 +805,125 @@ impl StorageService for KVStorageService {
         }
 
         return Ok(());
+    }
+
+    async fn get_password_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<YakManPassword>, GenericStorageError> {
+        let email_hash = sha256::digest(email);
+        return self.adapter.get_password(&email_hash).await;
+    }
+
+    async fn create_password_reset_link(
+        &self,
+        user_uuid: &str,
+    ) -> Result<YakManPublicPasswordResetLink, CreatePasswordResetLinkError> {
+        let user = match self.get_user_by_uuid(user_uuid).await? {
+            Some(user) => user,
+            None => return Err(CreatePasswordResetLinkError::InvalidUser),
+        };
+
+        let id = short_sha(&Uuid::new_v4().to_string());
+        let id_hash = sha256::digest(&id);
+
+        let email = user.email;
+        let email_hash = sha256::digest(&email);
+
+        let expiration = Utc::now() + chrono::Duration::days(2);
+
+        let password_reset_link = YakManPasswordResetLink {
+            email_hash,
+            expiration_timestamp_ms: expiration.timestamp_millis(),
+        };
+
+        self.adapter
+            .save_password_reset_link(&id_hash, password_reset_link)
+            .await?;
+
+        return Ok(YakManPublicPasswordResetLink {
+            id,
+            user_uuid: user_uuid.to_string(),
+        });
+    }
+
+    async fn reset_password_with_link(
+        &self,
+        reset_link: YakManPublicPasswordResetLink,
+        password: &str,
+    ) -> Result<(), ResetPasswordError> {
+        let now = Utc::now().timestamp_millis();
+
+        let id = sha256::digest(&reset_link.id);
+        let password_reset_link = match self.adapter.get_password_reset_link(&id).await? {
+            Some(password_reset_link) => password_reset_link,
+            None => {
+                return Err(ResetPasswordError::ResetLinkNotFound);
+            }
+        };
+
+        // Validate user_uuid match email hash from storage
+        let user = match self.get_user_by_uuid(&reset_link.user_uuid).await? {
+            Some(user) => user,
+            None => return Err(ResetPasswordError::InvalidUser),
+        };
+        let email_hash = sha256::digest(&user.email);
+        if &email_hash != &password_reset_link.email_hash {
+            return Err(ResetPasswordError::InvalidEmail);
+        }
+
+        // Validate expiration
+        if password_reset_link.expiration_timestamp_ms < now {
+            return Err(ResetPasswordError::ResetLinkExpired);
+        }
+
+        if let Err(err) = validate_password(password) {
+            return Err(ResetPasswordError::PasswordValidationError { error: err });
+        }
+
+        let password_hash = hash_password(password)
+            .map_err(|err| ResetPasswordError::PasswordHashError { error: err })?;
+        self.adapter
+            .save_password(
+                &email_hash,
+                YakManPassword {
+                    hash: password_hash,
+                    timestamp: now,
+                },
+            )
+            .await?;
+
+        self.adapter.delete_password_reset_link(&id).await?;
+
+        Ok(())
+    }
+
+    async fn validate_password_reset_link(
+        &self,
+        id: &str,
+        user_uuid: &str,
+    ) -> Result<bool, GenericStorageError> {
+        let id = sha256::digest(id);
+        let password_reset_link = match self.adapter.get_password_reset_link(&id).await? {
+            Some(password_reset_link) => password_reset_link,
+            None => return Ok(false),
+        };
+
+        let now = Utc::now().timestamp_millis();
+
+        // Validate expiration
+        if password_reset_link.expiration_timestamp_ms < now {
+            return Ok(false);
+        }
+
+        // Validate user_uuid match email hash from storage
+        let user = match self.get_user_by_uuid(user_uuid).await? {
+            Some(user) => user,
+            None => return Ok(false),
+        };
+
+        let email_hash = sha256::digest(&user.email);
+        return Ok(&email_hash == &password_reset_link.email_hash);
     }
 }
 
