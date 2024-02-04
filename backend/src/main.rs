@@ -45,6 +45,7 @@ pub struct StateManager {
 }
 
 impl StateManager {
+    #[deprecated]
     fn get_service(&self) -> &dyn StorageService {
         return self.service.as_ref();
     }
@@ -107,23 +108,23 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    let service = create_service().await;
+    let storage_service = create_service().await;
 
-    service
+    storage_service
         .initialize_storage()
         .await
         .expect("Failed to initialize storage");
 
-    let arc = Arc::new(service);
-
-    let oauth_service = create_oauth_service(arc.clone()).await;
+    let oauth_service = create_oauth_service(storage_service.clone()).await;
     let jwt_service = Arc::new(
         YakManTokenService::from_env()
             .map_err(|e| log::error!("{e}"))
             .expect("Failed to create jwt service"),
     );
 
-    let state = web::Data::new(StateManager { service: arc });
+    let state = web::Data::new(StateManager {
+        service: storage_service.clone(),
+    });
 
     let openapi = ApiDoc::openapi();
 
@@ -133,6 +134,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
             .wrap(Etag::default())
@@ -200,10 +202,10 @@ fn yakman_host_port_from_env() -> (String, u16) {
     (host, port)
 }
 
-async fn create_service() -> impl StorageService {
+async fn create_service() -> Arc<dyn StorageService> {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
 
-    return match adapter_name.as_str() {
+    return Arc::new(match adapter_name.as_str() {
         "REDIS" => {
             let adapter = Box::new(
                 RedisStorageAdapter::from_env()
@@ -235,7 +237,7 @@ async fn create_service() -> impl StorageService {
             KVStorageService::new(adapter)
         }
         _ => panic!("Unsupported adapter {adapter_name}"),
-    };
+    });
 }
 
 async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuthService> {

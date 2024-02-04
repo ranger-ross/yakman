@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use crate::error::{RollbackRevisionError, YakManApiError};
+use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::response::RevisionPayload;
 use crate::model::YakManRole;
-use crate::{middleware::roles::YakManRoleBinding, StateManager};
+use crate::services::StorageService;
 use actix_web::{get, post, web, Responder};
 use actix_web_grants::permissions::AuthDetails;
 use serde::Deserialize;
@@ -13,12 +16,15 @@ use serde::Deserialize;
 async fn get_instance_revisions(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
-    let service = state.get_service();
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap();
+    let config = storage_service
+        .get_config(&config_name)
+        .await
+        .unwrap()
+        .unwrap(); // TODO: handle these unwraps
 
     if !YakManRoleBinding::has_any_role(
         vec![
@@ -33,7 +39,7 @@ async fn get_instance_revisions(
         return Err(YakManApiError::forbidden());
     }
 
-    if let Some(data) = service
+    if let Some(data) = storage_service
         .get_instance_revisions(&config_name, &instance)
         .await?
     {
@@ -55,13 +61,16 @@ enum ReviewResult {
 async fn review_pending_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String, ReviewResult)>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance, revision, result) = path.into_inner();
-    let service = state.get_service();
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap();
+    let config = storage_service
+        .get_config(&config_name)
+        .await
+        .unwrap()
+        .unwrap();
 
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
@@ -79,13 +88,13 @@ async fn review_pending_instance_revision(
 
     match result {
         ReviewResult::ApproveAndApply | ReviewResult::Approve => {
-            return match service
+            return match storage_service
                 .approve_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
                 .await
             {
                 Ok(_) => {
                     if result == ReviewResult::ApproveAndApply {
-                        return match service
+                        return match storage_service
                             .apply_instance_revision(
                                 &config_name,
                                 &instance,
@@ -107,7 +116,7 @@ async fn review_pending_instance_revision(
             };
         }
         ReviewResult::Reject => {
-            return match service
+            return match storage_service
                 .reject_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
                 .await
             {
@@ -124,13 +133,16 @@ async fn review_pending_instance_revision(
 async fn apply_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance, revision) = path.into_inner();
-    let service = state.get_service();
 
-    let config = service.get_config(&config_name).await.unwrap().unwrap();
+    let config = storage_service
+        .get_config(&config_name)
+        .await
+        .unwrap()
+        .unwrap(); // todo: handle these unwraps
 
     if !YakManRoleBinding::has_any_role(
         vec![
@@ -150,7 +162,7 @@ async fn apply_instance_revision(
     }
     let reviewer_uuid = reviewer_uuid.unwrap();
 
-    return match service
+    return match storage_service
         .apply_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
         .await
     {
@@ -165,13 +177,12 @@ async fn apply_instance_revision(
 async fn rollback_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
-    state: web::Data<StateManager>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance, revision) = path.into_inner();
-    let service = state.get_service();
 
-    let config = service
+    let config = storage_service
         .get_config(&config_name)
         .await?
         .ok_or(RollbackRevisionError::InvalidConfig)?;
@@ -190,7 +201,7 @@ async fn rollback_instance_revision(
 
     let rollback_by_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
-    let new_revision = service
+    let new_revision = storage_service
         .rollback_instance_revision(&config_name, &instance, &revision, &rollback_by_uuid)
         .await?;
 
