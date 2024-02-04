@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod auth;
 pub mod configs;
 pub mod data;
 pub mod instances;
@@ -6,7 +7,6 @@ pub mod labels;
 pub mod oauth;
 pub mod projects;
 pub mod revisions;
-pub mod auth;
 pub mod yakman;
 
 fn is_alphanumeric_kebab_case(s: &str) -> bool {
