@@ -7,7 +7,7 @@
 
     export let data: PageData;
 
-    const enableOauth = data.config.enable_oauth;
+    const enableOauth = data.settings.enable_oauth;
 
     const LOCAL_STORAGE_OAUTH2_VERIFER_KEY = "oauth2-verifier";
 
@@ -52,12 +52,6 @@
         var hashed = await sha256(verifier);
         var base64encoded = base64urlencode(hashed);
         return base64encoded;
-    }
-
-    async function onNonOAuthLogin() {
-        fetch("/login", {
-            method: "POST",
-        });
     }
 
     onMount(async () => {

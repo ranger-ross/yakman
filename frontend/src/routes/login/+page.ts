@@ -1,12 +1,12 @@
 import { trpc } from "$lib/trpc/client";
-import type { PageData } from "./$types";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async (event) => {
 
-    const config = await trpc(event).yakman.fetchYakmanConfig.query();
+    const settings = await trpc(event).yakman.fetchYakmanSettings.query();
 
     return {
-        config: config,
+        settings: settings,
         error: event.url.searchParams.get('error')
     };
 }

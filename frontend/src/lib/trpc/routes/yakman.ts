@@ -5,14 +5,14 @@ import { convertYakManErrorToTRPCError } from "$lib/utils/error-helpers";
 
 const BASE_URL = getYakManBaseApiUrl();
 
-type YakManApplicationConfig = {
+type YakManApplicationSettings = {
     enable_oauth: boolean
 }
 
 export const yakman = t.router({
-    fetchYakmanConfig: t.procedure
-        .query(async (): Promise<YakManApplicationConfig> => {
-            const response = await fetch(`${BASE_URL}/yakman/config`);
+    fetchYakmanSettings: t.procedure
+        .query(async (): Promise<YakManApplicationSettings> => {
+            const response = await fetch(`${BASE_URL}/yakman/settings`);
             if (response.status != 200) {
                 throw convertYakManErrorToTRPCError(await response.text(), response.status)
             }
