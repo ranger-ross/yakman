@@ -61,6 +61,7 @@ impl StateManager {
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        api::yakman::yakman_config,
         api::auth::login,
         api::auth::reset_password,
         api::auth::create_password_reset_link,
@@ -153,6 +154,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
+            // YakMan
+            .service(api::yakman::yakman_config)
             // Auth
             .service(api::auth::login)
             .service(api::auth::reset_password)

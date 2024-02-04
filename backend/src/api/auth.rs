@@ -6,13 +6,13 @@ use crate::{
 };
 use actix_web::{
     post,
-    web::{self, Json, UrlEncoded},
+    web::{self, Json},
     HttpResponse, Responder,
 };
 use actix_web_grants::permissions::AuthDetails;
 pub use serde::Deserialize;
 use serde::Serialize;
-use utoipa::{openapi::security::Http, ToSchema};
+use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct LoginRequest {
