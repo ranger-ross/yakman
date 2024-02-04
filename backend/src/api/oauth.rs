@@ -22,10 +22,31 @@ use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
 pub use serde::Deserialize;
 use serde::Serialize;
-use utoipa::ToSchema;
+use utoipa::{
+    openapi::{Object, ObjectBuilder, SchemaType},
+    ToSchema,
+};
+
+fn string_schema() -> Object {
+    ObjectBuilder::new().schema_type(SchemaType::String).build()
+}
+
+fn pkce_code_challenge_schema() -> Object {
+    ObjectBuilder::new()
+        .property(
+            "code_challenge",
+            ObjectBuilder::new().schema_type(SchemaType::String).build(),
+        )
+        .property(
+            "code_challenge_method",
+            ObjectBuilder::new().schema_type(SchemaType::String).build(),
+        )
+        .build()
+}
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct OAuthInitPayload {
+    #[schema(schema_with=pkce_code_challenge_schema)]
     pub challenge: PkceCodeChallenge,
 }
 
@@ -37,7 +58,7 @@ pub struct OAuthInitResponse {
 }
 
 /// Begins the oauth login flow
-#[utoipa::path(responses((status = 200, body = String)))]
+#[utoipa::path(responses((status = 200, body = OAuthInitResponse)))]
 #[post("/oauth2/init")]
 pub async fn oauth_init(
     payload: Json<OAuthInitPayload>,
@@ -56,6 +77,7 @@ pub async fn oauth_init(
 pub struct OAuthExchangePayload {
     pub state: String,
     pub code: String,
+    #[schema(schema_with=string_schema)]
     pub verifier: PkceCodeVerifier,
     pub nonce: String,
 }

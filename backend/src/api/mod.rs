@@ -32,7 +32,6 @@ use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
     App,
 };
-use oauth2::PkceCodeVerifier;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -95,8 +94,6 @@ use utoipa::OpenApi;
     )
 )]
 pub struct YakManApiDoc;
-
-fn t(x: CreateApiKeyRequest) {}
 
 pub fn register_routes<T>(app: App<T>) -> App<T>
 where
