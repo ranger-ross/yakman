@@ -4,6 +4,7 @@ pub mod configs;
 pub mod data;
 pub mod instances;
 pub mod labels;
+pub mod lifecycle;
 pub mod oauth;
 pub mod projects;
 pub mod revisions;
@@ -14,6 +15,7 @@ use self::{
     auth::{
         CreatePasswordResetLink, LoginRequest, PasswordResetPayload, ValidatePasswordResetLink,
     },
+    lifecycle::YakManHealthResponse,
     oauth::{
         GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse,
         OAuthRefreshTokenPayload,
@@ -38,6 +40,7 @@ use utoipa::OpenApi;
 #[openapi(
     paths(
         yakman::yakman_settings,
+        lifecycle::health,
         auth::login,
         auth::reset_password,
         auth::create_password_reset_link,
@@ -77,7 +80,7 @@ use utoipa::OpenApi;
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload, OAuthRefreshTokenPayload,
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
-            CreateApiKeyResponse
+            CreateApiKeyResponse, YakManHealthResponse
         )
     ),
     tags(
@@ -91,6 +94,7 @@ use utoipa::OpenApi;
         (name = "revisions", description = "Config Instance Revision management endpoints"),
         (name = "yakman", description = "YakMan settings"),
         (name = "admin", description = "YakMan management (admins only) endpoints"),
+        (name = "lifecycle", description = "Application lifecycle endpoints"),
     )
 )]
 pub struct YakManApiDoc;
@@ -100,6 +104,8 @@ where
     T: ServiceFactory<ServiceRequest, Config = (), Error = actix_web::Error, InitError = ()>,
 {
     app
+        // Lifecycle
+        .service(lifecycle::health)
         // YakMan
         .service(yakman::yakman_settings)
         // Auth
