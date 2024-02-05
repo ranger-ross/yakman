@@ -4,19 +4,24 @@ pub mod configs;
 pub mod data;
 pub mod instances;
 pub mod labels;
+pub mod lifecycle;
 pub mod oauth;
 pub mod projects;
 pub mod revisions;
 pub mod yakman;
-pub mod lifecycle;
 
 use self::{
-    admin::{CreateApiKeyRequest, CreateApiKeyResponse}, auth::{
+    admin::{CreateApiKeyRequest, CreateApiKeyResponse},
+    auth::{
         CreatePasswordResetLink, LoginRequest, PasswordResetPayload, ValidatePasswordResetLink,
-    }, lifecycle::YakManHealthResponse, oauth::{
+    },
+    lifecycle::YakManHealthResponse,
+    oauth::{
         GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse,
         OAuthRefreshTokenPayload,
-    }, revisions::ReviewResult, yakman::YakManSettingsResponse
+    },
+    revisions::ReviewResult,
+    yakman::YakManSettingsResponse,
 };
 use crate::model::{
     request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload},
