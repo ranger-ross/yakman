@@ -158,9 +158,7 @@ mod tests {
                 .service(get_api_keys),
         )
         .await;
-        let req = test::TestRequest::get()
-            .uri("/v1/api-keys")
-            .to_request();
+        let req = test::TestRequest::get().uri("/v1/api-keys").to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
