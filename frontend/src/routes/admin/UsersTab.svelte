@@ -6,8 +6,10 @@
     import YakManInput from "$lib/components/YakManInput.svelte";
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
+    import CopyableTextBlock from "./CopyableTextBlock.svelte";
 
     let users = ($page.data as PageData).users;
+    let isOAuthEnabled = ($page.data as PageData).settings.enable_oauth;
 
     let newUsername = "";
     let resetPasswordLink: string | null = null;
@@ -61,12 +63,14 @@
                         >
                             User ID
                         </th>
-                        <th
-                            scope="col"
-                            class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right"
-                        >
-                            Reset Password
-                        </th>
+                        {#if !isOAuthEnabled}
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right"
+                            >
+                                Reset Password
+                            </th>
+                        {/if}
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -78,17 +82,21 @@
                             <td class="px-6 py-2 whitespace-nowrap text-sm">
                                 {user.uuid}
                             </td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right">
-                                <p class="text-gray-700 text-sm">
-                                    <YakManButton
-                                        variant={"secondary"}
-                                        on:click={() =>
-                                            resetPassword(user.uuid)}
-                                    >
-                                        Reset Password
-                                    </YakManButton>
-                                </p>
-                            </td>
+                            {#if !isOAuthEnabled}
+                                <td
+                                    class="px-6 py-2 whitespace-nowrap text-right"
+                                >
+                                    <p class="text-gray-700 text-sm">
+                                        <YakManButton
+                                            variant={"secondary"}
+                                            on:click={() =>
+                                                resetPassword(user.uuid)}
+                                        >
+                                            Reset Password
+                                        </YakManButton>
+                                    </p>
+                                </td>
+                            {/if}
                         </tr>
                     {/each}
                 </tbody>
@@ -96,6 +104,16 @@
         </div>
     </div>
 </YakManCard>
+
+{#if resetPasswordLink}
+    <YakManCard extraClasses="mt-2">
+        <CopyableTextBlock
+            title="Reset Password Link"
+            hint="Be sure to copy this link as it will not be shown again"
+            text={resetPasswordLink}
+        />
+    </YakManCard>
+{/if}
 
 <YakManCard extraClasses="mt-2">
     <h2 class="text-xl font-bold">Add User</h2>
@@ -107,3 +125,4 @@
         >
     </div>
 </YakManCard>
+

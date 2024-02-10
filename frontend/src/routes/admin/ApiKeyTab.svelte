@@ -4,8 +4,10 @@
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManSelect from "$lib/components/YakManSelect.svelte";
+    import { openGlobaModal } from "$lib/stores/global-modal-state";
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
+    import CopyableTextBlock from "./CopyableTextBlock.svelte";
 
     let apiKeyTableRows = ($page.data as PageData).apiKeyTableRows;
     let projects = ($page.data as PageData).projects;
@@ -18,11 +20,8 @@
     let newApiKeyProject = projects[0].uuid;
     let newApiKeyRole = "Viewer";
     let newApiKey: string | null = null;
-    let copied = false;
 
     async function createApiKey() {
-        console.log(newApiKeyProject, newApiKeyRole);
-
         const apiKey = await trpc($page).apiKeys.createApiKey.mutate({
             projectUuid: newApiKeyProject,
             role: newApiKeyRole,
@@ -32,15 +31,19 @@
     }
 
     async function deleteApiKey(id: string) {
-        await trpc($page).apiKeys.deleteApiKey.mutate({
-            id: id,
+        openGlobaModal({
+            title: "Are you sure",
+            message:
+                "Are you sure you want to delete this API key? This can not be undone.",
+            confirmButtonVariant: "danger",
+            confirmButtonText: "Delete",
+            async onConfirm() {
+                await trpc($page).apiKeys.deleteApiKey.mutate({
+                    id: id,
+                });
+                invalidateAll();
+            },
         });
-        invalidateAll();
-    }
-
-    function copyApiKey() {
-        navigator.clipboard.writeText(newApiKey!!);
-        copied = true;
     }
 </script>
 
@@ -61,6 +64,11 @@
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
+            {#if apiKeyTableRows.length === 0}
+                <td colspan="6" class="text-center text-gray-500 pt-4 text-sm">
+                    No API keys
+                </td>
+            {/if}
             {#each apiKeyTableRows as apiKey}
                 <tr>
                     <td class="px-3 py-2 whitespace-nowrap text-sm">
@@ -84,7 +92,7 @@
                     <td>
                         <YakManButton
                             on:click={() => deleteApiKey(apiKey.id)}
-                            variant={"secondary"}
+                            variant="danger"
                         >
                             Delete
                         </YakManButton>
@@ -116,31 +124,10 @@
     </div>
 
     {#if newApiKey}
-        <div class="mt-2">
-            <div class="bg-gray-50 text-white p-4 rounded-md">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-gray-500">New Api Key</span>
-                    <button
-                        class="code bg-gray-200 hover:bg-gray-300 text-gray-500 px-3 py-1 rounded-md"
-                        data-clipboard-target="#code"
-                        on:click={copyApiKey}
-                    >
-                        {#if copied}
-                            Copied
-                        {:else}
-                            Copy
-                        {/if}
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <code class="text-gray-800">
-                        {newApiKey ?? ""}
-                    </code>
-                </div>
-            </div>
-            <p class="text-gray-600">
-                Be sure to copy this key as it will not be shown again.
-            </p>
-        </div>
+        <CopyableTextBlock
+            title="New Api Key"
+            hint="Be sure to copy this key as it will not be shown again."
+            text={newApiKey ?? ""}
+        />
     {/if}
 </YakManCard>
