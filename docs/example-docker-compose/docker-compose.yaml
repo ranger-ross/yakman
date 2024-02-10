@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   backend:
-    image: ghcr.io/ranger-ross/yakman-backend:0.0.3-alpha
+    image: ghcr.io/ranger-ross/yakman-backend:0.0.4-alpha
     environment:
       - RUST_LOG=info
       - YAKMAN_ADAPTER=IN_MEMORY
@@ -16,7 +16,7 @@ services:
     ports:
       - "8000:8000"
   frontend:
-    image: ghcr.io/ranger-ross/yakman-frontend:0.0.3-alpha
+    image: ghcr.io/ranger-ross/yakman-frontend:0.0.4-alpha
     environment:
       - YAKMAN_API_URL=http://backend:8000
       - ORIGIN=http://localhost:3000
