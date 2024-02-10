@@ -23,7 +23,7 @@
     async function createApiKey() {
         console.log(newApiKeyProject, newApiKeyRole);
 
-        const apiKey = await trpc($page).admin.createApiKey.mutate({
+        const apiKey = await trpc($page).apiKeys.createApiKey.mutate({
             projectUuid: newApiKeyProject,
             role: newApiKeyRole,
         });
@@ -32,7 +32,7 @@
     }
 
     async function deleteApiKey(id: string) {
-        await trpc($page).admin.deleteApiKey.mutate({
+        await trpc($page).apiKeys.deleteApiKey.mutate({
             id: id,
         });
         invalidateAll();

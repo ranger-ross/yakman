@@ -3,7 +3,7 @@ import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async (event) => {
 
-    const settings = await trpc(event).yakman.fetchYakmanSettings.query();
+    const settings = await trpc(event).lifecycle.fetchYakmanSettings.query();
 
     return {
         settings: settings,

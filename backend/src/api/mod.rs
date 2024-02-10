@@ -1,4 +1,4 @@
-pub mod admin;
+pub mod api_keys;
 pub mod auth;
 pub mod configs;
 pub mod data;
@@ -7,18 +7,18 @@ pub mod labels;
 pub mod lifecycle;
 pub mod projects;
 pub mod revisions;
-pub mod yakman;
+pub mod users;
 
 use self::{
-    admin::{CreateApiKeyRequest, CreateApiKeyResponse},
+    api_keys::{CreateApiKeyRequest, CreateApiKeyResponse},
     auth::{
-        CreatePasswordResetLink, GetUserInfoResponse, LoginRequest, OAuthExchangePayload,
-        OAuthInitPayload, OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
+        CreatePasswordResetLink, LoginRequest, OAuthExchangePayload, OAuthInitPayload,
+        OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
         ValidatePasswordResetLink,
     },
-    lifecycle::YakManHealthResponse,
+    lifecycle::{YakManHealthResponse, YakManSettingsResponse},
     revisions::ReviewResult,
-    yakman::YakManSettingsResponse,
+    users::GetUserInfoResponse,
 };
 use crate::model::{
     request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload},
@@ -36,8 +36,8 @@ use utoipa::OpenApi;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        yakman::yakman_settings,
         lifecycle::health,
+        lifecycle::yakman_settings,
         auth::login,
         auth::reset_password,
         auth::create_password_reset_link,
@@ -45,7 +45,6 @@ use utoipa::OpenApi;
         auth::oauth_init,
         auth::oauth_exchange,
         auth::oauth_refresh,
-        auth::get_user_info,
         projects::get_projects,
         projects::create_project,
         configs::get_configs,
@@ -64,11 +63,12 @@ use utoipa::OpenApi;
         revisions::review_pending_instance_revision,
         revisions::apply_instance_revision,
         revisions::rollback_instance_revision,
-        admin::get_yakman_users,
-        admin::create_yakman_user,
-        admin::get_api_keys,
-        admin::create_api_key,
-        admin::delete_api_key,
+        users::get_yakman_users,
+        users::create_yakman_user,
+        users::get_user_info,
+        api_keys::get_api_keys,
+        api_keys::create_api_key,
+        api_keys::delete_api_key,
     ),
     components(
         schemas(
@@ -88,9 +88,9 @@ use utoipa::OpenApi;
         (name = "instances", description = "Config Instance management endpoints"),
         (name = "data", description = "Config data fetching endpoints"),
         (name = "revisions", description = "Config Instance Revision management endpoints"),
-        (name = "yakman", description = "YakMan settings"),
-        (name = "admin", description = "YakMan management (admins only) endpoints"),
+        (name = "users", description = "YakMan user management endpoints"),
         (name = "lifecycle", description = "Application lifecycle endpoints"),
+        (name = "api_keys", description = "API Key management endpoints"),
     )
 )]
 pub struct YakManApiDoc;
@@ -102,8 +102,7 @@ where
     app
         // Lifecycle
         .service(lifecycle::health)
-        // YakMan
-        .service(yakman::yakman_settings)
+        .service(lifecycle::yakman_settings)
         // Auth
         .service(auth::login)
         .service(auth::reset_password)
@@ -112,16 +111,17 @@ where
         .service(auth::oauth_init)
         .service(auth::oauth_exchange)
         .service(auth::oauth_refresh)
-        .service(auth::get_user_info)
         // Projects
         .service(projects::get_projects)
         .service(projects::create_project)
-        // Admin
-        .service(admin::get_yakman_users)
-        .service(admin::create_yakman_user)
-        .service(admin::get_api_keys)
-        .service(admin::create_api_key)
-        .service(admin::delete_api_key)
+        // Users
+        .service(users::get_yakman_users)
+        .service(users::create_yakman_user)
+        .service(users::get_user_info)
+        // Api Keys
+        .service(api_keys::get_api_keys)
+        .service(api_keys::create_api_key)
+        .service(api_keys::delete_api_key)
         // Configs
         .service(configs::get_configs)
         .service(configs::create_config)

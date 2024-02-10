@@ -20,7 +20,7 @@
             }
         }
         try {
-            await trpc($page).admin.createUser.mutate({
+            await trpc($page).users.createUser.mutate({
                 username: newUsername,
                 role: "Admin",
             });

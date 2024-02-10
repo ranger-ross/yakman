@@ -5,67 +5,19 @@ use crate::error::YakManApiError;
 use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
-use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
+use crate::model::YakManRole;
 use crate::services::StorageService;
 use actix_web::{delete, HttpResponse, Responder};
-use actix_web::{
-    get, put,
-    web::{self, Json},
-};
+use actix_web::{get, put, web};
 use actix_web_grants::permissions::AuthDetails;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-/// Gets users
-#[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
-#[get("/admin/v1/users")]
-pub async fn get_yakman_users(
-    auth_details: AuthDetails<YakManRoleBinding>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
-) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
-
-    if !is_admin {
-        return Err(YakManApiError::forbidden());
-    }
-
-    let users = storage_service.get_users().await?;
-    return Ok(web::Json(users));
-}
-
-/// Create YakMan user
-#[utoipa::path(request_body = YakManUser, responses((status = 200, body = (), content_type = [])))]
-#[put("/admin/v1/users")]
-pub async fn create_yakman_user(
-    auth_details: AuthDetails<YakManRoleBinding>,
-    payload: Json<CreateYakManUserPayload>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
-) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
-
-    if !is_admin {
-        return Err(YakManApiError::forbidden());
-    }
-
-    let mut users = storage_service.get_users().await.unwrap();
-    let user = payload.into_inner();
-
-    users.push(YakManUser {
-        email: user.email,
-        uuid: Uuid::new_v4().to_string(),
-        role: user.role,
-    });
-
-    storage_service.save_users(users).await.unwrap();
-
-    Ok(HttpResponse::Ok().finish())
-}
-
 /// Get Api Keys
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
-#[get("/admin/v1/api-keys")]
+#[get("/v1/api-keys")]
 pub async fn get_api_keys(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
@@ -103,7 +55,7 @@ pub struct CreateApiKeyResponse {
 
 /// Create an api key
 #[utoipa::path(responses((status = 200, body = CreateApiKeyResponse)))]
-#[put("/admin/v1/api-keys")]
+#[put("/v1/api-keys")]
 pub async fn create_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
@@ -150,7 +102,7 @@ pub async fn create_api_key(
 
 /// Revoke an API key
 #[utoipa::path(responses((status = 200, body = (), content_type = [])))]
-#[delete("/admin/v1/api-keys/{id}")]
+#[delete("/v1/api-keys/{id}")]
 pub async fn delete_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
@@ -207,7 +159,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri("/admin/v1/api-keys")
+            .uri("/v1/api-keys")
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
@@ -260,7 +212,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::put()
-            .uri("/admin/v1/api-keys")
+            .uri("/v1/api-keys")
             .set_json(&CreateApiKeyRequest {
                 project_uuid: project_uuid.clone(),
                 role: YakManRole::Viewer,
@@ -310,7 +262,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::delete()
-            .uri(&format!("/admin/v1/api-keys/{}", fake_api_key.id))
+            .uri(&format!("/v1/api-keys/{}", fake_api_key.id))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
