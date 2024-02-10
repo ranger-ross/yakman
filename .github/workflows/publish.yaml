@@ -21,6 +21,7 @@ jobs:
 
       - uses: docker/build-push-action@v5
         with:
+          context: .
           push: true
           tags: ghcr.io/ranger-ross/yakman-backend:${{ github.ref_name }}
           file: backend.Dockerfile
