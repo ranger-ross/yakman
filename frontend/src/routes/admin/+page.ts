@@ -34,9 +34,9 @@ export const load: PageLoad = async (event) => {
     }
 };
 
-function getTab(searchParams: URLSearchParams): "Changelog" | "Revisions" | null {
+function getTab(searchParams: URLSearchParams): "Users" | "Api Keys" | null {
     let tab = searchParams.get('tab');
-    if (['Changelog', 'Revisions'].includes(tab as string))
-        return tab as "Changelog" | "Revisions"
+    if (["Users", "Api Keys"].includes(tab as string))
+        return tab as "Users" | "Api Keys"
     return null;
 }

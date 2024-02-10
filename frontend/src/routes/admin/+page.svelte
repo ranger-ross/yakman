@@ -8,6 +8,7 @@
     import YakManSelect from "$lib/components/YakManSelect.svelte";
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
+    import UsersTab from "./UsersTab.svelte";
 
     export let data: PageData;
 
@@ -87,33 +88,7 @@
     </YakManCard>
 
     {#if selectedHistoryTab == "Users"}
-        <YakManCard extraClasses="mt-2">
-            <h2 class="text-xl font-bold mt-2">Users</h2>
-            {#each data.users ?? [] as user}
-                <li>{user.email}</li>
-            {/each}
-            <h2 class="text-xl font-bold">Add User</h2>
-            Username
-            <YakManInput placeholder="Username" bind:value={newUsername} />
-            <br />
-            <YakManButton on:click={createUser}>Create user</YakManButton>
-        </YakManCard>
-
-        <YakManCard extraClasses="mt-2">
-            <h2 class="text-xl font-bold mt-2">Reset Password</h2>
-            <YakManInput
-                placeholder="User UUID"
-                bind:value={resetPasswordUserUuid}
-            />
-
-            {#if resetPasswordLink}
-                <div class="text-lg my-3">
-                    {resetPasswordLink}
-                </div>
-            {/if}
-
-            <YakManButton on:click={resetPassword}>Reset Password</YakManButton>
-        </YakManCard>
+        <UsersTab users={data.users} />
     {/if}
 
     {#if selectedHistoryTab == "Api Keys"}
