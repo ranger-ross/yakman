@@ -15,6 +15,7 @@ export const load: PageLoad = async (event) => {
     const users = await t.users.fetchUsers.query();
     const apiKeys = await t.apiKeys.fetchApiKeys.query();
     const projects = await t.projects.fetchProjects.query();
+    const settings = await t.lifecycle.fetchYakmanSettings.query();
 
     const apiKeyTableRows = apiKeys.map(key => {
         return {
@@ -30,7 +31,8 @@ export const load: PageLoad = async (event) => {
         users: users,
         apiKeyTableRows: apiKeyTableRows,
         projects: projects,
-        tab: getTab(event.url.searchParams)
+        tab: getTab(event.url.searchParams),
+        settings
     }
 };
 
