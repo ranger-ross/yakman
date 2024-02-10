@@ -88,20 +88,30 @@
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1 class="text-xl font-bold mb-3">
-            Apply Config {config} -> {instance}
+        <h1
+            class="text-2xl md:text-3xl lg:text-2xl font-semibold text-gray-900 mb-4"
+        >
+            Apply Configuration
         </h1>
-        {#if data.pendingRevision}
-            <div>
-                <div class="flex gap-2">
-                    <h3 class="text-md font-bold text-gray-600">
-                        Pending Revision => {data.pendingRevision?.revision}
-                    </h3>
+        <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-gray-600">
+                Config: {config}
+            </h2>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-600">
+            Instance: {instance}
+        </h2>
 
-                    {#if data.pendingRevision.review_state == "Approved"}
-                        <ApprovedPill />
-                    {/if}
-                </div>
+        {#if data.pendingRevision}
+            <div class="flex items-center gap-2">
+                <p class="text-base text-gray-700 mt-2">
+                    Applying revision <span class="font-mono"
+                        >{data.pendingRevision?.revision}</span
+                    >
+                </p>
+                {#if data.pendingRevision.review_state == "Approved"}
+                    <ApprovedPill />
+                {/if}
             </div>
         {:else}
             No pending revisions
