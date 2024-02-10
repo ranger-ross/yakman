@@ -7,6 +7,7 @@
     import { openGlobaModal } from "$lib/stores/global-modal-state";
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
+    import ConfigPreview from "./ConfigPreview.svelte";
 
     export let data: PageData;
 
@@ -87,60 +88,72 @@
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1 class="text-xl font-bold mb-3">
-            Apply Config {config} -> {instance}
+        <h1
+            class="text-2xl md:text-3xl lg:text-2xl font-semibold text-gray-900 mb-4"
+        >
+            Apply Configuration
         </h1>
+        <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-gray-600">
+                Config: {config}
+            </h2>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-600">
+            Instance: {instance}
+        </h2>
+
         {#if data.pendingRevision}
-            <div>
-                <div class="flex gap-2">
-                    <h3 class="text-md font-bold text-gray-600">
-                        Pending Revision => {data.pendingRevision?.revision}
-                    </h3>
-
-                    {#if data.pendingRevision.review_state == "Approved"}
-                        <ApprovedPill />
-                    {/if}
-                </div>
-
-                <div class="w-full flex justify-evenly gap-6">
-                    <div class="m-2 p-2 bg-gray-100 rounded-md w-80">
-                        <div class="text-lg font-bold mb-3">Current</div>
-                        <div class="text-md font-bold mb-1">Content Type</div>
-                        <div class="text-md mb-2">
-                            {data.currentData?.contentType}
-                        </div>
-                        <div class="text-md font-bold mb-1">Text</div>
-                        <div>{data.currentData?.data}</div>
-                    </div>
-                    <div class="m-2 p-2 bg-gray-100 rounded-md w-80">
-                        <div class="text-lg font-bold mb-3">New</div>
-                        <div class="text-md font-bold mb-1">Content Type</div>
-                        <div class="text-md mb-2">
-                            {data.pendingData?.contentType}
-                        </div>
-                        <div class="text-md font-bold mb-1">Text</div>
-                        <div>{data.pendingData?.data}</div>
-                    </div>
-                </div>
-
-                <YakManButton variant="secondary" on:click={() => onReject()}>
-                    Reject
-                </YakManButton>
-
-                {#if data.pendingRevision.review_state != "Approved"}
-                    <YakManButton on:click={() => onApprove(false)}>
-                        Approve
-                    </YakManButton>
-
-                    <YakManButton on:click={() => onApprove(true)}>
-                        Approve and Apply
-                    </YakManButton>
-                {:else if data.pendingRevision.review_state == "Approved"}
-                    <YakManButton on:click={onApply}>Apply</YakManButton>
+            <div class="flex items-center gap-2">
+                <p class="text-base text-gray-700 mt-2">
+                    Applying revision <span class="font-mono"
+                        >{data.pendingRevision?.revision}</span
+                    >
+                </p>
+                {#if data.pendingRevision.review_state == "Approved"}
+                    <ApprovedPill />
                 {/if}
             </div>
         {:else}
             No pending revisions
         {/if}
     </YakManCard>
+
+    {#if data.pendingRevision}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-2">
+            <YakManCard>
+                <ConfigPreview
+                    title="Current"
+                    contentType={data.currentData?.contentType ?? ""}
+                    data={data.currentData?.data ?? ""}
+                />
+            </YakManCard>
+            <YakManCard>
+                <ConfigPreview
+                    title="New"
+                    contentType={data.pendingData?.contentType ?? ""}
+                    data={data.pendingData?.data ?? ""}
+                />
+            </YakManCard>
+        </div>
+    {/if}
+    {#if data.pendingRevision}
+        <YakManCard>
+            <h1 class="text-lg font-bold mb-1">Actions</h1>
+            <YakManButton variant="secondary" on:click={() => onReject()}>
+                Reject
+            </YakManButton>
+
+            {#if data.pendingRevision.review_state != "Approved"}
+                <YakManButton on:click={() => onApprove(false)}>
+                    Approve
+                </YakManButton>
+
+                <YakManButton on:click={() => onApprove(true)}>
+                    Approve and Apply
+                </YakManButton>
+            {:else if data.pendingRevision.review_state == "Approved"}
+                <YakManButton on:click={onApply}>Apply</YakManButton>
+            {/if}
+        </YakManCard>
+    {/if}
 </div>
