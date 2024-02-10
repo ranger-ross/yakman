@@ -5,8 +5,9 @@
     import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManInput from "$lib/components/YakManInput.svelte";
     import { trpc } from "$lib/trpc/client";
+    import type { PageData } from "./$types";
 
-    export let users: any[] = [];
+    let users = ($page.data as PageData).users;
 
     let newUsername = "";
     let resetPasswordUserUuid = "";
