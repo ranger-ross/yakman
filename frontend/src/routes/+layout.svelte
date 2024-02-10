@@ -44,6 +44,12 @@
 	});
 </script>
 
+<svelte:head>
+	<title>YakMan</title>
+	<meta name="description" content="YakMan Configs" />
+</svelte:head>
+
+
 <div class="app">
 	<YakManHeader />
 
