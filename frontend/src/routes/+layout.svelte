@@ -8,13 +8,11 @@
 	import { goto } from "$app/navigation";
 	import { userInfo } from "$lib/stores/user-info";
 	import YakManCard from "$lib/components/YakManCard.svelte";
-	import { page } from "$app/stores"
+	import { page } from "$app/stores";
 
 	export let data;
 
-	const pagesWithNoRefreshTokenNeeded: string[] = [
-		'/session/oauth-callback'
-	]
+	const pagesWithNoRefreshTokenNeeded: string[] = ["/session/oauth-callback"];
 
 	$: {
 		const userRoles = data.userRoles;
@@ -30,7 +28,10 @@
 	}
 
 	onMount(() => {
-		if (data.tokenRefreshNeeded && !pagesWithNoRefreshTokenNeeded.includes($page.url.pathname)) {
+		if (
+			data.tokenRefreshNeeded &&
+			!pagesWithNoRefreshTokenNeeded.includes($page.url.pathname)
+		) {
 			fetch("/session/refresh-token", {
 				method: "POST",
 			}).then((response) => {
@@ -48,7 +49,6 @@
 	<title>YakMan</title>
 	<meta name="description" content="YakMan Configs" />
 </svelte:head>
-
 
 <div class="app">
 	<YakManHeader />

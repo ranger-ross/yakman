@@ -11,7 +11,7 @@
     let profilePictureUrl: string | null;
 
     roles.subscribe((value) => {
-        isLoggedIn = hasRoles(value.globalRoles, value.roles)
+        isLoggedIn = hasRoles(value.globalRoles, value.roles);
         isAdmin = value?.globalRoles?.includes("Admin") ?? false;
     });
 
@@ -28,7 +28,17 @@
 <div
     class="bg-white shadow-sm h-14 flex justify-between items-center gap-3 mb-2 p-2"
 >
-    <a class="text-2xl font-bold" href="/">YakMan</a>
+    <a href="/">
+        <div class="flex gap-2 items-center">
+            <img
+                class="dark:invert h-4"
+                src="/yakman-logo.svg"
+                alt=""
+            />
+
+            <h1 class="text-2xl font-bold">YakMan</h1>
+        </div>
+    </a>
 
     {#if isLoggedIn}
         <YakManPopoverMenu
