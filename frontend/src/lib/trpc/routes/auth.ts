@@ -86,7 +86,7 @@ export const auth = t.router({
         }),
     fetchUserInfo: t.procedure
         .query(async ({ ctx }) => {
-            const response = await fetch(`${BASE_URL}/auth/user-info`, {
+            const response = await fetch(`${BASE_URL}/v1/user-info`, {
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
                 }

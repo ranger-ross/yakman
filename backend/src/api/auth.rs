@@ -8,7 +8,6 @@ use crate::{
     model::{YakManPublicPasswordResetLink, YakManRole},
     services::password::verify_password,
 };
-use actix_web::get;
 use actix_web::{
     post,
     web::{self, Json},
@@ -20,7 +19,6 @@ use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
 pub use serde::Deserialize;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::sync::Arc;
 use utoipa::openapi::{Object, ObjectBuilder, SchemaType};
 use utoipa::ToSchema;
@@ -382,52 +380,4 @@ pub async fn oauth_refresh(
         access_token: access_token_jwt,
         access_token_expire_timestamp: expire_timestamp,
     }))
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct GetUserInfoResponse {
-    pub profile_picture: Option<String>,
-    pub global_roles: Vec<YakManRole>,
-    pub roles: HashMap<String, YakManRole>,
-}
-
-/// Endpoint to get the currently logged in user's metadata and roles
-#[utoipa::path(responses((status = 200, body = GetUserInfoResponse)))]
-#[get("/auth/user-info")]
-pub async fn get_user_info(
-    details: AuthDetails<YakManRoleBinding>,
-    principle: YakManPrinciple,
-    storage_service: web::Data<Arc<dyn StorageService>>,
-) -> actix_web::Result<impl Responder, YakManApiError> {
-    let global_roles: Vec<YakManRole> = details
-        .permissions
-        .iter()
-        .filter_map(|p| match p {
-            YakManRoleBinding::GlobalRoleBinding(role) => Some(role.to_owned()),
-            _ => None,
-        })
-        .collect();
-
-    let roles: HashMap<String, YakManRole> = details
-        .permissions
-        .into_iter()
-        .filter_map(|p| match p {
-            YakManRoleBinding::ProjectRoleBinding(role) => Some((role.project_uuid, role.role)),
-            _ => None,
-        })
-        .collect();
-
-    let mut profile_picture = None;
-
-    if let Some(user_uuid) = principle.user_uuid {
-        if let Some(user) = storage_service.get_user_details(&user_uuid).await? {
-            profile_picture = user.profile_picture;
-        }
-    }
-
-    return Ok(web::Json(GetUserInfoResponse {
-        profile_picture: profile_picture,
-        global_roles: global_roles,
-        roles: roles,
-    }));
 }

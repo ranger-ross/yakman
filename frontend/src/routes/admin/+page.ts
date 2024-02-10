@@ -12,8 +12,8 @@ type ApiKeyTableRow = {
 export const load: PageLoad = async (event) => {
     const t = trpc(event);
 
-    const users = await t.admin.fetchUsers.query();
-    const apiKeys = await t.admin.fetchApiKeys.query();
+    const users = await t.users.fetchUsers.query();
+    const apiKeys = await t.apiKeys.fetchApiKeys.query();
     const projects = await t.projects.fetchProjects.query();
 
     const apiKeyTableRows = apiKeys.map(key => {

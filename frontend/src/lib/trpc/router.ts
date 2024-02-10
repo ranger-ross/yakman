@@ -7,9 +7,10 @@ import { labels } from './routes/labels';
 import { projects } from './routes/projects';
 import { revisions } from './routes/revisions';
 import { data } from './routes/data';
-import { admin } from './routes/admin';
 import { auth } from './routes/auth';
-import { yakman } from './routes/yakman';
+import { lifecycle } from './routes/lifecycle';
+import { users } from './routes/users';
+import { apiKeys } from './routes/api-keys';
 
 export const router = t.router({
     configs: configs,
@@ -18,9 +19,10 @@ export const router = t.router({
     instances: instances,
     revisions: revisions,
     data: data,
-    admin: admin,
+    users: users,
+    apiKeys: apiKeys,
     auth: auth,
-    yakman: yakman,
+    lifecycle: lifecycle,
 });
 
 export type Router = typeof router;
