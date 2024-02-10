@@ -12,6 +12,7 @@ permissions:
 jobs:
   # publish-backend:
   #   runs-on: ubuntu-latest
+  #   permissions: write-all
   #   steps:
   #     - uses: actions/checkout@v4
   #     - uses: docker/setup-qemu-action@v3
@@ -33,6 +34,7 @@ jobs:
 
   publish-frontend:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
