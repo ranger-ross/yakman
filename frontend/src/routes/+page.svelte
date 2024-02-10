@@ -94,11 +94,6 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Home</title>
-	<meta name="description" content="YakMan Configs" />
-</svelte:head>
-
 <section>
 	<div class="container mx-auto">
 		<YakManModal
