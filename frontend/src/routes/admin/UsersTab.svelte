@@ -10,7 +10,6 @@
     let users = ($page.data as PageData).users;
 
     let newUsername = "";
-    let resetPasswordUserUuid = "";
     let resetPasswordLink: string | null = null;
 
     async function createUser() {
@@ -31,13 +30,11 @@
         }
     }
 
-    async function resetPassword() {
-        console.log(resetPasswordUserUuid);
-
+    async function resetPassword(userUuid: string) {
         const { id, user_uuid } = await trpc(
             $page,
         ).auth.createResetPasswordLink.mutate({
-            userUuid: resetPasswordUserUuid,
+            userUuid: userUuid,
         });
 
         const origin = $page.url.origin;
@@ -47,25 +44,66 @@
 
 <YakManCard extraClasses="mt-2">
     <h2 class="text-xl font-bold mt-2">Users</h2>
-    {#each users as user}
-        <li>{user.email}</li>
-    {/each}
-    <h2 class="text-xl font-bold">Add User</h2>
-    Username
-    <YakManInput placeholder="Username" bind:value={newUsername} />
-    <br />
-    <YakManButton on:click={createUser}>Create user</YakManButton>
+    <div class="flex-grow mt-2">
+        <div class="bg-white rounded shadow-sm overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th
+                            scope="col"
+                            class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left"
+                        >
+                            Email
+                        </th>
+                        <th
+                            scope="col"
+                            class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left"
+                        >
+                            User ID
+                        </th>
+                        <th
+                            scope="col"
+                            class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right"
+                        >
+                            Reset Password
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {#each users as user}
+                        <tr>
+                            <td class="px-6 py-2 whitespace-nowrap">
+                                {user.email}
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm">
+                                {user.uuid}
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right">
+                                <p class="text-gray-700 text-sm">
+                                    <YakManButton
+                                        variant={"secondary"}
+                                        on:click={() =>
+                                            resetPassword(user.uuid)}
+                                    >
+                                        Reset Password
+                                    </YakManButton>
+                                </p>
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </YakManCard>
 
 <YakManCard extraClasses="mt-2">
-    <h2 class="text-xl font-bold mt-2">Reset Password</h2>
-    <YakManInput placeholder="User UUID" bind:value={resetPasswordUserUuid} />
-
-    {#if resetPasswordLink}
-        <div class="text-lg my-3">
-            {resetPasswordLink}
-        </div>
-    {/if}
-
-    <YakManButton on:click={resetPassword}>Reset Password</YakManButton>
+    <h2 class="text-xl font-bold">Add User</h2>
+    <div class="flex items-end">
+        <YakManInput placeholder="Username" bind:value={newUsername} />
+        <YakManButton
+            disabled={!newUsername || newUsername.length === 0}
+            on:click={createUser}>Create user</YakManButton
+        >
+    </div>
 </YakManCard>
