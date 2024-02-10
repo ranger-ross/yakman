@@ -5,7 +5,6 @@ pub mod data;
 pub mod instances;
 pub mod labels;
 pub mod lifecycle;
-pub mod oauth;
 pub mod projects;
 pub mod revisions;
 pub mod yakman;
@@ -13,13 +12,11 @@ pub mod yakman;
 use self::{
     admin::{CreateApiKeyRequest, CreateApiKeyResponse},
     auth::{
-        CreatePasswordResetLink, LoginRequest, PasswordResetPayload, ValidatePasswordResetLink,
+        CreatePasswordResetLink, GetUserInfoResponse, LoginRequest, OAuthExchangePayload,
+        OAuthInitPayload, OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
+        ValidatePasswordResetLink,
     },
     lifecycle::YakManHealthResponse,
-    oauth::{
-        GetUserInfoResponse, OAuthExchangePayload, OAuthInitPayload, OAuthInitResponse,
-        OAuthRefreshTokenPayload,
-    },
     revisions::ReviewResult,
     yakman::YakManSettingsResponse,
 };
@@ -45,10 +42,10 @@ use utoipa::OpenApi;
         auth::reset_password,
         auth::create_password_reset_link,
         auth::validate_password_reset_link,
-        oauth::oauth_init,
-        oauth::oauth_exchange,
-        oauth::oauth_refresh,
-        oauth::get_user_info,
+        auth::oauth_init,
+        auth::oauth_exchange,
+        auth::oauth_refresh,
+        auth::get_user_info,
         projects::get_projects,
         projects::create_project,
         configs::get_configs,
@@ -84,8 +81,7 @@ use utoipa::OpenApi;
         )
     ),
     tags(
-        (name = "oauth", description = "OAuth endpoints"),
-        (name = "auth", description = "Authentication endpoints (non-oauth)"),
+        (name = "auth", description = "Authentication endpoints"),
         (name = "projects", description = "Project management endpoints"),
         (name = "configs", description = "Config management endpoints"),
         (name = "labels", description = "Label management endpoints"),
@@ -113,11 +109,10 @@ where
         .service(auth::reset_password)
         .service(auth::create_password_reset_link)
         .service(auth::validate_password_reset_link)
-        // OAuth
-        .service(oauth::oauth_init)
-        .service(oauth::oauth_exchange)
-        .service(oauth::oauth_refresh)
-        .service(oauth::get_user_info)
+        .service(auth::oauth_init)
+        .service(auth::oauth_exchange)
+        .service(auth::oauth_refresh)
+        .service(auth::get_user_info)
         // Projects
         .service(projects::get_projects)
         .service(projects::create_project)

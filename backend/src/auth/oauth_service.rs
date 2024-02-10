@@ -22,6 +22,8 @@ use std::sync::Arc;
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait OAuthService: Send + Sync {
+    fn enabled(&self) -> bool;
+
     fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce);
 
     async fn exchange_oauth_code(
@@ -74,6 +76,10 @@ impl YakManOAuthService {
 
 #[async_trait]
 impl OAuthService for YakManOAuthService {
+    fn enabled(&self) -> bool {
+        true
+    }
+
     fn init_oauth(&self, challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
         let (auth_url, csrf_token, nonce) = self
             .client
@@ -201,8 +207,12 @@ impl OAuthDisabledService {
 
 #[async_trait]
 impl OAuthService for OAuthDisabledService {
+    fn enabled(&self) -> bool {
+        false
+    }
+
     fn init_oauth(&self, _challenge: PkceCodeChallenge) -> (String, CsrfToken, Nonce) {
-        todo!("DISABLED");
+        panic!("OAuth is diabled but init_oauth() was called");
     }
 
     async fn exchange_oauth_code(
@@ -211,14 +221,14 @@ impl OAuthService for OAuthDisabledService {
         _verifier: String,
         _nonce: String,
     ) -> Result<(String, YakManUser, Option<RefreshToken>, Option<String>), LoginError> {
-        todo!("DISABLED");
+        panic!("OAuth is diabled but exchange_oauth_code() was called");
     }
 
     async fn refresh_token(
         &self,
         _refresh_token: &str,
     ) -> Result<(String, String), RefreshTokenError> {
-        todo!("DISABLED");
+        panic!("OAuth is diabled but refresh_token() was called");
     }
 }
 

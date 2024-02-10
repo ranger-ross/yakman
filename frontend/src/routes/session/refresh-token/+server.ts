@@ -14,7 +14,7 @@ type OAuthRefreshTokenResponse = {
 export const POST: RequestHandler = async function ({ cookies, fetch }) {
     const refreshToken = cookies.get('refresh_token');
 
-    const response = await fetch(`${BASE_URL}/oauth2/refresh`, {
+    const response = await fetch(`${BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

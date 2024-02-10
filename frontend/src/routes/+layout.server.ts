@@ -1,6 +1,6 @@
 import { trpc } from "$lib/trpc/client";
 import type { LayoutServerLoad } from "./$types";
-import type { GetUserInfoResponse } from "$lib/trpc/routes/oauth";
+import type { GetUserInfoResponse } from "$lib/trpc/routes/auth";
 import { hasRoles } from "$lib/utils/role-utils";
 
 const noRoles: GetUserInfoResponse = {
@@ -18,7 +18,7 @@ export const load: LayoutServerLoad = async (event) => {
     let userRoles: GetUserInfoResponse = noRoles;
     let tokenRefreshNeeded = false;
     try {
-        userRoles = await trpc(event).oauth.fetchUserInfo.query();
+        userRoles = await trpc(event).auth.fetchUserInfo.query();
 
         if (!hasRoles(userRoles.global_roles, userRoles.roles)) {
             throw new Error("no user roles found");

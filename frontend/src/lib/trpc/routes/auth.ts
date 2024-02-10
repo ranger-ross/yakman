@@ -5,6 +5,12 @@ import { z } from "zod";
 const BASE_URL = getYakManBaseApiUrl();
 
 
+export type GetUserInfoResponse = {
+    profile_picture: string | null,
+    global_roles: string[],
+    roles: { [key: string]: string },
+};
+
 export const auth = t.router({
     createResetPasswordLink: t.procedure
         .input(z.object({
@@ -78,5 +84,17 @@ export const auth = t.router({
                 throw new Error(await response.text())
             }
         }),
+    fetchUserInfo: t.procedure
+        .query(async ({ ctx }) => {
+            const response = await fetch(`${BASE_URL}/auth/user-info`, {
+                headers: {
+                    ...createYakManAuthHeaders(ctx.accessToken),
+                }
+            });
+            if (response.status != 200) {
+                throw new Error(await response.text())
+            }
+            return await response.json() as GetUserInfoResponse;
+        })
 })
 
