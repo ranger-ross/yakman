@@ -36,24 +36,44 @@
     <h2 class="text-xl font-bold">Api Keys</h2>
 
     <table class="min-w-full divide-y divide-gray-200">
-        <thead>
-            {#each ["ID", "Project", "Role", "Created By", "Created At", ""] as col}
-                <th class="text-left">{col}</th>
-            {/each}
+        <thead class="bg-gray-50">
+            <tr>
+                {#each ["ID", "Project", "Role", "Created By", "Created At", ""] as col}
+                    <th
+                        scope="col"
+                        class="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left"
+                    >
+                        {col}
+                    </th>
+                {/each}
+            </tr>
         </thead>
-        <tbody>
-            {#each apiKeyTableRows ?? [] as apiKey}
+        <tbody class="bg-white divide-y divide-gray-200">
+            {#each apiKeyTableRows as apiKey}
                 <tr>
-                    <td>{apiKey.id}</td>
-                    <td>{apiKey.projectName}</td>
-                    <td>{apiKey.role}</td>
-                    <td>{apiKey.createdBy}</td>
-                    <td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">
+                        {apiKey.id}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">
+                        {apiKey.projectName}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">
+                        {apiKey.role}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">
+                        {apiKey.createdBy}
+                    </td>
+                    <td
+                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-500"
+                    >
                         {apiKey.createdAt.toLocaleDateString()}
                         {apiKey.createdAt.toLocaleTimeString()}
                     </td>
                     <td>
-                        <YakManButton on:click={() => deleteApiKey(apiKey.id)}>
+                        <YakManButton
+                            on:click={() => deleteApiKey(apiKey.id)}
+                            variant={"secondary"}
+                        >
                             Delete
                         </YakManButton>
                     </td>
@@ -61,8 +81,10 @@
             {/each}
         </tbody>
     </table>
+</YakManCard>
 
-    <h2 class="text-xl font-bold mt-2">Create Api Key</h2>
+<YakManCard extraClasses="mt-2">
+    <h2 class="text-xl font-bold">Create Api Key</h2>
 
     <YakManSelect label="Project" bind:value={newApiKeyProject}>
         {#each projects as project}

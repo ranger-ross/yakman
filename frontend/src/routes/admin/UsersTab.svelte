@@ -43,7 +43,7 @@
 </script>
 
 <YakManCard extraClasses="mt-2">
-    <h2 class="text-xl font-bold mt-2">Users</h2>
+    <h2 class="text-xl font-bold">Users</h2>
     <div class="flex-grow mt-2">
         <div class="bg-white rounded shadow-sm overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
