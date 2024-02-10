@@ -12,7 +12,7 @@ RUN pnpm install
 COPY ./frontend ./
 # Remove any files that are used for local dev that should not be included in the production build
 RUN rm -rf build
-RUN rm .env
+RUN rm -rf .env
 RUN rm -rf .svelte-kit
 
 
