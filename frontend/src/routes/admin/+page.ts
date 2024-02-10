@@ -30,5 +30,13 @@ export const load: PageLoad = async (event) => {
         users: users,
         apiKeyTableRows: apiKeyTableRows,
         projects: projects,
+        tab: getTab(event.url.searchParams)
     }
 };
+
+function getTab(searchParams: URLSearchParams): "Changelog" | "Revisions" | null {
+    let tab = searchParams.get('tab');
+    if (['Changelog', 'Revisions'].includes(tab as string))
+        return tab as "Changelog" | "Revisions"
+    return null;
+}
