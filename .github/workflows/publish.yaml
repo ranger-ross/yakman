@@ -24,4 +24,4 @@ jobs:
         with:
           push: true
           tags: ghcr.io/ranger-ross/yakman-backend:${{ github.ref_name }}
-          path: backend.Dockerfile
+          file: backend.Dockerfile
