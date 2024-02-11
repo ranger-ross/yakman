@@ -10,6 +10,7 @@ use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
+use chrono::{DateTime, Utc};
 use s3::primitives::ByteStream;
 use tokio::io::AsyncReadExt;
 
@@ -389,6 +390,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
         todo!()
+    }
+
+    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+        todo!();
     }
 }
 

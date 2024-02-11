@@ -9,6 +9,7 @@ use crate::model::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use log::info;
 use r2d2::PooledConnection;
 use redis::{Commands, RedisError};
@@ -283,6 +284,10 @@ impl KVStorageAdapter for RedisStorageAdapter {
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
         todo!()
+    }
+
+    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+        todo!();
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {

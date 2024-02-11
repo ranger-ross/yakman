@@ -3,6 +3,7 @@ use crate::model::{
     YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use self::errors::GenericStorageError;
 
@@ -143,6 +144,8 @@ pub trait KVStorageAdapter: Sync + Send {
         &self,
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError>;
+
+    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError>;
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError>;
 }

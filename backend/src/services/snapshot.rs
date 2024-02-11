@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use aws_sdk_s3::error;
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
@@ -16,8 +17,20 @@ impl SnapshotService {
 
     pub async fn take_snapshot(&self) {
         if let Some(lock) = self.try_take_lock().await {
-            log::info!("Aquired snapshot lockfile");
-            todo!();
+            log::info!(
+                "Aquired snapshot lockfile, Lock ID: {}",
+                lock.lock.unwrap().id
+            );
+
+            if let Err(err) = self
+                .adapter
+                .save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await
+            {
+                log::error!("Failed to unlock snapshot lockfile, Error: {:?}", err);
+            } else {
+                log::info!("Unlocked snapshot lockfile")
+            }
         } else {
             log::debug!("Snapshot lock already taken");
         }

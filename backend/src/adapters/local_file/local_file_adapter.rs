@@ -5,6 +5,7 @@ use std::{
 };
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
@@ -22,7 +23,8 @@ use super::{
 #[derive(Clone)]
 pub struct LocalFileStorageAdapter {
     pub path: String,
-    pub yakman_dir: Option<String>,
+    pub yakman_dir: &'static str,
+    pub yakman_snapshot_dir: &'static str,
 }
 
 #[async_trait]
@@ -237,6 +239,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
                 "Failed to create password reset link dir: {}",
                 password_reset_link_dir
             ));
+        }
+
+        let snapshot_dir = self.get_yakman_snapshot_dir();
+        if !Path::new(&snapshot_dir).is_dir() {
+            log::info!("Creating {}", snapshot_dir);
+            fs::create_dir(&snapshot_dir)
+                .expect(&format!("Failed to create snapshot dir: {}", snapshot_dir));
         }
 
         let project_file = self.get_projects_file_path();
@@ -480,14 +489,22 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Write::write_all(&mut data_file, data.as_bytes())?;
         Ok(())
     }
+
+    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+        todo!();
+    }
 }
 
 // Helper functions
 impl LocalFileStorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        let default_dir = String::from(".yakman");
-        let yakman_dir = self.yakman_dir.as_ref().unwrap_or(&default_dir);
+        let yakman_dir = self.yakman_dir;
         return format!("{}/{yakman_dir}", self.path.as_str());
+    }
+
+    fn get_yakman_snapshot_dir(&self) -> String {
+        let yakman_snapshot_dir = self.yakman_snapshot_dir;
+        return format!("{}/{yakman_snapshot_dir}", self.path.as_str());
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -556,7 +573,8 @@ impl LocalFileStorageAdapter {
 
         return LocalFileStorageAdapter {
             path: directory,
-            yakman_dir: None,
+            yakman_dir: ".yakman",
+            yakman_snapshot_dir: ".yakman-snapshot",
         };
     }
 }

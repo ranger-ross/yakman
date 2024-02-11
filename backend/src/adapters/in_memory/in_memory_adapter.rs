@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use futures_util::lock::Mutex;
 use serde::de::DeserializeOwned;
 
@@ -284,6 +285,10 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
         todo!()
+    }
+
+    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+        todo!();
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {

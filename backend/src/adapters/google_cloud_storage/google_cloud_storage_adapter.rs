@@ -9,6 +9,7 @@ use crate::model::{
 use crate::{adapters::google_cloud_storage::storage_types::RevisionJson, model::YakManApiKey};
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use google_cloud_storage::{
     client::{Client, ClientConfig},
     http::objects::{
@@ -391,6 +392,10 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
         todo!()
+    }
+
+    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+        todo!();
     }
 }
 
