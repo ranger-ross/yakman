@@ -165,3 +165,25 @@ pub struct YakManPublicPasswordResetLink {
     pub id: String,
     pub user_uuid: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManSnapshotLock {
+    pub lock: Option<YakManSnapshotLockInner>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManSnapshotLockInner {
+    pub id: String,
+    pub timestamp_ms: i64,
+}
+
+impl YakManSnapshotLock {
+    pub fn new(id: String, timestamp_ms: i64) -> Self {
+        Self {
+            lock: Some(YakManSnapshotLockInner {
+                id: id,
+                timestamp_ms: timestamp_ms,
+            }),
+        }
+    }
+}
