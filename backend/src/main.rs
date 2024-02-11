@@ -13,7 +13,6 @@ use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
-use crate::services::snapshot::SnapshotService;
 use actix_middleware_etag::Etag;
 use actix_web::middleware::Compress;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -31,7 +30,6 @@ use auth::oauth_service::{OAuthDisabledService, OAuthService};
 use auth::token::YakManTokenService;
 use dotenv::dotenv;
 use services::{kv_storage_service::KVStorageService, StorageService};
-use std::time::Duration;
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -46,16 +44,7 @@ async fn main() -> std::io::Result<()> {
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
 
     if settings::is_snapshot_backups_enabled() {
-        tokio::spawn(async {
-            let snapshot_service = SnapshotService::new(adapter);
-
-            loop {
-                snapshot_service.take_snapshot().await;
-
-                // TODO: make dynamic and probably CRON
-                tokio::time::sleep(Duration::from_secs(5)).await;
-            }
-        });
+        services::snapshot::register_snapshot_worker(adapter);
     }
 
     storage_service

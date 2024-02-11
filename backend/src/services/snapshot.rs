@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
-use aws_sdk_s3::error;
 use chrono::{Duration, Utc};
+use cron::Schedule;
 use uuid::Uuid;
 
-use crate::{adapters::KVStorageAdapter, model::YakManSnapshotLock};
+use crate::{adapters::KVStorageAdapter, model::YakManSnapshotLock, settings};
 
 pub struct SnapshotService {
     adapter: Arc<dyn KVStorageAdapter>,
@@ -93,4 +93,32 @@ impl SnapshotService {
         let now = Utc::now().timestamp_millis();
         YakManSnapshotLock::new(id, now)
     }
+}
+
+pub fn register_snapshot_worker(adapter: Arc<dyn KVStorageAdapter>) {
+    tokio::spawn(async {
+        let snapshot_service = SnapshotService::new(adapter);
+
+        loop {
+            let cron = settings::snapshot_backups_cron();
+            let schedule = match Schedule::from_str(&cron) {
+                Ok(schedule) => schedule,
+                Err(err) => {
+                    log::error!("Failed to parse cron {cron} for snapshot backups. Disabling snapshot backups. Inner error: {err:?}");
+                    break;
+                }
+            };
+
+            let next_snapshot_time = schedule.upcoming(Utc).take(1).next().unwrap();
+            let now = Utc::now();
+            let duration = next_snapshot_time - now;
+            let duration = duration.to_std().unwrap();
+
+            tokio::time::sleep(duration).await;
+            snapshot_service.take_snapshot().await;
+        }
+    });
+
+    let cron = settings::snapshot_backups_cron();
+    log::info!("Registered snapshot backup worker, schedule: [{cron}]");
 }
