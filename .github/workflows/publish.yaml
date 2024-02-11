@@ -12,7 +12,10 @@ permissions:
 jobs:
   publish-backend:
     runs-on: ubuntu-latest
-    permissions: write-all
+    environment: release
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -23,7 +26,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - uses: docker/build-push-action@v5
         with:
@@ -34,7 +37,10 @@ jobs:
 
   publish-frontend:
     runs-on: ubuntu-latest
-    permissions: write-all
+    environment: release
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -45,7 +51,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - uses: docker/build-push-action@v5
         with:
