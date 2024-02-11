@@ -7,7 +7,8 @@ use std::{
 use async_trait::async_trait;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use log::{error, info};
 

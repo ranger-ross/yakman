@@ -1,5 +1,6 @@
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
 
@@ -138,7 +139,10 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError>;
 
-    async fn save_snapshot_lock(&self, lock: &YakManSnapshotLock) -> Result<(), GenericStorageError>;
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError>;
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError>;
 }
