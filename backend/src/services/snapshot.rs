@@ -1,16 +1,19 @@
+use std::sync::Arc;
+
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
-use crate::{
-    adapters::{errors::GenericStorageError, KVStorageAdapter},
-    model::YakManSnapshotLock,
-};
+use crate::{adapters::KVStorageAdapter, model::YakManSnapshotLock};
 
-struct SnapshotService {
-    pub adapter: Box<dyn KVStorageAdapter>,
+pub struct SnapshotService {
+    adapter: Arc<dyn KVStorageAdapter>,
 }
 
 impl SnapshotService {
+    pub fn new(adapter: Arc<dyn KVStorageAdapter>) -> Self {
+        Self { adapter }
+    }
+
     pub async fn take_snapshot(&self) {
         if let Some(lock) = self.try_take_lock().await {
             log::info!("Aquired snapshot lockfile");

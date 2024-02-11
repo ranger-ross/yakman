@@ -186,4 +186,8 @@ impl YakManSnapshotLock {
             }),
         }
     }
+    /// Creates an unlocked lock file
+    pub fn unlocked() -> Self {
+        Self { lock: None }
+    }
 }

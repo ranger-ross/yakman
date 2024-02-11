@@ -13,6 +13,7 @@ use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
+use crate::services::snapshot::SnapshotService;
 use actix_middleware_etag::Etag;
 use actix_web::middleware::Compress;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -20,6 +21,7 @@ use actix_web_grants::GrantsMiddleware;
 use adapters::in_memory::InMemoryStorageAdapter;
 use adapters::local_file::LocalFileStorageAdapter;
 use adapters::redis::redis_adapter::RedisStorageAdapter;
+use adapters::KVStorageAdapter;
 use adapters::{
     aws_s3::AwsS3StorageAdapter,
     google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter,
@@ -39,7 +41,11 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    let storage_service = create_service().await;
+    let adapter = create_adapter().await;
+    let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
+    let snapshot_service = Arc::new(SnapshotService::new(adapter));
+
+    // TODO: Register snapshot worker
 
     storage_service
         .initialize_storage()
@@ -88,42 +94,27 @@ fn yakman_host_port_from_env() -> (String, u16) {
     (host, port)
 }
 
-async fn create_service() -> Arc<dyn StorageService> {
+async fn create_adapter() -> Arc<dyn KVStorageAdapter> {
     let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
 
-    return Arc::new(match adapter_name.as_str() {
-        "REDIS" => {
-            let adapter = Box::new(
-                RedisStorageAdapter::from_env()
-                    .await
-                    .context("Failed to initialize Redis adapter")
-                    .unwrap(),
-            );
-            KVStorageService::new(adapter)
-        }
-        "LOCAL_FILE_SYSTEM" => {
-            let adapter = Box::new(LocalFileStorageAdapter::from_env().await);
-            KVStorageService::new(adapter)
-        }
-        "S3" => {
-            let adapter = Box::new(AwsS3StorageAdapter::from_env().await);
-            KVStorageService::new(adapter)
-        }
-        "GOOGLE_CLOUD_STORAGE" => {
-            let adapter = Box::new(
-                GoogleCloudStorageAdapter::from_env()
-                    .await
-                    .context("Failed to initialize Google Cloud Storage adapter")
-                    .unwrap(),
-            );
-            KVStorageService::new(adapter)
-        }
-        "IN_MEMORY" => {
-            let adapter = Box::new(InMemoryStorageAdapter::new());
-            KVStorageService::new(adapter)
-        }
+    return match adapter_name.as_str() {
+        "REDIS" => Arc::new(
+            RedisStorageAdapter::from_env()
+                .await
+                .context("Failed to initialize Redis adapter")
+                .unwrap(),
+        ),
+        "LOCAL_FILE_SYSTEM" => Arc::new(LocalFileStorageAdapter::from_env().await),
+        "S3" => Arc::new(AwsS3StorageAdapter::from_env().await),
+        "GOOGLE_CLOUD_STORAGE" => Arc::new(
+            GoogleCloudStorageAdapter::from_env()
+                .await
+                .context("Failed to initialize Google Cloud Storage adapter")
+                .unwrap(),
+        ),
+        "IN_MEMORY" => Arc::new(InMemoryStorageAdapter::new()),
         _ => panic!("Unsupported adapter {adapter_name}"),
-    });
+    };
 }
 
 async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuthService> {

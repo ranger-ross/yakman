@@ -274,6 +274,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
                 .expect("Failed to create api-key file");
         }
 
+        let snapshot_lock = self.get_snapshot_lock_file_path();
+        if !Path::new(&snapshot_lock).is_file() {
+            self.save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await
+                .expect("Failed to create snapshot lock file");
+        }
+
         Ok(())
     }
 
@@ -457,14 +464,21 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     }
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
-        todo!()
+        let path = self.get_snapshot_lock_file_path();
+        let data = fs::read_to_string(path)?;
+        let data: YakManSnapshotLock = serde_json::from_str(&data)?;
+        return Ok(data);
     }
 
     async fn save_snapshot_lock(
         &self,
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let data = serde_json::to_string(&lock)?;
+        let data_file_path = self.get_snapshot_lock_file_path();
+        let mut data_file = File::create(&data_file_path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+        Ok(())
     }
 }
 
@@ -499,6 +513,11 @@ impl LocalFileStorageAdapter {
     fn get_user_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/users.json");
+    }
+
+    fn get_snapshot_lock_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/snapshot-lock.json");
     }
 
     fn get_instance_revisions_path(&self) -> String {
