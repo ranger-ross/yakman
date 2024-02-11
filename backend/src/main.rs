@@ -31,6 +31,7 @@ use auth::oauth_service::{OAuthDisabledService, OAuthService};
 use auth::token::YakManTokenService;
 use dotenv::dotenv;
 use services::{kv_storage_service::KVStorageService, StorageService};
+use std::time::Duration;
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -43,9 +44,18 @@ async fn main() -> std::io::Result<()> {
 
     let adapter = create_adapter().await;
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
-    let snapshot_service = Arc::new(SnapshotService::new(adapter));
 
-    // TODO: Register snapshot worker
+    //TODO: allow disabling
+    tokio::spawn(async {
+        let snapshot_service = SnapshotService::new(adapter);
+
+        loop {
+            snapshot_service.take_snapshot().await;
+
+            // TODO: make dynamic and probably CRON
+            tokio::time::sleep(Duration::from_secs(5)).await;
+        }
+    });
 
     storage_service
         .initialize_storage()

@@ -29,8 +29,8 @@ impl SnapshotService {
         let taken_lock = if let Some(lock) = snapshot_lock.map(|s| s.lock).ok()? {
             // Lock already taken, but check if its expired
             // in the event that the previous snapshot failed and the lock is permanently taken
-            let expiration_timestamp = Utc::now() + Duration::minutes(30);
-            if lock.timestamp_ms < expiration_timestamp.timestamp_millis() {
+            let max_age_timestamp = Utc::now() - Duration::minutes(30);
+            if lock.timestamp_ms < max_age_timestamp.timestamp_millis() {
                 self.create_new_lock()
             } else {
                 // Lock is not expired
@@ -39,6 +39,8 @@ impl SnapshotService {
         } else {
             self.create_new_lock()
         };
+
+        log::info!("Snapshot lockfile is unlocked, attempting to aquire lockfile");
 
         if let Err(err) = self.adapter.save_snapshot_lock(&taken_lock).await {
             log::error!("Failed to save lock. Error: {err:?}");
