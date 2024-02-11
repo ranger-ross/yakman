@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::{
     storage_types::{ApiKeysJson, ConfigJson, InstanceJson, LabelJson, UsersJson},
     GenericStorageError, KVStorageAdapter,
@@ -423,18 +425,34 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
             .into_paginator()
             .send();
 
+        // Clone `self` so that the borrow checker is okay with passing a ref across multiple async context.
+        // This should not be needed but the borrow checker does not know the tokio tasks will all be joined in this function
+        let self_ref = Arc::new(self.clone());
+
         while let Some(result) = res.next().await {
             match result {
                 Ok(output) => {
+                    let mut handles = Vec::new();
+
                     for object in output.contents() {
-                        // TODO: Parallelize this work since it does a lot of waiting on the AWS S3 API
                         if let Some(key) = object.key() {
+                            let key = key.to_string();
                             let new_key = key.to_string().replacen(&yakman_dir, &snapshot_dir, 1);
 
-                            if let Err(err) = self.copy_object(key, &new_key).await {
-                                log::error!("Failed to copy file {err:?}");
-                            }
+                            let adapter = self_ref.clone();
+
+                            handles.push(tokio::spawn(async move {
+                                println!("{} --> {}", key, new_key);
+                                if let Err(err) = adapter.copy_object(&(key), &new_key).await {
+                                    log::error!("Failed to copy file {err:?}");
+                                }
+                            }));
                         }
+                    }
+
+                    // Wait for all tasks to complete
+                    for handle in handles {
+                        handle.await.unwrap();
                     }
                 }
                 Err(err) => {
