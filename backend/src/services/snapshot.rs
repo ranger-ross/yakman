@@ -40,8 +40,21 @@ impl SnapshotService {
         // So wait few seconds and recheck the lock file to make sure it was not overwritten by another instance
         let sleep_duration = Duration::seconds(10).to_std().unwrap();
         tokio::time::sleep(sleep_duration).await;
+        let inner = &taken_lock
+            .lock
+            .as_ref()
+            .expect("Lock is created above so it will never be None");
 
-        todo!()
+        if let Some(lock) = self.get_lock().await.lock {
+            if lock.id != inner.id {
+                log::warn!("Lock was overriden, bailing");
+                return None;
+            }
+        } else {
+            return None;
+        }
+
+        return Some(taken_lock);
     }
 
     fn create_new_lock(&self) -> YakManSnapshotLock {
