@@ -45,6 +45,8 @@ async fn main() -> std::io::Result<()> {
 
     if settings::is_snapshot_backups_enabled() {
         services::snapshot::register_snapshot_worker(adapter);
+    } else {
+        log::info!("Snapshot backups disabled");
     }
 
     storage_service
