@@ -109,16 +109,28 @@ pub fn register_snapshot_worker(adapter: Arc<dyn KVStorageAdapter>) {
                 }
             };
 
-            let next_snapshot_time = schedule.upcoming(Utc).take(1).next().unwrap();
-            let now = Utc::now();
-            let duration = next_snapshot_time - now;
-            let duration = duration.to_std().unwrap();
+            let duration_until_next_snapshot = match get_next_timestamp(&schedule) {
+                Some(d) => d,
+                None => {
+                    log::error!(
+                        "Could not generate next snapshot schedule. Disabling snapshot backups."
+                    );
+                    break;
+                }
+            };
 
-            tokio::time::sleep(duration).await;
+            tokio::time::sleep(duration_until_next_snapshot).await;
             snapshot_service.take_snapshot().await;
         }
     });
 
     let cron = settings::snapshot_backups_cron();
     log::info!("Registered snapshot backup worker, schedule: [{cron}]");
+}
+
+fn get_next_timestamp(schedule: &Schedule) -> Option<std::time::Duration> {
+    let next_snapshot_time = schedule.upcoming(Utc).take(1).next()?;
+    let now = Utc::now();
+    let duration = next_snapshot_time - now;
+    return duration.to_std().ok();
 }
