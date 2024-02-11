@@ -1,7 +1,10 @@
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
-use crate::{adapters::KVStorageAdapter, model::YakManSnapshotLock};
+use crate::{
+    adapters::{errors::GenericStorageError, KVStorageAdapter},
+    model::YakManSnapshotLock,
+};
 
 struct SnapshotService {
     pub adapter: Box<dyn KVStorageAdapter>,
@@ -20,7 +23,7 @@ impl SnapshotService {
     async fn try_take_lock(&self) -> Option<YakManSnapshotLock> {
         let snapshot_lock = self.get_lock().await;
 
-        let taken_lock = if let Some(lock) = snapshot_lock.lock {
+        let taken_lock = if let Some(lock) = snapshot_lock.map(|s| s.lock).ok()? {
             // Lock already taken, but check if its expired
             // in the event that the previous snapshot failed and the lock is permanently taken
             let expiration_timestamp = Utc::now() + Duration::minutes(30);
@@ -34,7 +37,10 @@ impl SnapshotService {
             self.create_new_lock()
         };
 
-        self.lock(&taken_lock).await;
+        if let Err(err) = self.save_lock(&taken_lock).await {
+            log::error!("Failed to save lock. Error: {err:?}");
+            return None;
+        }
 
         // Since there are multiple types for storage systems there is no way to take an atomic lock.
         // So wait few seconds and recheck the lock file to make sure it was not overwritten by another instance
@@ -45,7 +51,7 @@ impl SnapshotService {
             .as_ref()
             .expect("Lock is created above so it will never be None");
 
-        if let Some(lock) = self.get_lock().await.lock {
+        if let Ok(Some(lock)) = self.get_lock().await.map(|s| s.lock) {
             if lock.id != inner.id {
                 log::warn!("Lock was overriden, bailing");
                 return None;
@@ -65,11 +71,11 @@ impl SnapshotService {
 
     // TODO: move these to adapters
 
-    async fn get_lock(&self) -> YakManSnapshotLock {
+    async fn get_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
         todo!()
     }
 
-    async fn lock(&self, lock: &YakManSnapshotLock) -> YakManSnapshotLock {
+    async fn save_lock(&self, lock: &YakManSnapshotLock) -> Result<(), GenericStorageError> {
         todo!()
     }
 }
