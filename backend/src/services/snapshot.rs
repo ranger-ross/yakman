@@ -11,7 +11,7 @@ struct SnapshotService {
 }
 
 impl SnapshotService {
-    pub async fn snapshot(&self) {
+    pub async fn take_snapshot(&self) {
         if let Some(lock) = self.try_take_lock().await {
             log::info!("Aquired snapshot lockfile");
             todo!();
@@ -21,7 +21,7 @@ impl SnapshotService {
     }
 
     async fn try_take_lock(&self) -> Option<YakManSnapshotLock> {
-        let snapshot_lock = self.get_lock().await;
+        let snapshot_lock = self.adapter.get_snapshot_lock().await;
 
         let taken_lock = if let Some(lock) = snapshot_lock.map(|s| s.lock).ok()? {
             // Lock already taken, but check if its expired
@@ -37,7 +37,7 @@ impl SnapshotService {
             self.create_new_lock()
         };
 
-        if let Err(err) = self.save_lock(&taken_lock).await {
+        if let Err(err) = self.adapter.save_snapshot_lock(&taken_lock).await {
             log::error!("Failed to save lock. Error: {err:?}");
             return None;
         }
@@ -51,7 +51,7 @@ impl SnapshotService {
             .as_ref()
             .expect("Lock is created above so it will never be None");
 
-        if let Ok(Some(lock)) = self.get_lock().await.map(|s| s.lock) {
+        if let Ok(Some(lock)) = self.adapter.get_snapshot_lock().await.map(|s| s.lock) {
             if lock.id != inner.id {
                 log::warn!("Lock was overriden, bailing");
                 return None;
@@ -67,15 +67,5 @@ impl SnapshotService {
         let id = Uuid::new_v4().to_string();
         let now = Utc::now().timestamp_millis();
         YakManSnapshotLock::new(id, now)
-    }
-
-    // TODO: move these to adapters
-
-    async fn get_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
-        todo!()
-    }
-
-    async fn save_lock(&self, lock: &YakManSnapshotLock) -> Result<(), GenericStorageError> {
-        todo!()
     }
 }

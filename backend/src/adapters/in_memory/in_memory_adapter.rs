@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use log::info;
 
@@ -273,6 +273,17 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
         self.remove(&self.get_password_reset_link_key(&id)).await;
         Ok(())
+    }
+
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {

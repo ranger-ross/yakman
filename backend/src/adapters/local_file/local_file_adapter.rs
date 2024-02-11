@@ -7,8 +7,7 @@ use std::{
 use async_trait::async_trait;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails
 };
 use log::{error, info};
 
@@ -454,6 +453,17 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let path = format!("{dir}/{id}.json");
         remove_file(path)?;
         Ok(())
+    }
+
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
     }
 }
 

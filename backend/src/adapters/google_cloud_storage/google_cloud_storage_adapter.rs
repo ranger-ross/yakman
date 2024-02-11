@@ -3,8 +3,7 @@ use super::{
     GenericStorageError, KVStorageAdapter,
 };
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails
 };
 use crate::{adapters::google_cloud_storage::storage_types::RevisionJson, model::YakManApiKey};
 use anyhow::Result;
@@ -381,6 +380,18 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         self.delete_object(&path).await?;
         return Ok(());
     }
+
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
+    }
+
 }
 
 // Helper functions
