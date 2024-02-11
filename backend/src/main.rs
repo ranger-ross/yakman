@@ -160,7 +160,7 @@ mod test_utils {
     pub async fn test_storage_service() -> Result<Arc<dyn StorageService>> {
         let adapter = InMemoryStorageAdapter::new();
         adapter.initialize_yakman_storage().await?;
-        let service: KVStorageService = KVStorageService::new(Box::new(adapter));
+        let service: KVStorageService = KVStorageService::new(Arc::new(adapter));
         return Ok(Arc::new(service));
     }
 
