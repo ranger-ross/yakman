@@ -18,6 +18,31 @@
                 break;
         }
     }
+
+    function onInput(e: any) {
+        if (mask === "kebab-case") {
+            let newValue = e.data;
+            if (newValue) {
+                let changed = false;
+                if (newValue !== newValue.toLowerCase()) {
+                    newValue = newValue.toLowerCase();
+                    changed = true;
+                }
+
+                if (newValue.includes(" ")) {
+                    console.log("space");
+                    newValue = newValue.replaceAll(" ", "-");
+                    changed = true;
+                }
+
+                if (changed) {
+                    value = `${value}${newValue}`;
+                }
+            }
+        }
+
+        dispatch("input", e);
+    }
 </script>
 
 <div class="w-64">
@@ -34,7 +59,7 @@
                 {placeholder}
                 {disabled}
                 bind:value
-                on:input={(e) => dispatch("input", e)}
+                on:input={onInput}
                 on:focus={(e) => dispatch("focus", e)}
                 on:blur={(e) => dispatch("blur", e)}
             />
@@ -47,7 +72,7 @@
                 {placeholder}
                 {disabled}
                 bind:value
-                on:input={(e) => dispatch("input", e)}
+                on:input={onInput}
                 on:focus={(e) => dispatch("focus", e)}
                 on:blur={(e) => dispatch("blur", e)}
             />
