@@ -490,9 +490,34 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
-    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
-        todo!();
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
+        let snapshot_base = self.get_yakman_snapshot_dir();
+        let formatted_date = timestamp.format("%Y-%m-%d-%H-%S").to_string();
+        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}");
+
+        let yakman_dir = self.get_yakman_dir();
+        copy_dir(Path::new(&yakman_dir), Path::new(&snapshot_dir))?;
+        Ok(())
     }
+}
+
+fn copy_dir(src: &Path, dest: &Path) -> std::io::Result<()> {
+    if src.is_dir() {
+        if !dest.exists() {
+            fs::create_dir_all(dest)?;
+        }
+        let entries = fs::read_dir(src)?;
+
+        for entry in entries {
+            let entry = entry?;
+            let src_path = entry.path();
+            let dest_path = dest.join(entry.file_name());
+            copy_dir(&src_path, &dest_path)?;
+        }
+    } else if src.is_file() {
+        fs::copy(src, dest)?;
+    }
+    Ok(())
 }
 
 // Helper functions

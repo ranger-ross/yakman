@@ -22,6 +22,13 @@ impl SnapshotService {
                 lock.lock.unwrap().id
             );
 
+            match self.adapter.take_snapshot(&Utc::now()).await {
+                Ok(_) => log::info!("Snapshot created"), // TODO: log snapshot 'key' created from adapter
+                Err(err) => {
+                    log::error!("Failed to take snapshot, Error: {err:?}");
+                }
+            }
+
             if let Err(err) = self
                 .adapter
                 .save_snapshot_lock(&YakManSnapshotLock::unlocked())

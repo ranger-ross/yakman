@@ -392,7 +392,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         todo!()
     }
 
-    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
         todo!();
     }
 }

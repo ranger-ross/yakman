@@ -145,7 +145,7 @@ pub trait KVStorageAdapter: Sync + Send {
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError>;
 
-    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError>;
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError>;
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError>;
 }

@@ -394,7 +394,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         todo!()
     }
 
-    async fn take_snapshot(&self, timestamp: DateTime<Utc>) -> Result<(), GenericStorageError> {
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
         todo!();
     }
 }

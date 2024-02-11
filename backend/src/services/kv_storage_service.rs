@@ -25,7 +25,7 @@ use argon2::{
 };
 use async_trait::async_trait;
 use chrono::Utc;
-use log::{error, info};
+use log::info;
 use moka::sync::{Cache, CacheBuilder};
 use uuid::Uuid;
 
