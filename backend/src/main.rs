@@ -45,17 +45,18 @@ async fn main() -> std::io::Result<()> {
     let adapter = create_adapter().await;
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
 
-    //TODO: allow disabling
-    tokio::spawn(async {
-        let snapshot_service = SnapshotService::new(adapter);
+    if settings::is_snapshot_backups_enabled() {
+        tokio::spawn(async {
+            let snapshot_service = SnapshotService::new(adapter);
 
-        loop {
-            snapshot_service.take_snapshot().await;
+            loop {
+                snapshot_service.take_snapshot().await;
 
-            // TODO: make dynamic and probably CRON
-            tokio::time::sleep(Duration::from_secs(5)).await;
-        }
-    });
+                // TODO: make dynamic and probably CRON
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        });
+    }
 
     storage_service
         .initialize_storage()
