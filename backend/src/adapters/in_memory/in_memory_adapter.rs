@@ -277,18 +277,42 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     }
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
-        todo!()
+        let storage = self.storage.lock().await;
+        let projects = storage.get(&self.get_snapshot_lock_key()).unwrap();
+        return Ok(serde_json::from_str(projects)?);
     }
 
     async fn save_snapshot_lock(
         &self,
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        self.insert(self.get_snapshot_lock_key(), serde_json::to_string(&lock)?)
+            .await;
+        Ok(())
     }
 
     async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
-        todo!();
+        let mut storage = self.storage.lock().await;
+
+        let keys: Vec<_> = (&storage)
+            .keys()
+            .filter(|k| !k.starts_with("SNAPSHOT"))
+            .map(|k| k.clone())
+            .collect();
+        let keys = keys.clone();
+
+        let snapshot_prefix = self.get_snapshot_key(timestamp);
+
+        for key in keys {
+            let value = storage.get(&key);
+            if value.is_none() {
+                continue;
+            }
+            let value = value.unwrap().clone();
+            storage.insert(format!("{snapshot_prefix}_{key}"), value);
+        }
+
+        Ok(())
     }
 
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
@@ -325,6 +349,13 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
             self.insert(api_key_key, serde_json::to_string(&api_keys)?)
                 .await;
             info!("Initialized API keys");
+        }
+
+        let snapshot_lock_key = self.get_snapshot_lock_key();
+        if !self.contains_key(&snapshot_lock_key).await {
+            self.save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await?;
+            log::info!("Initialized snapshot log file");
         }
 
         Ok(())
@@ -372,6 +403,10 @@ impl InMemoryStorageAdapter {
         format!("PROJECTS")
     }
 
+    fn get_snapshot_lock_key(&self) -> String {
+        format!("SNAPSHOT_LOCK")
+    }
+
     fn get_users_key(&self) -> String {
         format!("USERS")
     }
@@ -390,6 +425,10 @@ impl InMemoryStorageAdapter {
 
     fn get_data_key(&self, config_name: &str, data_key: &str) -> String {
         format!("CONFIG_DATA_{config_name}_{data_key}")
+    }
+
+    fn get_snapshot_key(&self, timestamp: &DateTime<Utc>) -> String {
+        format!("SNAPSHOT_{}", timestamp.to_rfc3339())
     }
 
     fn get_user_key(&self, uuid: &str) -> String {
