@@ -442,7 +442,6 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
                             let adapter = self_ref.clone();
 
                             handles.push(tokio::spawn(async move {
-                                println!("{} --> {}", key, new_key);
                                 if let Err(err) = adapter.copy_object(&(key), &new_key).await {
                                     log::error!("Failed to copy file {err:?}");
                                 }
