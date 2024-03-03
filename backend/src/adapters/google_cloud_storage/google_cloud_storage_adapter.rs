@@ -216,6 +216,13 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
                 .expect("Failed to create api-key file");
         }
 
+        let snapshot_lock = self.get_snapshot_lock_file_path();
+        if !self.object_exists(&snapshot_lock).await {
+            self.save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await
+                .expect("Failed to create snapshot lock file");
+        }
+
         Ok(())
     }
 
@@ -384,14 +391,20 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     }
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
-        todo!()
+        let path = self.get_snapshot_lock_file_path();
+        let content = self.get_object(&path).await?;
+        let data: YakManSnapshotLock = serde_json::from_str(&content)?;
+        return Ok(data);
     }
 
     async fn save_snapshot_lock(
         &self,
         lock: &YakManSnapshotLock,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let dir = self.get_snapshot_lock_file_path();
+        let data = serde_json::to_string(&lock)?;
+        self.put_object(&dir, data).await?;
+        return Ok(());
     }
 
     async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
@@ -434,6 +447,11 @@ impl GoogleCloudStorageAdapter {
     fn get_api_key_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/api-keys.json");
+    }
+
+    fn get_snapshot_lock_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/snapshot-lock.json");
     }
 
     fn get_config_instance_dir(&self) -> String {
