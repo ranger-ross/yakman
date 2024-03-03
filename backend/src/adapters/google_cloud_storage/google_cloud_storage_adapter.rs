@@ -13,9 +13,11 @@ use chrono::{DateTime, Utc};
 use google_cloud_storage::{
     client::{Client, ClientConfig},
     http::objects::{
+        copy::CopyObjectRequest,
         delete::DeleteObjectRequest,
         download::Range,
         get::GetObjectRequest,
+        list::ListObjectsRequest,
         upload::{Media, UploadObjectRequest, UploadType},
     },
 };
@@ -23,9 +25,9 @@ use log::error;
 
 #[derive(Clone)]
 pub struct GoogleCloudStorageAdapter {
-    pub yakman_dir: Option<String>,
     pub client: Client,
     pub bucket: String,
+    pub root: Option<String>,
 }
 
 #[async_trait]
@@ -408,15 +410,62 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     }
 
     async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
-        todo!();
+        let snapshot_base = self.get_yakman_snapshot_dir();
+        let formatted_date = timestamp.format("%Y-%m-%d-%H-%S").to_string();
+        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}");
+        let yakman_dir = self.get_yakman_dir();
+
+        let req = ListObjectsRequest {
+            bucket: self.bucket.to_string(),
+            prefix: Some(yakman_dir.clone()),
+            ..Default::default()
+        };
+
+        let res = self.client.list_objects(&req).await?;
+
+        if let Some(objects) = res.items {
+            for obj in objects {
+                let key = obj.name.clone();
+                let new_key = key.to_string().replacen(&yakman_dir, &snapshot_dir, 1);
+
+                let req = CopyObjectRequest {
+                    source_bucket: self.bucket.to_string(),
+                    source_object: key,
+                    destination_bucket: self.bucket.to_string(),
+                    destination_object: new_key,
+                    ..Default::default()
+                };
+                if let Err(err) = self.client.copy_object(&req).await {
+                    log::error!("Failed to copy file {err:?}");
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
 // Helper functions
 impl GoogleCloudStorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        let default_dir = String::from(".yakman");
-        return self.yakman_dir.as_ref().unwrap_or(&default_dir).to_string();
+        return self.get_yakman_root_dir(".yakman");
+    }
+
+    fn get_yakman_snapshot_dir(&self) -> String {
+        return self.get_yakman_root_dir(".yakman-snapshot");
+    }
+
+    // Gets the path of a directory at the YakMan root
+    fn get_yakman_root_dir(&self, dir: &str) -> String {
+        if let Some(root) = &self.root {
+            if root.is_empty() {
+                return dir.to_string();
+            } else {
+                return format!("{root}/{dir}");
+            }
+        } else {
+            return dir.to_string();
+        }
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -549,9 +598,11 @@ impl GoogleCloudStorageAdapter {
         let bucket = std::env::var("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET")
             .expect("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET was not set and is required for Google Cloud Storage adapter");
         Ok(GoogleCloudStorageAdapter {
-            yakman_dir: None,
             client: client,
             bucket: bucket,
+            // TODO: allow overrding from env var.
+            // Reminder, truncate the trailing slash or there will be a bug
+            root: None,
         })
     }
 }

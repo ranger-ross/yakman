@@ -413,7 +413,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
         let snapshot_base = self.get_yakman_snapshot_dir();
         let formatted_date = timestamp.format("%Y-%m-%d-%H-%S").to_string();
-        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}.json");
+        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}");
         let yakman_dir = self.get_yakman_dir();
 
         let mut res = self
