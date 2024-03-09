@@ -22,8 +22,9 @@ impl SnapshotService {
                 lock.lock.unwrap().id
             );
 
-            match self.adapter.take_snapshot(&Utc::now()).await {
-                Ok(_) => log::info!("Snapshot created"), // TODO: log snapshot 'key' created from adapter
+            let now = Utc::now();
+            match self.adapter.take_snapshot(&now).await {
+                Ok(_) => log::info!("Snapshot created for timestamp {}", now.to_string()),
                 Err(err) => {
                     log::error!("Failed to take snapshot, Error: {err:?}");
                 }
