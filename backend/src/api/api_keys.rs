@@ -6,6 +6,7 @@ use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::YakManRole;
+use crate::services::projects::YakManProjectService;
 use crate::services::StorageService;
 use actix_web::{delete, HttpResponse, Responder};
 use actix_web::{get, put, web};
@@ -58,6 +59,7 @@ pub struct CreateApiKeyResponse {
 #[put("/v1/api-keys")]
 pub async fn create_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
+    project_service: web::Data<Arc<dyn YakManProjectService>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
     request: web::Json<CreateApiKeyRequest>,
@@ -73,7 +75,7 @@ pub async fn create_api_key(
         None => return Err(YakManApiError::forbidden()),
     };
 
-    let projects = storage_service.get_projects().await?;
+    let projects = project_service.get_projects().await?;
     if !projects
         .iter()
         .any(|p| p.uuid == request.project_uuid.to_string())

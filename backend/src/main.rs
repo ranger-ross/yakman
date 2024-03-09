@@ -13,6 +13,12 @@ use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
+use crate::services::configs::{ConfigService, YakManConfigService};
+use crate::services::instances::{InstanceService, YakManInstanceService};
+use crate::services::labels::{LabelService, YakManLabelService};
+use crate::services::projects::{ProjectService, YakManProjectService};
+use crate::services::revisions::{RevisionService, YakManRevisionService};
+use crate::services::users::{UserService, YakManUserService};
 use actix_middleware_etag::Etag;
 use actix_web::middleware::Compress;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -42,6 +48,20 @@ async fn main() -> std::io::Result<()> {
 
     let adapter = create_adapter().await;
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
+    let project_service: Arc<dyn YakManProjectService> =
+        Arc::new(ProjectService::new(adapter.clone()));
+    let user_service: Arc<dyn YakManUserService> = Arc::new(UserService::new(adapter.clone()));
+    let config_service: Arc<dyn YakManConfigService> =
+        Arc::new(ConfigService::new(adapter.clone()));
+    let label_service: Arc<dyn YakManLabelService> = Arc::new(LabelService::new(adapter.clone()));
+    let instance_service: Arc<dyn YakManInstanceService> =
+        Arc::new(InstanceService::new(adapter.clone(), label_service.clone()));
+
+    let revision_service: Arc<dyn YakManRevisionService> = Arc::new(RevisionService::new(
+        adapter.clone(),
+        label_service.clone(),
+        instance_service.clone(),
+    ));
 
     if settings::is_snapshot_backups_enabled() {
         services::snapshot::register_snapshot_worker(adapter);
@@ -71,6 +91,12 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
+            .app_data(web::Data::new(project_service.clone()))
+            .app_data(web::Data::new(label_service.clone()))
+            .app_data(web::Data::new(instance_service.clone()))
+            .app_data(web::Data::new(revision_service.clone()))
+            .app_data(web::Data::new(config_service.clone()))
+            .app_data(web::Data::new(user_service.clone()))
             .wrap(Etag::default())
             .wrap(Compress::default())
             .wrap(Logger::new("%s %r"))

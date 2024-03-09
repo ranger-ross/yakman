@@ -5,7 +5,9 @@ use crate::error::{DeleteConfigInstanceError, SaveConfigInstanceError, YakManApi
 use crate::middleware::YakManPrinciple;
 use crate::model::response::{InstancePayload, RevisionPayload};
 use crate::model::{YakManLabel, YakManRole};
-use crate::services::StorageService;
+use crate::services::configs::YakManConfigService;
+use crate::services::instances::YakManInstanceService;
+use crate::services::revisions::YakManRevisionService;
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
@@ -16,11 +18,12 @@ use actix_web_grants::permissions::AuthDetails;
 async fn get_instances_by_config_name(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
+    instance_service: web::Data<Arc<dyn YakManInstanceService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let config_name = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match config_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -43,7 +46,7 @@ async fn get_instances_by_config_name(
         return Err(YakManApiError::forbidden());
     }
 
-    let data = storage_service
+    let data = instance_service
         .get_config_instance_metadata(&config_name)
         .await?;
 
@@ -59,11 +62,12 @@ async fn get_instances_by_config_name(
 async fn get_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
+    instance_service: web::Data<Arc<dyn YakManInstanceService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await? {
+    let config = match config_service.get_config(&config_name).await? {
         Some(config) => config,
         None => return Err(YakManApiError::not_found("Config not found")),
     };
@@ -83,7 +87,7 @@ async fn get_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    return match storage_service
+    return match instance_service
         .get_config_instance(&config_name, &instance)
         .await?
     {
@@ -100,7 +104,8 @@ async fn create_new_instance(
     path: web::Path<String>,
     query: web::Query<HashMap<String, String>>,
     data: String,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
+    instance_service: web::Data<Arc<dyn YakManInstanceService>>,
     req: HttpRequest,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
@@ -109,7 +114,7 @@ async fn create_new_instance(
     let labels: Vec<YakManLabel> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match config_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -129,7 +134,7 @@ async fn create_new_instance(
 
     let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
-    match storage_service
+    match instance_service
         .create_config_instance(&config_name, labels, &data, content_type, &creator_uuid)
         .await
     {
@@ -154,7 +159,8 @@ async fn update_new_instance(
     path: web::Path<(String, String)>,
     query: web::Query<HashMap<String, String>>,
     data: String,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
+    revision_service: web::Data<Arc<dyn YakManRevisionService>>,
     req: HttpRequest,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
@@ -163,7 +169,7 @@ async fn update_new_instance(
     let labels: Vec<YakManLabel> = extract_labels(query);
     let content_type: Option<String> = get_content_type(&req);
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match config_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -183,7 +189,7 @@ async fn update_new_instance(
 
     let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
-    let new_revsion = storage_service
+    let new_revsion = revision_service
         .submit_new_instance_revision(
             &config_name,
             &instance,
@@ -214,11 +220,12 @@ async fn update_new_instance(
 async fn delete_instance(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
+    instance_service: web::Data<Arc<dyn YakManInstanceService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match config_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -236,7 +243,7 @@ async fn delete_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    storage_service
+    instance_service
         .delete_instance(&config_name, &instance)
         .await
         .map_err(|e| match e {

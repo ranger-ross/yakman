@@ -5,7 +5,7 @@ use crate::{
     error::{CreateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{request::CreateProjectPayload, YakManProject, YakManRole},
-    services::StorageService,
+    services::projects::YakManProjectService,
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
@@ -17,7 +17,7 @@ use log::error;
 #[get("/v1/projects")]
 pub async fn get_projects(
     auth_details: AuthDetails<YakManRoleBinding>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    project_service: web::Data<Arc<dyn YakManProjectService>>,
 ) -> Result<impl Responder, YakManApiError> {
     if auth_details.permissions.len() == 0 {
         return Err(YakManApiError::forbidden());
@@ -41,7 +41,7 @@ pub async fn get_projects(
         })
         .collect();
 
-    let projects: Vec<YakManProject> = storage_service
+    let projects: Vec<YakManProject> = project_service
         .get_projects()
         .await?
         .into_iter()
@@ -57,7 +57,7 @@ pub async fn get_projects(
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<CreateProjectPayload>,
-    storage_service: web::Data<Arc<dyn StorageService>>,
+    project_service: web::Data<Arc<dyn YakManProjectService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
@@ -90,7 +90,7 @@ async fn create_project(
         ));
     }
 
-    return match storage_service.create_project(&project_name).await {
+    return match project_service.create_project(&project_name).await {
         Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {

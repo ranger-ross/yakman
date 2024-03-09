@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::error::YakManApiError;
 use crate::middleware::roles::YakManRoleBinding;
 use crate::model::YakManRole;
 use crate::services::StorageService;
+use crate::{error::YakManApiError, services::configs::YakManConfigService};
 use actix_web::{get, web, HttpResponse, Responder};
 use actix_web_grants::permissions::AuthDetails;
 
@@ -14,10 +14,11 @@ async fn get_instance_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, instance) = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match config_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -57,10 +58,11 @@ async fn get_revision_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
+    config_service: web::Data<Arc<dyn YakManConfigService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let (config_name, _, revision) = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match config_service.get_config(&config_name).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),

@@ -1,18 +1,18 @@
+pub mod configs;
+pub mod instances;
 pub mod kv_storage_service;
+pub mod labels;
 pub mod password;
+pub mod projects;
+pub mod revisions;
 pub mod snapshot;
+pub mod users;
 
 use crate::{
     adapters::errors::GenericStorageError,
-    error::{
-        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
-        DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
-        SaveConfigInstanceError,
-    },
+    error::{CreateLabelError, CreatePasswordResetLinkError, ResetPasswordError},
     model::{
-        ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManPassword, YakManProject, YakManPublicPasswordResetLink, YakManUser,
+        LabelType, YakManApiKey, YakManPassword, YakManPublicPasswordResetLink, YakManUser,
         YakManUserDetails,
     },
 };
@@ -20,57 +20,9 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait StorageService: Sync + Send {
-    async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
-
-    async fn create_project(&self, project_name: &str) -> Result<String, CreateProjectError>;
-
-    async fn get_visible_configs(
-        &self,
-        project_uuid: Option<String>,
-    ) -> Result<Vec<YakManConfig>, GenericStorageError>;
-
-    async fn get_config(
-        &self,
-        config_name: &str,
-    ) -> Result<Option<YakManConfig>, GenericStorageError>;
-
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
-
-    async fn create_config(
-        &self,
-        config_name: &str,
-        project_uuid: &str,
-    ) -> Result<(), CreateConfigError>;
-
-    async fn delete_config(&self, config_name: &str) -> Result<(), DeleteConfigError>;
-
-    async fn create_config_instance(
-        &self,
-        config_name: &str,
-        labels: Vec<YakManLabel>,
-        data: &str,
-        content_type: Option<String>,
-        creator_uuid: &str,
-    ) -> Result<String, CreateConfigInstanceError>;
-
-    async fn get_config_instance_metadata(
-        &self,
-        config_name: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
-
-    async fn get_config_instance(
-        &self,
-        config_name: &str,
-        instance: &str,
-    ) -> Result<Option<ConfigInstance>, GenericStorageError>;
-
-    async fn delete_instance(
-        &self,
-        config_name: &str,
-        instance: &str,
-    ) -> Result<(), DeleteConfigInstanceError>;
 
     async fn get_config_data(
         &self,
@@ -83,55 +35,6 @@ pub trait StorageService: Sync + Send {
         config_name: &str,
         revision: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError>;
-
-    /// Creates a new revision pending approval
-    async fn submit_new_instance_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        labels: Vec<YakManLabel>,
-        data: &str,
-        content_type: Option<String>,
-        submitted_by_uuid: &str,
-    ) -> Result<String, SaveConfigInstanceError>;
-
-    async fn get_instance_revisions(
-        &self,
-        config_name: &str,
-        instance: &str,
-    ) -> Result<Option<Vec<ConfigInstanceRevision>>, GenericStorageError>;
-
-    async fn approve_instance_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-        approved_uuid: &str,
-    ) -> Result<(), ApproveRevisionError>;
-
-    async fn apply_instance_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-        applied_by_uuid: &str,
-    ) -> Result<(), ApplyRevisionError>;
-
-    async fn reject_instance_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-        rejected_by_uuid: &str,
-    ) -> Result<(), ApplyRevisionError>;
-
-    async fn rollback_instance_revision(
-        &self,
-        config_name: &str,
-        instance: &str,
-        revision: &str,
-        rollback_by_uuid: &str,
-    ) -> Result<String, RollbackRevisionError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
