@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use super::{
     password::{hash_password, validate_password},
@@ -30,7 +30,7 @@ use moka::sync::{Cache, CacheBuilder};
 use uuid::Uuid;
 
 pub struct KVStorageService {
-    pub adapter: Box<dyn KVStorageAdapter>,
+    pub adapter: Arc<dyn KVStorageAdapter>,
     /// The cache key is the ID as a string
     pub api_key_id_cache: Cache<String, YakManApiKey>,
     /// The cache key is the token hash as a string
@@ -938,7 +938,7 @@ impl KVStorageService {
         }
     }
 
-    pub fn new(adapter: Box<dyn KVStorageAdapter>) -> KVStorageService {
+    pub fn new(adapter: Arc<dyn KVStorageAdapter>) -> KVStorageService {
         let api_key_id_cache = CacheBuilder::new(10_000)
             .time_to_live(Duration::from_secs(60))
             .build();

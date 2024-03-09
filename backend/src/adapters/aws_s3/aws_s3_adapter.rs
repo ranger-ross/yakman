@@ -1,21 +1,24 @@
+use std::sync::Arc;
+
 use super::{
     storage_types::{ApiKeysJson, ConfigJson, InstanceJson, LabelJson, UsersJson},
     GenericStorageError, KVStorageAdapter,
 };
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
+use chrono::{DateTime, Utc};
 use s3::primitives::ByteStream;
 use tokio::io::AsyncReadExt;
 
 #[derive(Clone)]
 pub struct AwsS3StorageAdapter {
-    pub yakman_dir: Option<String>,
+    pub root: Option<String>,
     pub client: s3::Client,
     pub bucket: String,
 }
@@ -218,6 +221,13 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
                 .expect("Failed to create api-key file");
         }
 
+        let snapshot_lock = self.get_snapshot_lock_file_path();
+        if !self.object_exists(&snapshot_lock).await {
+            self.save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await
+                .expect("Failed to create snapshot lock file");
+        }
+
         Ok(())
     }
 
@@ -379,13 +389,102 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         self.delete_object(&path).await?;
         Ok(())
     }
+
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        let path = self.get_snapshot_lock_file_path();
+        let content = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
+        let data: YakManSnapshotLock = serde_json::from_str(&content)?;
+        return Ok(data);
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        let path = self.get_snapshot_lock_file_path();
+        let data = serde_json::to_string(&lock)?;
+        self.put_object(&path, data).await?;
+        Ok(())
+    }
+
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
+        let snapshot_base = self.get_yakman_snapshot_dir();
+        let formatted_date = timestamp.format("%Y-%m-%d-%H-%S").to_string();
+        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}");
+        let yakman_dir = self.get_yakman_dir();
+
+        let mut res = self
+            .client
+            .list_objects_v2()
+            .bucket(&self.bucket)
+            .prefix(format!("{}/", yakman_dir))
+            .max_keys(50)
+            .into_paginator()
+            .send();
+
+        // Clone `self` so that the borrow checker is okay with passing a ref across multiple async context.
+        // This should not be needed but the borrow checker does not know the tokio tasks will all be joined in this function
+        let self_ref = Arc::new(self.clone());
+
+        while let Some(result) = res.next().await {
+            match result {
+                Ok(output) => {
+                    let mut handles = Vec::new();
+
+                    for object in output.contents() {
+                        if let Some(key) = object.key() {
+                            let key = key.to_string();
+                            let new_key = key.to_string().replacen(&yakman_dir, &snapshot_dir, 1);
+
+                            let adapter = self_ref.clone();
+
+                            handles.push(tokio::spawn(async move {
+                                if let Err(err) = adapter.copy_object(&(key), &new_key).await {
+                                    log::error!("Failed to copy file {err:?}");
+                                }
+                            }));
+                        }
+                    }
+
+                    // Wait for all tasks to complete
+                    for handle in handles {
+                        handle.await.unwrap();
+                    }
+                }
+                Err(err) => {
+                    log::error!("Failed to list obects {err:?}")
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 // Helper functions
 impl AwsS3StorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        let default_dir = String::from(".yakman");
-        return self.yakman_dir.as_ref().unwrap_or(&default_dir).to_string();
+        return self.get_yakman_root_dir(".yakman");
+    }
+
+    fn get_yakman_snapshot_dir(&self) -> String {
+        return self.get_yakman_root_dir(".yakman-snapshot");
+    }
+
+    // Gets the path of a directory at the YakMan root
+    fn get_yakman_root_dir(&self, dir: &str) -> String {
+        if let Some(root) = &self.root {
+            if root.is_empty() {
+                return dir.to_string();
+            } else {
+                return format!("{root}/{dir}");
+            }
+        } else {
+            return dir.to_string();
+        }
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -416,6 +515,11 @@ impl AwsS3StorageAdapter {
     fn get_api_key_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/api-keys.json");
+    }
+
+    fn get_snapshot_lock_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/snapshot-lock.json");
     }
 
     fn get_config_instance_dir(&self) -> String {
@@ -488,6 +592,17 @@ impl AwsS3StorageAdapter {
         };
     }
 
+    async fn copy_object(&self, source: &str, destination: &str) -> anyhow::Result<()> {
+        self.client
+            .copy_object()
+            .bucket(&self.bucket)
+            .copy_source(format!("{}/{source}", self.bucket))
+            .key(destination)
+            .send()
+            .await?;
+        Ok(())
+    }
+
     async fn get_object_as_option(
         &self,
         path: &str,
@@ -532,9 +647,11 @@ impl AwsS3StorageAdapter {
         let bucket = std::env::var("YAKMAN_AWS_S3_BUCKET")
             .expect("YAKMAN_AWS_S3_BUCKET was not set and is required for AWS S3 adapter");
         AwsS3StorageAdapter {
-            yakman_dir: None,
             client: client,
             bucket: bucket,
+            // TODO: allow overrding from env var.
+            // Reminder, truncate the trailing slash or there will be a bug
+            root: None,
         }
     }
 }

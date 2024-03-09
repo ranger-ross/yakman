@@ -5,10 +5,11 @@ use std::{
 };
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use log::{error, info};
 
@@ -22,7 +23,8 @@ use super::{
 #[derive(Clone)]
 pub struct LocalFileStorageAdapter {
     pub path: String,
-    pub yakman_dir: Option<String>,
+    pub yakman_dir: &'static str,
+    pub yakman_snapshot_dir: &'static str,
 }
 
 #[async_trait]
@@ -239,6 +241,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             ));
         }
 
+        let snapshot_dir = self.get_yakman_snapshot_dir();
+        if !Path::new(&snapshot_dir).is_dir() {
+            log::info!("Creating {}", snapshot_dir);
+            fs::create_dir(&snapshot_dir)
+                .expect(&format!("Failed to create snapshot dir: {}", snapshot_dir));
+        }
+
         let project_file = self.get_projects_file_path();
         if !Path::new(&project_file).is_file() {
             self.save_projects(vec![])
@@ -272,6 +281,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             self.save_api_keys(vec![])
                 .await
                 .expect("Failed to create api-key file");
+        }
+
+        let snapshot_lock = self.get_snapshot_lock_file_path();
+        if !Path::new(&snapshot_lock).is_file() {
+            self.save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await
+                .expect("Failed to create snapshot lock file");
         }
 
         Ok(())
@@ -455,14 +471,65 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         remove_file(path)?;
         Ok(())
     }
+
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        let path = self.get_snapshot_lock_file_path();
+        let data = fs::read_to_string(path)?;
+        let data: YakManSnapshotLock = serde_json::from_str(&data)?;
+        return Ok(data);
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&lock)?;
+        let data_file_path = self.get_snapshot_lock_file_path();
+        let mut data_file = File::create(&data_file_path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+        Ok(())
+    }
+
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
+        let snapshot_base = self.get_yakman_snapshot_dir();
+        let formatted_date = timestamp.format("%Y-%m-%d-%H-%S").to_string();
+        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}");
+
+        let yakman_dir = self.get_yakman_dir();
+        copy_dir(Path::new(&yakman_dir), Path::new(&snapshot_dir))?;
+        Ok(())
+    }
+}
+
+fn copy_dir(src: &Path, dest: &Path) -> std::io::Result<()> {
+    if src.is_dir() {
+        if !dest.exists() {
+            fs::create_dir_all(dest)?;
+        }
+        let entries = fs::read_dir(src)?;
+
+        for entry in entries {
+            let entry = entry?;
+            let src_path = entry.path();
+            let dest_path = dest.join(entry.file_name());
+            copy_dir(&src_path, &dest_path)?;
+        }
+    } else if src.is_file() {
+        fs::copy(src, dest)?;
+    }
+    Ok(())
 }
 
 // Helper functions
 impl LocalFileStorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        let default_dir = String::from(".yakman");
-        let yakman_dir = self.yakman_dir.as_ref().unwrap_or(&default_dir);
+        let yakman_dir = self.yakman_dir;
         return format!("{}/{yakman_dir}", self.path.as_str());
+    }
+
+    fn get_yakman_snapshot_dir(&self) -> String {
+        let yakman_snapshot_dir = self.yakman_snapshot_dir;
+        return format!("{}/{yakman_snapshot_dir}", self.path.as_str());
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -488,6 +555,11 @@ impl LocalFileStorageAdapter {
     fn get_user_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/users.json");
+    }
+
+    fn get_snapshot_lock_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/snapshot-lock.json");
     }
 
     fn get_instance_revisions_path(&self) -> String {
@@ -526,7 +598,8 @@ impl LocalFileStorageAdapter {
 
         return LocalFileStorageAdapter {
             path: directory,
-            yakman_dir: None,
+            yakman_dir: ".yakman",
+            yakman_snapshot_dir: ".yakman-snapshot",
         };
     }
 }

@@ -4,17 +4,20 @@ use super::{
 };
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use crate::{adapters::google_cloud_storage::storage_types::RevisionJson, model::YakManApiKey};
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use google_cloud_storage::{
     client::{Client, ClientConfig},
     http::objects::{
+        copy::CopyObjectRequest,
         delete::DeleteObjectRequest,
         download::Range,
         get::GetObjectRequest,
+        list::ListObjectsRequest,
         upload::{Media, UploadObjectRequest, UploadType},
     },
 };
@@ -22,9 +25,9 @@ use log::error;
 
 #[derive(Clone)]
 pub struct GoogleCloudStorageAdapter {
-    pub yakman_dir: Option<String>,
     pub client: Client,
     pub bucket: String,
+    pub root: Option<String>,
 }
 
 #[async_trait]
@@ -215,6 +218,13 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
                 .expect("Failed to create api-key file");
         }
 
+        let snapshot_lock = self.get_snapshot_lock_file_path();
+        if !self.object_exists(&snapshot_lock).await {
+            self.save_snapshot_lock(&YakManSnapshotLock::unlocked())
+                .await
+                .expect("Failed to create snapshot lock file");
+        }
+
         Ok(())
     }
 
@@ -381,13 +391,81 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         self.delete_object(&path).await?;
         return Ok(());
     }
+
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        let path = self.get_snapshot_lock_file_path();
+        let content = self.get_object(&path).await?;
+        let data: YakManSnapshotLock = serde_json::from_str(&content)?;
+        return Ok(data);
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_snapshot_lock_file_path();
+        let data = serde_json::to_string(&lock)?;
+        self.put_object(&dir, data).await?;
+        return Ok(());
+    }
+
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
+        let snapshot_base = self.get_yakman_snapshot_dir();
+        let formatted_date = timestamp.format("%Y-%m-%d-%H-%S").to_string();
+        let snapshot_dir = format!("{snapshot_base}/snapshot-{formatted_date}");
+        let yakman_dir = self.get_yakman_dir();
+
+        let req = ListObjectsRequest {
+            bucket: self.bucket.to_string(),
+            prefix: Some(yakman_dir.clone()),
+            ..Default::default()
+        };
+
+        let res = self.client.list_objects(&req).await?;
+
+        if let Some(objects) = res.items {
+            for obj in objects {
+                let key = obj.name.clone();
+                let new_key = key.to_string().replacen(&yakman_dir, &snapshot_dir, 1);
+
+                let req = CopyObjectRequest {
+                    source_bucket: self.bucket.to_string(),
+                    source_object: key,
+                    destination_bucket: self.bucket.to_string(),
+                    destination_object: new_key,
+                    ..Default::default()
+                };
+                if let Err(err) = self.client.copy_object(&req).await {
+                    log::error!("Failed to copy file {err:?}");
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 // Helper functions
 impl GoogleCloudStorageAdapter {
     fn get_yakman_dir(&self) -> String {
-        let default_dir = String::from(".yakman");
-        return self.yakman_dir.as_ref().unwrap_or(&default_dir).to_string();
+        return self.get_yakman_root_dir(".yakman");
+    }
+
+    fn get_yakman_snapshot_dir(&self) -> String {
+        return self.get_yakman_root_dir(".yakman-snapshot");
+    }
+
+    // Gets the path of a directory at the YakMan root
+    fn get_yakman_root_dir(&self, dir: &str) -> String {
+        if let Some(root) = &self.root {
+            if root.is_empty() {
+                return dir.to_string();
+            } else {
+                return format!("{root}/{dir}");
+            }
+        } else {
+            return dir.to_string();
+        }
     }
 
     fn get_labels_file_path(&self) -> String {
@@ -418,6 +496,11 @@ impl GoogleCloudStorageAdapter {
     fn get_api_key_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/api-keys.json");
+    }
+
+    fn get_snapshot_lock_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/snapshot-lock.json");
     }
 
     fn get_config_instance_dir(&self) -> String {
@@ -515,9 +598,11 @@ impl GoogleCloudStorageAdapter {
         let bucket = std::env::var("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET")
             .expect("YAKMAN_GOOGLE_CLOUD_STORAGE_BUCKET was not set and is required for Google Cloud Storage adapter");
         Ok(GoogleCloudStorageAdapter {
-            yakman_dir: None,
             client: client,
             bucket: bucket,
+            // TODO: allow overrding from env var.
+            // Reminder, truncate the trailing slash or there will be a bug
+            root: None,
         })
     }
 }

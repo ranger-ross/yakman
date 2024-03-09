@@ -5,10 +5,11 @@ use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
 };
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use log::info;
 use r2d2::PooledConnection;
 use redis::{Commands, RedisError};
@@ -22,7 +23,8 @@ pub struct RedisStorageAdapter {
     pub connection_pool: r2d2::Pool<redis::Client>,
 }
 
-const REDIS_PREFIX: &str = "YAKMAN";
+const REDIS_PREFIX: &str = "YAKMAN_DATA";
+const SNAPSHOT_PREFIX: &str = "YAKMAN_SNAPSHOT";
 
 #[async_trait]
 impl KVStorageAdapter for RedisStorageAdapter {
@@ -274,6 +276,46 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
+    async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
+        return self
+            .get_optional_data(&self.get_snapshot_lock_key())
+            .await?
+            .ok_or(GenericStorageError::new(
+                "Lockfile not found".to_string(),
+                "Lockfile not found".to_string(),
+            ));
+    }
+
+    async fn save_snapshot_lock(
+        &self,
+        lock: &YakManSnapshotLock,
+    ) -> Result<(), GenericStorageError> {
+        let mut connection = self.get_connection()?;
+        let _: () = connection.set(self.get_snapshot_lock_key(), serde_json::to_string(&lock)?)?;
+        Ok(())
+    }
+
+    async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
+        let mut connection = self.get_connection()?;
+        let keys: Vec<String> = connection.keys(format!("{REDIS_PREFIX}*"))?;
+
+        let formatted_date = timestamp.format("%Y%m%d%H%S").to_string();
+        let snapshot_prefix = format!("{SNAPSHOT_PREFIX}_{formatted_date}");
+
+        for key in keys {
+            let new_key = key.to_string().replacen(&REDIS_PREFIX, &snapshot_prefix, 1);
+            if let Err(err) = redis::cmd("COPY")
+                .arg(&key)
+                .arg(new_key)
+                .query::<()>(&mut connection)
+            {
+                log::error!("Failed to copy key {key}, Err: {err:?}");
+            }
+        }
+
+        return Ok(());
+    }
+
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
 
@@ -308,6 +350,13 @@ impl KVStorageAdapter for RedisStorageAdapter {
             let api_keys: Vec<YakManApiKey> = vec![];
             let _: () = connection.set(api_key_key, serde_json::to_string(&api_keys)?)?;
             info!("Initialized ApiKeys Redis Key");
+        }
+
+        let snapshot_lock_key = self.get_snapshot_lock_key();
+        if !connection.exists(&snapshot_lock_key)? {
+            let lock = YakManSnapshotLock::unlocked();
+            let _: () = connection.set(snapshot_lock_key, serde_json::to_string(&lock)?)?;
+            info!("Initialized snapshot lock Redis Key");
         }
 
         Ok(())
@@ -401,6 +450,10 @@ impl RedisStorageAdapter {
 
     fn get_api_keys_key(&self) -> String {
         return format!("{REDIS_PREFIX}_API_KEYS");
+    }
+
+    fn get_snapshot_lock_key(&self) -> String {
+        return format!("{REDIS_PREFIX}_SNAPSHOT_LOCK");
     }
 
     fn get_config_metadata_key(&self, config_name: &str) -> String {
