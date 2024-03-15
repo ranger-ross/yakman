@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::{
     storage_types::{ApiKeysJson, ConfigJson, InstanceJson, LabelJson, UsersJson},
     GenericStorageError, KVStorageAdapter,
@@ -178,7 +180,12 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         let instance_dir = self.get_config_instance_dir();
         // Create new file with data
         let data_file_path = format!("{instance_dir}/{config_name}/{data_key}");
-        self.put_object(&data_file_path, data.to_string()).await?;
+        self.put_object_with_content_type(
+            &data_file_path,
+            data.to_string(),
+            "application/octet-stream",
+        )
+        .await?;
         return Ok(());
     }
 
@@ -529,7 +536,23 @@ impl GoogleCloudStorageAdapter {
     }
 
     async fn put_object(&self, path: &str, data: String) -> Result<(), GenericStorageError> {
-        let upload_type = UploadType::Simple(Media::new(path.to_string()));
+        return self
+            .put_object_with_content_type(path, data, "application/json")
+            .await;
+    }
+
+    async fn put_object_with_content_type(
+        &self,
+        path: &str,
+        data: String,
+        content_type: &'static str,
+    ) -> Result<(), GenericStorageError> {
+        let media = Media {
+            name: Cow::Owned(path.to_string()),
+            content_type: Cow::Borrowed(content_type),
+            content_length: None,
+        };
+        let upload_type = UploadType::Simple(media);
         let request = UploadObjectRequest {
             bucket: self.bucket.to_string(),
             ..Default::default()
