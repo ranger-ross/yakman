@@ -12,6 +12,7 @@
     export let data: PageData;
 
     let { config, instance } = $page.params;
+    let isLinkCopied = false;
 
     function onApprove(isApply: boolean) {
         const message =
@@ -84,15 +85,31 @@
             },
         });
     }
+
+    function copyLink() {
+        isLinkCopied = true;
+        navigator.clipboard.writeText(window.location.href);
+    }
 </script>
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1
-            class="text-2xl md:text-3xl lg:text-2xl font-semibold text-gray-900 mb-4"
-        >
-            Apply Configuration
-        </h1>
+        <div class="flex justify-between">
+            <h1
+                class="text-2xl md:text-3xl lg:text-2xl font-semibold text-gray-900 mb-4"
+            >
+                Apply Configuration
+            </h1>
+            <div>
+                <YakManButton variant="secondary" on:click={copyLink}>
+                    {#if isLinkCopied}
+                        Copied
+                    {:else}
+                        Copy Link
+                    {/if}
+                </YakManButton>
+            </div>
+        </div>
         <div class="flex items-center gap-2">
             <h2 class="text-lg font-semibold text-gray-600">
                 Config: {config}
