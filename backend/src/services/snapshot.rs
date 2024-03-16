@@ -50,7 +50,8 @@ impl SnapshotService {
         let taken_lock = if let Some(lock) = snapshot_lock.map(|s| s.lock).ok()? {
             // Lock already taken, but check if its expired
             // in the event that the previous snapshot failed and the lock is permanently taken
-            let max_age_timestamp = Utc::now() - Duration::minutes(30);
+            let max_age_timestamp = Utc::now()
+                - Duration::try_minutes(30).expect("30 minutes will not be out of bounds");
             if lock.timestamp_ms < max_age_timestamp.timestamp_millis() {
                 self.create_new_lock()
             } else {
@@ -70,7 +71,10 @@ impl SnapshotService {
 
         // Since there are multiple types for storage systems there is no way to take an atomic lock.
         // So wait few seconds and recheck the lock file to make sure it was not overwritten by another instance
-        let sleep_duration = Duration::seconds(10).to_std().unwrap();
+        let sleep_duration = Duration::try_seconds(10)
+            .expect("10 seconds will not be out of bounds")
+            .to_std()
+            .unwrap();
         tokio::time::sleep(sleep_duration).await;
         let inner = &taken_lock
             .lock

@@ -856,7 +856,8 @@ impl StorageService for KVStorageService {
         let email = user.email;
         let email_hash = sha256::digest(&email);
 
-        let expiration = Utc::now() + chrono::Duration::days(2);
+        let expiration =
+            Utc::now() + chrono::Duration::try_days(2).expect("2 days will not be out of bounds");
 
         let password_reset_link = YakManPasswordResetLink {
             email_hash,

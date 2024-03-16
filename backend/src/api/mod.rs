@@ -21,11 +21,7 @@ use self::{
     users::GetUserInfoResponse,
 };
 use crate::model::{
-    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload},
-    response::{InstancePayload, RevisionPayload},
-    ConfigInstance, ConfigInstanceEvent, ConfigInstanceRevision, LabelType, RevisionReviewState,
-    YakManConfig, YakManLabel, YakManProject, YakManPublicPasswordResetLink, YakManRole,
-    YakManUser,
+    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload}, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManPublicPasswordResetLink, YakManRole, YakManUser
 };
 use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
@@ -77,7 +73,7 @@ use utoipa::OpenApi;
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload, OAuthRefreshTokenPayload,
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
-            CreateApiKeyResponse, YakManHealthResponse
+            CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData
         )
     ),
     tags(
