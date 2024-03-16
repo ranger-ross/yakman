@@ -46,6 +46,7 @@ use utoipa::OpenApi;
         auth::oauth_exchange,
         auth::oauth_refresh,
         projects::get_projects,
+        projects::get_project,
         projects::create_project,
         configs::get_configs,
         configs::create_config,
@@ -113,6 +114,7 @@ where
         .service(auth::oauth_refresh)
         // Projects
         .service(projects::get_projects)
+        .service(projects::get_project)
         .service(projects::create_project)
         // Users
         .service(users::get_yakman_users)

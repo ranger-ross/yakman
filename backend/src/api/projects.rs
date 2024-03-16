@@ -12,7 +12,7 @@ use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use log::error;
 
-/// Get all of the projects
+/// Get all of the projects (user has access to)
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
 #[get("/v1/projects")]
 pub async fn get_projects(
@@ -49,6 +49,48 @@ pub async fn get_projects(
         .collect();
 
     return Ok(web::Json(projects));
+}
+
+/// Get project by uuid
+#[utoipa::path(responses((status = 200, body = YakManProject)))]
+#[get("/v1/projects/{uuid}")]
+pub async fn get_project(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    if auth_details.authorities.len() == 0 {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let project_uuid: String = path.into_inner();
+    let has_role = YakManRoleBinding::has_any_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+            YakManRole::Viewer,
+        ],
+        &project_uuid,
+        &auth_details.authorities,
+    );
+
+    if !has_role {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let projects: Vec<YakManProject> = storage_service
+        .get_projects()
+        .await?
+        .into_iter()
+        .filter(|p| project_uuid == p.uuid)
+        .collect();
+
+    if let Some(project) = projects.into_iter().nth(0) {
+        return Ok(web::Json(project));
+    } else {
+        return Err(YakManApiError::not_found("Project not found"));
+    }
 }
 
 /// Create a new project
@@ -183,6 +225,67 @@ mod tests {
         assert_eq!("bar", first["name"]);
         assert_eq!(project_bar_uuid, first["uuid"]);
 
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_project_should_return_project() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo").await?;
+        let _project_bar_uuid = storage_service.create_project("bar").await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_project),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+
+        assert_eq!("foo", value["name"]);
+        assert_eq!(project_foo_uuid, value["uuid"]);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_project_should_not_return_projects_that_user_does_not_have() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo").await?;
+        let project_bar_uuid = storage_service.create_project("bar").await?;
+
+        let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
+            YakManUserProjectRole {
+                project_uuid: project_bar_uuid.clone(),
+                role: YakManRole::Admin,
+            },
+        )]);
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_extractor))
+                .service(get_project),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status().as_u16(), 403);
         Ok(())
     }
 

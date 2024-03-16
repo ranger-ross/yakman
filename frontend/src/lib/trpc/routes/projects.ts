@@ -17,7 +17,17 @@ export const projects = t.router({
             }
             return await response.json();
         }),
-
+    fetchProject: t.procedure
+        .input(z.string())
+        .query(async ({ input, ctx }): Promise<YakManProject> => {
+            const response = await fetch(`${BASE_URL}/v1/projects/${input}`, {
+                headers: createYakManAuthHeaders(ctx.accessToken)
+            });
+            if (response.status != 200) {
+                throw convertYakManErrorToTRPCError(await response.text(), response.status)
+            }
+            return await response.json();
+        }),
     createProject: t.procedure
         .input(z.string())
         .mutation(async ({ input, ctx }) => {

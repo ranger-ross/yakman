@@ -6,8 +6,7 @@ export const load: PageLoad = async (event) => {
     const { uuid } = event.params
     let project: YakManProject | null = null
     if (uuid) {
-        const projects = await trpc(event).projects.fetchProjects.query();
-        project = projects.find(project => project.uuid === uuid) ?? null
+        project = await trpc(event).projects.fetchProject.query(uuid);
     }
 
     return {
