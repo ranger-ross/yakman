@@ -12,7 +12,7 @@ use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use log::error;
 
-/// Get all of the projects
+/// Get all of the projects (user has access to)
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
 #[get("/v1/projects")]
 pub async fn get_projects(
@@ -49,6 +49,48 @@ pub async fn get_projects(
         .collect();
 
     return Ok(web::Json(projects));
+}
+
+/// Get project by uuid
+#[utoipa::path(responses((status = 200, body = YakManProject)))]
+#[get("/v1/projects/{uuid}")]
+pub async fn get_project(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    if auth_details.authorities.len() == 0 {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let project_uuid: String = path.into_inner();
+    let has_role = YakManRoleBinding::has_any_role(
+        vec![
+            YakManRole::Admin,
+            YakManRole::Approver,
+            YakManRole::Operator,
+            YakManRole::Viewer,
+        ],
+        &project_uuid,
+        &auth_details.authorities,
+    );
+
+    if !has_role {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let projects: Vec<YakManProject> = storage_service
+        .get_projects()
+        .await?
+        .into_iter()
+        .filter(|p| project_uuid == p.uuid)
+        .collect();
+
+    if let Some(project) = projects.into_iter().nth(0) {
+        return Ok(web::Json(project));
+    } else {
+        return Err(YakManApiError::not_found("Project not found"));
+    }
 }
 
 /// Create a new project
