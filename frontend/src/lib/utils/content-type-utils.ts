@@ -4,12 +4,14 @@ export type MonacoLanguage = "json" | "html" | "typescript" | "css" | "text" | "
 export function contentTypeToMonacoLanguage(contentType?: string | null): MonacoLanguage {
     if (!contentType)
         return "text";
-    if (contentType.includes("yaml") || contentType.includes("yml")) {
+    if (contentType.toLocaleLowerCase().includes("yaml") ||
+        contentType.toLocaleLowerCase().includes("yml")) {
         return "yaml";
     }
-    switch (contentType) {
-        case "application/json":
-            return "json";
+    if (contentType.toLocaleLowerCase().includes("json")) {
+        return "json";
+    }
+    switch (contentType.toLocaleLowerCase()) {
         case "text/html":
             return "html";
         default:
