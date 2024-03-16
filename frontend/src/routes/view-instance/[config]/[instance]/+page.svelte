@@ -10,6 +10,7 @@
     import type { PageData } from "./$types";
     import ChangelogTab from "./ChangelogTab.svelte";
     import RevisionsTab from "./RevisionsTab.svelte";
+    import ContentTypePill from "$lib/components/ContentTypePill.svelte";
 
     let { config, instance } = $page.params;
 
@@ -51,17 +52,12 @@
     </div>
     <div class="mb-2">
         <YakManCard>
-            <h1 class="text-lg font-bold mb-1">Content</h1>
-            <div class="mb-2">
-                <YakManCard>
-                    <span class="font-bold mr-2">Content Type</span>
-                    {data.data?.contentType}
-                </YakManCard>
+            <div class="flex gap-2">
+                <h1 class="text-lg font-bold mb-1">Content</h1>
+                <ContentTypePill contentType={data.data?.contentType} />               
             </div>
-            <div class="h-56 mb-6">
-                <div class="block text-gray-700 text-sm font-bold mb-2">
-                    Data
-                </div>
+            
+            <div class="h-56 mt-2 mb-6">
                 <MonacoEditor
                     content={data?.data?.data ?? ""}
                     language={editorLanguage}
