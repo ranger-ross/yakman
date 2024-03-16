@@ -41,15 +41,40 @@ pub struct ConfigInstance {
     pub current_revision: String,
     pub pending_revision: Option<String>,
     pub revisions: Vec<String>,
-    pub changelog: Vec<ConfigInstanceChange>,
+    pub changelog: Vec<ConfigInstanceEvent>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct ConfigInstanceChange {
+pub struct ConfigInstanceEvent {
+    #[serde(flatten)]
+    pub event: ConfigInstanceEventData,
     pub timestamp_ms: i64,
-    pub previous_revision: Option<String>,
-    pub new_revision: String,
-    pub applied_by_uuid: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub enum ConfigInstanceEventData {
+    Created {
+        new_revision: String,
+        created_by_uuid: String,
+    },
+    Updated {
+        previous_revision: String,
+        new_revision: String,
+        applied_by_uuid: String,
+    },
+    NewRevisionSubmitted {
+        previous_revision: String,
+        new_revision: String,
+        submitted_by_uuid: String,
+    },
+    NewRevisionApproved {
+        new_revision: String,
+        approver_by_uuid: String,
+    },
+    NewRevisionRejected {
+        new_revision: String,
+        rejected_by_uuid: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

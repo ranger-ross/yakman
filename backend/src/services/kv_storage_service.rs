@@ -13,8 +13,8 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        ConfigInstance, ConfigInstanceChange, ConfigInstanceRevision, LabelType,
-        RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
+        ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
+        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
         YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink, YakManRole,
         YakManUser, YakManUserDetails,
     },
@@ -162,17 +162,18 @@ impl StorageService for KVStorageService {
                 current_revision: revision.revision.clone(),
                 pending_revision: None,
                 revisions: vec![revision.revision.clone()],
-                changelog: vec![ConfigInstanceChange {
+                changelog: vec![ConfigInstanceEvent {
+                    event: ConfigInstanceEventData::Created {
+                        new_revision: revision.revision,
+                        created_by_uuid: creator_uuid.to_string(),
+                    },
                     timestamp_ms: now,
-                    previous_revision: None,
-                    new_revision: revision.revision,
-                    applied_by_uuid: creator_uuid.to_string(),
                 }],
             });
             self.adapter
                 .save_instance_metadata(config_name, instances)
                 .await?;
-            info!("Update instance metadata for config: {}", config_name);
+            log::info!("Update instance metadata for config: {config_name}");
 
             return Ok(instance);
         }
@@ -198,7 +199,7 @@ impl StorageService for KVStorageService {
                     return Err(CreateConfigError::duplicate_config(config_name));
                 }
 
-                info!("Config '{config_name}' already exists, unhiding it");
+                log::info!("Config '{config_name}' already exists, unhiding it");
 
                 // Config already exists, just unhide it
                 config.hidden = false;
@@ -354,6 +355,14 @@ impl StorageService for KVStorageService {
         // Update instance data
         instance.pending_revision = Some(String::from(&revision.revision));
         instance.revisions.push(String::from(&revision.revision));
+        instance.changelog.push(ConfigInstanceEvent {
+            event: ConfigInstanceEventData::NewRevisionSubmitted {
+                previous_revision: instance.current_revision.clone(),
+                new_revision: revision.revision.to_string(),
+                submitted_by_uuid: submitted_by_uuid.to_string(),
+            },
+            timestamp_ms: now,
+        });
 
         self.adapter
             .save_instance_metadata(config_name, instances)
@@ -451,6 +460,13 @@ impl StorageService for KVStorageService {
         if !instance.revisions.contains(&String::from(revision)) {
             instance.revisions.push(String::from(revision));
         }
+        instance.changelog.push(ConfigInstanceEvent {
+            event: ConfigInstanceEventData::NewRevisionApproved {
+                new_revision: revision.to_string(),
+                approver_by_uuid: approved_uuid.to_string(),
+            },
+            timestamp_ms: now,
+        });
 
         self.adapter
             .save_instance_metadata(config_name, metadata)
@@ -495,11 +511,13 @@ impl StorageService for KVStorageService {
         }
 
         let now = Utc::now().timestamp_millis();
-        instance.changelog.push(ConfigInstanceChange {
+        instance.changelog.push(ConfigInstanceEvent {
+            event: ConfigInstanceEventData::Updated {
+                previous_revision: instance.current_revision.clone(),
+                new_revision: String::from(revision),
+                applied_by_uuid: String::from(applied_by_uuid),
+            },
             timestamp_ms: now,
-            previous_revision: Some(instance.current_revision.clone()),
-            new_revision: String::from(revision),
-            applied_by_uuid: String::from(applied_by_uuid),
         });
         instance.current_revision = String::from(revision);
         instance.pending_revision = None;
@@ -548,6 +566,14 @@ impl StorageService for KVStorageService {
         if let Some(index) = instance.revisions.iter().position(|x| *x == revision) {
             instance.revisions.remove(index);
         }
+
+        instance.changelog.push(ConfigInstanceEvent {
+            event: ConfigInstanceEventData::NewRevisionRejected {
+                new_revision: revision.to_string(),
+                rejected_by_uuid: rejected_by_uuid.to_string(),
+            },
+            timestamp_ms: now,
+        });
 
         self.adapter
             .save_revision(config_name, &revision_data)
@@ -830,7 +856,8 @@ impl StorageService for KVStorageService {
         let email = user.email;
         let email_hash = sha256::digest(&email);
 
-        let expiration = Utc::now() + chrono::Duration::days(2);
+        let expiration =
+            Utc::now() + chrono::Duration::try_days(2).expect("2 days will not be out of bounds");
 
         let password_reset_link = YakManPasswordResetLink {
             email_hash,

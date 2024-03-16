@@ -31,14 +31,33 @@ export const YakManLabelSchema = z.object({
 
 export type YakManLabel = z.infer<typeof YakManLabelSchema>;
 
-export const ConfigInstanceChangeSchema = z.object({
+export const ConfigInstanceEventSchema = z.object({
     timestamp_ms: z.number(),
-    previous_revision: z.string().nullable(),
-    new_revision: z.string(),
-    applied_by_uuid: z.string()
+    Created: z.object({
+        new_revision: z.string(),
+        created_by_uuid: z.string(),
+    }).optional(),
+    Updated: z.object({
+        previous_revision: z.string(),
+        new_revision: z.string(),
+        created_by_uuid: z.string(),
+    }).optional(),
+    NewRevisionSubmitted: z.object({
+        previous_revision: z.string(),
+        new_revision: z.string(),
+        submitted_by_uuid: z.string(),
+    }).optional(),
+    NewRevisionApproved: z.object({
+        new_revision: z.string(),
+        approver_by_uuid: z.string(),
+    }).optional(),
+    NewRevisionRejected: z.object({
+        new_revision: z.string(),
+        rejected_by_uuid: z.string(),
+    }).optional()
 });
 
-export type ConfigInstanceChange = z.infer<typeof ConfigInstanceChangeSchema>;
+export type ConfigInstanceEvent = z.infer<typeof ConfigInstanceEventSchema>;
 
 export const YakManConfigInstanceSchema = z.object({
     config_name: z.string(),
@@ -47,7 +66,7 @@ export const YakManConfigInstanceSchema = z.object({
     current_revision: z.string(),
     pending_revision: z.string().nullable(),
     revisions: z.array(z.string()),
-    changelog: z.array(ConfigInstanceChangeSchema),
+    changelog: z.array(ConfigInstanceEventSchema),
 });
 
 export type YakManConfigInstance = z.infer<typeof YakManConfigInstanceSchema>;
