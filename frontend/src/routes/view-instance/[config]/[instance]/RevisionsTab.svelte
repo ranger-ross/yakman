@@ -11,6 +11,7 @@
     import { openGlobaModal } from "$lib/stores/global-modal-state";
     import MonacoEditor from "$lib/components/MonacoEditor.svelte";
     import ContentTypePill from "$lib/components/ContentTypePill.svelte";
+    import { contentTypeToMonacoLanguage } from "$lib/utils/content-type-utils";
 
     export let config: string | null = null;
     export let instance: string | null = null;
@@ -24,6 +25,8 @@
         contentType: "",
         labels: [] as string[],
     };
+
+    $: editorLanguage = contentTypeToMonacoLanguage(selectedRevisionData.contentType);
 
     onMount(async () => {
         // TODO: maybe auto-select current revision?
@@ -159,7 +162,7 @@
         <div class="h-48">
             <MonacoEditor
                 content={selectedRevisionData.data}
-                language={"json"}
+                language={editorLanguage}
                 disabled={true}
             />
         </div>
