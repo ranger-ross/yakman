@@ -9,6 +9,8 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { openGlobaModal } from "$lib/stores/global-modal-state";
+    import MonacoEditor from "$lib/components/MonacoEditor.svelte";
+    import ContentTypePill from "$lib/components/ContentTypePill.svelte";
 
     export let config: string | null = null;
     export let instance: string | null = null;
@@ -149,23 +151,21 @@
         </div>
     </div>
 
-    <div class="w-fit mr-2">
+    <div class="w-fit mr-2 min-w-80">
         <h1 class="text-lg font-bold mb-1">
             {`Revision: ${selectedRevisionData.revision}`}
         </h1>
 
-        <YakManTextArea
-            label="Data"
-            value={selectedRevisionData.data}
-            disabled
-        />
-        <div class="my-3">
-            <YakManInput
-                label="Content Type"
-                value={selectedRevisionData.contentType}
-                placeholder="my-config-name"
-                disabled
+        <div class="h-48">
+            <MonacoEditor
+                content={selectedRevisionData.data}
+                language={"json"}
+                disabled={true}
             />
+        </div>
+
+        <div class="my-3">
+            <ContentTypePill contentType={selectedRevisionData.contentType}/>
         </div>
 
         <div>

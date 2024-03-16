@@ -15,7 +15,7 @@
 
     function onApprove(isApply: boolean) {
         const message =
-            "Are you sure you want to approve this change?" +
+            "Are you sure you want to approve this change? " +
             (isApply
                 ? "It will be applied immediately"
                 : "You will need to apply it before changes are reflected");
