@@ -108,7 +108,7 @@ pub struct YakManApiKey {
     pub created_by_uuid: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
 pub enum YakManRole {
     Admin,
     Approver,
@@ -159,7 +159,7 @@ pub struct YakManUser {
     pub role: Option<YakManRole>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
 pub struct YakManUserProjectRole {
     pub project_uuid: String,
     pub role: YakManRole,

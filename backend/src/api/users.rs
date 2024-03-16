@@ -11,7 +11,7 @@ use actix_web::{
     web::{self, Json},
 };
 use actix_web::{HttpResponse, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -23,7 +23,7 @@ pub async fn get_yakman_users(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -41,7 +41,7 @@ pub async fn create_yakman_user(
     payload: Json<CreateYakManUserPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -77,7 +77,7 @@ pub async fn get_user_info(
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> actix_web::Result<impl Responder, YakManApiError> {
     let global_roles: Vec<YakManRole> = details
-        .permissions
+        .authorities
         .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(role) => Some(role.to_owned()),
@@ -86,10 +86,12 @@ pub async fn get_user_info(
         .collect();
 
     let roles: HashMap<String, YakManRole> = details
-        .permissions
-        .into_iter()
+        .authorities
+        .iter()
         .filter_map(|p| match p {
-            YakManRoleBinding::ProjectRoleBinding(role) => Some((role.project_uuid, role.role)),
+            YakManRoleBinding::ProjectRoleBinding(role) => {
+                Some((role.project_uuid.clone(), role.role.clone()))
+            }
             _ => None,
         })
         .collect();

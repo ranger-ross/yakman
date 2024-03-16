@@ -9,7 +9,7 @@ use crate::model::YakManRole;
 use crate::services::StorageService;
 use actix_web::{delete, HttpResponse, Responder};
 use actix_web::{get, put, web};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -22,7 +22,7 @@ pub async fn get_api_keys(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -62,7 +62,7 @@ pub async fn create_api_key(
     principle: YakManPrinciple,
     request: web::Json<CreateApiKeyRequest>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -108,7 +108,7 @@ pub async fn delete_api_key(
     storage_service: web::Data<Arc<dyn StorageService>>,
     path: web::Path<String>,
 ) -> Result<impl Responder, YakManApiError> {
-    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions);
+    let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
     if !is_admin {
         return Err(YakManApiError::forbidden());
@@ -162,7 +162,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("apikey-d66a57c5-a425-4157-b790-13756084d0cf", first["id"]);
@@ -220,7 +220,7 @@ mod tests {
         log::error!("{:#?}", resp.status());
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         assert!(!value["api_key"].is_null());
         assert!(value["api_key"].is_string());

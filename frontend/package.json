@@ -9,31 +9,30 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@fontsource/fira-mono": "5.0.8",
-		"@neoconfetti/svelte": "1.0.0",
+		"@fontsource/fira-mono": "5.0.12",
 		"@sveltejs/adapter-auto": "3.1.1",
-		"@sveltejs/adapter-node": "4.0.1",
+		"@sveltejs/adapter-node": "5.0.1",
 		"@sveltejs/kit": "2.5.4",
 		"@sveltejs/vite-plugin-svelte": "3.0.2",
 		"@types/cookie": "0.6.0",
 		"@types/set-cookie-parser": "2.4.7",
-		"autoprefixer": "10.4.17",
+		"autoprefixer": "10.4.18",
 		"postcss": "8.4.35",
 		"svelte": "4.2.12",
 		"svelte-check": "3.6.7",
 		"tailwindcss": "3.4.1",
 		"tslib": "2.6.2",
-		"typescript": "5.3.3",
-		"vite": "5.0.12"
+		"typescript": "5.4.2",
+		"vite": "5.1.6"
 	},
 	"type": "module",
 	"dependencies": {
 		"@trpc/client": "10.45.0",
 		"@trpc/server": "10.45.0",
-		"monaco-editor": "0.45.0",
+		"monaco-editor": "0.47.0",
 		"monaco-yaml": "5.1.1",
 		"set-cookie-parser": "2.6.0",
-		"trpc-sveltekit": "3.5.22",
+		"trpc-sveltekit": "3.6.1",
 		"zod": "3.22.4"
 	}
 }

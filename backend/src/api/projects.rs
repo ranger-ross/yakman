@@ -9,7 +9,7 @@ use crate::{
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use log::error;
 
 /// Get all of the projects
@@ -19,12 +19,12 @@ pub async fn get_projects(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    if auth_details.permissions.len() == 0 {
+    if auth_details.authorities.len() == 0 {
         return Err(YakManApiError::forbidden());
     }
 
     let user_has_global_role = auth_details
-        .permissions
+        .authorities
         .iter()
         .map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(_) => true,
@@ -33,11 +33,11 @@ pub async fn get_projects(
         .any(|v| v);
 
     let allowed_projects: HashSet<String> = auth_details
-        .permissions
-        .into_iter()
+        .authorities
+        .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(_) => None,
-            YakManRoleBinding::ProjectRoleBinding(r) => Some(r.project_uuid),
+            YakManRoleBinding::ProjectRoleBinding(r) => Some(r.project_uuid.clone()),
         })
         .collect();
 
@@ -63,10 +63,10 @@ async fn create_project(
     let project_name = payload.project_name.to_lowercase();
 
     let is_user_global_admin_or_approver = auth_details
-        .permissions
-        .into_iter()
+        .authorities
+        .iter()
         .filter_map(|p| match p {
-            YakManRoleBinding::GlobalRoleBinding(role) => Some(role),
+            YakManRoleBinding::GlobalRoleBinding(role) => Some(role.clone()),
             YakManRoleBinding::ProjectRoleBinding(_) => None,
         })
         .filter(|role| vec![YakManRole::Admin, YakManRole::Approver].contains(role))
@@ -135,7 +135,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("foo", first["name"]);
@@ -175,7 +175,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         assert_eq!(1, value.as_array().unwrap().len());
 

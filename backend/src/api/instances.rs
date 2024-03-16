@@ -8,7 +8,7 @@ use crate::model::{YakManLabel, YakManRole};
 use crate::services::StorageService;
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 
 /// Get config instances by config_name
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstance>)))]
@@ -36,7 +36,7 @@ async fn get_instances_by_config_name(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {
@@ -76,7 +76,7 @@ async fn get_instance(
             YakManRole::Viewer,
         ],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {
@@ -120,7 +120,7 @@ async fn create_new_instance(
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {
@@ -174,7 +174,7 @@ async fn update_new_instance(
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {
@@ -229,7 +229,7 @@ async fn delete_instance(
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin],
         &config.project_uuid,
-        &auth_details.permissions,
+        &auth_details.authorities,
     );
 
     if !has_role {

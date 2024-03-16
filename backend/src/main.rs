@@ -184,52 +184,60 @@ mod test_utils {
 
         use crate::{middleware::roles::YakManRoleBinding, model::YakManRole};
         use actix_web::{dev::ServiceRequest, Error};
-        use actix_web_grants::permissions::PermissionsExtractor;
+        use actix_web_grants::authorities::AuthoritiesExtractor;
         use anyhow::Result;
-        use std::future::ready;
+        use std::{collections::HashSet, future::ready};
 
         pub struct FakeRoleExtractor {
-            role_bindings: Vec<YakManRoleBinding>,
+            role_bindings: HashSet<YakManRoleBinding>,
         }
 
         impl FakeRoleExtractor {
             pub fn new(role_bindings: Vec<YakManRoleBinding>) -> FakeRoleExtractor {
                 FakeRoleExtractor {
-                    role_bindings: role_bindings,
+                    role_bindings: HashSet::from_iter(role_bindings.into_iter()),
                 }
             }
         }
 
-        impl<'a> PermissionsExtractor<'a, ServiceRequest, YakManRoleBinding> for FakeRoleExtractor {
-            type Future = core::future::Ready<Result<Vec<YakManRoleBinding>, Error>>;
+        impl<'a> AuthoritiesExtractor<'a, ServiceRequest, YakManRoleBinding> for FakeRoleExtractor {
+            type Future = core::future::Ready<Result<HashSet<YakManRoleBinding>, Error>>;
 
             fn extract(&self, _request: &'a mut ServiceRequest) -> Self::Future {
                 return ready(Ok(self.role_bindings.clone()));
             }
         }
 
-        pub async fn admin_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
-            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
-                YakManRole::Admin,
-            )]);
+        pub async fn admin_role(
+            _req: &ServiceRequest,
+        ) -> Result<HashSet<YakManRoleBinding>, Error> {
+            let mut roles: HashSet<YakManRoleBinding> = HashSet::new();
+            roles.insert(YakManRoleBinding::GlobalRoleBinding(YakManRole::Admin));
+            return Ok(roles);
         }
 
-        pub async fn approver_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
-            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
-                YakManRole::Approver,
-            )]);
+        pub async fn approver_role(
+            _req: &ServiceRequest,
+        ) -> Result<HashSet<YakManRoleBinding>, Error> {
+            let mut roles: HashSet<YakManRoleBinding> = HashSet::new();
+            roles.insert(YakManRoleBinding::GlobalRoleBinding(YakManRole::Approver));
+            return Ok(roles);
         }
 
-        pub async fn operator_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
-            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
-                YakManRole::Operator,
-            )]);
+        pub async fn operator_role(
+            _req: &ServiceRequest,
+        ) -> Result<HashSet<YakManRoleBinding>, Error> {
+            let mut roles: HashSet<YakManRoleBinding> = HashSet::new();
+            roles.insert(YakManRoleBinding::GlobalRoleBinding(YakManRole::Operator));
+            return Ok(roles);
         }
 
-        pub async fn viewer_role(_req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
-            return Ok(vec![YakManRoleBinding::GlobalRoleBinding(
-                YakManRole::Viewer,
-            )]);
+        pub async fn viewer_role(
+            _req: &ServiceRequest,
+        ) -> Result<HashSet<YakManRoleBinding>, Error> {
+            let mut roles: HashSet<YakManRoleBinding> = HashSet::new();
+            roles.insert(YakManRoleBinding::GlobalRoleBinding(YakManRole::Viewer));
+            return Ok(roles);
         }
     }
 }
