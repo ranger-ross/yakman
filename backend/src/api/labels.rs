@@ -7,7 +7,7 @@ use crate::{
     middleware::roles::YakManRoleBinding,
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 
 /// Get all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
@@ -32,7 +32,7 @@ pub async fn create_label(
 
     if !YakManRoleBinding::has_any_global_role(
         vec![YakManRole::Admin, YakManRole::Approver],
-        &auth_details.permissions,
+        &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
     }

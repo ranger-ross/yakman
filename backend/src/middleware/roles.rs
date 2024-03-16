@@ -1,5 +1,6 @@
 extern crate dotenv;
 
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use super::token::extract_access_token;
@@ -10,7 +11,7 @@ use crate::services::StorageService;
 use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum YakManRoleBinding {
     GlobalRoleBinding(YakManRole),
     ProjectRoleBinding(YakManUserProjectRole),
@@ -20,7 +21,7 @@ impl YakManRoleBinding {
     pub fn has_any_role(
         roles_to_match: Vec<YakManRole>,
         project_uuid: &str,
-        roles: &Vec<YakManRoleBinding>,
+        roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
             match role {
@@ -54,18 +55,18 @@ impl YakManRoleBinding {
     pub fn has_role(
         role_to_match: YakManRole,
         project_uuid: &str,
-        roles: &Vec<YakManRoleBinding>,
+        roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
         return YakManRoleBinding::has_any_role(vec![role_to_match], project_uuid, roles);
     }
 
-    pub fn has_global_role(role_to_match: YakManRole, roles: &Vec<YakManRoleBinding>) -> bool {
+    pub fn has_global_role(role_to_match: YakManRole, roles: &HashSet<YakManRoleBinding>) -> bool {
         return YakManRoleBinding::has_any_global_role(vec![role_to_match], roles);
     }
 
     pub fn has_any_global_role(
         roles_to_match: Vec<YakManRole>,
-        roles: &Vec<YakManRoleBinding>,
+        roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
             match role {
@@ -86,8 +87,8 @@ impl YakManRoleBinding {
     }
 }
 
-pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding>, Error> {
-    let mut role_bindings: Vec<YakManRoleBinding> = vec![];
+pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBinding>, Error> {
+    let mut role_bindings: HashSet<YakManRoleBinding> = HashSet::new();
 
     let token_service = req
         .app_data::<web::Data<Arc<YakManTokenService>>>()
@@ -97,7 +98,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
 
     let token = match token {
         Some(token) => token,
-        None => return Ok(vec![]),
+        None => return Ok(HashSet::new()),
     };
 
     if token_service.is_api_key(&token) {
@@ -105,7 +106,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
             Some(principle) => {
                 let key_id = match &principle.user_uuid {
                     Some(key_id) => key_id,
-                    None => return Ok(vec![]),
+                    None => return Ok(HashSet::new()),
                 };
 
                 let storage_service = req
@@ -113,17 +114,20 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
                     .unwrap();
 
                 if let Some(api_key) = storage_service.get_api_key_by_id(&key_id).await.unwrap() {
-                    Ok(vec![YakManRoleBinding::ProjectRoleBinding(
+                    let mut api_key_roles = HashSet::new();
+                    api_key_roles.insert(YakManRoleBinding::ProjectRoleBinding(
                         YakManUserProjectRole {
                             project_uuid: api_key.project_uuid,
                             role: api_key.role,
                         },
-                    )])
+                    ));
+
+                    Ok(api_key_roles)
                 } else {
-                    Ok(vec![])
+                    Ok(HashSet::new())
                 }
             }
-            None => Ok(vec![]),
+            None => Ok(HashSet::new()),
         };
     }
 
@@ -136,21 +140,21 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<Vec<YakManRoleBinding
                 .unwrap();
 
             if let Some(details) = storage_service.get_user_details(&uuid).await? {
-                let mut global_roles: Vec<YakManRoleBinding> = details
+                let global_roles: Vec<YakManRoleBinding> = details
                     .global_roles
                     .iter()
                     .map(|p| YakManRoleBinding::GlobalRoleBinding(p.clone()))
                     .collect();
 
-                role_bindings.append(&mut global_roles);
+                role_bindings.extend(global_roles);
 
-                let mut project_role_bindings: Vec<YakManRoleBinding> = details
+                let project_role_bindings: Vec<YakManRoleBinding> = details
                     .roles
                     .into_iter()
                     .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
                     .collect();
 
-                role_bindings.append(&mut project_role_bindings);
+                role_bindings.extend(project_role_bindings);
             } else {
                 log::info!("user details not found");
             }

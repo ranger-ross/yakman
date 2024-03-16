@@ -13,7 +13,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse, Responder,
 };
-use actix_web_grants::permissions::AuthDetails;
+use actix_web_grants::authorities::AuthDetails;
 use log::error;
 use oauth2::PkceCodeChallenge;
 use oauth2::PkceCodeVerifier;
@@ -100,7 +100,7 @@ pub async fn create_password_reset_link(
     };
 
     if &user_uuid != target_user_uuid {
-        if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.permissions) {
+        if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
             return Err(YakManApiError::forbidden());
         }
     }

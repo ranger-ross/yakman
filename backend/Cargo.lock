@@ -20,17 +20,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-grants-proc-macro"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c278a8d315dd00c434ad65ec14d3416cacb26d16961af8a1d7a19568071e4f32"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "actix-http"
 version = "3.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -208,12 +197,12 @@ dependencies = [
 
 [[package]]
 name = "actix-web-grants"
-version = "3.0.2"
+version = "4.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e03865e96db7fc34438d3f4aa330f81f537652f58f8b3728ddc623038055274"
+checksum = "cf5941a5bdf4cc022ca7721dae70d9818d7b13f93040b0543cb901410c8d3172"
 dependencies = [
- "actix-grants-proc-macro",
  "actix-web",
+ "protect-endpoints-proc-macro",
 ]
 
 [[package]]
@@ -2677,6 +2666,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2422ad645d89c99f8f3e6b88a9fdeca7fabeac836b1002371c4367c8f984aae"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "protect-endpoints-proc-macro"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dfff647917bb00f5e9c57a5c15d95db74db5387139ac03052358e38462c86a76"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
 ]
 
 [[package]]
