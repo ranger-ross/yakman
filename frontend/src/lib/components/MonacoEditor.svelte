@@ -64,10 +64,11 @@
     editor = Monaco.editor.create(divEl!, {
       value: content,
       language: language,
-      readOnly: disabled,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 2,
       minimap: { enabled: false },
+      overviewRulerLanes: 0,
+      renderLineHighlight: 'gutter',
       theme: "yakmanMonacoTheme",
     });
 
