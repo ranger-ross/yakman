@@ -92,7 +92,7 @@
         />
 
         {#if selectedHistoryTab == "Changelog"}
-            <ChangelogTab {sortedChangelog} />
+            <ChangelogTab {sortedChangelog} users={data.users} />
         {/if}
 
         {#if selectedHistoryTab == "Revisions"}

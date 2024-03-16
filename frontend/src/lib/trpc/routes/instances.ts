@@ -16,10 +16,7 @@ export const instances = t.router({
             const response = await fetch(`${BASE_URL}/v1/configs/${input}/instances`, {
                 headers: createYakManAuthHeaders(ctx.accessToken)
             });
-            let r = await response.json();
-
-            console.log(r[0].changelog);
-            return r;
+            return await response.json();
         }),
     createConfigInstance: t.procedure
         .input(z.object({
