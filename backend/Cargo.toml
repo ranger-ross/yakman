@@ -41,7 +41,7 @@ base64 = "0.22"
 google-cloud-storage = "0.16"
 moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
-cron = "0.12.0"
+cron = "0.12.1"
 
 [dev-dependencies]
 mockall = "0.12"
