@@ -75,6 +75,15 @@
   });
 
   $: {
+    // If the editor is disabled (readonly mode) and the content changes update the editor value.
+    // NOTE: If the editor value changes, it will reset the cursor position 
+    //       so it will be annoying if this is enabled if the editor is enabled.
+    if (editor && disabled) {
+      editor.setValue(content)
+    }
+  }
+
+  $: {
     // @ts-ignore setLanguage exists but is not on type def for some reason
     editor?.getModel().setLanguage(language);
   }
