@@ -58,7 +58,7 @@
                     case selection === "AddLabel":
                         return goto(`/add-label`);
                     case selection === "AddProject":
-                        return goto(`/add-project`);
+                        return goto(`/project`);
                     case selection === "Admin":
                         return goto(`/admin`);
                     case selection === "Logout":
