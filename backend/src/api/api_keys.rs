@@ -162,7 +162,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("apikey-d66a57c5-a425-4157-b790-13756084d0cf", first["id"]);
@@ -220,7 +220,7 @@ mod tests {
         log::error!("{:#?}", resp.status());
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         assert!(!value["api_key"].is_null());
         assert!(value["api_key"].is_string());

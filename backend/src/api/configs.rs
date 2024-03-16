@@ -230,7 +230,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let arr = value.as_array().unwrap();
 
@@ -278,7 +278,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let arr = value.as_array().unwrap();
 
@@ -360,7 +360,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let arr = value.as_array().unwrap();
 

@@ -135,7 +135,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("foo", first["name"]);
@@ -175,7 +175,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
 
-        let value: Value = body_to_json_value(resp).await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         assert_eq!(1, value.as_array().unwrap().len());
 
