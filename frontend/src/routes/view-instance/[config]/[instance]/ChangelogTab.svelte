@@ -1,15 +1,16 @@
 <script lang="ts">
+    import YakManCheckbox from "$lib/components/YakManCheckbox.svelte";
     import type { ConfigInstanceEvent } from "$lib/types/types";
     import {
         getEventName as getChangelogEventName,
         getEventType as getChangelogEventType,
+        type ChangelogEventType,
     } from "$lib/utils/changelog-utils";
 
     export let sortedChangelog: ConfigInstanceEvent[] = [];
     // Map<User UUID, Email>
     export let users: Map<string, string> = new Map();
-
-    console.log(users);
+    let showRevisionReviews = false;
 
     function formatDate(ts: number): string {
         const date = new Date(ts);
@@ -19,10 +20,33 @@
     function getEmail(uuid: string): string {
         return users.get(uuid) ?? uuid; // Fallback to the user UUID
     }
+
+    let displayableChangelog: ConfigInstanceEvent[];
+    $: {
+        function filterChangelog(
+            sortedChangelog: ConfigInstanceEvent[],
+        ): ConfigInstanceEvent[] {
+            if (showRevisionReviews) {
+                return sortedChangelog;
+            }
+            const nonReviewEvents: ChangelogEventType[] = [
+                "CREATED",
+                "UPDATED",
+                "UNKNOWN",
+            ];
+            return sortedChangelog.filter((change) =>
+                nonReviewEvents.includes(getChangelogEventType(change)),
+            );
+        }
+
+        displayableChangelog = filterChangelog(sortedChangelog);
+    }
 </script>
 
+<YakManCheckbox label="Show Review Events" bind:value={showRevisionReviews} />
+
 <div class="mt-2">
-    {#each sortedChangelog as change, index}
+    {#each displayableChangelog as change, index}
         {@const type = getChangelogEventType(change)}
         <div
             class={`grid grid-cols-2 my-2 p-1 px-2 rounded ${
