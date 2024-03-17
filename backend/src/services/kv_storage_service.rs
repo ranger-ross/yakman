@@ -13,10 +13,11 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-        LabelType, NotificationSetting, ProjectNotificationSettings, RevisionReviewState,
-        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
-        YakManProject, YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
+        request::ProjectNotificationType, ConfigInstance, ConfigInstanceEvent,
+        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting,
+        ProjectNotificationSettings, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel,
+        YakManPassword, YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink,
+        YakManRole, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     settings,
@@ -54,7 +55,11 @@ impl StorageService for KVStorageService {
         return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
     }
 
-    async fn create_project(&self, project_name: &str) -> Result<String, CreateProjectError> {
+    async fn create_project(
+        &self,
+        project_name: &str,
+        notification_settings: Option<ProjectNotificationType>,
+    ) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
         // Prevent duplicates
@@ -68,16 +73,19 @@ impl StorageService for KVStorageService {
 
         let project_uuid = Uuid::new_v4();
 
+        let notification_settings = notification_settings.map(|settings| {
+            let settings = match settings {
+                ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
+                    webhook_url: webhook_url,
+                },
+            };
+            ProjectNotificationSettings { settings }
+        });
+
         projects.push(YakManProject {
             name: String::from(project_name),
             uuid: project_uuid.to_string(),
-            notification_settings: Some(ProjectNotificationSettings {
-                settings: NotificationSetting::Slack {
-                    webhook_url:
-                            "https://hooks.slack.com/services/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"
-                .to_string(),
-             }
-            })
+            notification_settings: notification_settings
         });
 
         self.adapter.save_projects(projects).await?;

@@ -11,9 +11,9 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManPassword, YakManProject, YakManPublicPasswordResetLink, YakManUser,
-        YakManUserDetails,
+        request::ProjectNotificationType, ConfigInstance, ConfigInstanceRevision, LabelType,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManProject,
+        YakManPublicPasswordResetLink, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -22,7 +22,11 @@ use async_trait::async_trait;
 pub trait StorageService: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
-    async fn create_project(&self, project_name: &str) -> Result<String, CreateProjectError>;
+    async fn create_project(
+        &self,
+        project_name: &str,
+        notification_settings: Option<ProjectNotificationType>,
+    ) -> Result<String, CreateProjectError>;
 
     async fn get_visible_configs(
         &self,

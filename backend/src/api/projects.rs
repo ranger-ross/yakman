@@ -138,7 +138,7 @@ async fn create_project(
     }
 
     // Validate notification webhooks to protect against SSRF
-    if let Some(notification) = payload.notification_settings {
+    if let Some(notification) = &payload.notification_settings {
         match notification {
             ProjectNotificationType::Slack { webhook_url } => {
                 let Ok(url) = Url::parse(&webhook_url) else {
@@ -161,7 +161,7 @@ async fn create_project(
         }
     }
 
-    return match storage_service.create_project(&project_name).await {
+    return match storage_service.create_project(&project_name, payload.notification_settings).await {
         Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
@@ -192,8 +192,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo").await?;
-        let project_bar_uuid = storage_service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -225,8 +225,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let _project_foo_uuid = storage_service.create_project("foo").await?;
-        let project_bar_uuid = storage_service.create_project("bar").await?;
+        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
@@ -263,8 +263,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo").await?;
-        let _project_bar_uuid = storage_service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -293,8 +293,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo").await?;
-        let project_bar_uuid = storage_service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
