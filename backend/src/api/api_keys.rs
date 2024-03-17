@@ -190,7 +190,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_uuid = storage_service.create_project("foo").await?;
+        let project_uuid = storage_service.create_project("foo", None).await?;
 
         let api_keys = storage_service.get_api_keys().await?;
         assert_eq!(0, api_keys.len());
