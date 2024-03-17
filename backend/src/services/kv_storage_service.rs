@@ -1006,6 +1006,7 @@ impl KVStorageService {
             notification_settings.settings.into();
         notification_adapter
             .send_notification(YakManNotificationType::RevisionReviewSubmitted {
+                project_name: project.name.to_string(),
                 config_name: config_name.to_string(),
                 instance: instance.to_string(),
                 revision: revision.to_string(),

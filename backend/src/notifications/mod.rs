@@ -15,6 +15,7 @@ pub trait YakManNotificationAdapter {
 
 pub enum YakManNotificationType {
     RevisionReviewSubmitted {
+        project_name: String,
         config_name: String,
         instance: String,
         revision: String,

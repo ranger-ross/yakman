@@ -19,3 +19,7 @@ pub fn snapshot_backups_cron() -> String {
         .ok()
         .unwrap_or("0 0 * * * *".to_string());
 }
+
+pub fn yakman_application_host() -> Option<String> {
+    return std::env::var("YAKMAN_APPLICATION_HOST").ok();
+}

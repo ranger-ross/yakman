@@ -14,8 +14,6 @@ use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
 use crate::middleware::YakManPrincipleTransformer;
-use crate::notifications::slack::SlackNotificationAdapter;
-use crate::notifications::{YakManNotificationAdapter, YakManNotificationType};
 use actix_middleware_etag::Etag;
 use actix_web::middleware::Compress;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -42,17 +40,6 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     env_logger::init();
-
-    // let slack_adapter = SlackNotificationAdapter {
-    //     http_client: reqwest::Client::new(),
-    //     webhook_url:
-    //         "https://hooks.slack.com/services/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"
-    //             .to_string(),
-    // };
-    // slack_adapter
-    //     .send_notification(YakManNotificationType::RevisionReviewSubmitted)
-    //     .await
-    //     .unwrap();
 
     let adapter = create_adapter().await;
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
