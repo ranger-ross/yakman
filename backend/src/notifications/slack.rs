@@ -144,6 +144,37 @@ impl YakManNotificationType {
                     ]
                 })
             }
+            YakManNotificationType::RevisionReviewRejected {
+                project_name,
+                config_name,
+                instance,
+                revision: _,
+            } => {
+                json!({
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": format!(":boom: *Config change rejected for `{project_name}`*")
+                            }
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": format!("*Config:* {config_name}")
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": format!("*Instance:* `{instance}`")
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
         }
     }
 }

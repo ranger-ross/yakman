@@ -594,6 +594,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApplyRevisionError::InvalidConfig),
         };
 
+        let instance_id = instance;
         let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApplyRevisionError::InvalidInstance),
@@ -630,6 +631,15 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_instance_metadata(config_name, metadata)
             .await?;
+
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_reject_notification(config_name, instance_id, &revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
+        }
 
         return Ok(());
     }
@@ -1081,6 +1091,32 @@ impl KVStorageService {
             notification_settings.settings.into();
         notification_adapter
             .send_notification(YakManNotificationType::RevisionReviewApplied {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn send_reject_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewRejected {
                 project_name: project.name.to_string(),
                 config_name: config_name.to_string(),
                 instance: instance.to_string(),
