@@ -161,7 +161,10 @@ async fn create_project(
         }
     }
 
-    return match storage_service.create_project(&project_name, payload.notification_settings).await {
+    return match storage_service
+        .create_project(&project_name, payload.notification_settings)
+        .await
+    {
         Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {

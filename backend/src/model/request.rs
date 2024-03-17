@@ -23,7 +23,7 @@ pub enum ProjectNotificationType {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateProjectPayload {
     pub project_name: String,
-    pub notification_settings: Option<ProjectNotificationType>
+    pub notification_settings: Option<ProjectNotificationType>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

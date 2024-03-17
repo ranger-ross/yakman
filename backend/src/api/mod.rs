@@ -21,7 +21,9 @@ use self::{
     users::GetUserInfoResponse,
 };
 use crate::model::{
-    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType},
+    request::{
+        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
+    },
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
     LabelType, RevisionReviewState, YakManConfig, YakManLabel, YakManProject,

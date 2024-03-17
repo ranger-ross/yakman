@@ -41,7 +41,9 @@ impl YakManNotificationType {
             } => {
                 let review_request_message = if let Some(host) = settings::yakman_application_host()
                 {
-                    format!("Revision: {revision} <{host}/apply-changes/{config_name}/{instance}|Link>")
+                    format!(
+                        "Revision: {revision} <{host}/apply-changes/{config_name}/{instance}|Link>"
+                    )
                 } else {
                     format!("Revision: {revision}")
                 };

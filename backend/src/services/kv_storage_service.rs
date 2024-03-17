@@ -85,7 +85,7 @@ impl StorageService for KVStorageService {
         projects.push(YakManProject {
             name: String::from(project_name),
             uuid: project_uuid.to_string(),
-            notification_settings: notification_settings
+            notification_settings: notification_settings,
         });
 
         self.adapter.save_projects(projects).await?;
