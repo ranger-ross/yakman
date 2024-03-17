@@ -20,6 +20,7 @@ use crate::{
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
 };
+use anyhow::bail;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
@@ -326,6 +327,7 @@ impl StorageService for KVStorageService {
             .get_instance_metadata(config_name)
             .await?
             .ok_or(SaveConfigInstanceError::InvalidConfig)?;
+        let instance_id = instance;
 
         let instance = instances
             .iter_mut()
@@ -378,25 +380,11 @@ impl StorageService for KVStorageService {
 
         log::info!("Updated instance metadata for config: {config_name}");
 
-        // Send notification
-        // TODO: Better error handling
-        let configs = self.adapter.get_configs().await?;
-        let config = configs.into_iter().find(|c| c.name == config_name).unwrap();
-
-        if let Ok(projects) = self.adapter.get_projects().await {
-            let project = projects
-                .into_iter()
-                .find(|p| p.uuid == config.project_uuid)
-                .unwrap();
-
-            if let Some(notification_settings) = project.notification_settings {
-                let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
-                    notification_settings.settings.into();
-                notification_adapter
-                    .send_notification(YakManNotificationType::RevisionReviewSubmitted)
-                    .await
-                    .unwrap();
-            }
+        if let Err(err) = self
+            .send_submitted_notification(config_name, instance_id, &revision.revision)
+            .await
+        {
+            log::error!("Failed to send notification, {err:?}");
         }
 
         return Ok(revision_key);
@@ -992,6 +980,39 @@ impl KVStorageService {
             self.api_key_hash_cache
                 .insert(key.hash.to_string(), key.clone());
         }
+    }
+
+    async fn send_submitted_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let configs = self.adapter.get_configs().await?;
+        let Some(config) = configs.into_iter().find(|c| c.name == config_name) else {
+            bail!("could not find config {config_name}")
+        };
+
+        let projects = self.adapter.get_projects().await?;
+        let Some(project) = projects.into_iter().find(|p| p.uuid == config.project_uuid) else {
+            bail!("could not find project {}", config.project_uuid)
+        };
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewSubmitted {
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
     }
 
     pub fn new(adapter: Arc<dyn KVStorageAdapter>) -> KVStorageService {

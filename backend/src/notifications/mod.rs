@@ -14,7 +14,11 @@ pub trait YakManNotificationAdapter {
 }
 
 pub enum YakManNotificationType {
-    RevisionReviewSubmitted,
+    RevisionReviewSubmitted {
+        config_name: String,
+        instance: String,
+        revision: String,
+    },
 }
 
 impl From<NotificationSetting> for Arc<dyn YakManNotificationAdapter + Send + Sync> {

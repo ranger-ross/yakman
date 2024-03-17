@@ -35,8 +35,12 @@ impl YakManNotificationAdapter for SlackNotificationAdapter {
 impl SlackNotificationAdapter {
     fn create_slack_payload(&self, event: &YakManNotificationType) -> Value {
         match event {
-            YakManNotificationType::RevisionReviewSubmitted => json!({
-                "text": "Revision submitted"
+            YakManNotificationType::RevisionReviewSubmitted {
+                config_name,
+                instance,
+                revision,
+            } => json!({
+                "text": format!("Revision submitted {config_name}/{instance}/{revision}")
             }),
         }
     }
