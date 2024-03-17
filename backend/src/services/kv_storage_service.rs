@@ -47,6 +47,13 @@ impl StorageService for KVStorageService {
         return Ok(self.adapter.get_projects().await?);
     }
 
+    async fn get_project_details(
+        &self,
+        uuid: &str,
+    ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
+        return self.adapter.get_project_details(uuid).await;
+    }
+
     async fn get_config(
         &self,
         config_name: &str,

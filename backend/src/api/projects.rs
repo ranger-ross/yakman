@@ -84,18 +84,11 @@ pub async fn get_project(
         return Err(YakManApiError::forbidden());
     }
 
-    let projects: Vec<YakManProject> = storage_service
-        .get_projects()
-        .await?
-        .into_iter()
-        .filter(|p| project_uuid == p.uuid)
-        .collect();
-
-    if let Some(project) = projects.into_iter().nth(0) {
-        return Ok(web::Json(project));
-    } else {
+    let Some(details) = storage_service.get_project_details(&project_uuid).await? else {
         return Err(YakManApiError::not_found("Project not found"));
-    }
+    };
+
+    return Ok(web::Json(details));
 }
 
 /// Create a new project

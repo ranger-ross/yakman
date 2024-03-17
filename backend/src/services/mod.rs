@@ -11,9 +11,7 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        request::ProjectNotificationType, ConfigInstance, ConfigInstanceRevision, LabelType,
-        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManProject,
-        YakManPublicPasswordResetLink, YakManUser, YakManUserDetails,
+        request::ProjectNotificationType, ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails
     },
 };
 use async_trait::async_trait;
@@ -21,6 +19,8 @@ use async_trait::async_trait;
 #[async_trait]
 pub trait StorageService: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
+
+    async fn get_project_details(&self, uuid: &str) -> Result<Option<YakManProjectDetails>, GenericStorageError>;
 
     async fn create_project(
         &self,
