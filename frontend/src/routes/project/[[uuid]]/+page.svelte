@@ -6,12 +6,22 @@
     import { trpc } from "$lib/trpc/client";
     import { goto } from "$app/navigation";
     import type { PageData } from "./$types";
+    import YakManSelect from "$lib/components/YakManSelect.svelte";
+    import type { CreateProjectPayload } from "$lib/trpc/routes/projects";
 
     export let data: PageData;
+
+    type WebhookType = "slack";
 
     let projectId = $page.params.uuid;
     const isNewProject = !projectId;
     let name = data.project?.name ?? "";
+    let webhookUrl = "";
+    let webhookType: WebhookType = "slack";
+
+    const webhookUrlPlaceholder = {
+        slack: "https://hooks.slack.com/services/...",
+    } as const;
 
     async function onSave() {
         if (isNewProject) {
@@ -24,8 +34,22 @@
 
     async function onCreateProject() {
         try {
+            let createProjectPayload: CreateProjectPayload = { name };
+
+            if (webhookUrl?.length > 0) {
+                switch (webhookType) {
+                    case "slack": {
+                        createProjectPayload.slack = {
+                            webhookUrl: webhookUrl,
+                        };
+                    }
+                }
+            }
+
             const { projectUuid } =
-                await trpc($page).projects.createProject.mutate(name);
+                await trpc($page).projects.createProject.mutate(
+                    createProjectPayload,
+                );
             goto(`/?project=${projectUuid}`);
         } catch (e) {
             console.error("Error creating project", e);
@@ -50,6 +74,24 @@
                 disabled={!isNewProject}
                 mask="kebab-case"
             />
+        </div>
+    </YakManCard>
+
+    <YakManCard extraClasses="mt-2">
+        <h1 class="text-lg font-bold mb-4">Notification Settings (Webhooks)</h1>
+        <div class="mb-3 flex gap-2">
+            <YakManInput
+                label="URL"
+                placeholder={webhookUrlPlaceholder[webhookType]}
+                bind:value={webhookUrl}
+            />
+            <YakManSelect
+                cotainerClasses="w-24"
+                label="Type"
+                bind:value={webhookType}
+            >
+                <option value="slack">Slack</option>
+            </YakManSelect>
         </div>
     </YakManCard>
 

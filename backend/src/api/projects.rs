@@ -4,13 +4,18 @@ use crate::{
     api::is_alphanumeric_kebab_case,
     error::{CreateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::{request::CreateProjectPayload, YakManProject, YakManRole},
+    model::{
+        request::{CreateProjectPayload, ProjectNotificationType},
+        YakManProject, YakManRole,
+    },
     services::StorageService,
+    settings,
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use log::error;
+use url::Url;
 
 /// Get all of the projects (user has access to)
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
@@ -132,7 +137,34 @@ async fn create_project(
         ));
     }
 
-    return match storage_service.create_project(&project_name).await {
+    // Validate notification webhooks to protect against SSRF
+    if let Some(notification) = &payload.notification_settings {
+        match notification {
+            ProjectNotificationType::Slack { webhook_url } => {
+                let Ok(url) = Url::parse(&webhook_url) else {
+                    return Err(YakManApiError::bad_request("Invalid webhook url"));
+                };
+
+                let Some(webhook_host) = url.host() else {
+                    return Err(YakManApiError::bad_request("Invalid webhook url"));
+                };
+                let webhook_host = webhook_host.to_string();
+
+                let is_whitelisted_host = settings::notification_whitelisted_hosts()
+                    .into_iter()
+                    .any(|host| host == webhook_host);
+
+                if !is_whitelisted_host {
+                    return Err(YakManApiError::bad_request("Webhook host is not permitted"));
+                }
+            }
+        }
+    }
+
+    return match storage_service
+        .create_project(&project_name, payload.notification_settings)
+        .await
+    {
         Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
@@ -163,8 +195,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo").await?;
-        let project_bar_uuid = storage_service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -196,8 +228,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let _project_foo_uuid = storage_service.create_project("foo").await?;
-        let project_bar_uuid = storage_service.create_project("bar").await?;
+        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
@@ -234,8 +266,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo").await?;
-        let _project_bar_uuid = storage_service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -264,8 +296,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo").await?;
-        let project_bar_uuid = storage_service.create_project("bar").await?;
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_bar_uuid = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
@@ -304,6 +336,7 @@ mod tests {
             .uri("/v1/projects")
             .set_json(CreateProjectPayload {
                 project_name: "valid-project-name".to_string(),
+                notification_settings: None,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -326,6 +359,7 @@ mod tests {
             .uri("/v1/projects")
             .set_json(CreateProjectPayload {
                 project_name: "this is not a valid name".to_string(),
+                notification_settings: None,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -349,6 +383,7 @@ mod tests {
             .uri("/v1/projects")
             .set_json(CreateProjectPayload {
                 project_name: "".to_string(),
+                notification_settings: None,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;

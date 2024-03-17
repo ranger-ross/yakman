@@ -16,8 +16,14 @@ pub struct DeleteConfigPayload {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub enum ProjectNotificationType {
+    Slack { webhook_url: String },
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateProjectPayload {
     pub project_name: String,
+    pub notification_settings: Option<ProjectNotificationType>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

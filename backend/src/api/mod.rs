@@ -21,7 +21,9 @@ use self::{
     users::GetUserInfoResponse,
 };
 use crate::model::{
-    request::{CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload},
+    request::{
+        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
+    },
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
     LabelType, RevisionReviewState, YakManConfig, YakManLabel, YakManProject,
@@ -78,7 +80,7 @@ use utoipa::OpenApi;
             OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload, OAuthRefreshTokenPayload,
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
-            CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData
+            CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType
         )
     ),
     tags(

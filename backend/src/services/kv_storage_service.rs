@@ -13,12 +13,16 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
-        YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink, YakManRole,
-        YakManUser, YakManUserDetails,
+        request::ProjectNotificationType, ConfigInstance, ConfigInstanceEvent,
+        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting,
+        ProjectNotificationSettings, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel,
+        YakManPassword, YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink,
+        YakManRole, YakManUser, YakManUserDetails,
     },
+    notifications::{YakManNotificationAdapter, YakManNotificationType},
+    settings,
 };
+use anyhow::bail;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
@@ -51,7 +55,11 @@ impl StorageService for KVStorageService {
         return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
     }
 
-    async fn create_project(&self, project_name: &str) -> Result<String, CreateProjectError> {
+    async fn create_project(
+        &self,
+        project_name: &str,
+        notification_settings: Option<ProjectNotificationType>,
+    ) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
         // Prevent duplicates
@@ -65,9 +73,19 @@ impl StorageService for KVStorageService {
 
         let project_uuid = Uuid::new_v4();
 
+        let notification_settings = notification_settings.map(|settings| {
+            let settings = match settings {
+                ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
+                    webhook_url: webhook_url,
+                },
+            };
+            ProjectNotificationSettings { settings }
+        });
+
         projects.push(YakManProject {
             name: String::from(project_name),
             uuid: project_uuid.to_string(),
+            notification_settings: notification_settings,
         });
 
         self.adapter.save_projects(projects).await?;
@@ -318,6 +336,7 @@ impl StorageService for KVStorageService {
             .get_instance_metadata(config_name)
             .await?
             .ok_or(SaveConfigInstanceError::InvalidConfig)?;
+        let instance_id = instance;
 
         let instance = instances
             .iter_mut()
@@ -369,6 +388,15 @@ impl StorageService for KVStorageService {
             .await?;
 
         log::info!("Updated instance metadata for config: {config_name}");
+
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_submitted_notification(config_name, instance_id, &revision.revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
+        }
 
         return Ok(revision_key);
     }
@@ -430,6 +458,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
 
+        let instance_id = instance;
         let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApproveRevisionError::InvalidInstance),
@@ -472,6 +501,15 @@ impl StorageService for KVStorageService {
             .save_instance_metadata(config_name, metadata)
             .await?;
 
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_approved_notification(config_name, instance_id, &revision_data.revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
+        }
+
         return Ok(());
     }
 
@@ -487,6 +525,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApplyRevisionError::InvalidConfig),
         };
 
+        let instance_id = instance;
         let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApplyRevisionError::InvalidInstance),
@@ -531,6 +570,15 @@ impl StorageService for KVStorageService {
             .save_instance_metadata(config_name, metadata)
             .await?;
 
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_applied_notification(config_name, instance_id, revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
+        }
+
         return Ok(());
     }
 
@@ -546,6 +594,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApplyRevisionError::InvalidConfig),
         };
 
+        let instance_id = instance;
         let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApplyRevisionError::InvalidInstance),
@@ -582,6 +631,15 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_instance_metadata(config_name, metadata)
             .await?;
+
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_reject_notification(config_name, instance_id, &revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
+        }
 
         return Ok(());
     }
@@ -963,6 +1021,124 @@ impl KVStorageService {
             self.api_key_hash_cache
                 .insert(key.hash.to_string(), key.clone());
         }
+    }
+
+    async fn send_submitted_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewSubmitted {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn send_approved_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewApproved {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn send_applied_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewApplied {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn send_reject_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewRejected {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn get_project_by_config_name(&self, config_name: &str) -> anyhow::Result<YakManProject> {
+        let configs = self.adapter.get_configs().await?;
+        let Some(config) = configs.into_iter().find(|c| c.name == config_name) else {
+            bail!("Could not find config {config_name}")
+        };
+
+        let projects = self.adapter.get_projects().await?;
+        let Some(project) = projects.into_iter().find(|p| p.uuid == config.project_uuid) else {
+            bail!("Could not find project {}", config.project_uuid)
+        };
+
+        return Ok(project);
     }
 
     pub fn new(adapter: Arc<dyn KVStorageAdapter>) -> KVStorageService {

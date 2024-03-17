@@ -209,7 +209,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project with 2 configs
-        let project_uuid = storage_service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test", None).await?;
         storage_service
             .create_config("config1", &project_uuid)
             .await?;
@@ -256,11 +256,11 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test 2 project with 1 config each
-        let project1_uuid = storage_service.create_project("proj1").await?;
+        let project1_uuid = storage_service.create_project("proj1", None).await?;
         storage_service
             .create_config("config1", &project1_uuid)
             .await?;
-        let project2_uuid = storage_service.create_project("proj2").await?;
+        let project2_uuid = storage_service.create_project("proj2", None).await?;
         storage_service
             .create_config("config2", &project2_uuid)
             .await?;
@@ -300,7 +300,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project with config
-        let project1_uuid = storage_service.create_project("proj1").await?;
+        let project1_uuid = storage_service.create_project("proj1", None).await?;
         storage_service
             .create_config("config1", &project1_uuid)
             .await?;
@@ -336,7 +336,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project with 2 configs
-        let project_uuid = storage_service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test", None).await?;
         storage_service
             .create_config("config1", &project_uuid)
             .await?;
@@ -381,7 +381,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -416,7 +416,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -445,7 +445,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -474,7 +474,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test").await?;
+        let project_uuid = storage_service.create_project("test", None).await?;
         storage_service
             .create_config("foo-bar", &project_uuid)
             .await?;

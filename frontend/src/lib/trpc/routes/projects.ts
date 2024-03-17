@@ -6,6 +6,15 @@ import { convertYakManErrorToTRPCError } from "$lib/utils/error-helpers";
 
 const BASE_URL = getYakManBaseApiUrl();
 
+const CreateProjectPayloadSchema = z.object({
+    name: z.string(),
+    slack: z.object({
+        webhookUrl: z.string()
+    }).optional()
+});
+
+export type CreateProjectPayload = z.infer<typeof CreateProjectPayloadSchema>;
+
 export const projects = t.router({
     fetchProjects: t.procedure
         .query(async ({ ctx }): Promise<YakManProject[]> => {
@@ -29,17 +38,26 @@ export const projects = t.router({
             return await response.json();
         }),
     createProject: t.procedure
-        .input(z.string())
+        .input(CreateProjectPayloadSchema)
         .mutation(async ({ input, ctx }) => {
+            let body: any = {
+                'project_name': input.name
+            }
+
+            if (input.slack) {
+                body.notification_settings = {
+                    Slack: {
+                        webhook_url: input.slack.webhookUrl
+                    }
+                };
+            }
             const response = await fetch(`${BASE_URL}/v1/projects`, {
                 method: 'PUT',
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    'project_name': input
-                })
+                body: JSON.stringify(body)
             });
             if (response.status != 200) {
                 throw convertYakManErrorToTRPCError(await response.text(), response.status)

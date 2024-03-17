@@ -4,6 +4,7 @@ mod auth;
 mod error;
 mod middleware;
 mod model;
+mod notifications;
 mod services;
 mod settings;
 

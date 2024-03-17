@@ -3,9 +3,10 @@
 
     export let label: string = "";
     export let value: string | undefined = undefined;
+    export let cotainerClasses: string = "w-64";
 </script>
 
-<div class="w-64">
+<div class={cotainerClasses}>
     <label class="block text-gray-700 text-sm font-bold mb-2">{label}</label>
     <div class="relative">
         <select
