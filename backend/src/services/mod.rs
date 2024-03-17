@@ -18,7 +18,6 @@ use crate::{
 };
 use async_trait::async_trait;
 
-
 #[async_trait]
 pub trait StorageService: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;

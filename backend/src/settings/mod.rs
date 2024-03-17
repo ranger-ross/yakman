@@ -31,7 +31,6 @@ pub fn is_notifications_enabled() -> bool {
         .flatten()
         .unwrap_or_default();
 
-
     log::info!("ENABLED {r}");
 
     return r;

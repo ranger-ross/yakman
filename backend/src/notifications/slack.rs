@@ -119,7 +119,6 @@ impl YakManNotificationType {
                 instance,
                 revision: _,
             } => {
-
                 json!({
                     "blocks": [
                         {
