@@ -12,7 +12,6 @@ use crate::model::{
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
     YakManUserDetails,
 };
-use log::{error, info};
 
 use crate::adapters::local_file::storage_types::RevisionJson;
 
@@ -157,7 +156,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             let data: RevisionJson = serde_json::from_str(&content)?;
             return Ok(Some(data.revision));
         } else {
-            error!("Failed to load revision file: {revision}");
+            log::error!("Failed to load revision file: {revision}");
         }
 
         return Ok(None);
@@ -400,7 +399,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
         } else {
-            error!("Failed to load user file: {uuid}");
+            log::error!("Failed to load user file: {uuid}");
         }
 
         return Ok(None);
