@@ -113,21 +113,17 @@ async fn create_config(
         ));
     }
 
-    let projects = match storage_service.get_projects().await {
+    let project = match storage_service.get_project_details(&project_uuid).await {
         Ok(p) => p,
         Err(e) => {
-            error!("Failed to load projects, error: {e:?}");
+            log::error!("Failed to load projects, error: {e:?}");
             return Err(YakManApiError::server_error("Failed to create config"));
         }
     };
 
-    if projects
-        .into_iter()
-        .find(|p| p.uuid == project_uuid)
-        .is_none()
-    {
+    let Some(_) = project else {
         return Err(YakManApiError::bad_request("Project does not exist"));
-    }
+    };
 
     let result: Result<(), CreateConfigError> = storage_service
         .create_config(&config_name, &project_uuid)

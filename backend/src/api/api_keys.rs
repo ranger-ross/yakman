@@ -73,13 +73,12 @@ pub async fn create_api_key(
         None => return Err(YakManApiError::forbidden()),
     };
 
-    let projects = storage_service.get_projects().await?;
-    if !projects
-        .iter()
-        .any(|p| p.uuid == request.project_uuid.to_string())
-    {
+    let Some(_) = storage_service
+        .get_project_details(&request.project_uuid)
+        .await?
+    else {
         return Err(YakManApiError::bad_request("Invalid project"));
-    }
+    };
 
     let now = Utc::now().timestamp_millis();
     let new_api_key = format!("{API_KEY_PREFIX}{}", Uuid::new_v4().to_string());

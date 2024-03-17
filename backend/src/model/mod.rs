@@ -10,6 +10,12 @@ use utoipa::ToSchema;
 pub struct YakManProject {
     pub uuid: String, // Unique key
     pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct YakManProjectDetails {
+    pub uuid: String,
+    pub name: String,
     pub notification_settings: Option<ProjectNotificationSettings>,
 }
 

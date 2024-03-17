@@ -6,7 +6,8 @@ use super::{
 };
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
+    YakManUserDetails,
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
@@ -38,6 +39,33 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&projects)?;
         let path = self.get_projects_file_path();
+        self.put_object(&path, data).await?;
+        return Ok(());
+    }
+
+    async fn get_project_details(
+        &self,
+        project_uuid: &str,
+    ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
+        let dir = self.get_projects_dir();
+        let path = format!("{dir}/{project_uuid}.json");
+
+        let Some(content) = self.get_object_as_option(&path).await? else {
+            return Ok(None);
+        };
+
+        let data = serde_json::from_str(&content)?;
+        return Ok(Some(data));
+    }
+
+    async fn save_project_details(
+        &self,
+        uuid: &str,
+        project: YakManProjectDetails,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_projects_dir();
+        let path: String = format!("{dir}/{uuid}.json");
+        let data: String = serde_json::to_string(&project)?;
         self.put_object(&path, data).await?;
         return Ok(());
     }
@@ -525,6 +553,11 @@ impl AwsS3StorageAdapter {
     fn get_config_instance_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instances");
+    }
+
+    fn get_projects_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/projects");
     }
 
     fn get_user_dir(&self) -> String {

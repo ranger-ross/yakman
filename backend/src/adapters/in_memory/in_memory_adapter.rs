@@ -7,7 +7,8 @@ use serde::de::DeserializeOwned;
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
+    YakManUserDetails,
 };
 use log::info;
 
@@ -31,6 +32,25 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
         self.insert(self.get_projects_key(), serde_json::to_string(&projects)?)
             .await;
+        return Ok(());
+    }
+
+    async fn get_project_details(
+        &self,
+        project_uuid: &str,
+    ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
+        return Ok(self
+            .get_optional_data(&self.get_project_key(project_uuid))
+            .await?);
+    }
+
+    async fn save_project_details(
+        &self,
+        uuid: &str,
+        project: YakManProjectDetails,
+    ) -> Result<(), GenericStorageError> {
+        let key = self.get_project_key(uuid);
+        self.insert(key, serde_json::to_string(&project)?).await;
         return Ok(());
     }
 
@@ -429,6 +449,10 @@ impl InMemoryStorageAdapter {
 
     fn get_snapshot_key(&self, timestamp: &DateTime<Utc>) -> String {
         format!("SNAPSHOT_{}", timestamp.to_rfc3339())
+    }
+
+    fn get_project_key(&self, uuid: &str) -> String {
+        format!("PROJECTS_{uuid}")
     }
 
     fn get_user_key(&self, uuid: &str) -> String {
