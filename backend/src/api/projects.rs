@@ -4,13 +4,18 @@ use crate::{
     api::is_alphanumeric_kebab_case,
     error::{CreateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::{request::CreateProjectPayload, YakManProject, YakManRole},
+    model::{
+        request::{CreateProjectPayload, ProjectNotificationType},
+        YakManProject, YakManRole,
+    },
     services::StorageService,
+    settings,
 };
 
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use log::error;
+use url::Url;
 
 /// Get all of the projects (user has access to)
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
@@ -130,6 +135,30 @@ async fn create_project(
         return Err(YakManApiError::bad_request(
             "Invalid project name. Must be alphanumeric kebab case",
         ));
+    }
+
+    // Validate notification webhooks to protect against SSRF
+    if let Some(notification) = payload.notification_settings {
+        match notification {
+            ProjectNotificationType::Slack { webhook_url } => {
+                let Ok(url) = Url::parse(&webhook_url) else {
+                    return Err(YakManApiError::bad_request("Invalid webhook url"));
+                };
+
+                let Some(webhook_host) = url.host() else {
+                    return Err(YakManApiError::bad_request("Invalid webhook url"));
+                };
+                let webhook_host = webhook_host.to_string();
+
+                let is_whitelisted_host = settings::notification_whitelisted_hosts()
+                    .into_iter()
+                    .any(|host| host == webhook_host);
+
+                if !is_whitelisted_host {
+                    return Err(YakManApiError::bad_request("Webhook host is not permitted"));
+                }
+            }
+        }
     }
 
     return match storage_service.create_project(&project_name).await {
@@ -304,6 +333,7 @@ mod tests {
             .uri("/v1/projects")
             .set_json(CreateProjectPayload {
                 project_name: "valid-project-name".to_string(),
+                notification_settings: None,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -326,6 +356,7 @@ mod tests {
             .uri("/v1/projects")
             .set_json(CreateProjectPayload {
                 project_name: "this is not a valid name".to_string(),
+                notification_settings: None,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -349,6 +380,7 @@ mod tests {
             .uri("/v1/projects")
             .set_json(CreateProjectPayload {
                 project_name: "".to_string(),
+                notification_settings: None,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;

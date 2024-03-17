@@ -19,6 +19,7 @@ use crate::{
         YakManProject, YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
+    settings,
 };
 use anyhow::bail;
 use argon2::{
@@ -380,11 +381,13 @@ impl StorageService for KVStorageService {
 
         log::info!("Updated instance metadata for config: {config_name}");
 
-        if let Err(err) = self
-            .send_submitted_notification(config_name, instance_id, &revision.revision)
-            .await
-        {
-            log::error!("Failed to send notification, {err:?}");
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_submitted_notification(config_name, instance_id, &revision.revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
         }
 
         return Ok(revision_key);
