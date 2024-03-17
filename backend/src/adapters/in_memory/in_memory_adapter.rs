@@ -37,7 +37,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         &self,
         project_uuid: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
-        todo!()
+        return Ok(self.get_optional_data(&self.get_project_key(project_uuid)).await?)
     }
 
     async fn save_project_details(
@@ -45,7 +45,9 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         uuid: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let key = self.get_project_key(uuid);
+        self.insert(key, serde_json::to_string(&project)?).await;
+        return Ok(());
     }
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
@@ -443,6 +445,10 @@ impl InMemoryStorageAdapter {
 
     fn get_snapshot_key(&self, timestamp: &DateTime<Utc>) -> String {
         format!("SNAPSHOT_{}", timestamp.to_rfc3339())
+    }
+
+    fn get_project_key(&self, uuid: &str) -> String {
+        format!("PROJECTS_{uuid}")
     }
 
     fn get_user_key(&self, uuid: &str) -> String {
