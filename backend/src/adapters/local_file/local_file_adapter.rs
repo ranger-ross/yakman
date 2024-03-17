@@ -49,7 +49,15 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         &self,
         project_uuid: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
-        todo!()
+        let dir = self.get_projects_dir();
+        let path = format!("{dir}/{project_uuid}.json");
+
+        let Ok(content) = fs::read_to_string(&path) else {
+            return Ok(None);
+        };
+
+        let data: YakManProjectDetails = serde_json::from_str(&content)?;
+        return Ok(Some(data));
     }
 
     async fn save_project_details(
@@ -57,7 +65,12 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         uuid: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let path = self.get_projects_dir();
+        let data = serde_json::to_string(&project)?;
+        let revision_file_path = format!("{path}/{uuid}.json");
+        let mut file = File::create(&revision_file_path)?;
+        Write::write_all(&mut file, data.as_bytes())?;
+        return Ok(());
     }
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
@@ -204,28 +217,35 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let yakman_dir = self.get_yakman_dir();
         if !Path::new(&yakman_dir).is_dir() {
-            info!("Creating {}", yakman_dir);
+            log::info!("Creating {}", yakman_dir);
             fs::create_dir(&yakman_dir)
                 .expect(&format!("Failed to create base dir: {}", yakman_dir));
         }
 
+        let project_dir = self.get_projects_dir();
+        if !Path::new(&project_dir).is_dir() {
+            log::info!("Creating {}", project_dir);
+            fs::create_dir(&project_dir)
+                .expect(&format!("Failed to create project dir: {}", project_dir));
+        }
+
         let instance_dir = self.get_config_instance_dir();
         if !Path::new(&instance_dir).is_dir() {
-            info!("Creating {}", instance_dir);
+            log::info!("Creating {}", instance_dir);
             fs::create_dir(&instance_dir)
                 .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
 
         let revision_dir = self.get_instance_revisions_path();
         if !Path::new(&revision_dir).is_dir() {
-            info!("Creating {}", revision_dir);
+            log::info!("Creating {}", revision_dir);
             fs::create_dir(&revision_dir)
                 .expect(&format!("Failed to create revision dir: {}", instance_dir));
         }
 
         let instance_metadata_dir = self.get_config_instance_metadata_dir();
         if !Path::new(&instance_metadata_dir).is_dir() {
-            info!("Creating {}", instance_metadata_dir);
+            log::info!("Creating {}", instance_metadata_dir);
             fs::create_dir(&instance_metadata_dir).expect(&format!(
                 "Failed to create instance metadata dir: {}",
                 instance_metadata_dir
@@ -234,7 +254,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
         let user_dir = self.get_user_dir();
         if !Path::new(&user_dir).is_dir() {
-            info!("Creating {}", user_dir);
+            log::info!("Creating {}", user_dir);
             fs::create_dir(&user_dir).expect(&format!(
                 "Failed to create users metadata dir: {}",
                 user_dir
@@ -581,6 +601,11 @@ impl LocalFileStorageAdapter {
     fn get_instance_revisions_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/instance-revisions");
+    }
+
+    fn get_projects_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/projects");
     }
 
     fn get_config_instance_dir(&self) -> String {
