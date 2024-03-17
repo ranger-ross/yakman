@@ -6,8 +6,7 @@ use futures_util::lock::Mutex;
 use serde::de::DeserializeOwned;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser, YakManUserDetails
 };
 use log::info;
 
@@ -32,6 +31,21 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         self.insert(self.get_projects_key(), serde_json::to_string(&projects)?)
             .await;
         return Ok(());
+    }
+
+    async fn get_project_details(
+        &self,
+        project_uuid: &str,
+    ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_project_details(
+        &self,
+        uuid: &str,
+        project: YakManProjectDetails,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
     }
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {

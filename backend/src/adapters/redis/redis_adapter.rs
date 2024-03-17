@@ -4,8 +4,7 @@ use std::env;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser, YakManUserDetails
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -38,6 +37,21 @@ impl KVStorageAdapter for RedisStorageAdapter {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_projects_key(), serde_json::to_string(&projects)?)?;
         return Ok(());
+    }
+
+    async fn get_project_details(
+        &self,
+        project_uuid: &str,
+    ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_project_details(
+        &self,
+        uuid: &str,
+        project: YakManProjectDetails,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
     }
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {

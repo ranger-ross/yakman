@@ -16,8 +16,8 @@ use crate::{
         request::ProjectNotificationType, ConfigInstance, ConfigInstanceEvent,
         ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting,
         ProjectNotificationSettings, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel,
-        YakManPassword, YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink,
-        YakManRole, YakManUser, YakManUserDetails,
+        YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
+        YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     settings,
@@ -82,10 +82,19 @@ impl StorageService for KVStorageService {
             ProjectNotificationSettings { settings }
         });
 
+        let project_details: YakManProjectDetails = YakManProjectDetails {
+            name: String::from(project_name),
+            uuid: project_uuid.to_string(),
+            notification_settings,
+        };
+
+        self.adapter
+            .save_project_details(&project_uuid.to_string(), project_details)
+            .await?;
+
         projects.push(YakManProject {
             name: String::from(project_name),
             uuid: project_uuid.to_string(),
-            notification_settings: notification_settings,
         });
 
         self.adapter.save_projects(projects).await?;
@@ -1127,14 +1136,20 @@ impl KVStorageService {
         return Ok(());
     }
 
-    async fn get_project_by_config_name(&self, config_name: &str) -> anyhow::Result<YakManProject> {
+    async fn get_project_by_config_name(
+        &self,
+        config_name: &str,
+    ) -> anyhow::Result<YakManProjectDetails> {
         let configs = self.adapter.get_configs().await?;
         let Some(config) = configs.into_iter().find(|c| c.name == config_name) else {
             bail!("Could not find config {config_name}")
         };
 
-        let projects = self.adapter.get_projects().await?;
-        let Some(project) = projects.into_iter().find(|p| p.uuid == config.project_uuid) else {
+        let Some(project) = self
+            .adapter
+            .get_project_details(&config.project_uuid)
+            .await?
+        else {
             bail!("Could not find project {}", config.project_uuid)
         };
 

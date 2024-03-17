@@ -5,8 +5,7 @@ use super::{
     GenericStorageError, KVStorageAdapter,
 };
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManSnapshotLock, YakManUser, YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser, YakManUserDetails
 };
 use crate::{adapters::aws_s3::storage_types::RevisionJson, model::YakManApiKey};
 use async_trait::async_trait;
@@ -40,6 +39,21 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         let path = self.get_projects_file_path();
         self.put_object(&path, data).await?;
         return Ok(());
+    }
+
+    async fn get_project_details(
+        &self,
+        project_uuid: &str,
+    ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_project_details(
+        &self,
+        uuid: &str,
+        project: YakManProjectDetails,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
     }
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
