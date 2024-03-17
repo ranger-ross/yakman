@@ -14,10 +14,11 @@ use crate::{
     },
     model::{
         ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
-        YakManPasswordResetLink, YakManProject, YakManPublicPasswordResetLink, YakManRole,
-        YakManUser, YakManUserDetails,
+        LabelType, NotificationSetting, ProjectNotificationSettings, RevisionReviewState,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
+        YakManProject, YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
     },
+    notifications::{YakManNotificationAdapter, YakManNotificationType},
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
@@ -68,6 +69,13 @@ impl StorageService for KVStorageService {
         projects.push(YakManProject {
             name: String::from(project_name),
             uuid: project_uuid.to_string(),
+            notification_settings: Some(ProjectNotificationSettings {
+                settings: NotificationSetting::Slack {
+                    webhook_url:
+                            "https://hooks.slack.com/services/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"
+                .to_string(),
+             }
+            })
         });
 
         self.adapter.save_projects(projects).await?;
@@ -369,6 +377,27 @@ impl StorageService for KVStorageService {
             .await?;
 
         log::info!("Updated instance metadata for config: {config_name}");
+
+        // Send notification
+        // TODO: Better error handling
+        let configs = self.adapter.get_configs().await?;
+        let config = configs.into_iter().find(|c| c.name == config_name).unwrap();
+
+        if let Ok(projects) = self.adapter.get_projects().await {
+            let project = projects
+                .into_iter()
+                .find(|p| p.uuid == config.project_uuid)
+                .unwrap();
+
+            if let Some(notification_settings) = project.notification_settings {
+                let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+                    notification_settings.settings.into();
+                notification_adapter
+                    .send_notification(YakManNotificationType::RevisionReviewSubmitted)
+                    .await
+                    .unwrap();
+            }
+        }
 
         return Ok(revision_key);
     }

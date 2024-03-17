@@ -10,6 +10,17 @@ use utoipa::ToSchema;
 pub struct YakManProject {
     pub uuid: String, // Unique key
     pub name: String,
+    pub notification_settings: Option<ProjectNotificationSettings>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct ProjectNotificationSettings {
+    pub settings: NotificationSetting,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub enum NotificationSetting {
+    Slack { webhook_url: String },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

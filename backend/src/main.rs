@@ -43,16 +43,16 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    let slack_adapter = SlackNotificationAdapter {
-        http_client: reqwest::Client::new(),
-        webhook_url:
-            "https://hooks.slack.com/services/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"
-                .to_string(),
-    };
-    slack_adapter
-        .send_notification(YakManNotificationType::RevisionReviewSubmitted)
-        .await
-        .unwrap();
+    // let slack_adapter = SlackNotificationAdapter {
+    //     http_client: reqwest::Client::new(),
+    //     webhook_url:
+    //         "https://hooks.slack.com/services/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"
+    //             .to_string(),
+    // };
+    // slack_adapter
+    //     .send_notification(YakManNotificationType::RevisionReviewSubmitted)
+    //     .await
+    //     .unwrap();
 
     let adapter = create_adapter().await;
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
