@@ -82,6 +82,37 @@ impl YakManNotificationType {
                     ]
                 })
             }
+            YakManNotificationType::RevisionReviewApproved {
+                project_name,
+                config_name,
+                instance,
+                revision: _,
+            } => {
+                json!({
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": format!(":white_check_mark: *Config change request approved for `{project_name}`*")
+                            }
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": format!("*Config:* {config_name}")
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": format!("*Instance:* `{instance}`")
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
         }
     }
 }

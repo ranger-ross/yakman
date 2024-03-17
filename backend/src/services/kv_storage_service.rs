@@ -458,6 +458,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
 
+        let instance_id = instance;
         let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApproveRevisionError::InvalidInstance),
@@ -499,6 +500,15 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_instance_metadata(config_name, metadata)
             .await?;
+
+        if settings::is_notifications_enabled() {
+            if let Err(err) = self
+                .send_approved_notification(config_name, instance_id, &revision_data.revision)
+                .await
+            {
+                log::error!("Failed to send notification, {err:?}");
+            }
+        }
 
         return Ok(());
     }
@@ -999,15 +1009,7 @@ impl KVStorageService {
         instance: &str,
         revision: &str,
     ) -> anyhow::Result<()> {
-        let configs = self.adapter.get_configs().await?;
-        let Some(config) = configs.into_iter().find(|c| c.name == config_name) else {
-            bail!("could not find config {config_name}")
-        };
-
-        let projects = self.adapter.get_projects().await?;
-        let Some(project) = projects.into_iter().find(|p| p.uuid == config.project_uuid) else {
-            bail!("could not find project {}", config.project_uuid)
-        };
+        let project = self.get_project_by_config_name(config_name).await?;
 
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
@@ -1025,6 +1027,46 @@ impl KVStorageService {
             .await?;
 
         return Ok(());
+    }
+
+    async fn send_approved_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+        revision: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::RevisionReviewApproved {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+                revision: revision.to_string(),
+            })
+            .await?;
+
+        return Ok(());
+    }
+
+    async fn get_project_by_config_name(&self, config_name: &str) -> anyhow::Result<YakManProject> {
+        let configs = self.adapter.get_configs().await?;
+        let Some(config) = configs.into_iter().find(|c| c.name == config_name) else {
+            bail!("Could not find config {config_name}")
+        };
+
+        let projects = self.adapter.get_projects().await?;
+        let Some(project) = projects.into_iter().find(|p| p.uuid == config.project_uuid) else {
+            bail!("Could not find project {}", config.project_uuid)
+        };
+
+        return Ok(project);
     }
 
     pub fn new(adapter: Arc<dyn KVStorageAdapter>) -> KVStorageService {

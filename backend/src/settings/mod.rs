@@ -25,11 +25,16 @@ pub fn yakman_application_host() -> Option<String> {
 }
 
 pub fn is_notifications_enabled() -> bool {
-    return std::env::var("YAKMAN_NOTIFICATIONS_ENABLED")
+    let r = std::env::var("YAKMAN_NOTIFICATIONS_ENABLED")
         .map(|v| v.parse::<bool>().ok())
         .ok()
         .flatten()
         .unwrap_or_default();
+
+
+    log::info!("ENABLED {r}");
+
+    return r;
 }
 
 pub fn notification_whitelisted_hosts() -> Vec<String> {

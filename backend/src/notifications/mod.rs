@@ -20,6 +20,12 @@ pub enum YakManNotificationType {
         instance: String,
         revision: String,
     },
+    RevisionReviewApproved {
+        project_name: String,
+        config_name: String,
+        instance: String,
+        revision: String,
+    },
 }
 
 impl From<NotificationSetting> for Arc<dyn YakManNotificationAdapter + Send + Sync> {
