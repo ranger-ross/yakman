@@ -218,6 +218,15 @@ impl StorageService for KVStorageService {
                 .await?;
             log::info!("Update instance metadata for config: {config_name}");
 
+            if settings::is_notifications_enabled() {
+                if let Err(err) = self
+                    .send_instance_created_notification(config_name, &instance)
+                    .await
+                {
+                    log::error!("Failed to send notification, {err:?}");
+                }
+            }
+
             return Ok(instance);
         }
 
@@ -1046,6 +1055,34 @@ impl KVStorageService {
             self.api_key_hash_cache
                 .insert(key.hash.to_string(), key.clone());
         }
+    }
+
+    async fn send_instance_created_notification(
+        &self,
+        config_name: &str,
+        instance: &str,
+    ) -> anyhow::Result<()> {
+        let project = self.get_project_by_config_name(config_name).await?;
+
+        let Some(notification_settings) = project.notification_settings else {
+            return Ok(()); // No notification settings configured for project
+        };
+
+        if !notification_settings.events.is_instance_created_enabled {
+            return Ok(()); // Project does not have this notification enabled
+        }
+
+        let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
+            notification_settings.settings.into();
+        notification_adapter
+            .send_notification(YakManNotificationType::InstanceCreated {
+                project_name: project.name.to_string(),
+                config_name: config_name.to_string(),
+                instance: instance.to_string(),
+            })
+            .await?;
+
+        return Ok(());
     }
 
     async fn send_submitted_notification(
