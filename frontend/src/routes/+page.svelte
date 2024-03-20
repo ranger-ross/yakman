@@ -15,7 +15,7 @@
 	import { trpc } from "$lib/trpc/client";
 	import YakManModal from "$lib/components/YakManModal.svelte";
 	import KebabMenuIcon from "$lib/icons/KebabMenuIcon.svelte";
-	import YakManButton from "$lib/components/YakManButton.svelte";
+	import ProjectActions from "./ProjectActions.svelte";
 
 	export let data: PageData;
 
@@ -115,7 +115,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flex items-end gap-2">
+			<div class="flex justify-between items-end gap-2">
 				<YakManSelect
 					bind:value={selectedProjectUuid}
 					label="Project"
@@ -126,12 +126,9 @@
 					{/each}
 				</YakManSelect>
 
-				<a
-					tabindex="-1"
-					href={`/add-config?project=${selectedProjectUuid}`}
-				>
-					<YakManButton>Add Config</YakManButton>
-				</a>
+				<div class="w-fit">
+					<ProjectActions projectUuid={selectedProjectUuid} />
+				</div>
 			</div>
 
 			{#if data.configs.length == 0}
