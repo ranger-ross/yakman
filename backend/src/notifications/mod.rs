@@ -14,6 +14,11 @@ pub trait YakManNotificationAdapter {
 }
 
 pub enum YakManNotificationType {
+    InstanceCreated {
+        project_name: String,
+        config_name: String,
+        instance: String,
+    },
     RevisionReviewSubmitted {
         project_name: String,
         config_name: String,

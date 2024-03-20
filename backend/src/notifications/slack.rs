@@ -175,6 +175,36 @@ impl YakManNotificationType {
                     ]
                 })
             }
+            YakManNotificationType::InstanceCreated {
+                project_name,
+                config_name,
+                instance,
+            } => {
+                json!({
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": format!(":loudspeaker: *Config instance created for `{project_name}`*")
+                            }
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": format!("*Config:* {config_name}")
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": format!("*Instance:* `{instance}`")
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
         }
     }
 }

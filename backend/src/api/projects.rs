@@ -132,7 +132,7 @@ async fn create_project(
 
     // Validate notification webhooks to protect against SSRF
     if let Some(notification) = &payload.notification_settings {
-        match notification {
+        match &notification.notification_type {
             ProjectNotificationType::Slack { webhook_url } => {
                 let Ok(url) = Url::parse(&webhook_url) else {
                     return Err(YakManApiError::bad_request("Invalid webhook url"));

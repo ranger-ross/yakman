@@ -8,6 +8,7 @@
     import type { PageData } from "./$types";
     import YakManSelect from "$lib/components/YakManSelect.svelte";
     import type { CreateProjectPayload } from "$lib/trpc/routes/projects";
+    import YakManCheckbox from "$lib/components/YakManCheckbox.svelte";
 
     export let data: PageData;
 
@@ -18,6 +19,12 @@
     let name = data.project?.name ?? "";
     let webhookUrl = "";
     let webhookType: WebhookType = "slack";
+
+    let isInstanceCreateEventEnabled = false;
+    let isInstanceUpdateEventEnabled = false;
+    let isRevisionSubmittedEventEnabled = false;
+    let isRevisionApprovedEventEnabled = false;
+    let isRevisionRejectedEventEnabled = false;
 
     const webhookUrlPlaceholder = {
         slack: "https://hooks.slack.com/services/...",
@@ -44,6 +51,17 @@
                         };
                     }
                 }
+
+                createProjectPayload.notificationEvents = {
+                    isInstanceCreateEventEnabled: isInstanceCreateEventEnabled,
+                    isInstanceUpdateEventEnabled: isInstanceUpdateEventEnabled,
+                    isRevisionSubmittedEventEnabled:
+                        isRevisionSubmittedEventEnabled,
+                    isRevisionApprovedEventEnabled:
+                        isRevisionApprovedEventEnabled,
+                    isRevisionRejectedEventEnabled:
+                        isRevisionRejectedEventEnabled,
+                };
             }
 
             const { projectUuid } =
@@ -80,11 +98,6 @@
     <YakManCard extraClasses="mt-2">
         <h1 class="text-lg font-bold mb-4">Notification Settings (Webhooks)</h1>
         <div class="mb-3 flex gap-2">
-            <YakManInput
-                label="URL"
-                placeholder={webhookUrlPlaceholder[webhookType]}
-                bind:value={webhookUrl}
-            />
             <YakManSelect
                 cotainerClasses="w-24"
                 label="Type"
@@ -92,6 +105,36 @@
             >
                 <option value="slack">Slack</option>
             </YakManSelect>
+            <YakManInput
+                label="URL"
+                placeholder={webhookUrlPlaceholder[webhookType]}
+                bind:value={webhookUrl}
+            />
+        </div>
+        <div>
+            <h3 class="text-md font-bold">Events</h3>
+            <div class="flex flex-col">
+                <YakManCheckbox
+                    bind:value={isInstanceCreateEventEnabled}
+                    label="Instance Created"
+                />
+                <YakManCheckbox
+                    bind:value={isInstanceUpdateEventEnabled}
+                    label="Instance Updated"
+                />
+                <YakManCheckbox
+                    bind:value={isRevisionSubmittedEventEnabled}
+                    label="Revision Review Submitted"
+                />
+                <YakManCheckbox
+                    bind:value={isRevisionApprovedEventEnabled}
+                    label="Revision Review Approved"
+                />
+                <YakManCheckbox
+                    bind:value={isRevisionRejectedEventEnabled}
+                    label="Revision Review Rejected"
+                />
+            </div>
         </div>
     </YakManCard>
 
