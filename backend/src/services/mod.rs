@@ -11,7 +11,7 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        request::ProjectNotificationType, ConfigInstance, ConfigInstanceRevision, LabelType,
+        request::ProjectNotificationSettings, ConfigInstance, ConfigInstanceRevision, LabelType,
         YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManProject,
         YakManProjectDetails, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails,
     },
@@ -30,7 +30,7 @@ pub trait StorageService: Sync + Send {
     async fn create_project(
         &self,
         project_name: &str,
-        notification_settings: Option<ProjectNotificationType>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<String, CreateProjectError>;
 
     async fn get_visible_configs(

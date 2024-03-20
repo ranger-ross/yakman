@@ -13,11 +13,12 @@ use crate::{
         SaveConfigInstanceError,
     },
     model::{
-        request::ProjectNotificationType, ConfigInstance, ConfigInstanceEvent,
+        self, request::ProjectNotificationType, ConfigInstance, ConfigInstanceEvent,
         ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting,
-        ProjectNotificationSettings, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel,
-        YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
-        YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
+        NotificationSettingEvents, ProjectNotificationSettings, RevisionReviewState, YakManApiKey,
+        YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink, YakManProject,
+        YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManUser,
+        YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     settings,
@@ -65,7 +66,7 @@ impl StorageService for KVStorageService {
     async fn create_project(
         &self,
         project_name: &str,
-        notification_settings: Option<ProjectNotificationType>,
+        notification_settings: Option<model::request::ProjectNotificationSettings>,
     ) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
@@ -81,12 +82,20 @@ impl StorageService for KVStorageService {
         let project_uuid = Uuid::new_v4();
 
         let notification_settings = notification_settings.map(|settings| {
-            let settings = match settings {
+            let events = NotificationSettingEvents {
+                is_instance_updated_enabled: settings.is_instance_updated_enabled,
+                is_instance_created_enabled: settings.is_instance_created_enabled,
+                is_revision_submitted_enabled: settings.is_revision_submitted_enabled,
+                is_revision_approved_enabled: settings.is_revision_approved_enabled,
+                is_revision_reject_enabled: settings.is_revision_reject_enabled,
+            };
+
+            let settings = match settings.notification_type {
                 ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
                     webhook_url: webhook_url,
                 },
             };
-            ProjectNotificationSettings { settings }
+            ProjectNotificationSettings { settings, events }
         });
 
         let project_details: YakManProjectDetails = YakManProjectDetails {
@@ -1051,6 +1060,10 @@ impl KVStorageService {
             return Ok(()); // No notification settings configured for project
         };
 
+        if !notification_settings.events.is_revision_submitted_enabled {
+            return Ok(()); // Project does not have this notification enabled
+        }
+
         let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
             notification_settings.settings.into();
         notification_adapter
@@ -1076,6 +1089,10 @@ impl KVStorageService {
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
         };
+
+        if !notification_settings.events.is_revision_approved_enabled {
+            return Ok(()); // Project does not have this notification enabled
+        }
 
         let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
             notification_settings.settings.into();
@@ -1103,6 +1120,10 @@ impl KVStorageService {
             return Ok(()); // No notification settings configured for project
         };
 
+        if !notification_settings.events.is_instance_updated_enabled {
+            return Ok(()); // Project does not have this notification enabled
+        }
+
         let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
             notification_settings.settings.into();
         notification_adapter
@@ -1128,6 +1149,10 @@ impl KVStorageService {
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
         };
+
+        if !notification_settings.events.is_revision_reject_enabled {
+            return Ok(()); // Project does not have this notification enabled
+        }
 
         let notification_adapter: Arc<dyn YakManNotificationAdapter + Send + Sync> =
             notification_settings.settings.into();

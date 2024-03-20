@@ -22,11 +22,26 @@ pub struct YakManProjectDetails {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ProjectNotificationSettings {
     pub settings: NotificationSetting,
+    pub events: NotificationSettingEvents,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub enum NotificationSetting {
     Slack { webhook_url: String },
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct NotificationSettingEvents {
+    #[serde(default)]
+    pub is_instance_updated_enabled: bool,
+    #[serde(default)]
+    pub is_instance_created_enabled: bool,
+    #[serde(default)]
+    pub is_revision_submitted_enabled: bool,
+    #[serde(default)]
+    pub is_revision_approved_enabled: bool,
+    #[serde(default)]
+    pub is_revision_reject_enabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

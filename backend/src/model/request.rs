@@ -23,7 +23,22 @@ pub enum ProjectNotificationType {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateProjectPayload {
     pub project_name: String,
-    pub notification_settings: Option<ProjectNotificationType>,
+    pub notification_settings: Option<ProjectNotificationSettings>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct ProjectNotificationSettings {
+    pub notification_type: ProjectNotificationType,
+    #[serde(default)]
+    pub is_instance_updated_enabled: bool,
+    #[serde(default)]
+    pub is_instance_created_enabled: bool,
+    #[serde(default)]
+    pub is_revision_submitted_enabled: bool,
+    #[serde(default)]
+    pub is_revision_approved_enabled: bool,
+    #[serde(default)]
+    pub is_revision_reject_enabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
