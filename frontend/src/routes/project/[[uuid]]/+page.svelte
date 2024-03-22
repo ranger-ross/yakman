@@ -7,15 +7,15 @@
     import { goto } from "$app/navigation";
     import type { PageData } from "./$types";
     import YakManSelect from "$lib/components/YakManSelect.svelte";
-    import type { CreateProjectPayload } from "$lib/trpc/routes/projects";
+    import type { ModifyProjectPayload } from "$lib/trpc/routes/projects";
     import YakManCheckbox from "$lib/components/YakManCheckbox.svelte";
 
     export let data: PageData;
 
     type WebhookType = "slack";
 
-    let projectId = $page.params.uuid;
-    const isNewProject = !projectId;
+    let projectUuid = $page.params.uuid;
+    const isNewProject = !projectUuid;
     let name = data.project?.name ?? "";
     let webhookUrl = "";
     let webhookType: WebhookType = "slack";
@@ -28,7 +28,7 @@
 
     if (!isNewProject) {
         if (data.project?.notification_settings) {
-                const notificationSettings = data.project?.notification_settings;
+            const notificationSettings = data.project?.notification_settings;
 
             if (notificationSettings.settings.Slack) {
                 webhookType = "slack";
@@ -36,11 +36,13 @@
             }
 
             const events = notificationSettings.events;
-            isInstanceCreateEventEnabled = events.is_instance_created_enabled; 
-            isInstanceUpdateEventEnabled = events.is_instance_updated_enabled; 
-            isRevisionSubmittedEventEnabled = events.is_revision_submitted_enabled; 
-            isRevisionApprovedEventEnabled = events.is_revision_approved_enabled; 
-            isRevisionRejectedEventEnabled = events.is_revision_reject_enabled; 
+            isInstanceCreateEventEnabled = events.is_instance_created_enabled;
+            isInstanceUpdateEventEnabled = events.is_instance_updated_enabled;
+            isRevisionSubmittedEventEnabled =
+                events.is_revision_submitted_enabled;
+            isRevisionApprovedEventEnabled =
+                events.is_revision_approved_enabled;
+            isRevisionRejectedEventEnabled = events.is_revision_reject_enabled;
         }
     }
 
@@ -49,17 +51,8 @@
     } as const;
 
     async function onSave() {
-        if (isNewProject) {
-            onCreateProject();
-        } else {
-            // TODO: Implment
-            console.error("UPDATE PROJECT NOT IMPLMENTED");
-        }
-    }
-
-    async function onCreateProject() {
         try {
-            let createProjectPayload: CreateProjectPayload = { name };
+            let createProjectPayload: ModifyProjectPayload = { name };
 
             if (webhookUrl?.length > 0) {
                 switch (webhookType) {
@@ -82,11 +75,19 @@
                 };
             }
 
-            const { projectUuid } =
-                await trpc($page).projects.createProject.mutate(
-                    createProjectPayload,
-                );
-            goto(`/?project=${projectUuid}`);
+            if (isNewProject) {
+                const { projectUuid } =
+                    await trpc($page).projects.createProject.mutate(
+                        createProjectPayload,
+                    );
+                goto(`/?project=${projectUuid}`);
+            } else {
+                await trpc($page).projects.updateProject.mutate({
+                    uuid: projectUuid!,
+                    payload: createProjectPayload,
+                });
+                goto(`/?project=${projectUuid}`);
+            }
         } catch (e) {
             console.error("Error creating project", e);
         }

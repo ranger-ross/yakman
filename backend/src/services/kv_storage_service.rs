@@ -111,7 +111,8 @@ impl StorageService for KVStorageService {
 
         // Prevent duplicates
         for prj in &projects {
-            if &prj.name == &project_name {
+            // Be sure to check that the UUIDs do not match since we should always get at least one match when updating.
+            if &prj.name == &project_name && &prj.uuid != &project_uuid {
                 return Err(UpdateProjectError::DuplicateNameError {
                     name: String::from(project_name),
                 });
