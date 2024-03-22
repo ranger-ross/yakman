@@ -141,6 +141,22 @@ impl From<GenericStorageError> for CreateProjectError {
 }
 
 #[derive(Error, Debug)]
+pub enum UpdateProjectError {
+    #[error("Project not found")]
+    ProjectNotFound,
+    #[error("Duplicate project name: `{name}`")]
+    DuplicateNameError { name: String },
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for UpdateProjectError {
+    fn from(e: GenericStorageError) -> Self {
+        UpdateProjectError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
 pub enum CreateLabelError {
     #[error("Duplicate label: `{name}`")]
     DuplicateLabelError { name: String },

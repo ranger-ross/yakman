@@ -22,7 +22,7 @@ use self::{
 };
 use crate::model::{
     request::{
-        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
+        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType, UpdateProjectPayload,
     }, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManUser
 };
 use actix_web::{
@@ -46,6 +46,7 @@ use utoipa::OpenApi;
         projects::get_projects,
         projects::get_project,
         projects::create_project,
+        projects::update_project,
         configs::get_configs,
         configs::create_config,
         configs::delete_config,
@@ -77,7 +78,7 @@ use utoipa::OpenApi;
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
-            YakManProjectDetails, NotificationSettingEvents, NotificationSetting
+            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload
         )
     ),
     tags(
@@ -115,6 +116,7 @@ where
         .service(projects::get_projects)
         .service(projects::get_project)
         .service(projects::create_project)
+        .service(projects::update_project)
         // Users
         .service(users::get_yakman_users)
         .service(users::create_yakman_user)

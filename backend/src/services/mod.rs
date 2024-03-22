@@ -8,7 +8,7 @@ use crate::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
         DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
-        SaveConfigInstanceError,
+        SaveConfigInstanceError, UpdateProjectError,
     },
     model::{
         request::ProjectNotificationSettings, ConfigInstance, ConfigInstanceRevision, LabelType,
@@ -32,6 +32,13 @@ pub trait StorageService: Sync + Send {
         project_name: &str,
         notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<String, CreateProjectError>;
+
+    async fn update_project(
+        &self,
+        project_uuid: &str,
+        project_name: &str,
+        notification_settings: Option<ProjectNotificationSettings>,
+    ) -> Result<(), UpdateProjectError>;
 
     async fn get_visible_configs(
         &self,

@@ -10,15 +10,13 @@ use crate::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
         DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
-        SaveConfigInstanceError,
+        SaveConfigInstanceError, UpdateProjectError,
     },
     model::{
-        self, request::ProjectNotificationType, ConfigInstance, ConfigInstanceEvent,
-        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting,
-        NotificationSettingEvents, ProjectNotificationSettings, RevisionReviewState, YakManApiKey,
-        YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink, YakManProject,
-        YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManUser,
-        YakManUserDetails,
+        self, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
+        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
+        YakManPasswordResetLink, YakManProject, YakManProjectDetails,
+        YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     settings,
@@ -81,22 +79,7 @@ impl StorageService for KVStorageService {
 
         let project_uuid = Uuid::new_v4();
 
-        let notification_settings = notification_settings.map(|settings| {
-            let events = NotificationSettingEvents {
-                is_instance_updated_enabled: settings.is_instance_updated_enabled,
-                is_instance_created_enabled: settings.is_instance_created_enabled,
-                is_revision_submitted_enabled: settings.is_revision_submitted_enabled,
-                is_revision_approved_enabled: settings.is_revision_approved_enabled,
-                is_revision_reject_enabled: settings.is_revision_reject_enabled,
-            };
-
-            let settings = match settings.notification_type {
-                ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
-                    webhook_url: webhook_url,
-                },
-            };
-            ProjectNotificationSettings { settings, events }
-        });
+        let notification_settings = notification_settings.map(|settings| settings.into());
 
         let project_details: YakManProjectDetails = YakManProjectDetails {
             name: String::from(project_name),
@@ -116,6 +99,45 @@ impl StorageService for KVStorageService {
         self.adapter.save_projects(projects).await?;
 
         return Ok(project_uuid.to_string());
+    }
+
+    async fn update_project(
+        &self,
+        project_uuid: &str,
+        project_name: &str,
+        notification_settings: Option<model::request::ProjectNotificationSettings>,
+    ) -> Result<(), UpdateProjectError> {
+        let mut projects = self.adapter.get_projects().await?;
+
+        // Prevent duplicates
+        for prj in &projects {
+            if &prj.name == &project_name {
+                return Err(UpdateProjectError::DuplicateNameError {
+                    name: String::from(project_name),
+                });
+            }
+        }
+
+        let Some(mut project_details) = self.adapter.get_project_details(project_uuid).await?
+        else {
+            return Err(UpdateProjectError::ProjectNotFound);
+        };
+        let Some(project) = projects.iter_mut().find(|p| p.uuid == project_uuid) else {
+            return Err(UpdateProjectError::ProjectNotFound);
+        };
+
+        project.name = project_name.to_string();
+
+        let notification_settings = notification_settings.map(|settings| settings.into());
+        project_details.name = project_name.to_string();
+        project_details.notification_settings = notification_settings;
+
+        self.adapter
+            .save_project_details(project_uuid, project_details)
+            .await?;
+        self.adapter.save_projects(projects).await?;
+
+        Ok(())
     }
 
     async fn get_visible_configs(
