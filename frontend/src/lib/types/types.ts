@@ -7,6 +7,27 @@ export const YakManProjectSchema = z.object({
 
 export type YakManProject = z.infer<typeof YakManProjectSchema>;
 
+export const YakManProjectDetailsSchema = z.object({
+    uuid: z.string(),
+    name: z.string(),
+    notification_settings: z.object({
+        settings: z.object({
+            Slack: z.object({
+                webhook_url: z.string()
+            }).optional()
+        }),
+        events: z.object({
+            is_instance_updated_enabled: z.boolean(),
+            is_instance_created_enabled: z.boolean(),
+            is_revision_submitted_enabled: z.boolean(),
+            is_revision_approved_enabled: z.boolean(),
+            is_revision_reject_enabled: z.boolean()
+        })
+    }).optional()
+});
+
+export type YakManProjectDetails = z.infer<typeof YakManProjectDetailsSchema>;
+
 export const YakManConfigSchema = z.object({
     name: z.string(),
     project_uuid: z.string(),

@@ -57,7 +57,7 @@ pub async fn get_projects(
 }
 
 /// Get project by uuid
-#[utoipa::path(responses((status = 200, body = YakManProject)))]
+#[utoipa::path(responses((status = 200, body = YakManProjectDetails)))]
 #[get("/v1/projects/{uuid}")]
 pub async fn get_project(
     auth_details: AuthDetails<YakManRoleBinding>,

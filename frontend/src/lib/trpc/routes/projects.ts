@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { t } from "../t";
-import type { YakManProject } from "$lib/types/types";
+import type { YakManProject, YakManProjectDetails } from "$lib/types/types";
 import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 import { convertYakManErrorToTRPCError } from "$lib/utils/error-helpers";
 
@@ -35,7 +35,7 @@ export const projects = t.router({
         }),
     fetchProject: t.procedure
         .input(z.string())
-        .query(async ({ input, ctx }): Promise<YakManProject> => {
+        .query(async ({ input, ctx }): Promise<YakManProjectDetails> => {
             const response = await fetch(`${BASE_URL}/v1/projects/${input}`, {
                 headers: createYakManAuthHeaders(ctx.accessToken)
             });

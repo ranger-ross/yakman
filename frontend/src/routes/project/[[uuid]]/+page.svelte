@@ -26,6 +26,24 @@
     let isRevisionApprovedEventEnabled = false;
     let isRevisionRejectedEventEnabled = false;
 
+    if (!isNewProject) {
+        if (data.project?.notification_settings) {
+                const notificationSettings = data.project?.notification_settings;
+
+            if (notificationSettings.settings.Slack) {
+                webhookType = "slack";
+                webhookUrl = notificationSettings.settings.Slack.webhook_url;
+            }
+
+            const events = notificationSettings.events;
+            isInstanceCreateEventEnabled = events.is_instance_created_enabled; 
+            isInstanceUpdateEventEnabled = events.is_instance_updated_enabled; 
+            isRevisionSubmittedEventEnabled = events.is_revision_submitted_enabled; 
+            isRevisionApprovedEventEnabled = events.is_revision_approved_enabled; 
+            isRevisionRejectedEventEnabled = events.is_revision_reject_enabled; 
+        }
+    }
+
     const webhookUrlPlaceholder = {
         slack: "https://hooks.slack.com/services/...",
     } as const;
@@ -89,7 +107,6 @@
                 label="Name"
                 placeholder="my-project"
                 bind:value={name}
-                disabled={!isNewProject}
                 mask="kebab-case"
             />
         </div>
