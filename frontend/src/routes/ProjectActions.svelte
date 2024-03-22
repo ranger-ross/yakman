@@ -16,7 +16,7 @@
             <div
                 class="bg-gray-100 bg-opacity-60 hover:bg-gray-200 rounded-lg p-2"
             >
-                <a tabindex="-1" href={`/add-config?project=${projectUuid}`}>
+                <a tabindex="-1" href="/add-config?project={projectUuid}">
                     <div class="w-4 h-4 fill-gray-800 hover:fill-black">
                         <PlusIcon />
                     </div>
@@ -31,7 +31,7 @@
             <div
                 class="bg-gray-100 bg-opacity-60 hover:bg-gray-200 rounded-lg p-2"
             >
-                <a tabindex="-1" href={`/add-config?project=${projectUuid}`}>
+                <a tabindex="-1" href="/project/{projectUuid}">
                     <div class="w-4 h-4 fill-gray-800 hover:fill-black">
                         <GearIcon />
                     </div>
