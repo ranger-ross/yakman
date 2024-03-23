@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const YakManProjectSchema = z.object({
-    uuid: z.string(),
+    id: z.string(),
     name: z.string(),
 });
 
@@ -30,7 +30,7 @@ export type YakManProjectDetails = z.infer<typeof YakManProjectDetailsSchema>;
 
 export const YakManConfigSchema = z.object({
     name: z.string(),
-    project_uuid: z.string(),
+    project_id: z.string(),
     description: z.string(),
     hidden: z.boolean(),
 });
@@ -114,7 +114,7 @@ export type YakManUser = z.infer<typeof YakManUserSchema>;
 
 export const YakManApiKeySchema = z.object({
     id: z.string(),
-    project_uuid: z.string(),
+    project_id: z.string(),
     role: z.string(),
     created_at: z.number().int(),
     created_by_uuid: z.string(),

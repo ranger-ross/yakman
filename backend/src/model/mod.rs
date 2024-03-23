@@ -8,13 +8,13 @@ use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManProject {
-    pub uuid: String, // Unique key
+    pub id: String, // Unique key
     pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManProjectDetails {
-    pub uuid: String,
+    pub id: String,
     pub name: String,
     pub notification_settings: Option<ProjectNotificationSettings>,
 }
@@ -47,7 +47,7 @@ pub struct NotificationSettingEvents {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManConfig {
     pub name: String, // Unique key
-    pub project_uuid: String,
+    pub project_id: String,
     #[serde(default)]
     pub hidden: bool,
 }
@@ -134,7 +134,7 @@ pub struct ConfigInstanceRevision {
 pub struct YakManApiKey {
     pub id: String,
     pub hash: String,
-    pub project_uuid: String,
+    pub project_id: String,
     pub role: YakManRole,
     pub created_at: i64,
     pub created_by_uuid: String,
@@ -193,7 +193,7 @@ pub struct YakManUser {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
 pub struct YakManUserProjectRole {
-    pub project_uuid: String,
+    pub project_id: String,
     pub role: YakManRole,
 }
 

@@ -34,7 +34,7 @@ async fn get_instance_revisions(
             YakManRole::Operator,
             YakManRole::Viewer,
         ],
-        &config.project_uuid,
+        &config.project_id,
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
@@ -75,7 +75,7 @@ async fn review_pending_instance_revision(
 
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
-        &config.project_uuid,
+        &config.project_id,
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
@@ -151,7 +151,7 @@ async fn apply_instance_revision(
             YakManRole::Approver,
             YakManRole::Operator,
         ],
-        &config.project_uuid,
+        &config.project_id,
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
@@ -194,7 +194,7 @@ async fn rollback_instance_revision(
             YakManRole::Approver,
             YakManRole::Operator,
         ],
-        &config.project_uuid,
+        &config.project_id,
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());

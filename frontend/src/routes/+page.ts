@@ -15,11 +15,11 @@ export const load: PageLoad = async (event) => {
             throw e;
         }
     }
-    const projectUuidQueryParam = event.url.searchParams.get('project');
+    const projectIdQueryParam = event.url.searchParams.get('project');
 
-    const selectedProject = !!projectUuidQueryParam ? projects.find(p => p.uuid === projectUuidQueryParam) : projects[0];
+    const selectedProject = !!projectIdQueryParam ? projects.find(p => p.id === projectIdQueryParam) : projects[0];
 
-    const configs = (await trpc(event).configs.fetchConfigs.query(selectedProject?.uuid)) ?? [];
+    const configs = (await trpc(event).configs.fetchConfigs.query(selectedProject?.id)) ?? [];
 
     const formattedConfigs = [];
 

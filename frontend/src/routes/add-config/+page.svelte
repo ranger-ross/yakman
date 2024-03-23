@@ -11,19 +11,19 @@
     export let data: PageData;
 
     let name = "";
-    let defaultProjectUuid = $page.url.searchParams.get("project");
+    let defaultProjectId = $page.url.searchParams.get("project");
     let defaultProject =
-        data.projects.find((p) => p.uuid === defaultProjectUuid) ??
+        data.projects.find((p) => p.id === defaultProjectId) ??
         data.projects[0];
-    let selectedProjectUuid = defaultProject.uuid;
+    let selectedProjectId = defaultProject.id;
 
     async function onCreateConfig() {
         try {
             await trpc($page).configs.createConfig.mutate({
                 name: name,
-                projectUuid: selectedProjectUuid,
+                projectId: selectedProjectId,
             });
-            goto(`/?project=${selectedProjectUuid}`);
+            goto(`/?project=${selectedProjectId}`);
         } catch (e) {
             console.error("Error creating config:", e);
         }
@@ -42,9 +42,9 @@
             />
         </div>
         <div class="mb-3">
-            <YakManSelect label="Project" bind:value={selectedProjectUuid}>
+            <YakManSelect label="Project" bind:value={selectedProjectId}>
                 {#each data.projects as project}
-                    <option value={project.uuid}>{project.name}</option>
+                    <option value={project.id}>{project.name}</option>
                 {/each}
             </YakManSelect>
         </div>

@@ -45,10 +45,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path = format!("{dir}/{project_uuid}.json");
+        let path = format!("{dir}/{project_id}.json");
 
         let Some(content) = self.get_object_as_option(&path).await? else {
             return Ok(None);
@@ -60,19 +60,19 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path: String = format!("{dir}/{uuid}.json");
+        let path: String = format!("{dir}/{project_id}.json");
         let data: String = serde_json::to_string(&project)?;
         self.put_object(&path, data).await?;
         return Ok(());
     }
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path: String = format!("{dir}/{uuid}.json");
+        let path: String = format!("{dir}/{project_id}.json");
         self.delete_object(&path).await?;
         return Ok(());
     }
@@ -87,14 +87,14 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(v.configs);
     }
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
-            .filter(|c| c.project_uuid == project_uuid)
+            .filter(|c| c.project_id == project_id)
             .collect())
     }
 

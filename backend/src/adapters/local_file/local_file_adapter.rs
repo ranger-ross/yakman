@@ -46,10 +46,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path = format!("{dir}/{project_uuid}.json");
+        let path = format!("{dir}/{project_id}.json");
 
         let Ok(content) = fs::read_to_string(&path) else {
             return Ok(None);
@@ -61,20 +61,20 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
         let path = self.get_projects_dir();
         let data = serde_json::to_string(&project)?;
-        let revision_file_path = format!("{path}/{uuid}.json");
+        let revision_file_path = format!("{path}/{project_id}.json");
         let mut file = File::create(&revision_file_path)?;
         Write::write_all(&mut file, data.as_bytes())?;
         return Ok(());
     }
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
         let path = self.get_projects_dir();
-        remove_file(&format!("{path}/{uuid}.json"))?;
+        remove_file(&format!("{path}/{project_id}.json"))?;
         return Ok(());
     }
 
@@ -85,14 +85,14 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(v.configs);
     }
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
-            .filter(|c| c.project_uuid == project_uuid)
+            .filter(|c| c.project_id == project_id)
             .collect())
     }
 

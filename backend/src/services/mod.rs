@@ -24,7 +24,7 @@ pub trait StorageService: Sync + Send {
 
     async fn get_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError>;
 
     async fn create_project(
@@ -35,16 +35,16 @@ pub trait StorageService: Sync + Send {
 
     async fn update_project(
         &self,
-        project_uuid: &str,
+        project_id: &str,
         project_name: &str,
         notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<(), UpdateProjectError>;
 
-    async fn delete_project(&self, project_uuid: &str) -> Result<(), DeleteProjectError>;
+    async fn delete_project(&self, project_id: &str) -> Result<(), DeleteProjectError>;
 
     async fn get_visible_configs(
         &self,
-        project_uuid: Option<String>,
+        project_id: Option<String>,
     ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
     async fn get_config(
@@ -59,7 +59,7 @@ pub trait StorageService: Sync + Send {
     async fn create_config(
         &self,
         config_name: &str,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<(), CreateConfigError>;
 
     async fn delete_config(&self, config_name: &str) -> Result<(), DeleteConfigError>;

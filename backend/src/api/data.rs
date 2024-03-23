@@ -32,7 +32,7 @@ async fn get_instance_data(
             YakManRole::Operator,
             YakManRole::Viewer,
         ],
-        &config.project_uuid,
+        &config.project_id,
         &auth_details.authorities,
     );
 
@@ -75,7 +75,7 @@ async fn get_revision_data(
             YakManRole::Operator,
             YakManRole::Viewer,
         ],
-        &config.project_uuid,
+        &config.project_id,
         &auth_details.authorities,
     );
 

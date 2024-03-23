@@ -44,7 +44,7 @@ pub async fn get_api_keys(
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateApiKeyRequest {
-    pub project_uuid: String,
+    pub project_id: String,
     pub role: YakManRole,
 }
 
@@ -74,7 +74,7 @@ pub async fn create_api_key(
     };
 
     let Some(_) = storage_service
-        .get_project_details(&request.project_uuid)
+        .get_project_details(&request.project_id)
         .await?
     else {
         return Err(YakManApiError::bad_request("Invalid project"));
@@ -86,7 +86,7 @@ pub async fn create_api_key(
     let ak = YakManApiKey {
         id: format!("apikey-{}", Uuid::new_v4().to_string()),
         hash: sha256::digest(&new_api_key),
-        project_uuid: request.project_uuid.to_string(),
+        project_id: request.project_id.to_string(),
         role: request.role.clone(),
         created_at: now,
         created_by_uuid: user_uuid.to_string(),
@@ -133,7 +133,7 @@ mod tests {
         YakManApiKey {
             id: "apikey-d66a57c5-a425-4157-b790-13756084d0cf".to_string(),
             hash: "5fd924625f6ab16a19cc9807c7c506ae1813490e4ba675f843d5a10e0baacdb8".to_string(),
-            project_uuid: "91d16380-9df0-41dc-8542-c2dcf3633e7b".to_string(),
+            project_id: "91d16380-9df0-41dc-8542-c2dcf3633e7b".to_string(),
             role: YakManRole::Viewer,
             created_at: 1704330312738,
             created_by_uuid: "c34e15d0-0697-47c1-b36a-7f3456c68f1d".to_string(),
@@ -167,7 +167,7 @@ mod tests {
         assert_eq!("apikey-d66a57c5-a425-4157-b790-13756084d0cf", first["id"]);
         assert_eq!(
             "91d16380-9df0-41dc-8542-c2dcf3633e7b",
-            first["project_uuid"]
+            first["project_id"]
         );
         assert_eq!("Viewer", first["role"]);
         assert_eq!(1704330312738, first["created_at"].as_i64().unwrap());
@@ -189,7 +189,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_uuid = storage_service.create_project("foo", None).await?;
+        let project_id = storage_service.create_project("foo", None).await?;
 
         let api_keys = storage_service.get_api_keys().await?;
         assert_eq!(0, api_keys.len());
@@ -211,7 +211,7 @@ mod tests {
         let req = test::TestRequest::put()
             .uri("/v1/api-keys")
             .set_json(&CreateApiKeyRequest {
-                project_uuid: project_uuid.clone(),
+                project_id: project_id.clone(),
                 role: YakManRole::Viewer,
             })
             .to_request();
@@ -228,7 +228,7 @@ mod tests {
         assert_eq!(1, api_keys.len());
 
         let api_key = &api_keys[0];
-        assert_eq!(project_uuid, api_key.project_uuid);
+        assert_eq!(project_id, api_key.project_id);
         assert_eq!(YakManRole::Viewer, api_key.role);
         assert_eq!(
             "c34e15d0-0697-47c1-b36a-7f3456c68f1d",

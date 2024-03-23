@@ -61,7 +61,7 @@ export const projects = t.router({
             }
 
             return {
-                projectUuid: await response.text()
+                projectId: await response.text()
             }
         }),
     updateProject: t.procedure
@@ -85,7 +85,7 @@ export const projects = t.router({
             }
 
             return {
-                projectUuid: await response.text()
+                projectId: await response.text()
             }
         }),
     deleteProject: t.procedure

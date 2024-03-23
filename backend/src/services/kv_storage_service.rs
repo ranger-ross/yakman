@@ -77,33 +77,33 @@ impl StorageService for KVStorageService {
             }
         }
 
-        let project_uuid = Uuid::new_v4();
+        let project_id = generate_project_id();
 
         let notification_settings = notification_settings.map(|settings| settings.into());
 
         let project_details: YakManProjectDetails = YakManProjectDetails {
             name: String::from(project_name),
-            uuid: project_uuid.to_string(),
+            id: project_id.to_string(),
             notification_settings,
         };
 
         self.adapter
-            .save_project_details(&project_uuid.to_string(), project_details)
+            .save_project_details(&project_id.to_string(), project_details)
             .await?;
 
         projects.push(YakManProject {
             name: String::from(project_name),
-            uuid: project_uuid.to_string(),
+            id: project_id.to_string(),
         });
 
         self.adapter.save_projects(projects).await?;
 
-        return Ok(project_uuid.to_string());
+        return Ok(project_id.to_string());
     }
 
     async fn update_project(
         &self,
-        project_uuid: &str,
+        project_id: &str,
         project_name: &str,
         notification_settings: Option<model::request::ProjectNotificationSettings>,
     ) -> Result<(), UpdateProjectError> {
@@ -112,18 +112,18 @@ impl StorageService for KVStorageService {
         // Prevent duplicates
         for prj in &projects {
             // Be sure to check that the UUIDs do not match since we should always get at least one match when updating.
-            if &prj.name == &project_name && &prj.uuid != &project_uuid {
+            if &prj.name == &project_name && &prj.id != &project_id {
                 return Err(UpdateProjectError::DuplicateNameError {
                     name: String::from(project_name),
                 });
             }
         }
 
-        let Some(mut project_details) = self.adapter.get_project_details(project_uuid).await?
+        let Some(mut project_details) = self.adapter.get_project_details(project_id).await?
         else {
             return Err(UpdateProjectError::ProjectNotFound);
         };
-        let Some(project) = projects.iter_mut().find(|p| p.uuid == project_uuid) else {
+        let Some(project) = projects.iter_mut().find(|p| p.id == project_id) else {
             return Err(UpdateProjectError::ProjectNotFound);
         };
 
@@ -134,20 +134,20 @@ impl StorageService for KVStorageService {
         project_details.notification_settings = notification_settings;
 
         self.adapter
-            .save_project_details(project_uuid, project_details)
+            .save_project_details(project_id, project_details)
             .await?;
         self.adapter.save_projects(projects).await?;
 
         Ok(())
     }
 
-    async fn delete_project(&self, project_uuid: &str) -> Result<(), DeleteProjectError> {
-        let Some(_) = self.adapter.get_project_details(project_uuid).await? else {
+    async fn delete_project(&self, project_id: &str) -> Result<(), DeleteProjectError> {
+        let Some(_) = self.adapter.get_project_details(project_id).await? else {
             return Err(DeleteProjectError::ProjectNotFound);
         };
         let mut projects = self.adapter.get_projects().await?;
 
-        let Some(index) = projects.iter().position(|p| p.uuid == project_uuid) else {
+        let Some(index) = projects.iter().position(|p| p.id == project_id) else {
             return Err(DeleteProjectError::ProjectNotFound);
         };
 
@@ -158,7 +158,7 @@ impl StorageService for KVStorageService {
 
         let project_configs: Vec<_> = configs
             .iter()
-            .filter(|p| &p.project_uuid == &project_uuid)
+            .filter(|p| &p.project_id == &project_id)
             .collect();
 
         for config in &project_configs {
@@ -181,7 +181,7 @@ impl StorageService for KVStorageService {
 
         let remaining_configs: Vec<_> = configs
             .into_iter()
-            .filter(|p| &p.project_uuid != &project_uuid)
+            .filter(|p| &p.project_id != &project_id)
             .collect();
 
         let res = self.adapter.save_configs(remaining_configs).await;
@@ -189,16 +189,16 @@ impl StorageService for KVStorageService {
             log::error!("Failed to delete configs");
         }
         self.adapter.save_projects(projects).await?;
-        self.adapter.delete_project_details(project_uuid).await?;
+        self.adapter.delete_project_details(project_id).await?;
 
         Ok(())
     }
 
     async fn get_visible_configs(
         &self,
-        project_uuid: Option<String>,
+        project_id: Option<String>,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
-        let configs = self.get_all_configs(project_uuid).await?;
+        let configs = self.get_all_configs(project_id).await?;
         return Ok(configs.into_iter().filter(|c| !c.hidden).collect());
     }
 
@@ -312,7 +312,7 @@ impl StorageService for KVStorageService {
     async fn create_config(
         &self,
         config_name: &str,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<(), CreateConfigError> {
         let mut configs = self
             .get_all_configs(None)
@@ -341,7 +341,7 @@ impl StorageService for KVStorageService {
 
         configs.push(YakManConfig {
             name: String::from(config_name),
-            project_uuid: String::from(project_uuid),
+            project_id: String::from(project_id),
             hidden: false,
         });
 
@@ -1292,10 +1292,10 @@ impl KVStorageService {
 
         let Some(project) = self
             .adapter
-            .get_project_details(&config.project_uuid)
+            .get_project_details(&config.project_id)
             .await?
         else {
-            bail!("Could not find project {}", config.project_uuid)
+            bail!("Could not find project {}", config.project_id)
         };
 
         return Ok(project);
@@ -1319,12 +1319,12 @@ impl KVStorageService {
     /// Gets all configs including hidden configs
     async fn get_all_configs(
         &self,
-        project_uuid: Option<String>,
+        project_id: Option<String>,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
-        let configs = match project_uuid {
-            Some(project_uuid) => {
+        let configs = match project_id {
+            Some(project_id) => {
                 self.adapter
-                    .get_configs_by_project_uuid(&project_uuid)
+                    .get_configs_by_project_id(&project_id)
                     .await?
             }
             None => self.adapter.get_configs().await?,
@@ -1349,6 +1349,11 @@ impl KVStorageService {
         }
         return Ok(true);
     }
+}
+
+
+fn generate_project_id() -> String {
+    return format!("p{}", short_sha(&Uuid::new_v4().to_string()));
 }
 
 fn generate_instance_id() -> String {

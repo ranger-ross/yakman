@@ -37,19 +37,19 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_project_key(project_uuid))
+            .get_optional_data(&self.get_project_key(project_id))
             .await?);
     }
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
-        let key = self.get_project_key(uuid);
+        let key = self.get_project_key(project_id);
         self.insert(key, serde_json::to_string(&project)?).await;
         return Ok(());
     }
@@ -66,14 +66,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(serde_json::from_str(&configs)?);
     }
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
-            .filter(|c| c.project_uuid == project_uuid)
+            .filter(|c| c.project_id == project_id)
             .collect())
     }
 

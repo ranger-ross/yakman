@@ -23,22 +23,22 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError>;
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError>;
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError>;
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
     async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError>;

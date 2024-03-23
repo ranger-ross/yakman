@@ -20,7 +20,7 @@ pub enum YakManRoleBinding {
 impl YakManRoleBinding {
     pub fn has_any_role(
         roles_to_match: Vec<YakManRole>,
-        project_uuid: &str,
+        project_id: &str,
         roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
@@ -35,7 +35,7 @@ impl YakManRoleBinding {
                     }
                 }
                 YakManRoleBinding::ProjectRoleBinding(r) => {
-                    if r.project_uuid == project_uuid {
+                    if r.project_id == project_id {
                         if r.role == YakManRole::Admin {
                             return true;
                         }
@@ -54,10 +54,10 @@ impl YakManRoleBinding {
     #[allow(dead_code)]
     pub fn has_role(
         role_to_match: YakManRole,
-        project_uuid: &str,
+        project_id: &str,
         roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
-        return YakManRoleBinding::has_any_role(vec![role_to_match], project_uuid, roles);
+        return YakManRoleBinding::has_any_role(vec![role_to_match], project_id, roles);
     }
 
     pub fn has_global_role(role_to_match: YakManRole, roles: &HashSet<YakManRoleBinding>) -> bool {
@@ -117,7 +117,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                     let mut api_key_roles = HashSet::new();
                     api_key_roles.insert(YakManRoleBinding::ProjectRoleBinding(
                         YakManUserProjectRole {
-                            project_uuid: api_key.project_uuid,
+                            project_id: api_key.project_id,
                             role: api_key.role,
                         },
                     ));

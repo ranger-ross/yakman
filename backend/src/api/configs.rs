@@ -30,7 +30,7 @@ pub async fn get_configs(
     query: web::Query<GetConfigsQuery>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let project_uuid = query.project.to_owned();
+    let project_id = query.project.to_owned();
     let has_global_role = YakManRoleBinding::has_any_global_role(
         vec![
             YakManRole::Admin,
@@ -41,7 +41,7 @@ pub async fn get_configs(
         &auth_details.authorities,
     );
 
-    if let Some(project_uuid) = &project_uuid {
+    if let Some(project_id) = &project_id {
         if !has_global_role
             && !YakManRoleBinding::has_any_role(
                 vec![
@@ -50,7 +50,7 @@ pub async fn get_configs(
                     YakManRole::Operator,
                     YakManRole::Viewer,
                 ],
-                project_uuid,
+                project_id,
                 &auth_details.authorities,
             )
         {
@@ -62,12 +62,12 @@ pub async fn get_configs(
         .authorities
         .iter()
         .filter_map(|p| match p {
-            YakManRoleBinding::ProjectRoleBinding(role) => Some(role.project_uuid.clone()),
+            YakManRoleBinding::ProjectRoleBinding(role) => Some(role.project_id.clone()),
             _ => None,
         })
         .collect();
 
-    let data = storage_service.get_visible_configs(project_uuid).await?;
+    let data = storage_service.get_visible_configs(project_id).await?;
 
     if has_global_role {
         return Ok(web::Json(data));
@@ -75,7 +75,7 @@ pub async fn get_configs(
 
     let filtered_data = data
         .into_iter()
-        .filter(|c| allowed_projects.contains(&c.project_uuid))
+        .filter(|c| allowed_projects.contains(&c.project_id))
         .collect();
 
     return Ok(web::Json(filtered_data));
@@ -91,11 +91,11 @@ async fn create_config(
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
-    let project_uuid = payload.project_uuid;
+    let project_id = payload.project_id;
 
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin, YakManRole::Approver],
-        &project_uuid,
+        &project_id,
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
@@ -113,7 +113,7 @@ async fn create_config(
         ));
     }
 
-    let project = match storage_service.get_project_details(&project_uuid).await {
+    let project = match storage_service.get_project_details(&project_id).await {
         Ok(p) => p,
         Err(e) => {
             log::error!("Failed to load projects, error: {e:?}");
@@ -126,7 +126,7 @@ async fn create_config(
     };
 
     let result: Result<(), CreateConfigError> = storage_service
-        .create_config(&config_name, &project_uuid)
+        .create_config(&config_name, &project_id)
         .await;
 
     return match result {
@@ -153,11 +153,11 @@ async fn delete_config(
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
-    let project_uuid = payload.project_uuid;
+    let project_id = payload.project_id;
 
     if !YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin],
-        &project_uuid,
+        &project_id,
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
@@ -205,12 +205,12 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project with 2 configs
-        let project_uuid = storage_service.create_project("test", None).await?;
+        let project_id = storage_service.create_project("test", None).await?;
         storage_service
-            .create_config("config1", &project_uuid)
+            .create_config("config1", &project_id)
             .await?;
         storage_service
-            .create_config("config2", &project_uuid)
+            .create_config("config2", &project_id)
             .await?;
 
         let app = test::init_service(
@@ -221,7 +221,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/configs?project={project_uuid}"))
+            .uri(&format!("/v1/configs?project={project_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
@@ -235,12 +235,12 @@ mod tests {
         let first = &arr[0];
         assert_eq!("config1", first["name"]);
         assert_eq!(false, first["hidden"]);
-        assert_eq!(project_uuid.as_str(), first["project_uuid"]);
+        assert_eq!(project_id.as_str(), first["project_id"]);
 
         let second = &arr[1];
         assert_eq!("config2", second["name"]);
         assert_eq!(false, second["hidden"]);
-        assert_eq!(project_uuid.as_str(), second["project_uuid"]);
+        assert_eq!(project_id.as_str(), second["project_id"]);
 
         Ok(())
     }
@@ -252,13 +252,13 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test 2 project with 1 config each
-        let project1_uuid = storage_service.create_project("proj1", None).await?;
+        let project1_id = storage_service.create_project("proj1", None).await?;
         storage_service
-            .create_config("config1", &project1_uuid)
+            .create_config("config1", &project1_id)
             .await?;
-        let project2_uuid = storage_service.create_project("proj2", None).await?;
+        let project2_id = storage_service.create_project("proj2", None).await?;
         storage_service
-            .create_config("config2", &project2_uuid)
+            .create_config("config2", &project2_id)
             .await?;
 
         let app = test::init_service(
@@ -269,7 +269,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/configs?project={project1_uuid}"))
+            .uri(&format!("/v1/configs?project={project1_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
@@ -283,7 +283,7 @@ mod tests {
         let first = &arr[0];
         assert_eq!("config1", first["name"]);
         assert_eq!(false, first["hidden"]);
-        assert_eq!(project1_uuid.as_str(), first["project_uuid"]);
+        assert_eq!(project1_id.as_str(), first["project_id"]);
 
         Ok(())
     }
@@ -296,15 +296,15 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project with config
-        let project1_uuid = storage_service.create_project("proj1", None).await?;
+        let project1_id = storage_service.create_project("proj1", None).await?;
         storage_service
-            .create_config("config1", &project1_uuid)
+            .create_config("config1", &project1_id)
             .await?;
 
         let fake_role_extractor =
             FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
                 YakManUserProjectRole {
-                    project_uuid: "other".to_string(), // fake, just some other project
+                    project_id: "other".to_string(), // fake, just some other project
                     role: YakManRole::Operator,
                 },
             )]);
@@ -317,7 +317,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/configs?project={project1_uuid}"))
+            .uri(&format!("/v1/configs?project={project1_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(403, resp.status().as_u16());
@@ -332,12 +332,12 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project with 2 configs
-        let project_uuid = storage_service.create_project("test", None).await?;
+        let project_id = storage_service.create_project("test", None).await?;
         storage_service
-            .create_config("config1", &project_uuid)
+            .create_config("config1", &project_id)
             .await?;
         storage_service
-            .create_config("config2", &project_uuid)
+            .create_config("config2", &project_id)
             .await?;
 
         // Hide config2
@@ -351,7 +351,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/configs?project={project_uuid}"))
+            .uri(&format!("/v1/configs?project={project_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
@@ -365,7 +365,7 @@ mod tests {
         let first = &arr[0];
         assert_eq!("config1", first["name"]);
         assert_eq!(false, first["hidden"]);
-        assert_eq!(project_uuid.as_str(), first["project_uuid"]);
+        assert_eq!(project_id.as_str(), first["project_id"]);
 
         Ok(())
     }
@@ -377,7 +377,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test", None).await?;
+        let project_id = storage_service.create_project("test", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -390,7 +390,7 @@ mod tests {
             .uri(&format!("/v1/configs"))
             .set_json(&CreateConfigPayload {
                 config_name: "foo-bar".to_string(),
-                project_uuid: project_uuid,
+                project_id: project_id,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -412,7 +412,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test", None).await?;
+        let project_id = storage_service.create_project("test", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -425,7 +425,7 @@ mod tests {
             .uri(&format!("/v1/configs"))
             .set_json(&CreateConfigPayload {
                 config_name: "this is an invalid config name".to_string(),
-                project_uuid: project_uuid,
+                project_id: project_id,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -441,7 +441,7 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test", None).await?;
+        let project_id = storage_service.create_project("test", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -454,7 +454,7 @@ mod tests {
             .uri(&format!("/v1/configs"))
             .set_json(&CreateConfigPayload {
                 config_name: "".to_string(),
-                project_uuid: project_uuid,
+                project_id: project_id,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -470,9 +470,9 @@ mod tests {
         let storage_service = test_storage_service().await?;
 
         // Setup test project
-        let project_uuid = storage_service.create_project("test", None).await?;
+        let project_id = storage_service.create_project("test", None).await?;
         storage_service
-            .create_config("foo-bar", &project_uuid)
+            .create_config("foo-bar", &project_id)
             .await?;
 
         let app = test::init_service(
@@ -486,7 +486,7 @@ mod tests {
             .uri(&format!("/v1/configs"))
             .set_json(&CreateConfigPayload {
                 config_name: "foo-bar".to_string(),
-                project_uuid: project_uuid,
+                project_id: project_id,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;

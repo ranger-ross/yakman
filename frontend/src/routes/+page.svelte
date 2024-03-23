@@ -21,19 +21,19 @@
 
 	const projects: YakManProject[] = data.projects ?? [];
 
-	let projectUuidFromQuery = $page.url.searchParams.get("project");
-	let selectedProjectUuid = projectUuidFromQuery ?? projects[0]?.uuid;
+	let projectIdFromQuery = $page.url.searchParams.get("project");
+	let selectedProjectId = projectIdFromQuery ?? projects[0]?.id;
 
-	let selectedProject = projects.find((p) => p.uuid === selectedProjectUuid);
+	let selectedProject = projects.find((p) => p.id === selectedProjectId);
 
 	let configToDelete: YakManConfig | null = null;
 
 	function onProjectChange(e: Event) {
 		const target = e?.currentTarget as HTMLSelectElement;
-		const projectUuid = target?.value;
-		selectedProject = projects.find((p) => p.uuid === projectUuid);
+		const projectId = target?.value;
+		selectedProject = projects.find((p) => p.id === projectId);
 		console.log(selectedProject);
-		goto(`?project=${selectedProject?.uuid}`);
+		goto(`?project=${selectedProject?.id}`);
 	}
 
 	function timeAgo(timestamp: number, locale = "en") {
@@ -73,7 +73,7 @@
 		const index = data.configs.findIndex(
 			(c) =>
 				c.config.name === configToDelete?.name &&
-				c.config.project_uuid === configToDelete.project_uuid,
+				c.config.project_id === configToDelete.project_id,
 		);
 		const config = data.configs[index];
 		data.configs.splice(index, 1);
@@ -82,7 +82,7 @@
 		try {
 			await trpc($page).configs.deleteConfig.mutate({
 				name: configToDelete?.name!,
-				projectUuid: configToDelete?.project_uuid!,
+				projectId: configToDelete?.project_id!,
 			});
 
 			configToDelete = null;
@@ -117,17 +117,17 @@
 		{:else}
 			<div class="flex justify-between items-end gap-2">
 				<YakManSelect
-					bind:value={selectedProjectUuid}
+					bind:value={selectedProjectId}
 					label="Project"
 					on:change={onProjectChange}
 				>
 					{#each projects as project}
-						<option value={project.uuid}>{project.name}</option>
+						<option value={project.id}>{project.name}</option>
 					{/each}
 				</YakManSelect>
 
 				<div class="w-fit">
-					<ProjectActions projectUuid={selectedProjectUuid} />
+					<ProjectActions projectId={selectedProjectId} />
 				</div>
 			</div>
 

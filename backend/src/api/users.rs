@@ -90,7 +90,7 @@ pub async fn get_user_info(
         .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::ProjectRoleBinding(role) => {
-                Some((role.project_uuid.clone(), role.role.clone()))
+                Some((role.project_id.clone(), role.role.clone()))
             }
             _ => None,
         })
