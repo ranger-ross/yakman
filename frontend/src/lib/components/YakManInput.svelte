@@ -10,6 +10,7 @@
     export let disabled: boolean = false;
     export let mask: "" | "kebab-case" = "";
     export let type: "text" | "password" = "text";
+    export let containerClass: string = "w-64";
 
     $: {
         switch (mask) {
@@ -45,7 +46,7 @@
     }
 </script>
 
-<div class="w-64">
+<div class={containerClass}>
     <label class="block text-gray-700 text-sm font-bold mb-2" for={name}>
         {label}
     </label>

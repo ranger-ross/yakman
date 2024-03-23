@@ -113,14 +113,11 @@
                 }
 
                 createProjectPayload.notificationEvents = {
-                    isInstanceCreateEventEnabled: isInstanceCreateEventEnabled,
-                    isInstanceUpdateEventEnabled: isInstanceUpdateEventEnabled,
-                    isRevisionSubmittedEventEnabled:
-                        isRevisionSubmittedEventEnabled,
-                    isRevisionApprovedEventEnabled:
-                        isRevisionApprovedEventEnabled,
-                    isRevisionRejectedEventEnabled:
-                        isRevisionRejectedEventEnabled,
+                    isInstanceCreateEventEnabled,
+                    isInstanceUpdateEventEnabled,
+                    isRevisionSubmittedEventEnabled,
+                    isRevisionApprovedEventEnabled,
+                    isRevisionRejectedEventEnabled,
                 };
             }
 
@@ -196,7 +193,7 @@
             {#if isWebhookEnabled}
                 <div class="mb-3 flex gap-2">
                     <YakManSelect
-                        cotainerClasses="w-24"
+                        cotainerClasses="w-26"
                         label="Type"
                         bind:value={webhookType}
                     >
@@ -204,6 +201,7 @@
                         <option value="discord">Discord</option>
                     </YakManSelect>
                     <YakManInput
+                        containerClass="w-96"
                         label="URL"
                         placeholder={webhookUrlPlaceholder[webhookType]}
                         bind:value={webhookUrl}
