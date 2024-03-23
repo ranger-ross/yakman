@@ -9,7 +9,7 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
-        DeleteConfigInstanceError, ResetPasswordError, RollbackRevisionError,
+        DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError, RollbackRevisionError,
         SaveConfigInstanceError, UpdateProjectError,
     },
     model::{
@@ -139,6 +139,10 @@ impl StorageService for KVStorageService {
         self.adapter.save_projects(projects).await?;
 
         Ok(())
+    }
+
+    async fn delete_project(&self, project_uuid: &str) -> Result<(), DeleteProjectError> {
+        todo!();
     }
 
     async fn get_visible_configs(

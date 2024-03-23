@@ -2,7 +2,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     api::is_alphanumeric_kebab_case,
-    error::{CreateProjectError, UpdateProjectError, YakManApiError},
+    error::{CreateProjectError, DeleteProjectError, UpdateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{
         request::{
@@ -15,7 +15,7 @@ use crate::{
     settings,
 };
 
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use log::error;
 use url::Url;
@@ -182,6 +182,41 @@ async fn update_project(
                 Err(YakManApiError::bad_request("project not found"))
             }
         },
+    };
+}
+
+/// Delete project by uuid
+#[utoipa::path(responses((status = 200, body = ())))]
+#[delete("/v1/projects/{uuid}")]
+pub async fn delete_project(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    if auth_details.authorities.len() == 0 {
+        return Err(YakManApiError::forbidden());
+    }
+
+    let project_uuid: String = path.into_inner();
+    let has_role = YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin],
+        &project_uuid,
+        &auth_details.authorities,
+    );
+
+    if !has_role {
+        return Err(YakManApiError::forbidden());
+    }
+
+    return match storage_service.delete_project(&project_uuid).await {
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Err(DeleteProjectError::ProjectNotFound) => {
+            Err(YakManApiError::not_found("project not found"))
+        }
+        Err(DeleteProjectError::StorageError { message }) => {
+            log::error!("Failed to delete project {message}");
+            Err(YakManApiError::server_error("failed to delete project"))
+        }
     };
 }
 
