@@ -22,8 +22,14 @@ use self::{
 };
 use crate::model::{
     request::{
-        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType, UpdateProjectPayload,
-    }, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManUser
+        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
+        UpdateProjectPayload,
+    },
+    response::{InstancePayload, RevisionPayload},
+    ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
+    LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,
+    RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails,
+    YakManPublicPasswordResetLink, YakManRole, YakManUser,
 };
 use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
