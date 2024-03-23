@@ -265,6 +265,8 @@ fn validate_project(
 
 #[cfg(test)]
 mod tests {
+    use core::panic;
+
     use super::*;
     use crate::model::YakManUserProjectRole;
     use crate::test_utils::fake_roles::FakeRoleExtractor;
@@ -614,4 +616,93 @@ mod tests {
         assert_eq!(403, resp.status().as_u16());
         Ok(())
     }
+
+    #[actix_web::test]
+    async fn delete_project_should_delete_project() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(delete_project),
+        )
+        .await;
+        let req = test::TestRequest::delete()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
+
+        let project_details = storage_service
+            .get_project_details(&project_foo_uuid)
+            .await?;
+        if project_details.is_some() {
+            panic!("project details was not delete");
+        }
+
+        let projects = storage_service.get_projects().await?;
+
+        if let Some(_) = projects.iter().find(|p| p.uuid == project_foo_uuid) {
+            panic!("project was not deleted")
+        }
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn delete_project_should_return_not_found_for_none_existent_project() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(delete_project),
+        )
+        .await;
+        let req = test::TestRequest::delete()
+            .uri(&format!(
+                "/v1/projects/4dc8bcae-1bbf-4353-a642-ba82d060577d"
+            )) // fake uuid
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_client_error());
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn delete_project_should_check_permissions() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::approver_role))
+                .service(delete_project),
+        )
+        .await;
+        let req = test::TestRequest::delete()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(403, resp.status().as_u16());
+
+        Ok(())
+    }
+
 }
