@@ -257,7 +257,7 @@ mod tests {
         .await;
         let req = test::TestRequest::get().uri("/v1/projects").to_request();
         let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
+        assert_eq!(200, resp.status().as_u16());
 
         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
@@ -297,7 +297,7 @@ mod tests {
         .await;
         let req = test::TestRequest::get().uri("/v1/projects").to_request();
         let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
+        assert_eq!(200, resp.status().as_u16());
 
         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
@@ -330,7 +330,7 @@ mod tests {
             .uri(&format!("/v1/projects/{project_foo_uuid}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
+        assert_eq!(200, resp.status().as_u16());
 
         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
@@ -390,7 +390,7 @@ mod tests {
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
+        assert_eq!(200, resp.status().as_u16());
         Ok(())
     }
 
@@ -439,6 +439,117 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         let status = resp.status().as_u16();
         assert_eq!(400, status);
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn update_project_should_update_project_if_request_is_valid() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(update_project),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .set_json(UpdateProjectPayload {
+                project_name: "foo".to_string(),
+                notification_settings: None,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn update_project_should_prevent_duplicate_project_names() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(update_project),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .set_json(UpdateProjectPayload {
+                project_name: "bar".to_string(),
+                notification_settings: None,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status().as_u16());
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn update_project_should_respond_with_client_error_if_project_not_found() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(update_project),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!(
+                "/v1/projects/4dc8bcae-1bbf-4353-a642-ba82d060577d"
+            )) // random uuid
+            .set_json(UpdateProjectPayload {
+                project_name: "foo".to_string(),
+                notification_settings: None,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status().as_u16());
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn update_project_should_valiate_project_name() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(update_project),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .set_json(UpdateProjectPayload {
+                project_name: "invalid project".to_string(),
+                notification_settings: None,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(400, resp.status().as_u16());
         Ok(())
     }
 }
