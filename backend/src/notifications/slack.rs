@@ -5,7 +5,6 @@ use crate::settings;
 
 use super::{YakManNotificationAdapter, YakManNotificationType};
 
-
 pub struct SlackNotificationAdapter {
     pub http_client: reqwest::Client,
     pub webhook_url: String,
