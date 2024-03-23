@@ -72,6 +72,12 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
+    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+        let path = self.get_projects_dir();
+        remove_file(&format!("{path}/{uuid}.json"))?;
+        return Ok(());
+    }
+
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = fs::read_to_string(path)?;
@@ -81,7 +87,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn get_configs_by_project_uuid(
         &self,
-        project_uuid: String,
+        project_uuid: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
@@ -142,6 +148,12 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Write::write_all(&mut file, data.as_bytes())?;
 
         Ok(())
+    }
+
+    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
+        let metadata_path = self.get_config_instance_metadata_dir();
+        remove_file(&format!("{metadata_path}/{config_name}.json"))?;
+        return Ok(());
     }
 
     async fn get_revision(

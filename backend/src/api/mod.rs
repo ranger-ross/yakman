@@ -53,6 +53,7 @@ use utoipa::OpenApi;
         projects::get_project,
         projects::create_project,
         projects::update_project,
+        projects::delete_project,
         configs::get_configs,
         configs::create_config,
         configs::delete_config,
@@ -123,6 +124,7 @@ where
         .service(projects::get_project)
         .service(projects::create_project)
         .service(projects::update_project)
+        .service(projects::delete_project)
         // Users
         .service(users::get_yakman_users)
         .service(users::create_yakman_user)

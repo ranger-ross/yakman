@@ -70,6 +70,13 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(());
     }
 
+    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+        let dir = self.get_projects_dir();
+        let path: String = format!("{dir}/{uuid}.json");
+        self.delete_object(&path).await?;
+        return Ok(());
+    }
+
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = self
@@ -82,7 +89,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_configs_by_project_uuid(
         &self,
-        project_uuid: String,
+        project_uuid: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
@@ -143,6 +150,13 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         self.put_object(&instance_file, data).await?;
 
         Ok(())
+    }
+
+    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
+        let metadata_path = self.get_config_instance_metadata_dir();
+        let instance_file = format!("{metadata_path}/{config_name}.json");
+        self.delete_object(&instance_file).await?;
+        return Ok(());
     }
 
     async fn get_revision(
