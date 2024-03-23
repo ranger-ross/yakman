@@ -579,5 +579,4 @@ mod tests {
         assert_eq!(403, resp.status().as_u16());
         Ok(())
     }
-
 }
