@@ -239,27 +239,31 @@ fn validate_project(
     // Validate notification webhooks to protect against SSRF
     if let Some(notification) = &notification_settings {
         match &notification.notification_type {
-            ProjectNotificationType::Slack { webhook_url } => {
-                let Ok(url) = Url::parse(&webhook_url) else {
-                    return Err(YakManApiError::bad_request("Invalid webhook url"));
-                };
-
-                let Some(webhook_host) = url.host() else {
-                    return Err(YakManApiError::bad_request("Invalid webhook url"));
-                };
-                let webhook_host = webhook_host.to_string();
-
-                let is_whitelisted_host = settings::notification_whitelisted_hosts()
-                    .into_iter()
-                    .any(|host| host == webhook_host);
-
-                if !is_whitelisted_host {
-                    return Err(YakManApiError::bad_request("Webhook host is not permitted"));
-                }
-            }
+            ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(&webhook_url)?,
+            ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(&webhook_url)?,
         }
     }
 
+    return Ok(());
+}
+
+fn validate_webhook_url(webhook_url: &str) -> Result<(), YakManApiError> {
+    let Ok(url) = Url::parse(&webhook_url) else {
+        return Err(YakManApiError::bad_request("Invalid webhook url"));
+    };
+
+    let Some(webhook_host) = url.host() else {
+        return Err(YakManApiError::bad_request("Invalid webhook url"));
+    };
+    let webhook_host = webhook_host.to_string();
+
+    let is_whitelisted_host = settings::notification_whitelisted_hosts()
+        .into_iter()
+        .any(|host| host == webhook_host);
+
+    if !is_whitelisted_host {
+        return Err(YakManApiError::bad_request("Webhook host is not permitted"));
+    }
     return Ok(());
 }
 

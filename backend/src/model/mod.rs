@@ -28,6 +28,7 @@ pub struct ProjectNotificationSettings {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub enum NotificationSetting {
     Slack { webhook_url: String },
+    Discord { webhook_url: String },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

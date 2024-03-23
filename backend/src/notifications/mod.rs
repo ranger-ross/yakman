@@ -1,3 +1,4 @@
+pub mod discord;
 pub mod slack;
 
 use std::sync::Arc;
@@ -6,7 +7,7 @@ use async_trait::async_trait;
 
 use crate::model::NotificationSetting;
 
-use self::slack::SlackNotificationAdapter;
+use self::{discord::DiscordNotificationAdapter, slack::SlackNotificationAdapter};
 
 #[async_trait]
 pub trait YakManNotificationAdapter {
@@ -49,6 +50,10 @@ impl From<NotificationSetting> for Arc<dyn YakManNotificationAdapter + Send + Sy
     fn from(value: NotificationSetting) -> Self {
         match value {
             NotificationSetting::Slack { webhook_url } => Arc::new(SlackNotificationAdapter {
+                http_client: reqwest::Client::new(),
+                webhook_url: webhook_url,
+            }),
+            NotificationSetting::Discord { webhook_url } => Arc::new(DiscordNotificationAdapter {
                 http_client: reqwest::Client::new(),
                 webhook_url: webhook_url,
             }),

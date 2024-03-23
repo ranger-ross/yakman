@@ -14,7 +14,7 @@
 
     export let data: PageData;
 
-    type WebhookType = "slack";
+    type WebhookType = "slack" | "discord";
 
     let projectId = $page.params.id;
     const isNewProject = !projectId;
@@ -49,6 +49,11 @@
                 webhookUrl = notificationSettings.settings.Slack.webhook_url;
             }
 
+            if (notificationSettings.settings.Discord) {
+                webhookType = "discord";
+                webhookUrl = notificationSettings.settings.Discord.webhook_url;
+            }
+
             const events = notificationSettings.events;
             isInstanceCreateEventEnabled = events.is_instance_created_enabled;
             isInstanceUpdateEventEnabled = events.is_instance_updated_enabled;
@@ -62,6 +67,7 @@
 
     const webhookUrlPlaceholder = {
         slack: "https://hooks.slack.com/services/...",
+        discord: "https://discord.com/api/webhooks/...",
     } as const;
 
     $: isInvalid = (() => {
@@ -99,17 +105,19 @@
                             webhookUrl: webhookUrl,
                         };
                     }
+                    case "discord": {
+                        createProjectPayload.discord = {
+                            webhookUrl: webhookUrl,
+                        };
+                    }
                 }
 
                 createProjectPayload.notificationEvents = {
-                    isInstanceCreateEventEnabled: isInstanceCreateEventEnabled,
-                    isInstanceUpdateEventEnabled: isInstanceUpdateEventEnabled,
-                    isRevisionSubmittedEventEnabled:
-                        isRevisionSubmittedEventEnabled,
-                    isRevisionApprovedEventEnabled:
-                        isRevisionApprovedEventEnabled,
-                    isRevisionRejectedEventEnabled:
-                        isRevisionRejectedEventEnabled,
+                    isInstanceCreateEventEnabled,
+                    isInstanceUpdateEventEnabled,
+                    isRevisionSubmittedEventEnabled,
+                    isRevisionApprovedEventEnabled,
+                    isRevisionRejectedEventEnabled,
                 };
             }
 
@@ -185,13 +193,15 @@
             {#if isWebhookEnabled}
                 <div class="mb-3 flex gap-2">
                     <YakManSelect
-                        cotainerClasses="w-24"
+                        cotainerClasses="w-26"
                         label="Type"
                         bind:value={webhookType}
                     >
                         <option value="slack">Slack</option>
+                        <option value="discord">Discord</option>
                     </YakManSelect>
                     <YakManInput
+                        containerClass="w-96"
                         label="URL"
                         placeholder={webhookUrlPlaceholder[webhookType]}
                         bind:value={webhookUrl}

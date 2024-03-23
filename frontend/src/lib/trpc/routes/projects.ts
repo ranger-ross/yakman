@@ -11,6 +11,9 @@ const ModifyProjectPayloadSchema = z.object({
     slack: z.object({
         webhookUrl: z.string()
     }).optional(),
+    discord: z.object({
+        webhookUrl: z.string()
+    }).optional(),
     notificationEvents: z.object({
         isInstanceCreateEventEnabled: z.boolean(),
         isInstanceUpdateEventEnabled: z.boolean(),
@@ -101,18 +104,31 @@ export const projects = t.router({
         }),
 })
 
+// TODO: Improve type safety here
 function createModifyProjectPayload(request: ModifyProjectPayload): any {
     let body: any = {
         'project_name': request.name
     }
 
-    if (request.notificationEvents && request.slack) {
-        body.notification_settings = {
-            notification_type: {
+    const isNotificationEnabled = request.slack || request.discord;
+    if (request.notificationEvents && isNotificationEnabled) {
+        let type: any = null;
+        if (request.slack) {
+            type = {
                 Slack: {
                     webhook_url: request.slack.webhookUrl
                 }
-            },
+            };
+        } else if (request.discord) {
+            type = {
+                Discord: {
+                    webhook_url: request.discord.webhookUrl
+                }
+            };
+        }
+
+        body.notification_settings = {
+            notification_type: type,
             is_instance_updated_enabled: request.notificationEvents.isInstanceUpdateEventEnabled,
             is_instance_created_enabled: request.notificationEvents.isInstanceCreateEventEnabled,
             is_revision_submitted_enabled: request.notificationEvents.isRevisionSubmittedEventEnabled,
