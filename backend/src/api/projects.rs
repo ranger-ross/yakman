@@ -2,17 +2,20 @@ use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     api::is_alphanumeric_kebab_case,
-    error::{CreateProjectError, YakManApiError},
+    error::{CreateProjectError, UpdateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{
-        request::{CreateProjectPayload, ProjectNotificationType},
+        request::{
+            CreateProjectPayload, ProjectNotificationSettings, ProjectNotificationType,
+            UpdateProjectPayload,
+        },
         YakManProject, YakManRole,
     },
     services::StorageService,
     settings,
 };
 
-use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use log::error;
 use url::Url;
@@ -57,7 +60,7 @@ pub async fn get_projects(
 }
 
 /// Get project by uuid
-#[utoipa::path(responses((status = 200, body = YakManProject)))]
+#[utoipa::path(responses((status = 200, body = YakManProjectDetails)))]
 #[get("/v1/projects/{uuid}")]
 pub async fn get_project(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -118,6 +121,74 @@ async fn create_project(
         return Err(YakManApiError::forbidden());
     }
 
+    validate_project(&project_name, payload.notification_settings.as_ref())?;
+
+    return match storage_service
+        .create_project(&project_name, payload.notification_settings)
+        .await
+    {
+        Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
+        Err(e) => match e {
+            CreateProjectError::StorageError { message } => {
+                error!("Failed to create config {project_name}, error: {message}");
+                Err(YakManApiError::server_error("Failed to create config"))
+            }
+            CreateProjectError::DuplicateNameError { name: _ } => {
+                Err(YakManApiError::bad_request("duplicate project"))
+            }
+        },
+    };
+}
+
+/// Update a project
+#[utoipa::path(request_body = UpdateProjectPayload, responses((status = 200, body = (), content_type = [])))]
+#[post("/v1/projects/{uuid}")]
+async fn update_project(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    payload: web::Json<UpdateProjectPayload>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    let payload = payload.into_inner();
+    let project_name = payload.project_name.to_lowercase();
+
+    let project_uuid: String = path.into_inner();
+    let has_role = YakManRoleBinding::has_any_role(
+        vec![YakManRole::Admin],
+        &project_uuid,
+        &auth_details.authorities,
+    );
+
+    if !has_role {
+        return Err(YakManApiError::forbidden());
+    }
+
+    validate_project(&project_name, payload.notification_settings.as_ref())?;
+
+    return match storage_service
+        .update_project(&project_uuid, &project_name, payload.notification_settings)
+        .await
+    {
+        Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
+        Err(e) => match e {
+            UpdateProjectError::StorageError { message } => {
+                log::error!("Failed to create config {project_name}, error: {message}");
+                Err(YakManApiError::server_error("Failed to create config"))
+            }
+            UpdateProjectError::DuplicateNameError { name: _ } => {
+                Err(YakManApiError::bad_request("duplicate project"))
+            }
+            UpdateProjectError::ProjectNotFound => {
+                Err(YakManApiError::bad_request("project not found"))
+            }
+        },
+    };
+}
+
+fn validate_project(
+    project_name: &str,
+    notification_settings: Option<&ProjectNotificationSettings>,
+) -> Result<(), YakManApiError> {
     if project_name.is_empty() {
         return Err(YakManApiError::bad_request(
             "Invalid project name. Must not be empty",
@@ -131,7 +202,7 @@ async fn create_project(
     }
 
     // Validate notification webhooks to protect against SSRF
-    if let Some(notification) = &payload.notification_settings {
+    if let Some(notification) = &notification_settings {
         match &notification.notification_type {
             ProjectNotificationType::Slack { webhook_url } => {
                 let Ok(url) = Url::parse(&webhook_url) else {
@@ -154,21 +225,7 @@ async fn create_project(
         }
     }
 
-    return match storage_service
-        .create_project(&project_name, payload.notification_settings)
-        .await
-    {
-        Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
-        Err(e) => match e {
-            CreateProjectError::StorageError { message } => {
-                error!("Failed to create config {project_name}, error: {message}");
-                Err(YakManApiError::server_error("Failed to create config"))
-            }
-            CreateProjectError::DuplicateNameError { name: _ } => {
-                Err(YakManApiError::bad_request("duplicate project"))
-            }
-        },
-    };
+    return Ok(());
 }
 
 #[cfg(test)]
