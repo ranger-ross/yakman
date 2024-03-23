@@ -6,13 +6,13 @@ use super::{NotificationSetting, NotificationSettingEvents, YakManRole};
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateConfigPayload {
     pub config_name: String,
-    pub project_uuid: String,
+    pub project_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct DeleteConfigPayload {
-    pub config_name: String,
-    pub project_uuid: String,
+    pub config_id: String,
+    pub project_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]

@@ -4,16 +4,16 @@ import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async (event) => {
     let id = event.url.searchParams.get('id') as string;
-    let userUuid = event.url.searchParams.get('user_uuid') as string;
+    let userId = event.url.searchParams.get('user_id') as string;
 
     const { valid } = await trpc(event).auth.validateResetPasswordLink.query({
         id,
-        userUuid
+        userId: userId
     });
 
     return {
         id,
-        userUuid,
+        userId,
         isValidLink: valid
     }
 };

@@ -139,14 +139,11 @@ impl OAuthService for YakManOAuthService {
         {
             // Update the user's profile picture
             if let Some(profile_picture) = &picture {
-                if let Ok(Some(mut user)) = self.storage.get_user_details(&yakman_user.uuid).await {
+                if let Ok(Some(mut user)) = self.storage.get_user_details(&yakman_user.id).await {
                     user.profile_picture = Some(profile_picture.to_owned());
                     // Ignore the error, if the profile picture does not get update,
                     // its fine just ignore and move on
-                    let _ = self
-                        .storage
-                        .save_user_details(&yakman_user.uuid, user)
-                        .await;
+                    let _ = self.storage.save_user_details(&yakman_user.id, user).await;
                 }
             }
 

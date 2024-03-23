@@ -61,18 +61,18 @@ export const projects = t.router({
             }
 
             return {
-                projectUuid: await response.text()
+                projectId: await response.text()
             }
         }),
     updateProject: t.procedure
         .input(z.object({
-            uuid: z.string(),
+            projectId: z.string(),
             payload: ModifyProjectPayloadSchema
         }))
         .mutation(async ({ input, ctx }) => {
             const body = createModifyProjectPayload(input.payload)
             console.log(body)
-            const response = await fetch(`${BASE_URL}/v1/projects/${input.uuid}`, {
+            const response = await fetch(`${BASE_URL}/v1/projects/${input.projectId}`, {
                 method: 'POST',
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
@@ -85,7 +85,7 @@ export const projects = t.router({
             }
 
             return {
-                projectUuid: await response.text()
+                projectId: await response.text()
             }
         }),
     deleteProject: t.procedure

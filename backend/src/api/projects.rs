@@ -45,7 +45,7 @@ pub async fn get_projects(
         .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(_) => None,
-            YakManRoleBinding::ProjectRoleBinding(r) => Some(r.project_uuid.clone()),
+            YakManRoleBinding::ProjectRoleBinding(r) => Some(r.project_id.clone()),
         })
         .collect();
 
@@ -53,15 +53,15 @@ pub async fn get_projects(
         .get_projects()
         .await?
         .into_iter()
-        .filter(|p| user_has_global_role || allowed_projects.contains(&p.uuid))
+        .filter(|p| user_has_global_role || allowed_projects.contains(&p.id))
         .collect();
 
     return Ok(web::Json(projects));
 }
 
-/// Get project by uuid
+/// Get project by id
 #[utoipa::path(responses((status = 200, body = YakManProjectDetails)))]
-#[get("/v1/projects/{uuid}")]
+#[get("/v1/projects/{id}")]
 pub async fn get_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
@@ -71,7 +71,7 @@ pub async fn get_project(
         return Err(YakManApiError::forbidden());
     }
 
-    let project_uuid: String = path.into_inner();
+    let project_id: String = path.into_inner();
     let has_role = YakManRoleBinding::has_any_role(
         vec![
             YakManRole::Admin,
@@ -79,7 +79,7 @@ pub async fn get_project(
             YakManRole::Operator,
             YakManRole::Viewer,
         ],
-        &project_uuid,
+        &project_id,
         &auth_details.authorities,
     );
 
@@ -87,7 +87,7 @@ pub async fn get_project(
         return Err(YakManApiError::forbidden());
     }
 
-    let Some(details) = storage_service.get_project_details(&project_uuid).await? else {
+    let Some(details) = storage_service.get_project_details(&project_id).await? else {
         return Err(YakManApiError::not_found("Project not found"));
     };
 
@@ -127,7 +127,7 @@ async fn create_project(
         .create_project(&project_name, payload.notification_settings)
         .await
     {
-        Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
+        Ok(project_id) => Ok(HttpResponse::Ok().body(project_id)),
         Err(e) => match e {
             CreateProjectError::StorageError { message } => {
                 error!("Failed to create config {project_name}, error: {message}");
@@ -142,7 +142,7 @@ async fn create_project(
 
 /// Update a project
 #[utoipa::path(request_body = UpdateProjectPayload, responses((status = 200, body = (), content_type = [])))]
-#[post("/v1/projects/{uuid}")]
+#[post("/v1/projects/{id}")]
 async fn update_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     payload: web::Json<UpdateProjectPayload>,
@@ -152,10 +152,10 @@ async fn update_project(
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
-    let project_uuid: String = path.into_inner();
+    let project_id: String = path.into_inner();
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin],
-        &project_uuid,
+        &project_id,
         &auth_details.authorities,
     );
 
@@ -166,10 +166,10 @@ async fn update_project(
     validate_project(&project_name, payload.notification_settings.as_ref())?;
 
     return match storage_service
-        .update_project(&project_uuid, &project_name, payload.notification_settings)
+        .update_project(&project_id, &project_name, payload.notification_settings)
         .await
     {
-        Ok(project_uuid) => Ok(HttpResponse::Ok().body(project_uuid)),
+        Ok(project_id) => Ok(HttpResponse::Ok().body(project_id)),
         Err(e) => match e {
             UpdateProjectError::StorageError { message } => {
                 log::error!("Failed to create config {project_name}, error: {message}");
@@ -185,9 +185,9 @@ async fn update_project(
     };
 }
 
-/// Delete project by uuid
+/// Delete project by id
 #[utoipa::path(responses((status = 200, body = ())))]
-#[delete("/v1/projects/{uuid}")]
+#[delete("/v1/projects/{id}")]
 pub async fn delete_project(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
@@ -197,10 +197,10 @@ pub async fn delete_project(
         return Err(YakManApiError::forbidden());
     }
 
-    let project_uuid: String = path.into_inner();
+    let project_id: String = path.into_inner();
     let has_role = YakManRoleBinding::has_any_role(
         vec![YakManRole::Admin],
-        &project_uuid,
+        &project_id,
         &auth_details.authorities,
     );
 
@@ -208,7 +208,7 @@ pub async fn delete_project(
         return Err(YakManApiError::forbidden());
     }
 
-    return match storage_service.delete_project(&project_uuid).await {
+    return match storage_service.delete_project(&project_id).await {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(DeleteProjectError::ProjectNotFound) => {
             Err(YakManApiError::not_found("project not found"))
@@ -282,8 +282,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
-        let project_bar_uuid = storage_service.create_project("bar", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
+        let project_bar_id = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -300,11 +300,11 @@ mod tests {
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("foo", first["name"]);
-        assert_eq!(project_foo_uuid, first["uuid"]);
+        assert_eq!(project_foo_id, first["id"]);
 
         let second = &value.as_array().unwrap()[1];
         assert_eq!("bar", second["name"]);
-        assert_eq!(project_bar_uuid, second["uuid"]);
+        assert_eq!(project_bar_id, second["id"]);
 
         Ok(())
     }
@@ -315,12 +315,12 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
-        let project_bar_uuid = storage_service.create_project("bar", None).await?;
+        let _project_foo_id = storage_service.create_project("foo", None).await?;
+        let project_bar_id = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
-                project_uuid: project_bar_uuid.clone(),
+                project_id: project_bar_id.clone(),
                 role: YakManRole::Admin,
             },
         )]);
@@ -342,7 +342,7 @@ mod tests {
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("bar", first["name"]);
-        assert_eq!(project_bar_uuid, first["uuid"]);
+        assert_eq!(project_bar_id, first["id"]);
 
         Ok(())
     }
@@ -353,8 +353,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
-        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
+        let _project_bar_id = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -364,7 +364,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(200, resp.status().as_u16());
@@ -372,7 +372,7 @@ mod tests {
         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
         assert_eq!("foo", value["name"]);
-        assert_eq!(project_foo_uuid, value["uuid"]);
+        assert_eq!(project_foo_id, value["id"]);
 
         Ok(())
     }
@@ -383,12 +383,12 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
-        let project_bar_uuid = storage_service.create_project("bar", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
+        let project_bar_id = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
             YakManUserProjectRole {
-                project_uuid: project_bar_uuid.clone(),
+                project_id: project_bar_id.clone(),
                 role: YakManRole::Admin,
             },
         )]);
@@ -401,7 +401,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status().as_u16(), 403);
@@ -485,7 +485,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -495,7 +495,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::post()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .set_json(UpdateProjectPayload {
                 project_name: "foo".to_string(),
                 notification_settings: None,
@@ -512,8 +512,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
-        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
+        let _project_bar_id = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -523,7 +523,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::post()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .set_json(UpdateProjectPayload {
                 project_name: "bar".to_string(),
                 notification_settings: None,
@@ -540,7 +540,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let _project_foo_id = storage_service.create_project("foo", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -550,9 +550,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::post()
-            .uri(&format!(
-                "/v1/projects/4dc8bcae-1bbf-4353-a642-ba82d060577d"
-            )) // random uuid
+            .uri(&format!("/v1/projects/p48ad84e623f0")) // random id
             .set_json(UpdateProjectPayload {
                 project_name: "foo".to_string(),
                 notification_settings: None,
@@ -569,7 +567,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -579,7 +577,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::post()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .set_json(UpdateProjectPayload {
                 project_name: "invalid project".to_string(),
                 notification_settings: None,
@@ -596,7 +594,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -606,7 +604,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::post()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .set_json(UpdateProjectPayload {
                 project_name: "foo".to_string(),
                 notification_settings: None,
@@ -623,8 +621,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
-        let _project_bar_uuid = storage_service.create_project("bar", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
+        let _project_bar_id = storage_service.create_project("bar", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -634,21 +632,19 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::delete()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(200, resp.status().as_u16());
 
-        let project_details = storage_service
-            .get_project_details(&project_foo_uuid)
-            .await?;
+        let project_details = storage_service.get_project_details(&project_foo_id).await?;
         if project_details.is_some() {
             panic!("project details was not delete");
         }
 
         let projects = storage_service.get_projects().await?;
 
-        if let Some(_) = projects.iter().find(|p| p.uuid == project_foo_uuid) {
+        if let Some(_) = projects.iter().find(|p| p.id == project_foo_id) {
             panic!("project was not deleted")
         }
 
@@ -661,7 +657,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let _project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let _project_foo_id = storage_service.create_project("foo", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -671,9 +667,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::delete()
-            .uri(&format!(
-                "/v1/projects/4dc8bcae-1bbf-4353-a642-ba82d060577d"
-            )) // fake uuid
+            .uri(&format!("/v1/projects/p48ad84e623f0")) // fake id
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_client_error());
@@ -687,7 +681,7 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+        let project_foo_id = storage_service.create_project("foo", None).await?;
 
         let app = test::init_service(
             App::new()
@@ -697,7 +691,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::delete()
-            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .uri(&format!("/v1/projects/{project_foo_id}"))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(403, resp.status().as_u16());

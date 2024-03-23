@@ -5,6 +5,7 @@ use crate::error::YakManApiError;
 use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
+use crate::services::id::generate_user_id;
 use crate::services::StorageService;
 use actix_web::{
     get, put,
@@ -14,7 +15,6 @@ use actix_web::{HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::Serialize;
 use utoipa::ToSchema;
-use uuid::Uuid;
 
 /// Gets users
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
@@ -52,7 +52,7 @@ pub async fn create_yakman_user(
 
     users.push(YakManUser {
         email: user.email,
-        uuid: Uuid::new_v4().to_string(),
+        id: generate_user_id(),
         role: user.role,
     });
 
@@ -90,7 +90,7 @@ pub async fn get_user_info(
         .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::ProjectRoleBinding(role) => {
-                Some((role.project_uuid.clone(), role.role.clone()))
+                Some((role.project_id.clone(), role.role.clone()))
             }
             _ => None,
         })
@@ -98,8 +98,8 @@ pub async fn get_user_info(
 
     let mut profile_picture = None;
 
-    if let Some(user_uuid) = principle.user_uuid {
-        if let Some(user) = storage_service.get_user_details(&user_uuid).await? {
+    if let Some(user_id) = principle.user_id {
+        if let Some(user) = storage_service.get_user_details(&user_id).await? {
             profile_picture = user.profile_picture;
         }
     }

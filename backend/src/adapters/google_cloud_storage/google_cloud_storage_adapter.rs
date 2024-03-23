@@ -51,10 +51,10 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path = format!("{dir}/{project_uuid}.json");
+        let path = format!("{dir}/{project_id}.json");
 
         let Ok(content) = self.get_object(&path).await else {
             return Ok(None);
@@ -66,11 +66,11 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path: String = format!("{dir}/{uuid}.json");
+        let path: String = format!("{dir}/{project_id}.json");
 
         let data: String = serde_json::to_string(&project)?;
 
@@ -78,9 +78,9 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(());
     }
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
         let dir = self.get_projects_dir();
-        let path: String = format!("{dir}/{uuid}.json");
+        let path: String = format!("{dir}/{project_id}.json");
         self.delete_object(&path).await?;
         return Ok(());
     }
@@ -92,14 +92,14 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(v.configs);
     }
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
-            .filter(|c| c.project_uuid == project_uuid)
+            .filter(|c| c.project_id == project_id)
             .collect())
     }
 
@@ -127,10 +127,10 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_dir}/{config_name}.json");
+        let instance_file = format!("{metadata_dir}/{config_id}.json");
         if let Some(content) = self.get_object(&instance_file).await.ok() {
             let v: InstanceJson = serde_json::from_str(&content)?;
             return Ok(Some(v.instances));
@@ -140,11 +140,11 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_path}/{config_name}.json");
+        let instance_file = format!("{metadata_path}/{config_id}.json");
         let data = serde_json::to_string(&InstanceJson {
             instances: instances,
         })?;
@@ -154,20 +154,20 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_path}/{config_name}.json");
+        let instance_file = format!("{metadata_path}/{config_id}.json");
         self.delete_object(&instance_file).await?;
         return Ok(());
     }
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         let dir = self.get_instance_revisions_path();
-        let path = format!("{dir}/{config_name}/{revision}");
+        let path = format!("{dir}/{config_id}/{revision}");
 
         if let Ok(content) = self.get_object(&path).await {
             let data: RevisionJson = serde_json::from_str(&content)?;
@@ -181,7 +181,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
         let revisions_path = self.get_instance_revisions_path();
@@ -189,41 +189,41 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         let revision_data = serde_json::to_string(&RevisionJson {
             revision: revision.clone(),
         })?;
-        let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
+        let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}");
         self.put_object(&revision_file_path, revision_data).await?;
         return Ok(());
     }
 
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
         let revisions_path = self.get_instance_revisions_path();
-        let revision_file_path = format!("{revisions_path}/{config_name}/{revision}");
+        let revision_file_path = format!("{revisions_path}/{config_id}/{revision}");
         self.delete_object(&revision_file_path).await?;
         return Ok(());
     }
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
         let instance_dir = self.get_config_instance_dir();
-        let instance_path = format!("{instance_dir}/{config_name}/{data_key}");
+        let instance_path = format!("{instance_dir}/{config_id}/{data_key}");
         return Ok(self.get_object(&instance_path).await?);
     }
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
         let instance_dir = self.get_config_instance_dir();
         // Create new file with data
-        let data_file_path = format!("{instance_dir}/{config_name}/{data_key}");
+        let data_file_path = format!("{instance_dir}/{config_id}/{data_key}");
         self.put_object_with_content_type(
             &data_file_path,
             data.to_string(),
@@ -310,14 +310,14 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {
-            if user.uuid == uuid {
+            if user.id == user_id {
                 return Ok(Some(user));
             }
         }
@@ -327,16 +327,16 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
         let dir = self.get_user_dir();
-        let path = format!("{dir}/{uuid}.json");
+        let path = format!("{dir}/{user_id}.json");
 
         if let Ok(content) = self.get_object(&path).await {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
         } else {
-            log::error!("Failed to load user file: {uuid}");
+            log::error!("Failed to load user file: {user_id}");
         }
 
         return Ok(None);
@@ -344,11 +344,11 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_user_dir();
-        let path: String = format!("{dir}/{uuid}.json");
+        let path: String = format!("{dir}/{user_id}.json");
 
         let data: String = serde_json::to_string(&details)?;
 

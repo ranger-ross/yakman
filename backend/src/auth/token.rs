@@ -54,7 +54,7 @@ pub struct YakManJwtClaims {
     pub sub: String,
     pub iat: i64,
     pub exp: i64,
-    pub uuid: String,
+    pub user_id: String,
 }
 
 impl YakManTokenService {
@@ -97,7 +97,7 @@ impl TokenService for YakManTokenService {
             sub: username.into(),
             exp: now + (token_time_to_live_seconds),
             iss: "YakMan Backend".into(),
-            uuid: user.uuid.to_string(),
+            user_id: user.id.to_string(),
         };
         let unsigned_token = Token::new(header, claims);
 

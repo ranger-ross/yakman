@@ -12,11 +12,11 @@ type RevisionPayload = {
 export const revisions = t.router({
     fetchInstanceRevisions: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             instance: z.string(),
         }))
         .query(async ({ input, ctx }): Promise<YakManInstanceRevision[]> => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances/${input.instance}/revisions`, {
                 headers: createYakManAuthHeaders(ctx.accessToken)
             });
 
@@ -24,13 +24,13 @@ export const revisions = t.router({
         }),
     reviewInstanceRevision: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             instance: z.string(),
             revision: z.string(),
             reviewResult: z.enum(["Approve", "ApproveAndApply", "Reject"])
         }))
         .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/review/${input.reviewResult}`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances/${input.instance}/revisions/${input.revision}/review/${input.reviewResult}`, {
                 headers: createYakManAuthHeaders(ctx.accessToken),
                 method: 'POST'
             });
@@ -41,12 +41,12 @@ export const revisions = t.router({
         }),
     applyInstanceRevision: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             instance: z.string(),
             revision: z.string(),
         }))
         .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/apply`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances/${input.instance}/revisions/${input.revision}/apply`, {
                 headers: createYakManAuthHeaders(ctx.accessToken),
                 method: 'POST'
             });
@@ -57,12 +57,12 @@ export const revisions = t.router({
         }),
     rollbackInstanceRevision: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             instance: z.string(),
             revision: z.string(),
         }))
         .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}/revisions/${input.revision}/rollback`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances/${input.instance}/revisions/${input.revision}/rollback`, {
                 headers: createYakManAuthHeaders(ctx.accessToken),
                 method: 'POST'
             });

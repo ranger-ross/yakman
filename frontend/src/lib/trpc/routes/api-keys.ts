@@ -15,7 +15,7 @@ export const apiKeys = t.router({
         }),
     createApiKey: t.procedure
         .input(z.object({
-            projectUuid: z.string(),
+            projectId: z.string(),
             role: z.string()
         }))
         .mutation(async ({ input, ctx }) => {
@@ -26,7 +26,7 @@ export const apiKeys = t.router({
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    'project_uuid': input.projectUuid,
+                    'project_id': input.projectId,
                     'role': input.role
                 })
             });

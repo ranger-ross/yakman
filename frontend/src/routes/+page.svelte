@@ -21,19 +21,19 @@
 
 	const projects: YakManProject[] = data.projects ?? [];
 
-	let projectUuidFromQuery = $page.url.searchParams.get("project");
-	let selectedProjectUuid = projectUuidFromQuery ?? projects[0]?.uuid;
+	let projectIdFromQuery = $page.url.searchParams.get("project");
+	let selectedProjectId = projectIdFromQuery ?? projects[0]?.id;
 
-	let selectedProject = projects.find((p) => p.uuid === selectedProjectUuid);
+	let selectedProject = projects.find((p) => p.id === selectedProjectId);
 
 	let configToDelete: YakManConfig | null = null;
 
 	function onProjectChange(e: Event) {
 		const target = e?.currentTarget as HTMLSelectElement;
-		const projectUuid = target?.value;
-		selectedProject = projects.find((p) => p.uuid === projectUuid);
+		const projectId = target?.value;
+		selectedProject = projects.find((p) => p.id === projectId);
 		console.log(selectedProject);
-		goto(`?project=${selectedProject?.uuid}`);
+		goto(`?project=${selectedProject?.id}`);
 	}
 
 	function timeAgo(timestamp: number, locale = "en") {
@@ -72,8 +72,8 @@
 		// Optimistic update
 		const index = data.configs.findIndex(
 			(c) =>
-				c.config.name === configToDelete?.name &&
-				c.config.project_uuid === configToDelete.project_uuid,
+				c.config.id === configToDelete?.id &&
+				c.config.project_id === configToDelete.project_id,
 		);
 		const config = data.configs[index];
 		data.configs.splice(index, 1);
@@ -82,7 +82,7 @@
 		try {
 			await trpc($page).configs.deleteConfig.mutate({
 				name: configToDelete?.name!,
-				projectUuid: configToDelete?.project_uuid!,
+				projectId: configToDelete?.project_id!,
 			});
 
 			configToDelete = null;
@@ -117,17 +117,17 @@
 		{:else}
 			<div class="flex justify-between items-end gap-2">
 				<YakManSelect
-					bind:value={selectedProjectUuid}
+					bind:value={selectedProjectId}
 					label="Project"
 					on:change={onProjectChange}
 				>
 					{#each projects as project}
-						<option value={project.uuid}>{project.name}</option>
+						<option value={project.id}>{project.name}</option>
 					{/each}
 				</YakManSelect>
 
 				<div class="w-fit">
-					<ProjectActions projectUuid={selectedProjectUuid} />
+					<ProjectActions projectId={selectedProjectId} />
 				</div>
 			</div>
 
@@ -159,7 +159,7 @@
 								const selection = value.detail;
 								if (selection === "AddInstance") {
 									goto(
-										`/modify-instance/${config.config.name}`,
+										`/modify-instance/${config.config.id}`,
 									);
 								} else if (selection === "DeleteConfig") {
 									configToDelete = config.config;
@@ -197,25 +197,25 @@
 								<div class="flex items-center gap-5">
 									{#if !!instance.pending_revision}
 										<div>
-											<StatusPill
-												>Pending Changes</StatusPill
-											>
+											<StatusPill>
+												Pending Changes
+											</StatusPill>
 										</div>
 									{/if}
 									<div class="flex flex-col items-end">
 										<YakManLink
-											href={`/modify-instance/${instance.config_name}/${instance.instance}`}
+											href={`/modify-instance/${instance.config_id}/${instance.instance}`}
 										>
 											Edit
 										</YakManLink>
 										<YakManLink
-											href={`/view-instance/${instance.config_name}/${instance.instance}`}
+											href={`/view-instance/${instance.config_id}/${instance.instance}`}
 										>
 											View
 										</YakManLink>
 										{#if !!instance.pending_revision}
 											<YakManLink
-												href={`/apply-changes/${instance.config_name}/${instance.instance}`}
+												href={`/apply-changes/${instance.config_id}/${instance.instance}`}
 											>
 												Review Changes
 											</YakManLink>

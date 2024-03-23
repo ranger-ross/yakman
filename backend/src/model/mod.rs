@@ -8,13 +8,13 @@ use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManProject {
-    pub uuid: String, // Unique key
+    pub id: String, // Unique key
     pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManProjectDetails {
-    pub uuid: String,
+    pub id: String,
     pub name: String,
     pub notification_settings: Option<ProjectNotificationSettings>,
 }
@@ -46,8 +46,9 @@ pub struct NotificationSettingEvents {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManConfig {
-    pub name: String, // Unique key
-    pub project_uuid: String,
+    pub id: String, // Unique key
+    pub name: String,
+    pub project_id: String,
     #[serde(default)]
     pub hidden: bool,
 }
@@ -67,7 +68,7 @@ pub struct YakManLabel {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ConfigInstance {
-    pub config_name: String,
+    pub config_id: String,
     pub instance: String,         // Unique key
     pub labels: Vec<YakManLabel>, // These should match the labels in the current revision
     pub current_revision: String,
@@ -87,25 +88,25 @@ pub struct ConfigInstanceEvent {
 pub enum ConfigInstanceEventData {
     Created {
         new_revision: String,
-        created_by_uuid: String,
+        created_by_user_id: String,
     },
     Updated {
         previous_revision: String,
         new_revision: String,
-        applied_by_uuid: String,
+        applied_by_user_id: String,
     },
     NewRevisionSubmitted {
         previous_revision: String,
         new_revision: String,
-        submitted_by_uuid: String,
+        submitted_by_user_id: String,
     },
     NewRevisionApproved {
         new_revision: String,
-        approver_by_uuid: String,
+        approver_by_user_id: String,
     },
     NewRevisionRejected {
         new_revision: String,
-        rejected_by_uuid: String,
+        rejected_by_user_id: String,
     },
 }
 
@@ -123,9 +124,9 @@ pub struct ConfigInstanceRevision {
     pub labels: Vec<YakManLabel>,
     pub timestamp_ms: i64,
     pub review_state: RevisionReviewState,
-    pub reviewed_by_uuid: Option<String>,
+    pub reviewed_by_user_id: Option<String>,
     pub review_timestamp_ms: Option<i64>,
-    pub submitted_by_uuid: String,
+    pub submitted_by_user_id: String,
     pub submit_timestamp_ms: i64,
     pub content_type: String,
 }
@@ -134,10 +135,10 @@ pub struct ConfigInstanceRevision {
 pub struct YakManApiKey {
     pub id: String,
     pub hash: String,
-    pub project_uuid: String,
+    pub project_id: String,
     pub role: YakManRole,
     pub created_at: i64,
-    pub created_by_uuid: String,
+    pub created_by_user_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
@@ -187,13 +188,13 @@ impl TryFrom<String> for YakManRole {
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct YakManUser {
     pub email: String,
-    pub uuid: String,
+    pub id: String,
     pub role: Option<YakManRole>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
 pub struct YakManUserProjectRole {
-    pub project_uuid: String,
+    pub project_id: String,
     pub role: YakManRole,
 }
 
@@ -220,7 +221,7 @@ pub struct YakManPasswordResetLink {
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct YakManPublicPasswordResetLink {
     pub id: String,
-    pub user_uuid: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

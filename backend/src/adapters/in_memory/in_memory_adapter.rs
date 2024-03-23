@@ -37,25 +37,25 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_project_key(project_uuid))
+            .get_optional_data(&self.get_project_key(project_id))
             .await?);
     }
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
-        let key = self.get_project_key(uuid);
+        let key = self.get_project_key(project_id);
         self.insert(key, serde_json::to_string(&project)?).await;
         return Ok(());
     }
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
-        let key = self.get_project_key(uuid);
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_project_key(project_id);
         self.remove(&key).await;
         return Ok(());
     }
@@ -66,14 +66,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(serde_json::from_str(&configs)?);
     }
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
-            .filter(|c| c.project_uuid == project_uuid)
+            .filter(|c| c.project_id == project_id)
             .collect())
     }
 
@@ -97,74 +97,73 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_name))
+            .get_optional_data(&self.get_config_metadata_key(config_id))
             .await?);
     }
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
         Ok(self
             .storage
             .lock()
             .await
-            .get(&self.get_data_key(config_name, data_key))
+            .get(&self.get_data_key(config_id, data_key))
             .unwrap()
             .to_string())
     }
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
-        self.insert(self.get_data_key(config_name, data_key), data.to_string())
+        self.insert(self.get_data_key(config_id, data_key), data.to_string())
             .await;
         Ok(())
     }
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&instances)?;
-        self.insert(self.get_config_metadata_key(config_name), data.to_string())
+        self.insert(self.get_config_metadata_key(config_id), data.to_string())
             .await;
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_config_metadata_key(config_name))
-            .await;
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
+        self.remove(&self.get_config_metadata_key(config_id)).await;
         return Ok(());
     }
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         Ok(self
-            .get_optional_data(&self.get_revision_key(config_name, revision))
+            .get_optional_data(&self.get_revision_key(config_id, revision))
             .await?)
     }
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
         let revision_key = &revision.revision;
         let data = serde_json::to_string(&revision)?;
         self.insert(
-            self.get_revision_key(config_name, revision_key),
+            self.get_revision_key(config_id, revision_key),
             data.to_string(),
         )
         .await;
@@ -173,10 +172,10 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_revision_key(config_name, revision))
+        self.remove(&self.get_revision_key(config_id, revision))
             .await;
         Ok(())
     }
@@ -209,14 +208,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {
-            if user.uuid == uuid {
+            if user.id == user_id {
                 return Ok(Some(user));
             }
         }
@@ -226,17 +225,17 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
-        return Ok(self.get_optional_data(&self.get_user_key(uuid)).await?);
+        return Ok(self.get_optional_data(&self.get_user_key(user_id)).await?);
     }
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
-        let key = self.get_user_key(uuid);
+        let key = self.get_user_key(user_id);
         self.insert(key, serde_json::to_string(&details)?).await;
         return Ok(());
     }
@@ -447,28 +446,28 @@ impl InMemoryStorageAdapter {
         return format!("API_KEYS");
     }
 
-    fn get_config_metadata_key(&self, config_name: &str) -> String {
-        format!("CONFIG_METADATA_{config_name}")
+    fn get_config_metadata_key(&self, config_id: &str) -> String {
+        format!("CONFIG_METADATA_{config_id}")
     }
 
-    fn get_revision_key(&self, config_name: &str, revision: &str) -> String {
-        format!("REVISION_{config_name}_{revision}")
+    fn get_revision_key(&self, config_id: &str, revision: &str) -> String {
+        format!("REVISION_{config_id}_{revision}")
     }
 
-    fn get_data_key(&self, config_name: &str, data_key: &str) -> String {
-        format!("CONFIG_DATA_{config_name}_{data_key}")
+    fn get_data_key(&self, config_id: &str, data_key: &str) -> String {
+        format!("CONFIG_DATA_{config_id}_{data_key}")
     }
 
     fn get_snapshot_key(&self, timestamp: &DateTime<Utc>) -> String {
         format!("SNAPSHOT_{}", timestamp.to_rfc3339())
     }
 
-    fn get_project_key(&self, uuid: &str) -> String {
-        format!("PROJECTS_{uuid}")
+    fn get_project_key(&self, project_id: &str) -> String {
+        format!("PROJECTS_{project_id}")
     }
 
-    fn get_user_key(&self, uuid: &str) -> String {
-        format!("USERS_{uuid}")
+    fn get_user_key(&self, user_id: &str) -> String {
+        format!("USERS_{user_id}")
     }
 
     fn get_password_key(&self, email_hash: &str) -> String {

@@ -23,22 +23,22 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError>;
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError>;
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError>;
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
     async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError>;
@@ -49,57 +49,57 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError>;
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError>;
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError>;
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError>;
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError>;
 
     /// This does not delete the revision data because it might be shared across revisions.
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn prepare_config_instance_storage(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn prepare_revision_instance_storage(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
@@ -110,17 +110,19 @@ pub trait KVStorageAdapter: Sync + Send {
     ) -> Result<Option<YakManUser>, GenericStorageError>;
 
     /// This is for searching the main user list. It is reccomended to use `get_user_details` instead.
-    async fn get_user_by_uuid(&self, uuid: &str)
-        -> Result<Option<YakManUser>, GenericStorageError>;
+    async fn get_user_by_id(
+        &self,
+        user_id: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError>;
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError>;
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError>;
 

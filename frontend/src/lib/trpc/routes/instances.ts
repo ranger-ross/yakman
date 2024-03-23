@@ -20,7 +20,7 @@ export const instances = t.router({
         }),
     createConfigInstance: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             data: z.string(),
             contentType: z.string(),
             labels: z.record(z.string(), z.string())
@@ -31,7 +31,7 @@ export const instances = t.router({
                 query = '?' + new URLSearchParams(input.labels);
             }
 
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances${query}`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances${query}`, {
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
                     'content-type': input.contentType ?? 'text/plain'
@@ -52,7 +52,7 @@ export const instances = t.router({
         }),
     updateConfigInstance: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             instance: z.string(),
             data: z.string(),
             contentType: z.string(),
@@ -64,7 +64,7 @@ export const instances = t.router({
                 query = '?' + new URLSearchParams(input.labels);
             }
 
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}${query}`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances/${input.instance}${query}`, {
                 headers: {
                     ...createYakManAuthHeaders(ctx.accessToken),
                     'content-type': input.contentType ?? 'text/plain'
@@ -79,11 +79,11 @@ export const instances = t.router({
         }),
     deleteConfigInstance: t.procedure
         .input(z.object({
-            configName: z.string(),
+            configId: z.string(),
             instance: z.string(),
         }))
         .mutation(async ({ input, ctx }) => {
-            const response = await fetch(`${BASE_URL}/v1/configs/${input.configName}/instances/${input.instance}`, {
+            const response = await fetch(`${BASE_URL}/v1/configs/${input.configId}/instances/${input.instance}`, {
                 headers: createYakManAuthHeaders(ctx.accessToken),
                 method: 'DELETE'
             });

@@ -43,26 +43,26 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn get_project_details(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_project_key(project_uuid))
+            .get_optional_data(&self.get_project_key(project_id))
             .await?);
     }
 
     async fn save_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
-        let key = self.get_project_key(uuid);
+        let key = self.get_project_key(project_id);
         let mut connection = self.get_connection()?;
         let _: () = connection.set(key, serde_json::to_string(&project)?)?;
         return Ok(());
     }
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
-        let key = self.get_project_key(uuid);
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_project_key(project_id);
         let mut connection = self.get_connection()?;
         let _: () = connection.del(&key)?;
         Ok(())
@@ -74,14 +74,14 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&configs)?);
     }
 
-    async fn get_configs_by_project_uuid(
+    async fn get_configs_by_project_id(
         &self,
-        project_uuid: &str,
+        project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
             .into_iter()
-            .filter(|c| c.project_uuid == project_uuid)
+            .filter(|c| c.project_id == project_id)
             .collect())
     }
 
@@ -105,46 +105,46 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_name))
+            .get_optional_data(&self.get_config_metadata_key(config_id))
             .await?);
     }
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
         let mut connection = self.get_connection()?;
-        Ok(connection.get(self.get_data_key(config_name, data_key))?)
+        Ok(connection.get(self.get_data_key(config_id, data_key))?)
     }
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
-        let _: () = connection.set(self.get_data_key(config_name, data_key), data)?;
+        let _: () = connection.set(self.get_data_key(config_id, data_key), data)?;
         Ok(())
     }
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let data = serde_json::to_string(&instances)?;
-        let _: () = connection.set(self.get_config_metadata_key(config_name), data)?;
+        let _: () = connection.set(self.get_config_metadata_key(config_id), data)?;
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
-        let key = self.get_config_metadata_key(config_name);
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_config_metadata_key(config_id);
         let mut connection = self.get_connection()?;
         let _: () = connection.del(&key)?;
         Ok(())
@@ -152,33 +152,33 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         Ok(self
-            .get_optional_data(&self.get_revision_key(config_name, revision))
+            .get_optional_data(&self.get_revision_key(config_id, revision))
             .await?)
     }
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let revision_key = &revision.revision;
         let data = serde_json::to_string(&revision)?;
-        let _: () = connection.set(self.get_revision_key(config_name, revision_key), data)?;
+        let _: () = connection.set(self.get_revision_key(config_id, revision_key), data)?;
         Ok(())
     }
 
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
-        let _: () = connection.del(&self.get_revision_key(config_name, revision))?;
+        let _: () = connection.del(&self.get_revision_key(config_id, revision))?;
         Ok(())
     }
 
@@ -210,14 +210,14 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {
-            if user.uuid == uuid {
+            if user.id == user_id {
                 return Ok(Some(user));
             }
         }
@@ -227,17 +227,17 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
-        return Ok(self.get_optional_data(&self.get_user_key(uuid)).await?);
+        return Ok(self.get_optional_data(&self.get_user_key(user_id)).await?);
     }
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
-        let key = self.get_user_key(uuid);
+        let key = self.get_user_key(user_id);
         let mut connection = self.get_connection()?;
         let _: () = connection.set(key, serde_json::to_string(&details)?)?;
         return Ok(());
@@ -491,24 +491,24 @@ impl RedisStorageAdapter {
         return format!("{REDIS_PREFIX}_SNAPSHOT_LOCK");
     }
 
-    fn get_config_metadata_key(&self, config_name: &str) -> String {
-        format!("{REDIS_PREFIX}_CONFIG_METADATA_{config_name}")
+    fn get_config_metadata_key(&self, config_id: &str) -> String {
+        format!("{REDIS_PREFIX}_CONFIG_METADATA_{config_id}")
     }
 
-    fn get_revision_key(&self, config_name: &str, revision: &str) -> String {
-        format!("{REDIS_PREFIX}_REVISION_{config_name}_{revision}")
+    fn get_revision_key(&self, config_id: &str, revision: &str) -> String {
+        format!("{REDIS_PREFIX}_REVISION_{config_id}_{revision}")
     }
 
-    fn get_data_key(&self, config_name: &str, data_key: &str) -> String {
-        format!("{REDIS_PREFIX}_CONFIG_DATA_{config_name}_{data_key}")
+    fn get_data_key(&self, config_id: &str, data_key: &str) -> String {
+        format!("{REDIS_PREFIX}_CONFIG_DATA_{config_id}_{data_key}")
     }
 
-    fn get_project_key(&self, uuid: &str) -> String {
-        format!("{REDIS_PREFIX}_PROJECTS_{uuid}")
+    fn get_project_key(&self, project_id: &str) -> String {
+        format!("{REDIS_PREFIX}_PROJECTS_{project_id}")
     }
 
-    fn get_user_key(&self, uuid: &str) -> String {
-        format!("{REDIS_PREFIX}_USERS_{uuid}")
+    fn get_user_key(&self, user_id: &str) -> String {
+        format!("{REDIS_PREFIX}_USERS_{user_id}")
     }
 
     fn get_password_key(&self, email_hash: &str) -> String {

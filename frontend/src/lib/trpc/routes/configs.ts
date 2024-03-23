@@ -22,7 +22,7 @@ export const configs = t.router({
     createConfig: t.procedure
         .input(z.object({
             name: z.string(),
-            projectUuid: z.string()
+            projectId: z.string()
         }))
         .mutation(async ({ input, ctx }) => {
             const response = await fetch(`${BASE_URL}/v1/configs`, {
@@ -33,7 +33,7 @@ export const configs = t.router({
                 },
                 body: JSON.stringify({
                     'config_name': input.name,
-                    'project_uuid': input.projectUuid
+                    'project_id': input.projectId
                 })
             });
             if (response.status != 200) {
@@ -46,7 +46,7 @@ export const configs = t.router({
     deleteConfig: t.procedure
         .input(z.object({
             name: z.string(),
-            projectUuid: z.string()
+            projectId: z.string()
         }))
         .mutation(async ({ input, ctx }) => {
             const response = await fetch(`${BASE_URL}/v1/configs`, {
@@ -57,7 +57,7 @@ export const configs = t.router({
                 },
                 body: JSON.stringify({
                     'config_name': input.name,
-                    'project_uuid': input.projectUuid
+                    'project_id': input.projectId
                 })
             });
             if (response.status != 200) {

@@ -7,7 +7,7 @@ export const load: PageLoad = async (event) => {
     const { config, instance } = event.params
 
     const revisions = await trpc(event).revisions.fetchInstanceRevisions.query({
-        configName: config,
+        configId: config,
         instance: instance,
     })
 
@@ -25,7 +25,7 @@ export const load: PageLoad = async (event) => {
 
     if (instanceMetadata) {
         data = await trpc(event).data.fetchRevisionData.query({
-            configName: config,
+            configId: config,
             instance: instance,
             revision: instanceMetadata.current_revision
         });
@@ -36,30 +36,30 @@ export const load: PageLoad = async (event) => {
         try {
             const allUsers = await trpc(event).users.fetchUsers.query()
 
-            const userUuids = new Set(instanceMetadata.changelog
+            const userIds = new Set(instanceMetadata.changelog
                 .map(change => {
                     const type = getEventType(change);
                     switch (type) {
                         case "CREATED":
-                            return change.Created?.created_by_uuid;
+                            return change.Created?.created_by_user_id;
                         case "UPDATED":
-                            return change.Updated?.created_by_uuid;
+                            return change.Updated?.created_by_user_id;
                         case "SUBMITTED":
-                            return change.NewRevisionSubmitted?.submitted_by_uuid;
+                            return change.NewRevisionSubmitted?.submitted_by_user_id;
                         case "APPROVED":
-                            return change.NewRevisionApproved?.approver_by_uuid;
+                            return change.NewRevisionApproved?.approver_by_user_id;
                         case "REJECTED":
-                            return change.NewRevisionRejected?.rejected_by_uuid;;
+                            return change.NewRevisionRejected?.rejected_by_user_id;;
                         case "UNKNOWN":
                             return null;
                     }
                 })
-                .filter(uuid => !!uuid))
+                .filter(userId => !!userId))
 
 
             for (const user of allUsers) {
-                if (userUuids.has(user.uuid)) {
-                    users.set(user.uuid, user.email)
+                if (userIds.has(user.id)) {
+                    users.set(user.id, user.email)
                 }
             }
         } catch {

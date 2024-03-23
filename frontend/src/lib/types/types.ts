@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const YakManProjectSchema = z.object({
-    uuid: z.string(),
+    id: z.string(),
     name: z.string(),
 });
 
 export type YakManProject = z.infer<typeof YakManProjectSchema>;
 
 export const YakManProjectDetailsSchema = z.object({
-    uuid: z.string(),
+    id: z.string(),
     name: z.string(),
     notification_settings: z.object({
         settings: z.object({
@@ -29,9 +29,9 @@ export const YakManProjectDetailsSchema = z.object({
 export type YakManProjectDetails = z.infer<typeof YakManProjectDetailsSchema>;
 
 export const YakManConfigSchema = z.object({
+    id: z.string(),
     name: z.string(),
-    project_uuid: z.string(),
-    description: z.string(),
+    project_id: z.string(),
     hidden: z.boolean(),
 });
 
@@ -56,32 +56,32 @@ export const ConfigInstanceEventSchema = z.object({
     timestamp_ms: z.number(),
     Created: z.object({
         new_revision: z.string(),
-        created_by_uuid: z.string(),
+        created_by_user_id: z.string(),
     }).optional(),
     Updated: z.object({
         previous_revision: z.string(),
         new_revision: z.string(),
-        created_by_uuid: z.string(),
+        created_by_user_id: z.string(),
     }).optional(),
     NewRevisionSubmitted: z.object({
         previous_revision: z.string(),
         new_revision: z.string(),
-        submitted_by_uuid: z.string(),
+        submitted_by_user_id: z.string(),
     }).optional(),
     NewRevisionApproved: z.object({
         new_revision: z.string(),
-        approver_by_uuid: z.string(),
+        approver_by_user_id: z.string(),
     }).optional(),
     NewRevisionRejected: z.object({
         new_revision: z.string(),
-        rejected_by_uuid: z.string(),
+        rejected_by_user_id: z.string(),
     }).optional()
 });
 
 export type ConfigInstanceEvent = z.infer<typeof ConfigInstanceEventSchema>;
 
 export const YakManConfigInstanceSchema = z.object({
-    config_name: z.string(),
+    config_id: z.string(),
     instance: z.string(),
     labels: z.array(YakManLabelSchema),
     current_revision: z.string(),
@@ -98,7 +98,7 @@ export const YakManInstanceRevisionSchema = z.object({
     labels: z.array(YakManLabelSchema),
     timestamp_ms: z.number().int(),
     review_state: z.enum(['Pending', 'Approved', 'Rejected']),
-    reviewed_by_uuid: z.string().nullable(),
+    reviewed_by_user_id: z.string().nullable(),
     review_timestamp_ms: z.number().int().nullable(),
     content_type: z.string(),
 });
@@ -107,17 +107,17 @@ export type YakManInstanceRevision = z.infer<typeof YakManInstanceRevisionSchema
 
 export const YakManUserSchema = z.object({
     email: z.string(),
-    uuid: z.string(),
+    id: z.string(),
 });
 
 export type YakManUser = z.infer<typeof YakManUserSchema>;
 
 export const YakManApiKeySchema = z.object({
     id: z.string(),
-    project_uuid: z.string(),
+    project_id: z.string(),
     role: z.string(),
     created_at: z.number().int(),
-    created_by_uuid: z.string(),
+    created_by_user_id: z.string(),
 });
 
 export type YakManApiKey = z.infer<typeof YakManApiKeySchema>;

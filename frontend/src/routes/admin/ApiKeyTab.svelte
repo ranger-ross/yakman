@@ -17,13 +17,13 @@
         projects = ($page.data as PageData).projects;
     }
 
-    let newApiKeyProject = projects[0].uuid;
+    let newApiKeyProject = projects[0].id;
     let newApiKeyRole = "Viewer";
     let newApiKey: string | null = null;
 
     async function createApiKey() {
         const apiKey = await trpc($page).apiKeys.createApiKey.mutate({
-            projectUuid: newApiKeyProject,
+            projectId: newApiKeyProject,
             role: newApiKeyRole,
         });
         newApiKey = apiKey;
@@ -108,7 +108,7 @@
 
     <YakManSelect label="Project" bind:value={newApiKeyProject}>
         {#each projects as project}
-            <option value={project.uuid}>{project.name}</option>
+            <option value={project.id}>{project.name}</option>
         {/each}
     </YakManSelect>
 

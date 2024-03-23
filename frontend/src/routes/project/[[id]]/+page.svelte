@@ -16,8 +16,8 @@
 
     type WebhookType = "slack";
 
-    let projectUuid = $page.params.uuid;
-    const isNewProject = !projectUuid;
+    let projectId = $page.params.id;
+    const isNewProject = !projectId;
     let name = data.project?.name ?? "";
     let webhookUrl = "";
     let webhookType: WebhookType = "slack";
@@ -34,7 +34,8 @@
     roles.subscribe((value) => {
         isProjectAdmin = value?.globalRoles?.includes("Admin") ?? false;
         if (!isProjectAdmin) {
-            isProjectAdmin = value?.roles[projectUuid]?.includes("Admin") ?? false;
+            isProjectAdmin =
+                value?.roles[projectId]?.includes("Admin") ?? false;
         }
     });
 
@@ -113,17 +114,17 @@
             }
 
             if (isNewProject) {
-                const { projectUuid } =
+                const { projectId } =
                     await trpc($page).projects.createProject.mutate(
                         createProjectPayload,
                     );
-                goto(`/?project=${projectUuid}`);
+                goto(`/?project=${projectId}`);
             } else {
                 await trpc($page).projects.updateProject.mutate({
-                    uuid: projectUuid!,
+                    projectId: projectId!,
                     payload: createProjectPayload,
                 });
-                goto(`/?project=${projectUuid}`);
+                goto(`/?project=${projectId}`);
             }
         } catch (e) {
             console.error("Error creating project", e);
@@ -139,9 +140,7 @@
             confirmButtonText: "Delete",
             async onConfirm() {
                 try {
-                    await trpc($page).projects.deleteProject.mutate(
-                        projectUuid,
-                    );
+                    await trpc($page).projects.deleteProject.mutate(projectId);
                     goto(`/`);
                 } catch (e) {
                     console.error("Failed to delete project", e);

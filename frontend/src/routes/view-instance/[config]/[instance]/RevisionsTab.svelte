@@ -52,7 +52,7 @@
             const { contentType, data } = await trpc(
                 $page,
             ).data.fetchRevisionData.query({
-                configName: $page.params.config,
+                configId: $page.params.config,
                 instance: $page.params.instance,
                 revision: revision.revision,
             });
@@ -64,7 +64,7 @@
         } catch (e) {
             console.error(e);
             // Since the update failed to get new data
-            // rollback revision title to avoid confusing the user
+            // rollback revision title to avconfigIding the user
             selectedRevisionData.revision = oldRevision;
         }
     }
@@ -83,7 +83,7 @@
                         await trpc(
                             $page,
                         ).revisions.rollbackInstanceRevision.mutate({
-                            configName: config!,
+                            configId: config!,
                             instance: instance!,
                             revision: revision,
                         });

@@ -8,7 +8,7 @@
     } from "$lib/utils/changelog-utils";
 
     export let sortedChangelog: ConfigInstanceEvent[] = [];
-    // Map<User UUID, Email>
+    // Map<User ID, Email>
     export let users: Map<string, string> = new Map();
     let showRevisionReviews = false;
 
@@ -17,8 +17,8 @@
         return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     }
 
-    function getEmail(uuid: string): string {
-        return users.get(uuid) ?? uuid; // Fallback to the user UUID
+    function getEmail(userId: string): string {
+        return users.get(userId) ?? userId; // Fallback to the user ID
     }
 
     let displayableChangelog: ConfigInstanceEvent[];
@@ -89,7 +89,7 @@
                     </p>
                     <p>
                         Approved by: {getEmail(
-                            change.NewRevisionSubmitted?.submitted_by_uuid ??
+                            change.NewRevisionSubmitted?.submitted_by_user_id ??
                                 "",
                         )}
                     </p>
@@ -101,7 +101,8 @@
                     </p>
                     <p>
                         Approved by: {getEmail(
-                            change.NewRevisionApproved?.approver_by_uuid ?? "",
+                            change.NewRevisionApproved?.approver_by_user_id ??
+                                "",
                         )}
                     </p>
                 {:else if type === "REJECTED"}
@@ -112,7 +113,8 @@
                     </p>
                     <p>
                         Rejected by: {getEmail(
-                            change.NewRevisionRejected?.rejected_by_uuid ?? "",
+                            change.NewRevisionRejected?.rejected_by_user_id ??
+                                "",
                         )}
                     </p>
                 {/if}

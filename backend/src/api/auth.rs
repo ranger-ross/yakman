@@ -80,7 +80,7 @@ pub async fn login(
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreatePasswordResetLink {
-    pub user_uuid: String,
+    pub user_id: String,
 }
 
 /// Create a new password reset link (non-oauth)
@@ -92,20 +92,19 @@ pub async fn create_password_reset_link(
     principle: YakManPrinciple,
     auth_details: AuthDetails<YakManRoleBinding>,
 ) -> Result<impl Responder, YakManApiError> {
-    let target_user_uuid = &payload.user_uuid;
+    let target_user_id = &payload.user_id;
 
-    let user_uuid = match principle.user_uuid {
-        Some(user_id) => user_id,
-        None => return Err(YakManApiError::unauthorized()),
+    let Some(user_id) = principle.user_id else {
+        return Err(YakManApiError::unauthorized());
     };
 
-    if &user_uuid != target_user_uuid {
+    if &user_id != target_user_id {
         if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
             return Err(YakManApiError::forbidden());
         }
     }
 
-    match storage_service.create_password_reset_link(&user_uuid).await {
+    match storage_service.create_password_reset_link(&user_id).await {
         Ok(reset_link) => return Ok(web::Json(reset_link)),
         Err(CreatePasswordResetLinkError::InvalidUser) => {
             return Err(YakManApiError::bad_request("Invalid user"))
@@ -120,7 +119,7 @@ pub async fn create_password_reset_link(
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ValidatePasswordResetLink {
     pub id: String,
-    pub user_uuid: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -136,7 +135,7 @@ pub async fn validate_password_reset_link(
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     match storage_service
-        .validate_password_reset_link(&payload.id, &payload.user_uuid)
+        .validate_password_reset_link(&payload.id, &payload.user_id)
         .await
     {
         Ok(is_valid) => {

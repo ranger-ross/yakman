@@ -4,7 +4,7 @@ import type { PageLoad } from "./$types";
 export const load: PageLoad = async (event) => {
     const editMode = !!event.params.instance;
     let data = editMode ? await trpc(event).data.fetchInstanceData.query({
-        configName: event.params.config,
+        configId: event.params.config,
         instance: event.params.instance!,
     }) : null;
 

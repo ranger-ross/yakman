@@ -47,7 +47,7 @@
         try {
             if (editMode) {
                 await trpc($page).instances.updateConfigInstance.mutate({
-                    configName: config,
+                    configId: config,
                     instance: instance,
                     contentType: contentType,
                     data: input,
@@ -58,7 +58,7 @@
                 const result = await trpc(
                     $page,
                 ).instances.createConfigInstance.mutate({
-                    configName: config,
+                    configId: config,
                     contentType: contentType,
                     data: input,
                     labels: filtedSelectedLabels,
@@ -78,7 +78,7 @@
             confirmButtonText: "Delete",
             async onConfirm() {
                 await trpc($page).instances.deleteConfigInstance.mutate({
-                    configName: config,
+                    configId: config,
                     instance: instance,
                 });
 
