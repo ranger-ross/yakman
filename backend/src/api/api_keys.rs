@@ -68,9 +68,8 @@ pub async fn create_api_key(
         return Err(YakManApiError::forbidden());
     }
 
-    let user_uuid = match &principle.user_uuid {
-        Some(uuid) => uuid,
-        None => return Err(YakManApiError::forbidden()),
+    let Some(user_id) = &principle.user_id else {
+        return Err(YakManApiError::forbidden());
     };
 
     let Some(_) = storage_service
@@ -89,7 +88,7 @@ pub async fn create_api_key(
         project_id: request.project_id.to_string(),
         role: request.role.clone(),
         created_at: now,
-        created_by_uuid: user_uuid.to_string(),
+        created_by_user_id: user_id.to_string(),
     };
 
     storage_service.save_api_key(ak).await?;
@@ -136,7 +135,7 @@ mod tests {
             project_id: "91d16380-9df0-41dc-8542-c2dcf3633e7b".to_string(),
             role: YakManRole::Viewer,
             created_at: 1704330312738,
-            created_by_uuid: "c34e15d0-0697-47c1-b36a-7f3456c68f1d".to_string(),
+            created_by_user_id: "c34e15d0-0697-47c1-b36a-7f3456c68f1d".to_string(),
         }
     }
 
@@ -165,15 +164,12 @@ mod tests {
 
         let first = &value.as_array().unwrap()[0];
         assert_eq!("apikey-d66a57c5-a425-4157-b790-13756084d0cf", first["id"]);
-        assert_eq!(
-            "91d16380-9df0-41dc-8542-c2dcf3633e7b",
-            first["project_id"]
-        );
+        assert_eq!("91d16380-9df0-41dc-8542-c2dcf3633e7b", first["project_id"]);
         assert_eq!("Viewer", first["role"]);
         assert_eq!(1704330312738, first["created_at"].as_i64().unwrap());
         assert_eq!(
             "c34e15d0-0697-47c1-b36a-7f3456c68f1d",
-            first["created_by_uuid"]
+            first["created_by_user_id"]
         );
 
         // Make sure the hash is not leak in the response (regardless of the json field)
@@ -200,7 +196,7 @@ mod tests {
                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
                 .wrap_fn(|req, srv| {
                     req.extensions_mut().insert(YakManPrinciple {
-                        user_uuid: Some("c34e15d0-0697-47c1-b36a-7f3456c68f1d".to_string()),
+                        user_id: Some("c34e15d0-0697-47c1-b36a-7f3456c68f1d".to_string()),
                     });
 
                     srv.call(req)
@@ -232,7 +228,7 @@ mod tests {
         assert_eq!(YakManRole::Viewer, api_key.role);
         assert_eq!(
             "c34e15d0-0697-47c1-b36a-7f3456c68f1d",
-            api_key.created_by_uuid
+            api_key.created_by_user_id
         );
 
         Ok(())

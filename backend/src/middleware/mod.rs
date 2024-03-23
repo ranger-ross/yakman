@@ -21,7 +21,7 @@ use self::token::extract_access_token;
 
 #[derive(Debug, Clone)]
 pub struct YakManPrinciple {
-    pub user_uuid: Option<String>,
+    pub user_id: Option<String>,
 }
 
 impl FromRequest for YakManPrinciple {
@@ -77,7 +77,7 @@ where
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let mut user_uuid: Option<String> = None;
+            let mut user_id: Option<String> = None;
             if let Some(token) = extract_access_token(&req) {
                 let token_service = req
                     .app_data::<web::Data<Arc<YakManTokenService>>>()
@@ -93,22 +93,19 @@ where
                     // todo: handle unwrap??
                     if let Some(api_key) = storage_service.get_api_key_by_hash(&hash).await.unwrap()
                     {
-                        user_uuid = Some(api_key.id.to_string());
+                        user_id = Some(api_key.id.to_string());
                     }
                 } else {
                     match token_service.validate_access_token(&token) {
                         Ok(claims) => {
-                            let uuid = claims.uuid;
-                            user_uuid = Some(uuid);
+                            user_id = Some(claims.user_id);
                         }
                         Err(_) => (),
                     }
                 }
             }
 
-            req.extensions_mut().insert(YakManPrinciple {
-                user_uuid: user_uuid,
-            });
+            req.extensions_mut().insert(YakManPrinciple { user_id });
 
             let res = svc.call(req).await?;
 

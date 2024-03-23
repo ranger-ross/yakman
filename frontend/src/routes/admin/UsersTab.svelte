@@ -32,15 +32,15 @@
         }
     }
 
-    async function resetPassword(userUuid: string) {
-        const { id, user_uuid } = await trpc(
+    async function resetPassword(userId: string) {
+        const { id, user_id } = await trpc(
             $page,
         ).auth.createResetPasswordLink.mutate({
-            userUuid: userUuid,
+            userId: userId,
         });
 
         const origin = $page.url.origin;
-        resetPasswordLink = `${origin}/session/reset-password?id=${id}&user_uuid=${user_uuid}`;
+        resetPasswordLink = `${origin}/sessionuserIdassword?id=${id}&user_id=${user_id}`;
     }
 </script>
 
@@ -80,7 +80,7 @@
                                 {user.email}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm">
-                                {user.uuid}
+                                {user.id}
                             </td>
                             {#if !isOAuthEnabled}
                                 <td
@@ -90,7 +90,7 @@
                                         <YakManButton
                                             variant={"secondary"}
                                             on:click={() =>
-                                                resetPassword(user.uuid)}
+                                                resetPassword(user.id)}
                                         >
                                             Reset Password
                                         </YakManButton>

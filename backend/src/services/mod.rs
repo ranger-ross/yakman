@@ -1,6 +1,7 @@
 pub mod kv_storage_service;
 pub mod password;
 pub mod snapshot;
+pub mod id;
 
 use crate::{
     adapters::errors::GenericStorageError,
@@ -70,7 +71,7 @@ pub trait StorageService: Sync + Send {
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
-        creator_uuid: &str,
+        creator_user_id: &str,
     ) -> Result<String, CreateConfigInstanceError>;
 
     async fn get_config_instance_metadata(
@@ -110,7 +111,7 @@ pub trait StorageService: Sync + Send {
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
-        submitted_by_uuid: &str,
+        submitted_by_user_id: &str,
     ) -> Result<String, SaveConfigInstanceError>;
 
     async fn get_instance_revisions(
@@ -124,7 +125,7 @@ pub trait StorageService: Sync + Send {
         config_id: &str,
         instance: &str,
         revision: &str,
-        approved_uuid: &str,
+        approved_user_id: &str,
     ) -> Result<(), ApproveRevisionError>;
 
     async fn apply_instance_revision(
@@ -132,7 +133,7 @@ pub trait StorageService: Sync + Send {
         config_id: &str,
         instance: &str,
         revision: &str,
-        applied_by_uuid: &str,
+        applied_by_user_id: &str,
     ) -> Result<(), ApplyRevisionError>;
 
     async fn reject_instance_revision(
@@ -140,7 +141,7 @@ pub trait StorageService: Sync + Send {
         config_id: &str,
         instance: &str,
         revision: &str,
-        rejected_by_uuid: &str,
+        rejected_by_user_id: &str,
     ) -> Result<(), ApplyRevisionError>;
 
     async fn rollback_instance_revision(
@@ -148,7 +149,7 @@ pub trait StorageService: Sync + Send {
         config_id: &str,
         instance: &str,
         revision: &str,
-        rollback_by_uuid: &str,
+        rollback_by_user_id: &str,
     ) -> Result<String, RollbackRevisionError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
@@ -158,17 +159,19 @@ pub trait StorageService: Sync + Send {
         email: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError>;
 
-    async fn get_user_by_uuid(&self, uuid: &str)
-        -> Result<Option<YakManUser>, GenericStorageError>;
+    async fn get_user_by_id(
+        &self,
+        user_id: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError>;
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError>;
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError>;
 
@@ -197,7 +200,7 @@ pub trait StorageService: Sync + Send {
 
     async fn create_password_reset_link(
         &self,
-        user_uuid: &str,
+        user_id: &str,
     ) -> Result<YakManPublicPasswordResetLink, CreatePasswordResetLinkError>;
 
     async fn reset_password_with_link(
@@ -209,7 +212,7 @@ pub trait StorageService: Sync + Send {
     async fn validate_password_reset_link(
         &self,
         id: &str,
-        user_uuid: &str,
+        user_id: &str,
     ) -> Result<bool, GenericStorageError>;
 
     async fn initialize_storage(&self) -> Result<(), GenericStorageError>;

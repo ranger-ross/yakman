@@ -307,14 +307,14 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {
-            if user.uuid == uuid {
+            if user.id == user_id {
                 return Ok(Some(user));
             }
         }
@@ -324,10 +324,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
         let dir = self.get_user_dir();
-        let path = format!("{dir}/{uuid}.json");
+        let path = format!("{dir}/{user_id}.json");
 
         if let Some(content) = self.get_object_as_option(&path).await? {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
@@ -339,11 +339,11 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_user_dir();
-        let path: String = format!("{dir}/{uuid}.json");
+        let path: String = format!("{dir}/{user_id}.json");
 
         let data: String = serde_json::to_string(&details)?;
 

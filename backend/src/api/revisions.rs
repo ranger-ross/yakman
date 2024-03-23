@@ -81,16 +81,14 @@ async fn review_pending_instance_revision(
         return Err(YakManApiError::forbidden());
     }
 
-    let reviewer_uuid = principle.user_uuid;
-    if reviewer_uuid.is_none() {
+    let Some(reviewer_user_id) = principle.user_id else {
         return Err(YakManApiError::forbidden());
-    }
-    let reviewer_uuid = reviewer_uuid.unwrap();
+    };
 
     match result {
         ReviewResult::ApproveAndApply | ReviewResult::Approve => {
             return match storage_service
-                .approve_instance_revision(&config_id, &instance, &revision, &reviewer_uuid)
+                .approve_instance_revision(&config_id, &instance, &revision, &reviewer_user_id)
                 .await
             {
                 Ok(_) => {
@@ -100,7 +98,7 @@ async fn review_pending_instance_revision(
                                 &config_id,
                                 &instance,
                                 &revision,
-                                &reviewer_uuid,
+                                &reviewer_user_id,
                             )
                             .await
                         {
@@ -118,7 +116,7 @@ async fn review_pending_instance_revision(
         }
         ReviewResult::Reject => {
             return match storage_service
-                .reject_instance_revision(&config_id, &instance, &revision, &reviewer_uuid)
+                .reject_instance_revision(&config_id, &instance, &revision, &reviewer_user_id)
                 .await
             {
                 Ok(_) => Ok(HttpResponse::Ok().finish()),
@@ -157,14 +155,12 @@ async fn apply_instance_revision(
         return Err(YakManApiError::forbidden());
     }
 
-    let reviewer_uuid = principle.user_uuid;
-    if reviewer_uuid.is_none() {
+    let Some(reviewer_user_id) = principle.user_id else {
         return Err(YakManApiError::forbidden());
-    }
-    let reviewer_uuid = reviewer_uuid.unwrap();
+    };
 
     return match storage_service
-        .apply_instance_revision(&config_id, &instance, &revision, &reviewer_uuid)
+        .apply_instance_revision(&config_id, &instance, &revision, &reviewer_user_id)
         .await
     {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
@@ -200,10 +196,10 @@ async fn rollback_instance_revision(
         return Err(YakManApiError::forbidden());
     }
 
-    let rollback_by_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
+    let rollback_by_user_id = principle.user_id.ok_or(YakManApiError::forbidden())?;
 
     let new_revision = storage_service
-        .rollback_instance_revision(&config_id, &instance, &revision, &rollback_by_uuid)
+        .rollback_instance_revision(&config_id, &instance, &revision, &rollback_by_user_id)
         .await?;
 
     Ok(web::Json(RevisionPayload {

@@ -104,7 +104,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
     if token_service.is_api_key(&token) {
         return match req.extensions().get::<YakManPrinciple>() {
             Some(principle) => {
-                let key_id = match &principle.user_uuid {
+                let key_id = match &principle.user_id {
                     Some(key_id) => key_id,
                     None => return Ok(HashSet::new()),
                 };
@@ -133,13 +133,13 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
 
     match token_service.validate_access_token(&token) {
         Ok(claims) => {
-            let uuid = claims.uuid;
+            let user_id = claims.user_id;
 
             let storage_service = req
                 .app_data::<web::Data<Arc<dyn StorageService>>>()
                 .unwrap();
 
-            if let Some(details) = storage_service.get_user_details(&uuid).await? {
+            if let Some(details) = storage_service.get_user_details(&user_id).await? {
                 let global_roles: Vec<YakManRoleBinding> = details
                     .global_roles
                     .iter()

@@ -14,7 +14,7 @@ export type GetUserInfoResponse = {
 export const auth = t.router({
     createResetPasswordLink: t.procedure
         .input(z.object({
-            userUuid: z.string(),
+            userId: z.string(),
         }))
         .mutation(async ({ ctx, input }) => {
             const response = await fetch(`${BASE_URL}/auth/create-reset-password-link`, {
@@ -24,7 +24,7 @@ export const auth = t.router({
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    user_uuid: input.userUuid
+                    user_id: input.userId
                 })
             });
             if (response.status != 200) {
@@ -32,13 +32,13 @@ export const auth = t.router({
             }
             return await response.json() as {
                 id: string,
-                user_uuid: string,
+                user_id: string,
             };
         }),
     validateResetPasswordLink: t.procedure
         .input(z.object({
             id: z.string(),
-            userUuid: z.string(),
+            userId: z.string(),
         }))
         .query(async ({ ctx, input }) => {
             const response = await fetch(`${BASE_URL}/auth/validate-reset-password-link`, {
@@ -49,7 +49,7 @@ export const auth = t.router({
                 },
                 body: JSON.stringify({
                     id: input.id,
-                    user_uuid: input.userUuid
+                    user_id: input.userId
                 })
             });
             if (response.status != 200) {
@@ -62,7 +62,7 @@ export const auth = t.router({
     resetPassword: t.procedure
         .input(z.object({
             id: z.string(),
-            userUuid: z.string(),
+            userId: z.string(),
             password: z.string(),
         }))
         .mutation(async ({ ctx, input }) => {
@@ -75,7 +75,7 @@ export const auth = t.router({
                 body: JSON.stringify({
                     reset_link: {
                         id: input.id,
-                        user_uuid: input.userUuid
+                        user_id: input.userId
                     },
                     password: input.password
                 })

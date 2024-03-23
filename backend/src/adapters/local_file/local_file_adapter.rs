@@ -385,14 +385,14 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {
-            if user.uuid == uuid {
+            if user.id == user_id {
                 return Ok(Some(user));
             }
         }
@@ -402,16 +402,16 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
         let dir = self.get_user_dir();
-        let path = format!("{dir}/{uuid}.json");
+        let path = format!("{dir}/{user_id}.json");
 
         if let Ok(content) = fs::read_to_string(&path) {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
         } else {
-            log::error!("Failed to load user file: {uuid}");
+            log::error!("Failed to load user file: {user_id}");
         }
 
         return Ok(None);
@@ -419,11 +419,11 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let dir = self.get_user_dir();
-        let path = format!("{dir}/{uuid}.json");
+        let path = format!("{dir}/{user_id}.json");
 
         let data: String = serde_json::to_string(&details)?;
 

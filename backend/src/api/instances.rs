@@ -127,10 +127,10 @@ async fn create_new_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
+    let creator_user_id = principle.user_id.ok_or(YakManApiError::forbidden())?;
 
     match storage_service
-        .create_config_instance(&config_id, labels, &data, content_type, &creator_uuid)
+        .create_config_instance(&config_id, labels, &data, content_type, &creator_user_id)
         .await
     {
         Ok(instance) => Ok(web::Json(InstancePayload { instance: instance })),
@@ -181,7 +181,7 @@ async fn update_new_instance(
         return Err(YakManApiError::forbidden());
     }
 
-    let creator_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
+    let creator_user_id = principle.user_id.ok_or(YakManApiError::forbidden())?;
 
     let new_revsion = storage_service
         .submit_new_instance_revision(
@@ -190,7 +190,7 @@ async fn update_new_instance(
             labels,
             &data,
             content_type,
-            &creator_uuid,
+            &creator_user_id,
         )
         .await
         .map_err(|e| match e {

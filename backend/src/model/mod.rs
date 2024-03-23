@@ -88,25 +88,25 @@ pub struct ConfigInstanceEvent {
 pub enum ConfigInstanceEventData {
     Created {
         new_revision: String,
-        created_by_uuid: String,
+        created_by_user_id: String,
     },
     Updated {
         previous_revision: String,
         new_revision: String,
-        applied_by_uuid: String,
+        applied_by_user_id: String,
     },
     NewRevisionSubmitted {
         previous_revision: String,
         new_revision: String,
-        submitted_by_uuid: String,
+        submitted_by_user_id: String,
     },
     NewRevisionApproved {
         new_revision: String,
-        approver_by_uuid: String,
+        approver_by_user_id: String,
     },
     NewRevisionRejected {
         new_revision: String,
-        rejected_by_uuid: String,
+        rejected_by_user_id: String,
     },
 }
 
@@ -124,9 +124,9 @@ pub struct ConfigInstanceRevision {
     pub labels: Vec<YakManLabel>,
     pub timestamp_ms: i64,
     pub review_state: RevisionReviewState,
-    pub reviewed_by_uuid: Option<String>,
+    pub reviewed_by_user_id: Option<String>,
     pub review_timestamp_ms: Option<i64>,
-    pub submitted_by_uuid: String,
+    pub submitted_by_user_id: String,
     pub submit_timestamp_ms: i64,
     pub content_type: String,
 }
@@ -138,7 +138,7 @@ pub struct YakManApiKey {
     pub project_id: String,
     pub role: YakManRole,
     pub created_at: i64,
-    pub created_by_uuid: String,
+    pub created_by_user_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
@@ -188,7 +188,7 @@ impl TryFrom<String> for YakManRole {
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct YakManUser {
     pub email: String,
-    pub uuid: String,
+    pub id: String,
     pub role: Option<YakManRole>,
 }
 
@@ -221,7 +221,7 @@ pub struct YakManPasswordResetLink {
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct YakManPublicPasswordResetLink {
     pub id: String,
-    pub user_uuid: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

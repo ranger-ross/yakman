@@ -54,8 +54,8 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(());
     }
 
-    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
-        let key = self.get_project_key(uuid);
+    async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_project_key(project_id);
         self.remove(&key).await;
         return Ok(());
     }
@@ -209,14 +209,14 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(None);
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
         let users = self.get_users().await?;
 
         for user in users {
-            if user.uuid == uuid {
+            if user.id == user_id {
                 return Ok(Some(user));
             }
         }
@@ -226,17 +226,17 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
-        return Ok(self.get_optional_data(&self.get_user_key(uuid)).await?);
+        return Ok(self.get_optional_data(&self.get_user_key(user_id)).await?);
     }
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
-        let key = self.get_user_key(uuid);
+        let key = self.get_user_key(user_id);
         self.insert(key, serde_json::to_string(&details)?).await;
         return Ok(());
     }
@@ -463,12 +463,12 @@ impl InMemoryStorageAdapter {
         format!("SNAPSHOT_{}", timestamp.to_rfc3339())
     }
 
-    fn get_project_key(&self, uuid: &str) -> String {
-        format!("PROJECTS_{uuid}")
+    fn get_project_key(&self, project_id: &str) -> String {
+        format!("PROJECTS_{project_id}")
     }
 
-    fn get_user_key(&self, uuid: &str) -> String {
-        format!("USERS_{uuid}")
+    fn get_user_key(&self, user_id: &str) -> String {
+        format!("USERS_{user_id}")
     }
 
     fn get_password_key(&self, email_hash: &str) -> String {

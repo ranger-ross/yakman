@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use super::{
+    id::{generate_config_id, generate_project_id, short_sha},
     password::{hash_password, validate_password},
     StorageService,
 };
@@ -19,6 +20,7 @@ use crate::{
         YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
+    services::id::{generate_instance_id, generate_revision_id, generate_user_id},
     settings,
 };
 use anyhow::bail;
@@ -48,9 +50,9 @@ impl StorageService for KVStorageService {
 
     async fn get_project_details(
         &self,
-        uuid: &str,
+        project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
-        return self.adapter.get_project_details(uuid).await;
+        return self.adapter.get_project_details(project_id).await;
     }
 
     async fn get_config(
@@ -240,7 +242,7 @@ impl StorageService for KVStorageService {
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
-        creator_uuid: &str,
+        creator_user_id: &str,
     ) -> Result<String, CreateConfigInstanceError> {
         if let Some(mut instances) = self.adapter.get_instance_metadata(config_id).await? {
             let instance = generate_instance_id();
@@ -264,9 +266,9 @@ impl StorageService for KVStorageService {
                 labels: labels,
                 timestamp_ms: now,
                 review_state: RevisionReviewState::Approved,
-                reviewed_by_uuid: Some(creator_uuid.to_string()),
+                reviewed_by_user_id: Some(creator_user_id.to_string()),
                 review_timestamp_ms: Some(now),
-                submitted_by_uuid: creator_uuid.to_string(),
+                submitted_by_user_id: creator_user_id.to_string(),
                 submit_timestamp_ms: now,
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
@@ -283,7 +285,7 @@ impl StorageService for KVStorageService {
                 changelog: vec![ConfigInstanceEvent {
                     event: ConfigInstanceEventData::Created {
                         new_revision: revision.revision,
-                        created_by_uuid: creator_uuid.to_string(),
+                        created_by_user_id: creator_user_id.to_string(),
                     },
                     timestamp_ms: now,
                 }],
@@ -444,7 +446,7 @@ impl StorageService for KVStorageService {
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
-        submitted_by_uuid: &str,
+        submitted_by_user_id: &str,
     ) -> Result<String, SaveConfigInstanceError> {
         let mut instances = self
             .adapter
@@ -478,9 +480,9 @@ impl StorageService for KVStorageService {
             labels: labels,
             timestamp_ms: now,
             review_state: RevisionReviewState::Pending,
-            reviewed_by_uuid: None,
+            reviewed_by_user_id: None,
             review_timestamp_ms: None,
-            submitted_by_uuid: submitted_by_uuid.to_string(),
+            submitted_by_user_id: submitted_by_user_id.to_string(),
             submit_timestamp_ms: now,
             content_type: content_type.unwrap_or(String::from("text/plain")),
         };
@@ -493,7 +495,7 @@ impl StorageService for KVStorageService {
             event: ConfigInstanceEventData::NewRevisionSubmitted {
                 previous_revision: instance.current_revision.clone(),
                 new_revision: revision.revision.to_string(),
-                submitted_by_uuid: submitted_by_uuid.to_string(),
+                submitted_by_user_id: submitted_by_user_id.to_string(),
             },
             timestamp_ms: now,
         });
@@ -566,7 +568,7 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
         revision: &str,
-        approved_uuid: &str,
+        approved_user_id: &str,
     ) -> Result<(), ApproveRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_id).await? {
             Some(metadata) => metadata,
@@ -595,7 +597,7 @@ impl StorageService for KVStorageService {
 
         let now = Utc::now().timestamp_millis();
         revision_data.review_state = RevisionReviewState::Approved;
-        revision_data.reviewed_by_uuid = Some(approved_uuid.to_string());
+        revision_data.reviewed_by_user_id = Some(approved_user_id.to_string());
         revision_data.review_timestamp_ms = Some(now);
         self.adapter
             .save_revision(config_id, &revision_data)
@@ -607,7 +609,7 @@ impl StorageService for KVStorageService {
         instance.changelog.push(ConfigInstanceEvent {
             event: ConfigInstanceEventData::NewRevisionApproved {
                 new_revision: revision.to_string(),
-                approver_by_uuid: approved_uuid.to_string(),
+                approver_by_user_id: approved_user_id.to_string(),
             },
             timestamp_ms: now,
         });
@@ -633,7 +635,7 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
         revision: &str,
-        applied_by_uuid: &str,
+        applied_by_user_id: &str,
     ) -> Result<(), ApplyRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_id).await? {
             Some(metadata) => metadata,
@@ -669,7 +671,7 @@ impl StorageService for KVStorageService {
             event: ConfigInstanceEventData::Updated {
                 previous_revision: instance.current_revision.clone(),
                 new_revision: String::from(revision),
-                applied_by_uuid: String::from(applied_by_uuid),
+                applied_by_user_id: String::from(applied_by_user_id),
             },
             timestamp_ms: now,
         });
@@ -702,7 +704,7 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
         revision: &str,
-        rejected_by_uuid: &str,
+        rejected_by_user_id: &str,
     ) -> Result<(), ApplyRevisionError> {
         let mut metadata = match self.get_config_instance_metadata(config_id).await? {
             Some(metadata) => metadata,
@@ -722,7 +724,7 @@ impl StorageService for KVStorageService {
 
         let now = Utc::now().timestamp_millis();
         revision_data.review_state = RevisionReviewState::Rejected;
-        revision_data.reviewed_by_uuid = Some(rejected_by_uuid.to_string());
+        revision_data.reviewed_by_user_id = Some(rejected_by_user_id.to_string());
         revision_data.review_timestamp_ms = Some(now);
 
         instance.pending_revision = None;
@@ -734,7 +736,7 @@ impl StorageService for KVStorageService {
         instance.changelog.push(ConfigInstanceEvent {
             event: ConfigInstanceEventData::NewRevisionRejected {
                 new_revision: revision.to_string(),
-                rejected_by_uuid: rejected_by_uuid.to_string(),
+                rejected_by_user_id: rejected_by_user_id.to_string(),
             },
             timestamp_ms: now,
         });
@@ -764,7 +766,7 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
         revision: &str,
-        rollback_by_uuid: &str,
+        rollback_by_user_id: &str,
     ) -> Result<String, RollbackRevisionError> {
         let mut instances = self
             .adapter
@@ -793,9 +795,9 @@ impl StorageService for KVStorageService {
             labels: previous_revision.labels.clone(),
             timestamp_ms: now,
             review_state: RevisionReviewState::Pending,
-            reviewed_by_uuid: None,
+            reviewed_by_user_id: None,
             review_timestamp_ms: Some(now),
-            submitted_by_uuid: rollback_by_uuid.to_string(),
+            submitted_by_user_id: rollback_by_user_id.to_string(),
             submit_timestamp_ms: now,
             content_type: previous_revision.content_type,
         };
@@ -826,7 +828,7 @@ impl StorageService for KVStorageService {
                 email: std::env::var("YAKMAN_DEFAULT_ADMIN_USER_EMAIL")
                     .expect("No users found and 'YAKMAN_DEFAULT_ADMIN_USER_EMAIL' is not set"),
                 role: Some(YakManRole::Admin),
-                uuid: Uuid::new_v4().to_string(),
+                id: generate_user_id(),
             };
 
             let admin_user_details = YakManUserDetails {
@@ -836,7 +838,7 @@ impl StorageService for KVStorageService {
             };
 
             self.adapter
-                .save_user_details(&admin_user.uuid, admin_user_details)
+                .save_user_details(&admin_user.id, admin_user_details)
                 .await?;
 
             self.adapter.save_users(vec![admin_user]).await?;
@@ -886,30 +888,33 @@ impl StorageService for KVStorageService {
         return self.adapter.get_users().await;
     }
 
-    async fn get_user_by_email(&self, id: &str) -> Result<Option<YakManUser>, GenericStorageError> {
-        return self.adapter.get_user_by_email(id).await;
+    async fn get_user_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<YakManUser>, GenericStorageError> {
+        return self.adapter.get_user_by_email(email).await;
     }
 
-    async fn get_user_by_uuid(
+    async fn get_user_by_id(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUser>, GenericStorageError> {
-        return self.adapter.get_user_by_uuid(uuid).await;
+        return self.adapter.get_user_by_id(user_id).await;
     }
 
     async fn get_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
-        return self.adapter.get_user_details(uuid).await;
+        return self.adapter.get_user_details(user_id).await;
     }
 
     async fn save_user_details(
         &self,
-        uuid: &str,
+        user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
-        return self.adapter.save_user_details(uuid, details).await;
+        return self.adapter.save_user_details(user_id, details).await;
     }
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
@@ -1016,9 +1021,9 @@ impl StorageService for KVStorageService {
 
     async fn create_password_reset_link(
         &self,
-        user_uuid: &str,
+        user_id: &str,
     ) -> Result<YakManPublicPasswordResetLink, CreatePasswordResetLinkError> {
-        let user = match self.get_user_by_uuid(user_uuid).await? {
+        let user = match self.get_user_by_id(user_id).await? {
             Some(user) => user,
             None => return Err(CreatePasswordResetLinkError::InvalidUser),
         };
@@ -1043,7 +1048,7 @@ impl StorageService for KVStorageService {
 
         return Ok(YakManPublicPasswordResetLink {
             id,
-            user_uuid: user_uuid.to_string(),
+            user_id: user_id.to_string(),
         });
     }
 
@@ -1062,8 +1067,8 @@ impl StorageService for KVStorageService {
             }
         };
 
-        // Validate user_uuid match email hash from storage
-        let user = match self.get_user_by_uuid(&reset_link.user_uuid).await? {
+        // Validate user_id match email hash from storage
+        let user = match self.get_user_by_id(&reset_link.user_id).await? {
             Some(user) => user,
             None => return Err(ResetPasswordError::InvalidUser),
         };
@@ -1101,7 +1106,7 @@ impl StorageService for KVStorageService {
     async fn validate_password_reset_link(
         &self,
         id: &str,
-        user_uuid: &str,
+        user_id: &str,
     ) -> Result<bool, GenericStorageError> {
         let id = sha256::digest(id);
         let password_reset_link = match self.adapter.get_password_reset_link(&id).await? {
@@ -1116,10 +1121,9 @@ impl StorageService for KVStorageService {
             return Ok(false);
         }
 
-        // Validate user_uuid match email hash from storage
-        let user = match self.get_user_by_uuid(user_uuid).await? {
-            Some(user) => user,
-            None => return Ok(false),
+        // Validate user_id match email hash from storage
+        let Some(user) = self.get_user_by_id(user_id).await? else {
+            return Ok(false);
         };
 
         let email_hash = sha256::digest(&user.email);
@@ -1345,70 +1349,5 @@ impl KVStorageService {
             }
         }
         return Ok(true);
-    }
-}
-
-fn generate_project_id() -> String {
-    return format!("p{}", short_sha(&Uuid::new_v4().to_string()));
-}
-
-fn generate_config_id() -> String {
-    return format!("c{}", short_sha(&Uuid::new_v4().to_string()));
-}
-
-// fn generate_user_id() -> String {
-//     return format!("u{}", short_sha(&Uuid::new_v4().to_string()));
-// }
-
-fn generate_instance_id() -> String {
-    return format!("i{}", short_sha(&Uuid::new_v4().to_string()));
-}
-
-fn generate_revision_id() -> String {
-    return format!("r{}", short_sha(&Uuid::new_v4().to_string()));
-}
-
-/// Returns a 12 character string representation of a SHA256
-fn short_sha(input: &str) -> String {
-    let sha: String = sha256::digest(input);
-    return sha[0..12].to_string();
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn test_short_sha() {
-        let result = short_sha("hello world");
-        assert_eq!(result, "b94d27b9934d");
-
-        let result = short_sha("foo");
-        assert_eq!(result, "2c26b46b68ff");
-
-        let result = short_sha("bar");
-        assert_eq!(result, "fcde2b2edba5");
-
-        let result = short_sha("ade10004-41df-4bf6-88b9-d768afab674f");
-        assert_eq!(result, "8146205a8d27");
-    }
-
-    #[test]
-    fn test_generate_instance_id() {
-        for _i in 0..10 {
-            let result = generate_instance_id();
-            assert_eq!(13, result.len());
-            assert!(result.starts_with('i'));
-        }
-    }
-
-    #[test]
-    fn test_generate_revision_id() {
-        for _i in 0..10 {
-            let result = generate_revision_id();
-            assert_eq!(13, result.len());
-            assert!(result.starts_with('r'));
-        }
     }
 }

@@ -23,7 +23,7 @@ export const load: PageLoad = async (event) => {
             projectName: projects.find(p => p.id === key.project_id)?.name,
             role: key.role,
             createdAt: new Date(key.created_at),
-            createdBy: users.find(u => u.uuid === key.created_by_uuid)?.email
+            createdBy: users.find(u => u.id === key.created_by_user_id)?.email
         } as ApiKeyTableRow
     });
 

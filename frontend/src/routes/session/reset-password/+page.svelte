@@ -48,7 +48,7 @@
         try {
             await trpc($page).auth.resetPassword.mutate({
                 id: data.id,
-                userUuid: data.userUuid,
+                userId: data.userId,
                 password,
             });
             goto("/");
@@ -65,7 +65,7 @@
                 <h1 class="text-lg font-bold mb-2">Reset Password</h1>
 
                 {#if data.isValidLink}
-                    {#if !data.id && !data.userUuid}
+                    {#if !data.id && !data.userId}
                         <p>Error</p>
                     {:else}
                         <YakManInput

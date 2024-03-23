@@ -16,7 +16,7 @@
 
     type WebhookType = "slack";
 
-    let projectId = $page.params.uuid;
+    let projectId = $page.params.id;
     const isNewProject = !projectId;
     let name = data.project?.name ?? "";
     let webhookUrl = "";
@@ -121,7 +121,7 @@
                 goto(`/?project=${projectId}`);
             } else {
                 await trpc($page).projects.updateProject.mutate({
-                    uuid: projectId!,
+                    projectId: projectId!,
                     payload: createProjectPayload,
                 });
                 goto(`/?project=${projectId}`);
