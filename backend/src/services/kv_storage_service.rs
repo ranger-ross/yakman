@@ -156,6 +156,8 @@ impl StorageService for KVStorageService {
         self.adapter.save_projects(projects).await?;
         self.adapter.delete_project_details(project_uuid).await?;
 
+        // TODO: Remove configs/instances/ect
+
         Ok(())
     }
 

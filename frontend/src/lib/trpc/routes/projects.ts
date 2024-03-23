@@ -87,7 +87,18 @@ export const projects = t.router({
             return {
                 projectUuid: await response.text()
             }
-        })
+        }),
+    deleteProject: t.procedure
+        .input(z.string())
+        .mutation(async ({ input, ctx }): Promise<undefined> => {
+            const response = await fetch(`${BASE_URL}/v1/projects/${input}`, {
+                method: 'DELETE',
+                headers: createYakManAuthHeaders(ctx.accessToken)
+            });
+            if (response.status != 200) {
+                throw convertYakManErrorToTRPCError(await response.text(), response.status)
+            }
+        }),
 })
 
 function createModifyProjectPayload(request: ModifyProjectPayload): any {

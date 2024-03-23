@@ -9,6 +9,7 @@
     import YakManSelect from "$lib/components/YakManSelect.svelte";
     import type { ModifyProjectPayload } from "$lib/trpc/routes/projects";
     import YakManCheckbox from "$lib/components/YakManCheckbox.svelte";
+    import { openGlobaModal } from "$lib/stores/global-modal-state";
 
     export let data: PageData;
 
@@ -118,6 +119,26 @@
             console.error("Error creating project", e);
         }
     }
+
+    function onDeleteClicked() {
+        openGlobaModal({
+            title: "Are you sure you want to delete this project?",
+            message:
+                "This cannot be undone. All configs for this project will also be deleted!",
+            confirmButtonVariant: "danger",
+            confirmButtonText: "Delete",
+            async onConfirm() {
+                try {
+                    await trpc($page).projects.deleteProject.mutate(
+                        projectUuid,
+                    );
+                    goto(`/`);
+                } catch (e) {
+                    console.error("Failed to delete project", e);
+                }
+            },
+        });
+    }
 </script>
 
 <div class="container mx-auto">
@@ -198,5 +219,11 @@
                 Update
             {/if}
         </YakManButton>
+        {#if !isNewProject}
+            <!-- TODO: Hide if not admin -->
+            <YakManButton on:click={onDeleteClicked} variant="danger">
+                Delete Project
+            </YakManButton>
+        {/if}
     </YakManCard>
 </div>
