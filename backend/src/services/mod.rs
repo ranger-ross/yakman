@@ -5,7 +5,10 @@ pub mod snapshot;
 use crate::{
     adapters::errors::GenericStorageError,
     error::{
-        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError
+        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
+        DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError, RollbackRevisionError,
+        SaveConfigInstanceError, UpdateProjectError,
     },
     model::{
         request::ProjectNotificationSettings, ConfigInstance, ConfigInstanceRevision, LabelType,
