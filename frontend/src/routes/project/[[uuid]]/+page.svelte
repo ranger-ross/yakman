@@ -20,6 +20,7 @@
     let webhookUrl = "";
     let webhookType: WebhookType = "slack";
 
+    let isWebhookEnabled = false;
     let isInstanceCreateEventEnabled = false;
     let isInstanceUpdateEventEnabled = false;
     let isRevisionSubmittedEventEnabled = false;
@@ -28,6 +29,7 @@
 
     if (!isNewProject) {
         if (data.project?.notification_settings) {
+            isWebhookEnabled = true;
             const notificationSettings = data.project?.notification_settings;
 
             if (notificationSettings.settings.Slack) {
@@ -49,6 +51,30 @@
     const webhookUrlPlaceholder = {
         slack: "https://hooks.slack.com/services/...",
     } as const;
+
+    $: isInvalid = (() => {
+        if (!name || name.length === 0) {
+            return true;
+        }
+        if (isWebhookEnabled) {
+            if (!webhookUrl || webhookUrl.length === 0) {
+                return true;
+            }
+
+            if (
+                ![
+                    isInstanceCreateEventEnabled,
+                    isInstanceUpdateEventEnabled,
+                    isRevisionSubmittedEventEnabled,
+                    isRevisionApprovedEventEnabled,
+                    isRevisionRejectedEventEnabled,
+                ].includes(true)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    })();
 
     async function onSave() {
         try {
@@ -114,54 +140,58 @@
     </YakManCard>
 
     <YakManCard extraClasses="mt-2">
-        <h1 class="text-lg font-bold mb-4">Notification Settings (Webhooks)</h1>
-        <div class="mb-3 flex gap-2">
-            <YakManSelect
-                cotainerClasses="w-24"
-                label="Type"
-                bind:value={webhookType}
-            >
-                <option value="slack">Slack</option>
-            </YakManSelect>
-            <YakManInput
-                label="URL"
-                placeholder={webhookUrlPlaceholder[webhookType]}
-                bind:value={webhookUrl}
+        <h1 class="text-lg font-bold">Notification Settings (Webhooks)</h1>
+        <div class="mb-4">
+            <YakManCheckbox
+                bind:value={isWebhookEnabled}
+                label="Enable Notifications"
             />
         </div>
-        <div>
-            <h3 class="text-md font-bold">Events</h3>
-            <div class="flex flex-col">
-                <YakManCheckbox
-                    bind:value={isInstanceCreateEventEnabled}
-                    label="Instance Created"
-                />
-                <YakManCheckbox
-                    bind:value={isInstanceUpdateEventEnabled}
-                    label="Instance Updated"
-                />
-                <YakManCheckbox
-                    bind:value={isRevisionSubmittedEventEnabled}
-                    label="Revision Review Submitted"
-                />
-                <YakManCheckbox
-                    bind:value={isRevisionApprovedEventEnabled}
-                    label="Revision Review Approved"
-                />
-                <YakManCheckbox
-                    bind:value={isRevisionRejectedEventEnabled}
-                    label="Revision Review Rejected"
+        {#if isWebhookEnabled}
+            <div class="mb-3 flex gap-2">
+                <YakManSelect
+                    cotainerClasses="w-24"
+                    label="Type"
+                    bind:value={webhookType}
+                >
+                    <option value="slack">Slack</option>
+                </YakManSelect>
+                <YakManInput
+                    label="URL"
+                    placeholder={webhookUrlPlaceholder[webhookType]}
+                    bind:value={webhookUrl}
                 />
             </div>
-        </div>
+            <div>
+                <h3 class="text-md font-bold">Events</h3>
+                <div class="flex flex-col">
+                    <YakManCheckbox
+                        bind:value={isInstanceCreateEventEnabled}
+                        label="Instance Created"
+                    />
+                    <YakManCheckbox
+                        bind:value={isInstanceUpdateEventEnabled}
+                        label="Instance Updated"
+                    />
+                    <YakManCheckbox
+                        bind:value={isRevisionSubmittedEventEnabled}
+                        label="Revision Review Submitted"
+                    />
+                    <YakManCheckbox
+                        bind:value={isRevisionApprovedEventEnabled}
+                        label="Revision Review Approved"
+                    />
+                    <YakManCheckbox
+                        bind:value={isRevisionRejectedEventEnabled}
+                        label="Revision Review Rejected"
+                    />
+                </div>
+            </div>
+        {/if}
     </YakManCard>
 
     <YakManCard extraClasses="mt-2">
-        <YakManButton
-            on:click={onSave}
-            type="submit"
-            disabled={!name || name.length === 0}
-        >
+        <YakManButton on:click={onSave} type="submit" disabled={isInvalid}>
             {#if isNewProject}
                 Create
             {:else}
