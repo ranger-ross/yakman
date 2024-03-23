@@ -153,10 +153,43 @@ impl StorageService for KVStorageService {
 
         projects.remove(index);
 
+        // Delete all of the configs
+        let configs = self.adapter.get_configs().await?;
+
+        let project_configs: Vec<_> = configs
+            .iter()
+            .filter(|p| &p.project_uuid == &project_uuid)
+            .collect();
+
+        for config in &project_configs {
+            if let Ok(Some(metadata)) = self.get_config_instance_metadata(&config.name).await {
+                for instance in metadata {
+                    let res = self.delete_instance(&config.name, &instance.instance).await;
+                    if res.is_err() {
+                        log::error!("Failed to delete config {}", config.name);
+                    }
+                }
+            } else {
+                log::error!("Failed to delete config {}", config.name);
+            }
+
+            let res = self.adapter.delete_instance_metadata(&config.name).await;
+            if res.is_err() {
+                log::error!("Failed to delete config metadata {}", config.name);
+            }
+        }
+
+        let remaining_configs: Vec<_> = configs
+            .into_iter()
+            .filter(|p| &p.project_uuid != &project_uuid)
+            .collect();
+
+        let res = self.adapter.save_configs(remaining_configs).await;
+        if res.is_err() {
+            log::error!("Failed to delete configs");
+        }
         self.adapter.save_projects(projects).await?;
         self.adapter.delete_project_details(project_uuid).await?;
-
-        // TODO: Remove configs/instances/ect
 
         Ok(())
     }
@@ -1291,7 +1324,7 @@ impl KVStorageService {
         let configs = match project_uuid {
             Some(project_uuid) => {
                 self.adapter
-                    .get_configs_by_project_uuid(project_uuid)
+                    .get_configs_by_project_uuid(&project_uuid)
                     .await?
             }
             None => self.adapter.get_configs().await?,

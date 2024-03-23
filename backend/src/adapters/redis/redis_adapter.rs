@@ -76,7 +76,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
     async fn get_configs_by_project_uuid(
         &self,
-        project_uuid: String,
+        project_uuid: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
@@ -140,6 +140,13 @@ impl KVStorageAdapter for RedisStorageAdapter {
         let mut connection = self.get_connection()?;
         let data = serde_json::to_string(&instances)?;
         let _: () = connection.set(self.get_config_metadata_key(config_name), data)?;
+        Ok(())
+    }
+
+    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_config_metadata_key(config_name);
+        let mut connection = self.get_connection()?;
+        let _: () = connection.del(&key)?;
         Ok(())
     }
 

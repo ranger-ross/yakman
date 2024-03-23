@@ -38,7 +38,7 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_configs_by_project_uuid(
         &self,
-        project_uuid: String,
+        project_uuid: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
     async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError>;
@@ -52,6 +52,14 @@ pub trait KVStorageAdapter: Sync + Send {
         config_name: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
+    async fn save_instance_metadata(
+        &self,
+        config_name: &str,
+        instances: Vec<ConfigInstance>,
+    ) -> Result<(), GenericStorageError>;
+
+    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError>;
+
     async fn get_instance_data(
         &self,
         config_name: &str,
@@ -63,12 +71,6 @@ pub trait KVStorageAdapter: Sync + Send {
         config_name: &str,
         data_key: &str,
         data: &str,
-    ) -> Result<(), GenericStorageError>;
-
-    async fn save_instance_metadata(
-        &self,
-        config_name: &str,
-        instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError>;
 
     async fn get_revision(

@@ -94,7 +94,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
 
     async fn get_configs_by_project_uuid(
         &self,
-        project_uuid: String,
+        project_uuid: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = self.get_configs().await?;
         Ok(configs
@@ -152,6 +152,13 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         self.put_object(&instance_file, data).await?;
 
         Ok(())
+    }
+
+    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
+        let metadata_path = self.get_config_instance_metadata_dir();
+        let instance_file = format!("{metadata_path}/{config_name}.json");
+        self.delete_object(&instance_file).await?;
+        return Ok(());
     }
 
     async fn get_revision(
