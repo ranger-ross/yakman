@@ -18,6 +18,7 @@ pub struct DeleteConfigPayload {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub enum ProjectNotificationType {
     Slack { webhook_url: String },
+    Discord { webhook_url: String },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
@@ -59,6 +60,9 @@ impl Into<crate::model::ProjectNotificationSettings> for ProjectNotificationSett
 
         let settings = match self.notification_type {
             ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
+                webhook_url: webhook_url,
+            },
+            ProjectNotificationType::Discord { webhook_url } => NotificationSetting::Discord {
                 webhook_url: webhook_url,
             },
         };

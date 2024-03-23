@@ -14,6 +14,9 @@ export const YakManProjectDetailsSchema = z.object({
         settings: z.object({
             Slack: z.object({
                 webhook_url: z.string()
+            }).optional(),
+            Discord: z.object({
+                webhook_url: z.string()
             }).optional()
         }),
         events: z.object({

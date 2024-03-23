@@ -14,7 +14,7 @@
 
     export let data: PageData;
 
-    type WebhookType = "slack";
+    type WebhookType = "slack" | "discord";
 
     let projectId = $page.params.id;
     const isNewProject = !projectId;
@@ -49,6 +49,11 @@
                 webhookUrl = notificationSettings.settings.Slack.webhook_url;
             }
 
+            if (notificationSettings.settings.Discord) {
+                webhookType = "discord";
+                webhookUrl = notificationSettings.settings.Discord.webhook_url;
+            }
+
             const events = notificationSettings.events;
             isInstanceCreateEventEnabled = events.is_instance_created_enabled;
             isInstanceUpdateEventEnabled = events.is_instance_updated_enabled;
@@ -62,6 +67,7 @@
 
     const webhookUrlPlaceholder = {
         slack: "https://hooks.slack.com/services/...",
+        discord: "https://discord.com/api/webhooks/...",
     } as const;
 
     $: isInvalid = (() => {
@@ -96,6 +102,11 @@
                 switch (webhookType) {
                     case "slack": {
                         createProjectPayload.slack = {
+                            webhookUrl: webhookUrl,
+                        };
+                    }
+                    case "discord": {
+                        createProjectPayload.discord = {
                             webhookUrl: webhookUrl,
                         };
                     }
@@ -190,6 +201,7 @@
                         bind:value={webhookType}
                     >
                         <option value="slack">Slack</option>
+                        <option value="discord">Discord</option>
                     </YakManSelect>
                     <YakManInput
                         label="URL"

@@ -1,15 +1,10 @@
 use async_trait::async_trait;
-use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::settings;
 
 use super::{YakManNotificationAdapter, YakManNotificationType};
 
-#[derive(Debug, Serialize)]
-struct SlackNotificationPayload {
-    text: String,
-}
 
 pub struct SlackNotificationAdapter {
     pub http_client: reqwest::Client,
