@@ -1,7 +1,7 @@
+pub mod id;
 pub mod kv_storage_service;
 pub mod password;
 pub mod snapshot;
-pub mod id;
 
 use crate::{
     adapters::errors::GenericStorageError,

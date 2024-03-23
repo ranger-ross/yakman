@@ -550,9 +550,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::post()
-            .uri(&format!(
-                "/v1/projects/p48ad84e623f0"
-            )) // random id
+            .uri(&format!("/v1/projects/p48ad84e623f0")) // random id
             .set_json(UpdateProjectPayload {
                 project_name: "foo".to_string(),
                 notification_settings: None,
@@ -639,9 +637,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(200, resp.status().as_u16());
 
-        let project_details = storage_service
-            .get_project_details(&project_foo_id)
-            .await?;
+        let project_details = storage_service.get_project_details(&project_foo_id).await?;
         if project_details.is_some() {
             panic!("project details was not delete");
         }
@@ -671,9 +667,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::delete()
-            .uri(&format!(
-                "/v1/projects/p48ad84e623f0"
-            )) // fake id
+            .uri(&format!("/v1/projects/p48ad84e623f0")) // fake id
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_client_error());

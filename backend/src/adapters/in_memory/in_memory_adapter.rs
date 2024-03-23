@@ -141,8 +141,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     }
 
     async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_config_metadata_key(config_id))
-            .await;
+        self.remove(&self.get_config_metadata_key(config_id)).await;
         return Ok(());
     }
 

@@ -143,10 +143,7 @@ impl OAuthService for YakManOAuthService {
                     user.profile_picture = Some(profile_picture.to_owned());
                     // Ignore the error, if the profile picture does not get update,
                     // its fine just ignore and move on
-                    let _ = self
-                        .storage
-                        .save_user_details(&yakman_user.id, user)
-                        .await;
+                    let _ = self.storage.save_user_details(&yakman_user.id, user).await;
                 }
             }
 
