@@ -552,4 +552,32 @@ mod tests {
         assert_eq!(400, resp.status().as_u16());
         Ok(())
     }
+
+    #[actix_web::test]
+    async fn update_project_should_check_permissions() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let project_foo_uuid = storage_service.create_project("foo", None).await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(storage_service))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::operator_role)) // Admin role needed
+                .service(update_project),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!("/v1/projects/{project_foo_uuid}"))
+            .set_json(UpdateProjectPayload {
+                project_name: "foo".to_string(),
+                notification_settings: None,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(403, resp.status().as_u16());
+        Ok(())
+    }
+
 }
