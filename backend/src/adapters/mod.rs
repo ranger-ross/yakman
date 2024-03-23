@@ -32,6 +32,8 @@ pub trait KVStorageAdapter: Sync + Send {
         project: YakManProjectDetails,
     ) -> Result<(), GenericStorageError>;
 
+    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError>;
+
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
     async fn get_configs_by_project_uuid(

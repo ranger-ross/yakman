@@ -142,7 +142,21 @@ impl StorageService for KVStorageService {
     }
 
     async fn delete_project(&self, project_uuid: &str) -> Result<(), DeleteProjectError> {
-        todo!();
+        let Some(_) = self.adapter.get_project_details(project_uuid).await? else {
+            return Err(DeleteProjectError::ProjectNotFound);
+        };
+        let mut projects = self.adapter.get_projects().await?;
+
+        let Some(index) = projects.iter().position(|p| p.uuid == project_uuid) else {
+            return Err(DeleteProjectError::ProjectNotFound);
+        };
+
+        projects.remove(index);
+
+        self.adapter.save_projects(projects).await?;
+        self.adapter.delete_project_details(project_uuid).await?;
+
+        Ok(())
     }
 
     async fn get_visible_configs(

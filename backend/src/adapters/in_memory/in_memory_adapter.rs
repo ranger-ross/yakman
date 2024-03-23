@@ -54,6 +54,12 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(());
     }
 
+    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_project_key(uuid);
+        self.remove(&key).await;
+        return Ok(());
+    }
+
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let storage = self.storage.lock().await;
         let configs = storage.get(&self.get_configs_key()).unwrap();

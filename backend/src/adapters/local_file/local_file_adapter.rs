@@ -72,6 +72,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
+    async fn delete_project_details(&self, uuid: &str) -> Result<(), GenericStorageError> {
+        let path = self.get_projects_dir();
+        let revision_file_path = format!("{path}/{uuid}.json");
+        remove_file(revision_file_path)?;
+        return Ok(());
+    }
+
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let path = self.get_configs_file_path();
         let content = fs::read_to_string(path)?;
