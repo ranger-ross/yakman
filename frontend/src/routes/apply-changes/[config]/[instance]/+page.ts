@@ -6,7 +6,7 @@ export const load: PageLoad = async (event) => {
     const { config, instance } = event.params
 
     const revisions = await trpc(event).revisions.fetchInstanceRevisions.query({
-        configName: config,
+        configId: config,
         instance: instance,
     })
 
@@ -30,14 +30,14 @@ export const load: PageLoad = async (event) => {
 
     if (instanceMetadata) {
         currentData = await trpc(event).data.fetchRevisionData.query({
-            configName: config,
+            configId: config,
             instance: instance,
             revision: instanceMetadata.current_revision
         });
 
         if (instanceMetadata.pending_revision) {
             pendingData = await trpc(event).data.fetchRevisionData.query({
-                configName: config,
+                configId: config,
                 instance: instance,
                 revision: instanceMetadata.pending_revision
             });

@@ -27,7 +27,7 @@
             async onConfirm() {
                 try {
                     await trpc($page).revisions.reviewInstanceRevision.mutate({
-                        configName: config,
+                        configId: config,
                         instance: instance,
                         revision: data.pendingRevision?.revision as string,
                         reviewResult: isApply ? "ApproveAndApply" : "Approve",
@@ -54,7 +54,7 @@
             async onConfirm() {
                 try {
                     await trpc($page).revisions.reviewInstanceRevision.mutate({
-                        configName: config,
+                        configId: config,
                         instance: instance,
                         revision: data.pendingRevision?.revision as string,
                         reviewResult: "Reject",
@@ -74,7 +74,7 @@
             async onConfirm() {
                 try {
                     await trpc($page).revisions.applyInstanceRevision.mutate({
-                        configName: config,
+                        configId: config,
                         instance: instance,
                         revision: data.pendingRevision?.revision as string,
                     });

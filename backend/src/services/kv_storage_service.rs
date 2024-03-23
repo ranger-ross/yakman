@@ -55,10 +55,10 @@ impl StorageService for KVStorageService {
 
     async fn get_config(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<YakManConfig>, GenericStorageError> {
         let c = self.adapter.get_configs().await?;
-        return Ok(c.into_iter().find(|c| c.name == config_name && !c.hidden));
+        return Ok(c.into_iter().find(|c| c.id == config_id && !c.hidden));
     }
 
     async fn create_project(
@@ -119,8 +119,7 @@ impl StorageService for KVStorageService {
             }
         }
 
-        let Some(mut project_details) = self.adapter.get_project_details(project_id).await?
-        else {
+        let Some(mut project_details) = self.adapter.get_project_details(project_id).await? else {
             return Err(UpdateProjectError::ProjectNotFound);
         };
         let Some(project) = projects.iter_mut().find(|p| p.id == project_id) else {
@@ -162,20 +161,20 @@ impl StorageService for KVStorageService {
             .collect();
 
         for config in &project_configs {
-            if let Ok(Some(metadata)) = self.get_config_instance_metadata(&config.name).await {
+            if let Ok(Some(metadata)) = self.get_config_instance_metadata(&config.id).await {
                 for instance in metadata {
-                    let res = self.delete_instance(&config.name, &instance.instance).await;
+                    let res = self.delete_instance(&config.id, &instance.instance).await;
                     if res.is_err() {
-                        log::error!("Failed to delete config {}", config.name);
+                        log::error!("Failed to delete config {}", config.id);
                     }
                 }
             } else {
-                log::error!("Failed to delete config {}", config.name);
+                log::error!("Failed to delete config {}", config.id);
             }
 
-            let res = self.adapter.delete_instance_metadata(&config.name).await;
+            let res = self.adapter.delete_instance_metadata(&config.id).await;
             if res.is_err() {
-                log::error!("Failed to delete config metadata {}", config.name);
+                log::error!("Failed to delete config metadata {}", config.id);
             }
         }
 
@@ -237,13 +236,13 @@ impl StorageService for KVStorageService {
 
     async fn create_config_instance(
         &self,
-        config_name: &str,
+        config_id: &str,
         labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         creator_uuid: &str,
     ) -> Result<String, CreateConfigInstanceError> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_name).await? {
+        if let Some(mut instances) = self.adapter.get_instance_metadata(config_id).await? {
             let instance = generate_instance_id();
             let revision_key: String = generate_revision_id();
             let data_key = Uuid::new_v4().to_string();
@@ -255,7 +254,7 @@ impl StorageService for KVStorageService {
 
             // Create new file with data
             self.adapter
-                .save_instance_data(config_name, &data_key, data)
+                .save_instance_data(config_id, &data_key, data)
                 .await?;
 
             // Create revision
@@ -271,11 +270,11 @@ impl StorageService for KVStorageService {
                 submit_timestamp_ms: now,
                 content_type: content_type.unwrap_or(String::from("text/plain")),
             };
-            self.adapter.save_revision(config_name, &revision).await?;
+            self.adapter.save_revision(config_id, &revision).await?;
 
             // Add new instance to instances and update the instance metadata
             instances.push(ConfigInstance {
-                config_name: config_name.to_string(),
+                config_id: config_id.to_string(),
                 instance: instance.to_string(),
                 labels: revision.labels,
                 current_revision: revision.revision.clone(),
@@ -290,13 +289,13 @@ impl StorageService for KVStorageService {
                 }],
             });
             self.adapter
-                .save_instance_metadata(config_name, instances)
+                .save_instance_metadata(config_id, instances)
                 .await?;
-            log::info!("Update instance metadata for config: {config_name}");
+            log::info!("Update instance metadata for config: {config_id}");
 
             if settings::is_notifications_enabled() {
                 if let Err(err) = self
-                    .send_instance_created_notification(config_name, &instance)
+                    .send_instance_created_notification(config_id, &instance)
                     .await
                 {
                     log::error!("Failed to send notification, {err:?}");
@@ -313,7 +312,7 @@ impl StorageService for KVStorageService {
         &self,
         config_name: &str,
         project_id: &str,
-    ) -> Result<(), CreateConfigError> {
+    ) -> Result<String, CreateConfigError> {
         let mut configs = self
             .get_all_configs(None)
             .await
@@ -321,6 +320,9 @@ impl StorageService for KVStorageService {
 
         let mut config = configs.iter_mut().find(|config| config.name == config_name);
 
+        let config_id = generate_config_id();
+
+        // TODO: Review if this logic makes sense
         match &mut config {
             Some(&mut ref mut config) => {
                 if !config.hidden {
@@ -329,17 +331,20 @@ impl StorageService for KVStorageService {
 
                 log::info!("Config '{config_name}' already exists, unhiding it");
 
+                let config_id = config.id.clone();
+
                 // Config already exists, just unhide it
                 config.hidden = false;
                 self.adapter.save_configs(configs).await.map_err(|_| {
                     CreateConfigError::storage_error("Failed to update configs file")
                 })?;
-                return Ok(());
+                return Ok(config_id);
             }
             None => (),
         }
 
         configs.push(YakManConfig {
+            id: config_id.clone(),
             name: String::from(config_name),
             project_id: String::from(project_id),
             hidden: false,
@@ -347,13 +352,13 @@ impl StorageService for KVStorageService {
 
         // Create instance metadata file
         self.adapter
-            .save_instance_metadata(config_name, vec![])
+            .save_instance_metadata(&config_id, vec![])
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to save instance metadata"))?;
 
         // Create config instances directory
         self.adapter
-            .prepare_config_instance_storage(config_name)
+            .prepare_config_instance_storage(&config_id)
             .await
             .map_err(|_| {
                 CreateConfigError::storage_error("Failed to create instances directory")
@@ -361,7 +366,7 @@ impl StorageService for KVStorageService {
 
         // Create config revisions directory
         self.adapter
-            .prepare_revision_instance_storage(config_name)
+            .prepare_revision_instance_storage(&config_id)
             .await
             .map_err(|_| {
                 CreateConfigError::storage_error("Failed to create revisions directory")
@@ -373,15 +378,15 @@ impl StorageService for KVStorageService {
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to update configs file"))?;
 
-        Ok(())
+        Ok(config_id)
     }
 
-    async fn delete_config(&self, config_name: &str) -> Result<(), DeleteConfigError> {
+    async fn delete_config(&self, config_id: &str) -> Result<(), DeleteConfigError> {
         let mut configs = self.get_visible_configs(None).await?;
 
         if let Some(config) = configs
             .iter_mut()
-            .find(|config| config.name == config_name && !config.hidden)
+            .find(|config| config.id == config_id && !config.hidden)
         {
             config.hidden = true;
             self.adapter.save_configs(configs).await?;
@@ -393,17 +398,17 @@ impl StorageService for KVStorageService {
 
     async fn get_config_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
-        return Ok(self.adapter.get_instance_metadata(config_name).await?);
+        return Ok(self.adapter.get_instance_metadata(config_id).await?);
     }
 
     async fn get_config_instance(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
     ) -> Result<Option<ConfigInstance>, GenericStorageError> {
-        let instances = self.get_config_instance_metadata(config_name).await?;
+        let instances = self.get_config_instance_metadata(config_id).await?;
         return match instances {
             Some(instances) => Ok(instances.into_iter().find(|inst| inst.instance == instance)),
             None => Ok(None),
@@ -412,10 +417,10 @@ impl StorageService for KVStorageService {
 
     async fn get_config_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_name).await? {
+        if let Some(instances) = self.adapter.get_instance_metadata(config_id).await? {
             info!("Found {} instances", instances.len());
 
             info!("Search for instance ID {}", instance);
@@ -423,7 +428,7 @@ impl StorageService for KVStorageService {
 
             if let Some(instance) = selected_instance {
                 return self
-                    .get_data_by_revision(config_name, &instance.current_revision)
+                    .get_data_by_revision(config_id, &instance.current_revision)
                     .await;
             }
             info!("No selected instance found");
@@ -434,7 +439,7 @@ impl StorageService for KVStorageService {
 
     async fn submit_new_instance_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         labels: Vec<YakManLabel>,
         data: &str,
@@ -443,7 +448,7 @@ impl StorageService for KVStorageService {
     ) -> Result<String, SaveConfigInstanceError> {
         let mut instances = self
             .adapter
-            .get_instance_metadata(config_name)
+            .get_instance_metadata(config_id)
             .await?
             .ok_or(SaveConfigInstanceError::InvalidConfig)?;
         let instance_id = instance;
@@ -462,7 +467,7 @@ impl StorageService for KVStorageService {
 
         // Create new file with data
         self.adapter
-            .save_instance_data(config_name, &data_key, data)
+            .save_instance_data(config_id, &data_key, data)
             .await?;
 
         // Create revision
@@ -479,7 +484,7 @@ impl StorageService for KVStorageService {
             submit_timestamp_ms: now,
             content_type: content_type.unwrap_or(String::from("text/plain")),
         };
-        self.adapter.save_revision(config_name, &revision).await?;
+        self.adapter.save_revision(config_id, &revision).await?;
 
         // Update instance data
         instance.pending_revision = Some(String::from(&revision.revision));
@@ -494,14 +499,14 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_instance_metadata(config_name, instances)
+            .save_instance_metadata(config_id, instances)
             .await?;
 
-        log::info!("Updated instance metadata for config: {config_name}");
+        log::info!("Updated instance metadata for config: {config_id}");
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
-                .send_submitted_notification(config_name, instance_id, &revision.revision)
+                .send_submitted_notification(config_id, instance_id, &revision.revision)
                 .await
             {
                 log::error!("Failed to send notification, {err:?}");
@@ -513,10 +518,10 @@ impl StorageService for KVStorageService {
 
     async fn get_instance_revisions(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
     ) -> Result<Option<Vec<ConfigInstanceRevision>>, GenericStorageError> {
-        let instances = match self.get_config_instance_metadata(&config_name).await? {
+        let instances = match self.get_config_instance_metadata(&config_id).await? {
             Some(value) => value,
             None => return Ok(None),
         };
@@ -531,7 +536,7 @@ impl StorageService for KVStorageService {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.adapter.get_revision(config_name, &rev).await? {
+            if let Some(revision) = self.adapter.get_revision(config_id, &rev).await? {
                 revisions.push(revision);
             }
         }
@@ -542,13 +547,13 @@ impl StorageService for KVStorageService {
     /// Returns a tuple of (data, content_type)
     async fn get_data_by_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError> {
-        if let Some(revision_data) = self.adapter.get_revision(config_name, revision).await? {
+        if let Some(revision_data) = self.adapter.get_revision(config_id, revision).await? {
             let key = &revision_data.data_key;
             return Ok(Some((
-                self.adapter.get_instance_data(config_name, key).await?,
+                self.adapter.get_instance_data(config_id, key).await?,
                 revision_data.content_type,
             )));
         }
@@ -558,12 +563,12 @@ impl StorageService for KVStorageService {
 
     async fn approve_instance_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
         approved_uuid: &str,
     ) -> Result<(), ApproveRevisionError> {
-        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
+        let mut metadata = match self.get_config_instance_metadata(config_id).await? {
             Some(metadata) => metadata,
             None => return Err(ApproveRevisionError::InvalidConfig),
         };
@@ -583,7 +588,7 @@ impl StorageService for KVStorageService {
             return Err(ApproveRevisionError::InvalidRevision);
         }
 
-        let mut revision_data = match self.adapter.get_revision(config_name, revision).await.ok() {
+        let mut revision_data = match self.adapter.get_revision(config_id, revision).await.ok() {
             Some(Some(revision_data)) => revision_data,
             None | Some(None) => return Err(ApproveRevisionError::InvalidRevision),
         };
@@ -593,7 +598,7 @@ impl StorageService for KVStorageService {
         revision_data.reviewed_by_uuid = Some(approved_uuid.to_string());
         revision_data.review_timestamp_ms = Some(now);
         self.adapter
-            .save_revision(config_name, &revision_data)
+            .save_revision(config_id, &revision_data)
             .await?;
 
         if !instance.revisions.contains(&String::from(revision)) {
@@ -608,12 +613,12 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_instance_metadata(config_name, metadata)
+            .save_instance_metadata(config_id, metadata)
             .await?;
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
-                .send_approved_notification(config_name, instance_id, &revision_data.revision)
+                .send_approved_notification(config_id, instance_id, &revision_data.revision)
                 .await
             {
                 log::error!("Failed to send notification, {err:?}");
@@ -625,12 +630,12 @@ impl StorageService for KVStorageService {
 
     async fn apply_instance_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
         applied_by_uuid: &str,
     ) -> Result<(), ApplyRevisionError> {
-        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
+        let mut metadata = match self.get_config_instance_metadata(config_id).await? {
             Some(metadata) => metadata,
             None => return Err(ApplyRevisionError::InvalidConfig),
         };
@@ -650,7 +655,7 @@ impl StorageService for KVStorageService {
             return Err(ApplyRevisionError::InvalidRevision);
         }
 
-        let revision_data = match self.adapter.get_revision(config_name, revision).await.ok() {
+        let revision_data = match self.adapter.get_revision(config_id, revision).await.ok() {
             Some(Some(revision_data)) => revision_data,
             None | Some(None) => return Err(ApplyRevisionError::InvalidRevision),
         };
@@ -677,12 +682,12 @@ impl StorageService for KVStorageService {
         }
 
         self.adapter
-            .save_instance_metadata(config_name, metadata)
+            .save_instance_metadata(config_id, metadata)
             .await?;
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
-                .send_applied_notification(config_name, instance_id, revision)
+                .send_applied_notification(config_id, instance_id, revision)
                 .await
             {
                 log::error!("Failed to send notification, {err:?}");
@@ -694,12 +699,12 @@ impl StorageService for KVStorageService {
 
     async fn reject_instance_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
         rejected_by_uuid: &str,
     ) -> Result<(), ApplyRevisionError> {
-        let mut metadata = match self.get_config_instance_metadata(config_name).await? {
+        let mut metadata = match self.get_config_instance_metadata(config_id).await? {
             Some(metadata) => metadata,
             None => return Err(ApplyRevisionError::InvalidConfig),
         };
@@ -710,7 +715,7 @@ impl StorageService for KVStorageService {
             None => return Err(ApplyRevisionError::InvalidInstance),
         };
 
-        let mut revision_data = match self.adapter.get_revision(config_name, revision).await.ok() {
+        let mut revision_data = match self.adapter.get_revision(config_id, revision).await.ok() {
             Some(Some(revision_data)) => revision_data,
             None | Some(None) => return Err(ApplyRevisionError::InvalidRevision),
         };
@@ -735,16 +740,16 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_revision(config_name, &revision_data)
+            .save_revision(config_id, &revision_data)
             .await?;
 
         self.adapter
-            .save_instance_metadata(config_name, metadata)
+            .save_instance_metadata(config_id, metadata)
             .await?;
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
-                .send_reject_notification(config_name, instance_id, &revision)
+                .send_reject_notification(config_id, instance_id, &revision)
                 .await
             {
                 log::error!("Failed to send notification, {err:?}");
@@ -756,14 +761,14 @@ impl StorageService for KVStorageService {
 
     async fn rollback_instance_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
         rollback_by_uuid: &str,
     ) -> Result<String, RollbackRevisionError> {
         let mut instances = self
             .adapter
-            .get_instance_metadata(config_name)
+            .get_instance_metadata(config_id)
             .await?
             .ok_or(RollbackRevisionError::InvalidConfig)?;
 
@@ -774,7 +779,7 @@ impl StorageService for KVStorageService {
 
         let previous_revision = self
             .adapter
-            .get_revision(&config_name, &revision)
+            .get_revision(&config_id, &revision)
             .await?
             .ok_or(RollbackRevisionError::InvalidRevision)?;
 
@@ -794,16 +799,16 @@ impl StorageService for KVStorageService {
             submit_timestamp_ms: now,
             content_type: previous_revision.content_type,
         };
-        self.adapter.save_revision(config_name, &revision).await?;
+        self.adapter.save_revision(config_id, &revision).await?;
 
         // Update instance data
         instance.pending_revision = Some(String::from(&revision.revision));
         instance.revisions.push(String::from(&revision.revision));
 
         self.adapter
-            .save_instance_metadata(config_name, instances)
+            .save_instance_metadata(config_id, instances)
             .await?;
-        log::info!("Updated instance metadata for config: {config_name}");
+        log::info!("Updated instance metadata for config: {config_id}");
         return Ok(revision_key);
     }
 
@@ -968,12 +973,12 @@ impl StorageService for KVStorageService {
 
     async fn delete_instance(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
     ) -> Result<(), DeleteConfigInstanceError> {
         let instances = self
             .adapter
-            .get_instance_metadata(config_name)
+            .get_instance_metadata(config_id)
             .await?
             .ok_or(DeleteConfigInstanceError::InvalidConfig)?;
 
@@ -989,11 +994,11 @@ impl StorageService for KVStorageService {
             .collect();
 
         self.adapter
-            .save_instance_metadata(config_name, remaining_instances)
+            .save_instance_metadata(config_id, remaining_instances)
             .await?;
 
         for revision in config_instance.revisions {
-            if let Err(e) = self.adapter.delete_revision(config_name, &revision).await {
+            if let Err(e) = self.adapter.delete_revision(config_id, &revision).await {
                 log::error!("Failed to delete revision ({revision}) {e:?}");
             }
         }
@@ -1135,10 +1140,10 @@ impl KVStorageService {
 
     async fn send_instance_created_notification(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
     ) -> anyhow::Result<()> {
-        let project = self.get_project_by_config_name(config_name).await?;
+        let (project, config) = self.get_data_to_send_notification(config_id).await?;
 
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
@@ -1153,7 +1158,7 @@ impl KVStorageService {
         notification_adapter
             .send_notification(YakManNotificationType::InstanceCreated {
                 project_name: project.name.to_string(),
-                config_name: config_name.to_string(),
+                config_name: config.name,
                 instance: instance.to_string(),
             })
             .await?;
@@ -1163,11 +1168,11 @@ impl KVStorageService {
 
     async fn send_submitted_notification(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
     ) -> anyhow::Result<()> {
-        let project = self.get_project_by_config_name(config_name).await?;
+        let (project, config) = self.get_data_to_send_notification(config_id).await?;
 
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
@@ -1182,7 +1187,7 @@ impl KVStorageService {
         notification_adapter
             .send_notification(YakManNotificationType::RevisionReviewSubmitted {
                 project_name: project.name.to_string(),
-                config_name: config_name.to_string(),
+                config_name: config.name,
                 instance: instance.to_string(),
                 revision: revision.to_string(),
             })
@@ -1193,11 +1198,11 @@ impl KVStorageService {
 
     async fn send_approved_notification(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
     ) -> anyhow::Result<()> {
-        let project = self.get_project_by_config_name(config_name).await?;
+        let (project, config) = self.get_data_to_send_notification(config_id).await?;
 
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
@@ -1212,7 +1217,7 @@ impl KVStorageService {
         notification_adapter
             .send_notification(YakManNotificationType::RevisionReviewApproved {
                 project_name: project.name.to_string(),
-                config_name: config_name.to_string(),
+                config_name: config.name,
                 instance: instance.to_string(),
                 revision: revision.to_string(),
             })
@@ -1223,11 +1228,11 @@ impl KVStorageService {
 
     async fn send_applied_notification(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
     ) -> anyhow::Result<()> {
-        let project = self.get_project_by_config_name(config_name).await?;
+        let (project, config) = self.get_data_to_send_notification(config_id).await?;
 
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
@@ -1242,7 +1247,7 @@ impl KVStorageService {
         notification_adapter
             .send_notification(YakManNotificationType::RevisionReviewApplied {
                 project_name: project.name.to_string(),
-                config_name: config_name.to_string(),
+                config_name: config.name,
                 instance: instance.to_string(),
                 revision: revision.to_string(),
             })
@@ -1253,11 +1258,11 @@ impl KVStorageService {
 
     async fn send_reject_notification(
         &self,
-        config_name: &str,
+        config_id: &str,
         instance: &str,
         revision: &str,
     ) -> anyhow::Result<()> {
-        let project = self.get_project_by_config_name(config_name).await?;
+        let (project, config) = self.get_data_to_send_notification(config_id).await?;
 
         let Some(notification_settings) = project.notification_settings else {
             return Ok(()); // No notification settings configured for project
@@ -1272,7 +1277,7 @@ impl KVStorageService {
         notification_adapter
             .send_notification(YakManNotificationType::RevisionReviewRejected {
                 project_name: project.name.to_string(),
-                config_name: config_name.to_string(),
+                config_name: config.name.to_string(),
                 instance: instance.to_string(),
                 revision: revision.to_string(),
             })
@@ -1281,24 +1286,20 @@ impl KVStorageService {
         return Ok(());
     }
 
-    async fn get_project_by_config_name(
+    async fn get_data_to_send_notification(
         &self,
-        config_name: &str,
-    ) -> anyhow::Result<YakManProjectDetails> {
+        config_id: &str,
+    ) -> anyhow::Result<(YakManProjectDetails, YakManConfig)> {
         let configs = self.adapter.get_configs().await?;
-        let Some(config) = configs.into_iter().find(|c| c.name == config_name) else {
-            bail!("Could not find config {config_name}")
+        let Some(config) = configs.into_iter().find(|c| c.id == config_id) else {
+            bail!("Could not find config {config_id}")
         };
 
-        let Some(project) = self
-            .adapter
-            .get_project_details(&config.project_id)
-            .await?
-        else {
+        let Some(project) = self.adapter.get_project_details(&config.project_id).await? else {
             bail!("Could not find project {}", config.project_id)
         };
 
-        return Ok(project);
+        return Ok((project, config));
     }
 
     pub fn new(adapter: Arc<dyn KVStorageAdapter>) -> KVStorageService {
@@ -1322,11 +1323,7 @@ impl KVStorageService {
         project_id: Option<String>,
     ) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let configs = match project_id {
-            Some(project_id) => {
-                self.adapter
-                    .get_configs_by_project_id(&project_id)
-                    .await?
-            }
+            Some(project_id) => self.adapter.get_configs_by_project_id(&project_id).await?,
             None => self.adapter.get_configs().await?,
         };
         return Ok(configs);
@@ -1351,10 +1348,17 @@ impl KVStorageService {
     }
 }
 
-
 fn generate_project_id() -> String {
     return format!("p{}", short_sha(&Uuid::new_v4().to_string()));
 }
+
+fn generate_config_id() -> String {
+    return format!("c{}", short_sha(&Uuid::new_v4().to_string()));
+}
+
+// fn generate_user_id() -> String {
+//     return format!("u{}", short_sha(&Uuid::new_v4().to_string()));
+// }
 
 fn generate_instance_id() -> String {
     return format!("i{}", short_sha(&Uuid::new_v4().to_string()));

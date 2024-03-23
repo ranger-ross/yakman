@@ -13,16 +13,16 @@ use utoipa::ToSchema;
 
 /// Get all of the revisions for a config
 #[utoipa::path(responses((status = 200, body = Vec<ConfigInstanceRevision>)))]
-#[get("/v1/configs/{config_name}/instances/{instance}/revisions")]
+#[get("/v1/configs/{config_id}/instances/{instance}/revisions")]
 async fn get_instance_revisions(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let (config_name, instance) = path.into_inner();
+    let (config_id, instance) = path.into_inner();
 
     let config = storage_service
-        .get_config(&config_name)
+        .get_config(&config_id)
         .await
         .unwrap()
         .unwrap(); // TODO: handle these unwraps
@@ -41,7 +41,7 @@ async fn get_instance_revisions(
     }
 
     if let Some(data) = storage_service
-        .get_instance_revisions(&config_name, &instance)
+        .get_instance_revisions(&config_id, &instance)
         .await?
     {
         return Ok(web::Json(data));
@@ -58,17 +58,17 @@ pub enum ReviewResult {
 
 /// Updates a revsion based on a review result.
 #[utoipa::path(responses((status = 200, body = (), content_type = [])))]
-#[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/review/{result}")]
+#[post("/v1/configs/{config_id}/instances/{instance}/revisions/{revision}/review/{result}")]
 async fn review_pending_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String, ReviewResult)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
-    let (config_name, instance, revision, result) = path.into_inner();
+    let (config_id, instance, revision, result) = path.into_inner();
 
     let config = storage_service
-        .get_config(&config_name)
+        .get_config(&config_id)
         .await
         .unwrap()
         .unwrap();
@@ -90,14 +90,14 @@ async fn review_pending_instance_revision(
     match result {
         ReviewResult::ApproveAndApply | ReviewResult::Approve => {
             return match storage_service
-                .approve_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
+                .approve_instance_revision(&config_id, &instance, &revision, &reviewer_uuid)
                 .await
             {
                 Ok(_) => {
                     if result == ReviewResult::ApproveAndApply {
                         return match storage_service
                             .apply_instance_revision(
-                                &config_name,
+                                &config_id,
                                 &instance,
                                 &revision,
                                 &reviewer_uuid,
@@ -118,7 +118,7 @@ async fn review_pending_instance_revision(
         }
         ReviewResult::Reject => {
             return match storage_service
-                .reject_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
+                .reject_instance_revision(&config_id, &instance, &revision, &reviewer_uuid)
                 .await
             {
                 Ok(_) => Ok(HttpResponse::Ok().finish()),
@@ -130,17 +130,17 @@ async fn review_pending_instance_revision(
 
 /// Applies an approved revision
 #[utoipa::path(responses((status = 200, body = (), content_type = [])))]
-#[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/apply")]
+#[post("/v1/configs/{config_id}/instances/{instance}/revisions/{revision}/apply")]
 async fn apply_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
-    let (config_name, instance, revision) = path.into_inner();
+    let (config_id, instance, revision) = path.into_inner();
 
     let config = storage_service
-        .get_config(&config_name)
+        .get_config(&config_id)
         .await
         .unwrap()
         .unwrap(); // todo: handle these unwraps
@@ -164,7 +164,7 @@ async fn apply_instance_revision(
     let reviewer_uuid = reviewer_uuid.unwrap();
 
     return match storage_service
-        .apply_instance_revision(&config_name, &instance, &revision, &reviewer_uuid)
+        .apply_instance_revision(&config_id, &instance, &revision, &reviewer_uuid)
         .await
     {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
@@ -174,17 +174,17 @@ async fn apply_instance_revision(
 
 /// Rollback an instance a previous revision (by cloning the revision)
 #[utoipa::path(responses((status = 200, body = RevisionPayload)))]
-#[post("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/rollback")]
+#[post("/v1/configs/{config_id}/instances/{instance}/revisions/{revision}/rollback")]
 async fn rollback_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
 ) -> Result<impl Responder, YakManApiError> {
-    let (config_name, instance, revision) = path.into_inner();
+    let (config_id, instance, revision) = path.into_inner();
 
     let config = storage_service
-        .get_config(&config_name)
+        .get_config(&config_id)
         .await?
         .ok_or(RollbackRevisionError::InvalidConfig)?;
 
@@ -203,7 +203,7 @@ async fn rollback_instance_revision(
     let rollback_by_uuid = principle.user_uuid.ok_or(YakManApiError::forbidden())?;
 
     let new_revision = storage_service
-        .rollback_instance_revision(&config_name, &instance, &revision, &rollback_by_uuid)
+        .rollback_instance_revision(&config_id, &instance, &revision, &rollback_by_uuid)
         .await?;
 
     Ok(web::Json(RevisionPayload {

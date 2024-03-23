@@ -49,57 +49,57 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError>;
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError>;
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError>;
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError>;
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError>;
 
     /// This does not delete the revision data because it might be shared across revisions.
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn prepare_config_instance_storage(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn prepare_revision_instance_storage(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<(), GenericStorageError>;
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;

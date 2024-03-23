@@ -122,10 +122,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_dir}/{config_name}.json");
+        let instance_file = format!("{metadata_dir}/{config_id}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
             let v: InstanceJson = serde_json::from_str(&content)?;
             return Ok(Some(v.instances));
@@ -135,11 +135,11 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_path}/{config_name}.json");
+        let instance_file = format!("{metadata_path}/{config_id}.json");
         let data = serde_json::to_string(&InstanceJson {
             instances: instances,
         })?;
@@ -150,19 +150,19 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
-        remove_file(&format!("{metadata_path}/{config_name}.json"))?;
+        remove_file(&format!("{metadata_path}/{config_id}.json"))?;
         return Ok(());
     }
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         let dir = self.get_instance_revisions_path();
-        let path = format!("{dir}/{config_name}/{revision}");
+        let path = format!("{dir}/{config_id}/{revision}");
 
         if let Ok(content) = fs::read_to_string(&path) {
             let data: RevisionJson = serde_json::from_str(&content)?;
@@ -176,7 +176,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
         let revisions_path = self.get_instance_revisions_path();
@@ -184,7 +184,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let revision_data = serde_json::to_string(&RevisionJson {
             revision: revision.clone(),
         })?;
-        let revision_file_path = format!("{revisions_path}/{config_name}/{revision_key}");
+        let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}");
         let mut revision_file = File::create(&revision_file_path)?;
         Write::write_all(&mut revision_file, revision_data.as_bytes())?;
         return Ok(());
@@ -192,33 +192,33 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
         let revisions_path = self.get_instance_revisions_path();
-        remove_file(format!("{revisions_path}/{config_name}/{revision}"))?;
+        remove_file(format!("{revisions_path}/{config_id}/{revision}"))?;
         return Ok(());
     }
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
         let instance_dir = self.get_config_instance_dir();
-        let instance_path = format!("{instance_dir}/{config_name}/{data_key}");
+        let instance_path = format!("{instance_dir}/{config_id}/{data_key}");
         return Ok(fs::read_to_string(instance_path)?);
     }
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
         let instance_dir = self.get_config_instance_dir();
         // Create new file with data
-        let data_file_path = format!("{instance_dir}/{config_name}/{data_key}");
+        let data_file_path = format!("{instance_dir}/{config_id}/{data_key}");
         let mut data_file = File::create(&data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
 
@@ -344,10 +344,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn prepare_config_instance_storage(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<(), GenericStorageError> {
         let config_instance_dir = self.get_config_instance_dir();
-        let config_instance_path = format!("{config_instance_dir}/{config_name}");
+        let config_instance_path = format!("{config_instance_dir}/{config_id}");
         if !Path::new(&config_instance_path).exists() {
             fs::create_dir(&config_instance_path)?;
         }
@@ -356,10 +356,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn prepare_revision_instance_storage(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<(), GenericStorageError> {
         let revision_instance_dir = self.get_instance_revisions_path();
-        let revision_instance_path = format!("{revision_instance_dir}/{config_name}");
+        let revision_instance_path = format!("{revision_instance_dir}/{config_id}");
         if !Path::new(&revision_instance_path).exists() {
             fs::create_dir(&revision_instance_path)?;
         }

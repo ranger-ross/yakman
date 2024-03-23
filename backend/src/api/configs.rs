@@ -1,8 +1,8 @@
 use crate::{
     api::is_alphanumeric_kebab_case,
-    error::YakManApiError,
-    error::{CreateConfigError, DeleteConfigError},
+    error::{CreateConfigError, DeleteConfigError, YakManApiError},
     middleware::roles::YakManRoleBinding,
+    model::response::ConfigPayload,
 };
 use crate::{
     model::{
@@ -13,7 +13,6 @@ use crate::{
 };
 use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
-use log::error;
 use serde::Deserialize;
 use std::{collections::HashSet, sync::Arc};
 
@@ -125,15 +124,15 @@ async fn create_config(
         return Err(YakManApiError::bad_request("Project does not exist"));
     };
 
-    let result: Result<(), CreateConfigError> = storage_service
+    let result: Result<String, CreateConfigError> = storage_service
         .create_config(&config_name, &project_id)
         .await;
 
     return match result {
-        Ok(()) => Ok(web::Json(config_name)), // todo: maybe add a wrapper type?
+        Ok(config_id) => Ok(web::Json(ConfigPayload { config_id })),
         Err(e) => match e {
             CreateConfigError::StorageError { message } => {
-                error!("Failed to create config {config_name}, error: {message}");
+                log::error!("Failed to create config {config_name}, error: {message}");
                 Err(YakManApiError::server_error("Failed to create config"))
             }
             CreateConfigError::DuplicateConfigError { name: _ } => {
@@ -152,7 +151,7 @@ async fn delete_config(
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
-    let config_name = payload.config_name.to_lowercase();
+    let config_id = payload.config_id.to_lowercase();
     let project_id = payload.project_id;
 
     if !YakManRoleBinding::has_any_role(
@@ -163,19 +162,13 @@ async fn delete_config(
         return Err(YakManApiError::forbidden());
     }
 
-    if !is_alphanumeric_kebab_case(&config_name) {
-        return Err(YakManApiError::bad_request(
-            "Invalid config name. Must be alphanumeric kebab case",
-        ));
-    }
-
-    let result: Result<(), DeleteConfigError> = storage_service.delete_config(&config_name).await;
+    let result: Result<(), DeleteConfigError> = storage_service.delete_config(&config_id).await;
 
     return match result {
         Ok(()) => Ok(HttpResponse::Ok().finish()),
         Err(e) => match e {
             DeleteConfigError::StorageError { message } => {
-                error!("Failed to create config {config_name}, error: {message}");
+                log::error!("Failed to create config {config_id}, error: {message}");
                 Err(YakManApiError::server_error("Failed to delete config"))
             }
             DeleteConfigError::ConfigDoesNotExistError => {

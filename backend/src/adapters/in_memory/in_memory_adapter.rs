@@ -97,74 +97,74 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn get_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
     ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_name))
+            .get_optional_data(&self.get_config_metadata_key(config_id))
             .await?);
     }
 
     async fn get_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
         Ok(self
             .storage
             .lock()
             .await
-            .get(&self.get_data_key(config_name, data_key))
+            .get(&self.get_data_key(config_id, data_key))
             .unwrap()
             .to_string())
     }
 
     async fn save_instance_data(
         &self,
-        config_name: &str,
+        config_id: &str,
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
-        self.insert(self.get_data_key(config_name, data_key), data.to_string())
+        self.insert(self.get_data_key(config_id, data_key), data.to_string())
             .await;
         Ok(())
     }
 
     async fn save_instance_metadata(
         &self,
-        config_name: &str,
+        config_id: &str,
         instances: Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&instances)?;
-        self.insert(self.get_config_metadata_key(config_name), data.to_string())
+        self.insert(self.get_config_metadata_key(config_id), data.to_string())
             .await;
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_name: &str) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_config_metadata_key(config_name))
+    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
+        self.remove(&self.get_config_metadata_key(config_id))
             .await;
         return Ok(());
     }
 
     async fn get_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         Ok(self
-            .get_optional_data(&self.get_revision_key(config_name, revision))
+            .get_optional_data(&self.get_revision_key(config_id, revision))
             .await?)
     }
 
     async fn save_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
         let revision_key = &revision.revision;
         let data = serde_json::to_string(&revision)?;
         self.insert(
-            self.get_revision_key(config_name, revision_key),
+            self.get_revision_key(config_id, revision_key),
             data.to_string(),
         )
         .await;
@@ -173,10 +173,10 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn delete_revision(
         &self,
-        config_name: &str,
+        config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_revision_key(config_name, revision))
+        self.remove(&self.get_revision_key(config_id, revision))
             .await;
         Ok(())
     }
@@ -447,16 +447,16 @@ impl InMemoryStorageAdapter {
         return format!("API_KEYS");
     }
 
-    fn get_config_metadata_key(&self, config_name: &str) -> String {
-        format!("CONFIG_METADATA_{config_name}")
+    fn get_config_metadata_key(&self, config_id: &str) -> String {
+        format!("CONFIG_METADATA_{config_id}")
     }
 
-    fn get_revision_key(&self, config_name: &str, revision: &str) -> String {
-        format!("REVISION_{config_name}_{revision}")
+    fn get_revision_key(&self, config_id: &str, revision: &str) -> String {
+        format!("REVISION_{config_id}_{revision}")
     }
 
-    fn get_data_key(&self, config_name: &str, data_key: &str) -> String {
-        format!("CONFIG_DATA_{config_name}_{data_key}")
+    fn get_data_key(&self, config_id: &str, data_key: &str) -> String {
+        format!("CONFIG_DATA_{config_id}_{data_key}")
     }
 
     fn get_snapshot_key(&self, timestamp: &DateTime<Utc>) -> String {

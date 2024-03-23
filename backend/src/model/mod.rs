@@ -46,7 +46,8 @@ pub struct NotificationSettingEvents {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManConfig {
-    pub name: String, // Unique key
+    pub id: String, // Unique key
+    pub name: String,
     pub project_id: String,
     #[serde(default)]
     pub hidden: bool,
@@ -67,7 +68,7 @@ pub struct YakManLabel {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ConfigInstance {
-    pub config_name: String,
+    pub config_id: String,
     pub instance: String,         // Unique key
     pub labels: Vec<YakManLabel>, // These should match the labels in the current revision
     pub current_revision: String,

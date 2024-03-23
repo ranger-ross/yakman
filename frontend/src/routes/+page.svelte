@@ -72,7 +72,7 @@
 		// Optimistic update
 		const index = data.configs.findIndex(
 			(c) =>
-				c.config.name === configToDelete?.name &&
+				c.config.id === configToDelete?.id &&
 				c.config.project_id === configToDelete.project_id,
 		);
 		const config = data.configs[index];
@@ -159,7 +159,7 @@
 								const selection = value.detail;
 								if (selection === "AddInstance") {
 									goto(
-										`/modify-instance/${config.config.name}`,
+										`/modify-instance/${config.config.id}`,
 									);
 								} else if (selection === "DeleteConfig") {
 									configToDelete = config.config;
@@ -197,25 +197,25 @@
 								<div class="flex items-center gap-5">
 									{#if !!instance.pending_revision}
 										<div>
-											<StatusPill
-												>Pending Changes</StatusPill
-											>
+											<StatusPill>
+												Pending Changes
+											</StatusPill>
 										</div>
 									{/if}
 									<div class="flex flex-col items-end">
 										<YakManLink
-											href={`/modify-instance/${instance.config_name}/${instance.instance}`}
+											href={`/modify-instance/${instance.config_id}/${instance.instance}`}
 										>
 											Edit
 										</YakManLink>
 										<YakManLink
-											href={`/view-instance/${instance.config_name}/${instance.instance}`}
+											href={`/view-instance/${instance.config_id}/${instance.instance}`}
 										>
 											View
 										</YakManLink>
 										{#if !!instance.pending_revision}
 											<YakManLink
-												href={`/apply-changes/${instance.config_name}/${instance.instance}`}
+												href={`/apply-changes/${instance.config_id}/${instance.instance}`}
 											>
 												Review Changes
 											</YakManLink>

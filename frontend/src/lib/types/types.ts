@@ -29,9 +29,9 @@ export const YakManProjectDetailsSchema = z.object({
 export type YakManProjectDetails = z.infer<typeof YakManProjectDetailsSchema>;
 
 export const YakManConfigSchema = z.object({
+    id: z.string(),
     name: z.string(),
     project_id: z.string(),
-    description: z.string(),
     hidden: z.boolean(),
 });
 
@@ -81,7 +81,7 @@ export const ConfigInstanceEventSchema = z.object({
 export type ConfigInstanceEvent = z.infer<typeof ConfigInstanceEventSchema>;
 
 export const YakManConfigInstanceSchema = z.object({
-    config_name: z.string(),
+    config_id: z.string(),
     instance: z.string(),
     labels: z.array(YakManLabelSchema),
     current_revision: z.string(),

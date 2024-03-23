@@ -11,7 +11,7 @@ pub struct CreateConfigPayload {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct DeleteConfigPayload {
-    pub config_name: String,
+    pub config_id: String,
     pub project_id: String,
 }
 

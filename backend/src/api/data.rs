@@ -9,15 +9,15 @@ use actix_web_grants::authorities::AuthDetails;
 
 /// Get config data by instance ID
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/v1/configs/{config_name}/instances/{instance}/data")]
+#[get("/v1/configs/{config_id}/instances/{instance}/data")]
 async fn get_instance_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let (config_name, instance) = path.into_inner();
+    let (config_id, instance) = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match storage_service.get_config(&config_id).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -41,7 +41,7 @@ async fn get_instance_data(
     }
 
     let data = storage_service
-        .get_config_data(&config_name, &instance)
+        .get_config_data(&config_id, &instance)
         .await?;
 
     return match data {
@@ -52,15 +52,15 @@ async fn get_instance_data(
 
 /// Get config data by instance ID and revision ID
 #[utoipa::path(responses((status = 200, body = String)))]
-#[get("/v1/configs/{config_name}/instances/{instance}/revisions/{revision}/data")]
+#[get("/v1/configs/{config_id}/instances/{instance}/revisions/{revision}/data")]
 async fn get_revision_data(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<(String, String, String)>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let (config_name, _, revision) = path.into_inner();
+    let (config_id, _, revision) = path.into_inner();
 
-    let config = match storage_service.get_config(&config_name).await {
+    let config = match storage_service.get_config(&config_id).await {
         Ok(config) => match config {
             Some(config) => config,
             None => return Err(YakManApiError::not_found("Config not found")),
@@ -84,7 +84,7 @@ async fn get_revision_data(
     }
 
     let data = storage_service
-        .get_data_by_revision(&config_name, &revision)
+        .get_data_by_revision(&config_id, &revision)
         .await?;
 
     return match data {

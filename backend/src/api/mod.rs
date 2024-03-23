@@ -59,7 +59,7 @@ use utoipa::OpenApi;
         configs::delete_config,
         labels::get_labels,
         labels::create_label,
-        instances::get_instances_by_config_name,
+        instances::get_instances_by_config_id,
         instances::get_instance,
         instances::create_new_instance,
         instances::update_new_instance,
@@ -141,7 +141,7 @@ where
         .service(labels::get_labels)
         .service(labels::create_label)
         // Instances
-        .service(instances::get_instances_by_config_name)
+        .service(instances::get_instances_by_config_id)
         .service(instances::get_instance)
         .service(instances::create_new_instance)
         .service(instances::update_new_instance)

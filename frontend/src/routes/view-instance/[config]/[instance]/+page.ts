@@ -7,7 +7,7 @@ export const load: PageLoad = async (event) => {
     const { config, instance } = event.params
 
     const revisions = await trpc(event).revisions.fetchInstanceRevisions.query({
-        configName: config,
+        configId: config,
         instance: instance,
     })
 
@@ -25,7 +25,7 @@ export const load: PageLoad = async (event) => {
 
     if (instanceMetadata) {
         data = await trpc(event).data.fetchRevisionData.query({
-            configName: config,
+            configId: config,
             instance: instance,
             revision: instanceMetadata.current_revision
         });
