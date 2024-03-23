@@ -329,12 +329,12 @@ mod tests {
         storage_service
             .create_config("config1", &project_id)
             .await?;
-        storage_service
+        let config2_id = storage_service
             .create_config("config2", &project_id)
             .await?;
 
         // Hide config2
-        storage_service.delete_config("config2").await?;
+        storage_service.delete_config(&config2_id).await?;
 
         let app = test::init_service(
             App::new()
@@ -389,7 +389,10 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(200, resp.status());
 
-        let config = storage_service.get_config("foo-bar").await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+        let config_id = value["config_id"].as_str().unwrap();
+
+        let config = storage_service.get_config(config_id).await?;
         assert!(config.is_some());
         let config = config.unwrap();
         assert_eq!("foo-bar", config.name);
