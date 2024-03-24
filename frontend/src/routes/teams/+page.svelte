@@ -18,7 +18,7 @@
             confirmButtonText: "Delete",
             async onConfirm() {
                 await trpc($page).teams.deleteTeam.mutate({
-                    teamId: teamId
+                    teamId,
                 });
 
                 invalidateAll();
@@ -38,13 +38,13 @@
                             scope="col"
                             class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left"
                         >
-                            Name
+                            ID
                         </th>
                         <th
                             scope="col"
                             class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left"
                         >
-                            ID
+                            Name
                         </th>
                         <th
                             scope="col"
@@ -63,11 +63,11 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     {#each data.teams as team}
                         <tr>
-                            <td class="px-6 py-2 whitespace-nowrap">
-                                {team.name}
-                            </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm">
                                 {team.id}
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap">
+                                {team.name}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm">
                                 <YakManLink href="/teams/modify/{team.id}">
@@ -88,7 +88,7 @@
             </table>
         </div>
     </div>
-    <div class="mt-3">
+    <div class="mt-3 w-fit">
         <YakManLink href="/teams/modify">Create Team</YakManLink>
     </div>
 </YakManCard>
