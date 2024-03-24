@@ -387,7 +387,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         let configs_key = self.get_configs_key();
         if !self.contains_key(&configs_key).await {
             self.save_configs(vec![]).await?;
-            info!("Initialized Configs Key");
+            log::info!("Initialized Configs Key");
         }
 
         let projects_key = self.get_projects_key();
@@ -395,20 +395,27 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
             let projects: Vec<YakManProject> = vec![];
             self.insert(projects_key, serde_json::to_string(&projects)?)
                 .await;
-            info!("Initialized Projects Key");
+            log::info!("Initialized Projects Key");
         }
 
         let labels_key = self.get_labels_key();
         if !self.contains_key(&labels_key).await {
             self.save_labels(vec![]).await?;
-            info!("Initialized Labels Key");
+            log::info!("Initialized Labels Key");
         }
 
         let users_key = self.get_users_key();
         if !self.contains_key(&users_key).await {
             let users: Vec<YakManUser> = vec![];
             self.insert(users_key, serde_json::to_string(&users)?).await;
-            info!("Initialized Users Key");
+            log::info!("Initialized Users Key");
+        }
+
+        let teams_key = self.get_teams_key();
+        if !self.contains_key(&teams_key).await {
+            let teams: Vec<YakManTeam> = vec![];
+            self.insert(teams_key, serde_json::to_string(&teams)?).await;
+            log::info!("Initialized Teams Key");
         }
 
         let api_key_key = self.get_api_keys_key();
@@ -416,7 +423,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
             let api_keys: Vec<YakManApiKey> = vec![];
             self.insert(api_key_key, serde_json::to_string(&api_keys)?)
                 .await;
-            info!("Initialized API keys");
+            log::info!("Initialized API keys");
         }
 
         let snapshot_lock_key = self.get_snapshot_lock_key();
