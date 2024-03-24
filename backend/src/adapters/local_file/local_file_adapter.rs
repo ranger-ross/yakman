@@ -9,8 +9,8 @@ use chrono::{DateTime, Utc};
 
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
-    YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 
 use crate::adapters::local_file::storage_types::RevisionJson;
@@ -254,22 +254,23 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
                 .expect(&format!("Failed to create revision dir: {}", instance_dir));
         }
 
-        let instance_metadata_dir = self.get_config_instance_metadata_dir();
-        if !Path::new(&instance_metadata_dir).is_dir() {
-            log::info!("Creating {}", instance_metadata_dir);
-            fs::create_dir(&instance_metadata_dir).expect(&format!(
-                "Failed to create instance metadata dir: {}",
-                instance_metadata_dir
-            ));
+        let instance_dir = self.get_config_instance_metadata_dir();
+        if !Path::new(&instance_dir).is_dir() {
+            log::info!("Creating {}", instance_dir);
+            fs::create_dir(&instance_dir)
+                .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
 
         let user_dir = self.get_user_dir();
         if !Path::new(&user_dir).is_dir() {
             log::info!("Creating {}", user_dir);
-            fs::create_dir(&user_dir).expect(&format!(
-                "Failed to create users metadata dir: {}",
-                user_dir
-            ));
+            fs::create_dir(&user_dir).expect(&format!("Failed to create users dir: {}", user_dir));
+        }
+
+        let team_dir = self.get_teams_dir();
+        if !Path::new(&team_dir).is_dir() {
+            log::info!("Creating {}", team_dir);
+            fs::create_dir(&team_dir).expect(&format!("Failed to create team dir: {}", team_dir));
         }
 
         let password_dir = self.get_password_dir();
@@ -321,6 +322,13 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             self.save_users(vec![])
                 .await
                 .expect("Failed to create users file");
+        }
+
+        let team_file = self.get_team_file_path();
+        if !Path::new(&team_file).is_file() {
+            self.save_teams(vec![])
+                .await
+                .expect("Failed to create teams file");
         }
 
         let api_key_file = self.get_api_key_file_path();
@@ -519,6 +527,54 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
+    async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
+        let path = self.get_team_file_path();
+        let content = fs::read_to_string(path)?;
+        let data: Vec<YakManTeam> = serde_json::from_str(&content)?;
+        return Ok(data);
+    }
+
+    async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+        let data = serde_json::to_string(&teams)?;
+        let path = self.get_team_file_path();
+        let mut file = File::create(&path)?;
+        Write::write_all(&mut file, data.as_bytes())?;
+        return Ok(());
+    }
+
+    async fn get_team_details(
+        &self,
+        team_id: &str,
+    ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
+        let dir = self.get_teams_dir();
+        let path = format!("{dir}/{team_id}.json");
+
+        if let Ok(content) = fs::read_to_string(&path) {
+            let data: YakManTeamDetails = serde_json::from_str(&content)?;
+            return Ok(Some(data));
+        }
+        return Ok(None);
+    }
+
+    async fn save_team_details(
+        &self,
+        team_id: &str,
+        details: YakManTeamDetails,
+    ) -> Result<(), GenericStorageError> {
+        let dir = self.get_teams_dir();
+        let path = format!("{dir}/{team_id}.json");
+        let data: String = serde_json::to_string(&details)?;
+        let mut data_file = File::create(&path)?;
+        Write::write_all(&mut data_file, data.as_bytes())?;
+        return Ok(());
+    }
+
+    async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
+        let path = self.get_teams_dir();
+        remove_file(&format!("{path}/{team_id}.json"))?;
+        return Ok(());
+    }
+
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
         let path = self.get_snapshot_lock_file_path();
         let data = fs::read_to_string(path)?;
@@ -604,6 +660,11 @@ impl LocalFileStorageAdapter {
         return format!("{yakman_dir}/users.json");
     }
 
+    fn get_team_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/teams.json");
+    }
+
     fn get_snapshot_lock_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/snapshot-lock.json");
@@ -617,6 +678,11 @@ impl LocalFileStorageAdapter {
     fn get_projects_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/projects");
+    }
+
+    fn get_teams_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/teams");
     }
 
     fn get_config_instance_dir(&self) -> String {

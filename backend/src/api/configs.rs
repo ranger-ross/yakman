@@ -183,7 +183,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        model::YakManUserProjectRole,
+        model::YakManProjectRole,
         test_utils::{fake_roles::FakeRoleExtractor, *},
     };
     use actix_web::{test, web::Data, App};
@@ -296,7 +296,7 @@ mod tests {
 
         let fake_role_extractor =
             FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
-                YakManUserProjectRole {
+                YakManProjectRole {
                     project_id: "other".to_string(), // fake, just some other project
                     role: YakManRole::Operator,
                 },
