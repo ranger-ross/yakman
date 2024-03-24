@@ -194,7 +194,7 @@ pub struct YakManUser {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq, Clone, Hash)]
-pub struct YakManUserProjectRole {
+pub struct YakManProjectRole {
     pub project_id: String,
     pub role: YakManRole,
 }
@@ -203,7 +203,7 @@ pub struct YakManUserProjectRole {
 pub struct YakManUserDetails {
     pub profile_picture: Option<String>,
     pub global_roles: Vec<YakManRole>,
-    pub roles: Vec<YakManUserProjectRole>,
+    pub roles: Vec<YakManProjectRole>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -223,6 +223,20 @@ pub struct YakManPasswordResetLink {
 pub struct YakManPublicPasswordResetLink {
     pub id: String,
     pub user_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManTeam {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct YakManTeamDetails {
+    pub id: String,
+    pub name: String,
+    pub global_roles: Vec<YakManRole>,
+    pub roles: Vec<YakManProjectRole>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

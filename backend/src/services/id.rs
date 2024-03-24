@@ -20,6 +20,10 @@ pub fn generate_revision_id() -> String {
     return format!("r{}", short_sha(&Uuid::new_v4().to_string()));
 }
 
+pub fn generate_team_id() -> String {
+    return format!("t{}", short_sha(&Uuid::new_v4().to_string()));
+}
+
 /// Returns a 12 character string representation of a SHA256
 pub fn short_sha(input: &str) -> String {
     let sha: String = sha256::digest(input);

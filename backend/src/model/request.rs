@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::{NotificationSetting, NotificationSettingEvents, YakManRole};
+use super::{NotificationSetting, NotificationSettingEvents, YakManProjectRole, YakManRole};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct CreateConfigPayload {
@@ -74,4 +74,11 @@ impl Into<crate::model::ProjectNotificationSettings> for ProjectNotificationSett
 pub struct CreateYakManUserPayload {
     pub email: String,
     pub role: Option<YakManRole>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct CreateTeamPayload {
+    pub name: String,
+    pub global_roles: Vec<YakManRole>,
+    pub roles: Vec<YakManProjectRole>,
 }

@@ -7,6 +7,7 @@ pub mod labels;
 pub mod lifecycle;
 pub mod projects;
 pub mod revisions;
+pub mod teams;
 pub mod users;
 
 use self::{
@@ -97,6 +98,7 @@ use utoipa::OpenApi;
         (name = "data", description = "Config data fetching endpoints"),
         (name = "revisions", description = "Config Instance Revision management endpoints"),
         (name = "users", description = "YakMan user management endpoints"),
+        (name = "teams", description = "YakMan team management endpoints"),
         (name = "lifecycle", description = "Application lifecycle endpoints"),
         (name = "api_keys", description = "API Key management endpoints"),
     )
@@ -129,6 +131,10 @@ where
         .service(users::get_yakman_users)
         .service(users::create_yakman_user)
         .service(users::get_user_info)
+        // Teams
+        .service(teams::get_teams)
+        .service(teams::get_team)
+        .service(teams::create_team)
         // Api Keys
         .service(api_keys::get_api_keys)
         .service(api_keys::create_api_key)

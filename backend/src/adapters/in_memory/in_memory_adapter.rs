@@ -6,9 +6,7 @@ use futures_util::lock::Mutex;
 use serde::de::DeserializeOwned;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
-    YakManUserDetails,
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails
 };
 use log::info;
 
@@ -305,6 +303,33 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
         self.remove(&self.get_password_reset_link_key(&id)).await;
         Ok(())
+    }
+
+    async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+        todo!()
+    }
+
+    async fn get_team_details(
+        &self,
+        team_id: &str,
+    ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
+        todo!()
+    }
+
+    async fn save_team_details(
+        &self,
+        team_id: &str,
+        details: YakManTeamDetails,
+    ) -> Result<(), GenericStorageError> {
+        todo!()
+    }
+
+    async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
+        todo!()
     }
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {

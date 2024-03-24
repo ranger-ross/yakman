@@ -6,7 +6,7 @@ use std::sync::Arc;
 use super::token::extract_access_token;
 use super::YakManPrinciple;
 use crate::auth::token::{TokenService, YakManTokenService};
-use crate::model::{YakManRole, YakManUserProjectRole};
+use crate::model::{YakManRole, YakManProjectRole};
 use crate::services::StorageService;
 use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
@@ -14,7 +14,7 @@ use actix_web::{dev::ServiceRequest, web, Error};
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum YakManRoleBinding {
     GlobalRoleBinding(YakManRole),
-    ProjectRoleBinding(YakManUserProjectRole),
+    ProjectRoleBinding(YakManProjectRole),
 }
 
 impl YakManRoleBinding {
@@ -116,7 +116,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                 if let Some(api_key) = storage_service.get_api_key_by_id(&key_id).await.unwrap() {
                     let mut api_key_roles = HashSet::new();
                     api_key_roles.insert(YakManRoleBinding::ProjectRoleBinding(
-                        YakManUserProjectRole {
+                        YakManProjectRole {
                             project_id: api_key.project_id,
                             role: api_key.role,
                         },

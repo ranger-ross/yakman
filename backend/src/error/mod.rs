@@ -354,3 +354,17 @@ impl From<GenericStorageError> for CreatePasswordResetLinkError {
         Self::StorageError { message: e.message }
     }
 }
+
+#[derive(Error, Debug)]
+pub enum CreateTeamError {
+    #[error("Duplicate team")]
+    DuplicateTeam,
+    #[error("Storage Error: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for CreateTeamError {
+    fn from(e: GenericStorageError) -> Self {
+        Self::StorageError { message: e.message }
+    }
+}

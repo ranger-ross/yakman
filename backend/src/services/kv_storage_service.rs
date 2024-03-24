@@ -9,18 +9,21 @@ use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
-        DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError, RollbackRevisionError,
-        SaveConfigInstanceError, UpdateProjectError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError,
+        RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
     },
     model::{
-        self, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
-        YakManPasswordResetLink, YakManProject, YakManProjectDetails,
-        YakManPublicPasswordResetLink, YakManRole, YakManUser, YakManUserDetails,
+        self, request::CreateTeamPayload, ConfigInstance, ConfigInstanceEvent,
+        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
+        YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam,
+        YakManTeamDetails, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
-    services::id::{generate_instance_id, generate_revision_id, generate_user_id},
+    services::id::{
+        generate_instance_id, generate_revision_id, generate_team_id, generate_user_id,
+    },
     settings,
 };
 use anyhow::bail;
@@ -919,6 +922,49 @@ impl StorageService for KVStorageService {
 
     async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
         return self.adapter.save_users(users).await;
+    }
+
+    async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
+        return Ok(self.adapter.get_teams().await?);
+    }
+
+    async fn get_team_details(
+        &self,
+        team_id: &str,
+    ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
+        return Ok(self.adapter.get_team_details(team_id).await?);
+    }
+
+    async fn create_team(&self, payload: CreateTeamPayload) -> Result<String, CreateTeamError> {
+        let team_name = payload.name;
+
+        let mut teams = self.adapter.get_teams().await?;
+        if teams.iter().any(|t| t.name == team_name) {
+            return Err(CreateTeamError::DuplicateTeam);
+        }
+
+        let team_id = generate_team_id();
+
+        teams.push(YakManTeam {
+            id: team_id.clone(),
+            name: team_name.clone(),
+        });
+
+        self.adapter
+            .save_team_details(
+                &team_id.clone(),
+                YakManTeamDetails {
+                    id: team_id.clone(),
+                    name: team_name,
+                    roles: payload.roles,
+                    global_roles: payload.global_roles,
+                },
+            )
+            .await?;
+
+        self.adapter.save_teams(teams).await?;
+
+        return Ok(team_id);
     }
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {

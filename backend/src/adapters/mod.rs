@@ -1,7 +1,7 @@
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
-    YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -155,6 +155,23 @@ pub trait KVStorageAdapter: Sync + Send {
     ) -> Result<(), GenericStorageError>;
 
     async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError>;
+
+    async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError>;
+
+    async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError>;
+
+    async fn get_team_details(
+        &self,
+        team_id: &str,
+    ) -> Result<Option<YakManTeamDetails>, GenericStorageError>;
+
+    async fn save_team_details(
+        &self,
+        team_id: &str,
+        details: YakManTeamDetails,
+    ) -> Result<(), GenericStorageError>;
+
+    async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError>;
 
