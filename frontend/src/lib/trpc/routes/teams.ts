@@ -28,7 +28,8 @@ export const teams = t.router({
             roles: z.array(z.object({
                 projectId: z.string(),
                 role: YakManRoleSchema
-            }))
+            })),
+            teamMembers: z.array(z.string())
         }))
         .mutation(async ({ input, ctx }) => {
             const response = await fetch(`${BASE_URL}/v1/teams`, {
@@ -44,6 +45,7 @@ export const teams = t.router({
                         project_id: role.projectId,
                         role: role.role,
                     })),
+                    team_member_user_ids: input.teamMembers
                 })
             });
             if (response.status != 200) {

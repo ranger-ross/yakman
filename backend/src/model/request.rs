@@ -81,4 +81,5 @@ pub struct CreateTeamPayload {
     pub name: String,
     pub global_roles: Vec<YakManRole>,
     pub roles: Vec<YakManProjectRole>,
+    pub team_member_user_ids: Vec<String>,
 }

@@ -41,6 +41,7 @@
 
         return output;
     })();
+    let teamMembers: { label: string; value: string }[] = [];
 
     async function createTeam() {
         const roles = Object.keys(projectRoles)
@@ -50,11 +51,14 @@
                 role: projectRoles[projectId]!,
             }));
 
+        const teamMemberUserIds = teamMembers.map((member) => member.value);
+
         if (isNewTeam) {
             await trpc($page).teams.createTeam.mutate({
                 name: teamName,
                 globalRole: globalRole,
                 roles: roles,
+                teamMembers: teamMemberUserIds,
             });
             goto("/teams");
         } else {
@@ -80,50 +84,73 @@
             mask="kebab-case"
             containerClass="w-64 mb-2"
         />
+    </div>
+</YakManCard>
 
-        <YakManSelect label="Global Role" bind:value={globalRole}>
-            <option value={undefined}>None</option>
-            {#each ROLE_OPTIONS as role}
-                <option value={role}>{role}</option>
-            {/each}
-        </YakManSelect>
-
-        <label
-            class="block text-gray-700 text-sm font-bold my-2"
-            for="ProjectRoles"
-        >
-            Project Roles
-        </label>
-
-        <div class="w-96">
-            <MultiSelect
-                name="ProjectRoles"
-                placeholder="Select project to add roles"
-                bind:selected={selectedProjects}
-                options={data.projects.map((p) => ({
-                    label: p.name,
-                    value: p.id,
-                }))}
-            />
-        </div>
-
-        {#each selectedProjects as project}
-            <div class="mt-2">
-                <YakManSelect
-                    label="{project.label} Project Role"
-                    bind:value={projectRoles[project.value]}
-                >
-                    <option value={undefined}>None</option>
-                    {#each ROLE_OPTIONS as role}
-                        <option value={role}>{role}</option>
-                    {/each}
-                </YakManSelect>
-            </div>
+<YakManCard extraClasses="mt-2">
+    <YakManSelect label="Global Role" bind:value={globalRole}>
+        <option value={undefined}>None</option>
+        {#each ROLE_OPTIONS as role}
+            <option value={role}>{role}</option>
         {/each}
+    </YakManSelect>
 
-        <div class="mt-3">TODO: Add users</div>
+    <label
+        class="block text-gray-700 text-sm font-bold mb-2 mt-4"
+        for="ProjectRoles"
+    >
+        Project Roles
+    </label>
+
+    <div class="w-96">
+        <MultiSelect
+            name="ProjectRoles"
+            placeholder="Select project to add roles"
+            bind:selected={selectedProjects}
+            options={data.projects.map((p) => ({
+                label: p.name,
+                value: p.id,
+            }))}
+        />
     </div>
 
+    {#each selectedProjects as project}
+        <div class="mt-2">
+            <YakManSelect
+                label="{project.label} Project Role"
+                bind:value={projectRoles[project.value]}
+            >
+                <option value={undefined}>None</option>
+                {#each ROLE_OPTIONS as role}
+                    <option value={role}>{role}</option>
+                {/each}
+            </YakManSelect>
+        </div>
+    {/each}
+</YakManCard>
+
+<YakManCard extraClasses="mt-2">
+    <label
+        class="block text-gray-700 text-sm font-bold mb-2"
+        for="ProjectRoles"
+    >
+        Team Members
+    </label>
+
+    <div class="w-96">
+        <MultiSelect
+            name="TeamMembers"
+            bind:selected={teamMembers}
+            placeholder="Select project to add roles"
+            options={data.users.map((user) => ({
+                label: user.email,
+                value: user.id,
+            }))}
+        />
+    </div>
+</YakManCard>
+
+<YakManCard extraClasses="mt-2">
     <YakManButton disabled={isInvalid} on:click={createTeam}>
         {#if isNewTeam}
             Create Team

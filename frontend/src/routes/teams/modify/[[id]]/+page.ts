@@ -12,10 +12,12 @@ export const load: PageLoad = async (event) => {
     }
 
     const projects = await trpc(event).projects.fetchProjects.query();
+    const users = await trpc(event).users.fetchUsers.query();
 
     return {
         team,
-        projects
+        projects,
+        users
     };
 }
 

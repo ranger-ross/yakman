@@ -8,7 +8,10 @@ use super::{
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
-        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError, DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError
+        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
+        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
     },
     model::{
         self, request::CreateTeamPayload, ConfigInstance, ConfigInstanceEvent,
@@ -942,6 +945,16 @@ impl StorageService for KVStorageService {
             return Err(CreateTeamError::DuplicateTeam);
         }
 
+        let mut user_details: Vec<YakManUserDetails> = vec![];
+
+        for user_id in &payload.team_member_user_ids {
+            let Ok(Some(details)) = self.adapter.get_user_details(user_id).await else {
+                log::error!("Failed to get user details for user ID {user_id}");
+                continue;
+            };
+            user_details.push(details);
+        }
+
         let team_id = generate_team_id();
 
         teams.push(YakManTeam {
@@ -963,6 +976,16 @@ impl StorageService for KVStorageService {
             .await?;
 
         self.adapter.save_teams(teams).await?;
+
+        for mut user in user_details {
+            user.team_ids.push(team_id.clone());
+            let user_id = user.user_id.clone();
+
+            let res = self.adapter.save_user_details(&user_id, user).await;
+            if res.is_err() {
+                log::error!("Failed to save user id: {user_id}");
+            }
+        }
 
         return Ok(team_id);
     }

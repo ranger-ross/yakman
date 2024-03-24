@@ -108,9 +108,14 @@ export const YakManInstanceRevisionSchema = z.object({
 
 export type YakManInstanceRevision = z.infer<typeof YakManInstanceRevisionSchema>;
 
+export const YakManRoleSchema = z.enum(['Viewer', 'Operator', 'Approver', 'Admin']);
+
+export type YakManRole = z.infer<typeof YakManRoleSchema>;
+
 export const YakManUserSchema = z.object({
     email: z.string(),
     id: z.string(),
+    role: YakManRoleSchema,
 });
 
 export type YakManUser = z.infer<typeof YakManUserSchema>;
@@ -131,10 +136,6 @@ export const YakManTeamSchema = z.object({
 });
 
 export type YakManTeam = z.infer<typeof YakManTeamSchema>;
-
-export const YakManRoleSchema = z.enum(['Viewer', 'Operator', 'Approver', 'Admin']);
-
-export type YakManRole = z.infer<typeof YakManRoleSchema>;
 
 export const YakManTeamDetailsSchema = z.object({
     id: z.string(),
