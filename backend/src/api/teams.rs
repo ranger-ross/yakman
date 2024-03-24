@@ -8,6 +8,7 @@ use crate::{
 use crate::{model::YakManRole, services::StorageService};
 use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 /// Get teams
@@ -53,8 +54,13 @@ async fn get_team(
     };
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateTeamResponse {
+    team_id: String,
+}
+
 /// Create a new team
-#[utoipa::path(request_body = CreateTeamPayload, responses((status = 200, body = String)))]
+#[utoipa::path(request_body = CreateTeamPayload, responses((status = 200, body = CreateTeamResponse)))]
 #[put("/v1/teams")]
 async fn create_team(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -72,7 +78,7 @@ async fn create_team(
     }
 
     return match storage_service.create_team(payload).await {
-        Ok(config_id) => Ok(web::Json(ConfigPayload { config_id })),
+        Ok(team_id) => Ok(web::Json(CreateTeamResponse { team_id })),
         Err(e) => match e {
             CreateTeamError::DuplicateTeam => Err(YakManApiError::bad_request("duplicate team")),
             CreateTeamError::StorageError { message } => {
@@ -109,316 +115,306 @@ async fn delete_team(
     };
 }
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+    use actix_web::{test, web::Data, App};
+    use actix_web_grants::GrantsMiddleware;
+    use anyhow::Result;
+    use serde_json::Value;
 
-//     use super::*;
-//     use crate::{
-//         model::YakManProjectRole,
-//         test_utils::{fake_roles::FakeRoleExtractor, *},
-//     };
-//     use actix_web::{test, web::Data, App};
-//     use actix_web_grants::GrantsMiddleware;
-//     use anyhow::Result;
-//     use serde_json::Value;
+    #[actix_web::test]
+    async fn create_team_should_create_team() -> Result<()> {
+        prepare_for_actix_test()?;
 
-//     #[actix_web::test]
-//     async fn get_configs_should_return_configs() -> Result<()> {
-//         prepare_for_actix_test()?;
+        let storage_service = test_storage_service().await?;
 
-//         let storage_service = test_storage_service().await?;
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(create_team),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .uri(&format!("/v1/teams"))
+            .set_json(&CreateTeamPayload {
+                name: "foo".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
 
-//         // Setup test project with 2 configs
-//         let project_id = storage_service.create_project("test", None).await?;
-//         storage_service
-//             .create_config("config1", &project_id)
-//             .await?;
-//         storage_service
-//             .create_config("config2", &project_id)
-//             .await?;
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(get_configs),
-//         )
-//         .await;
-//         let req = test::TestRequest::get()
-//             .uri(&format!("/v1/configs?project={project_id}"))
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert!(resp.status().is_success());
+        let team_id = value["team_id"].as_str().unwrap();
 
-//         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+        // Validate team details was created
+        let team_details = storage_service.get_team_details(team_id).await?.unwrap();
+        assert_eq!(team_id, team_details.id);
+        assert_eq!("foo", team_details.name);
 
-//         let arr = value.as_array().unwrap();
+        // Validate team was added to global list
+        let teams = storage_service.get_teams().await?;
+        assert!(teams.iter().find(|t| t.id == team_id).is_some());
 
-//         assert_eq!(2, arr.len());
+        Ok(())
+    }
 
-//         let first = &arr[0];
-//         assert_eq!("config1", first["name"]);
-//         assert_eq!(false, first["hidden"]);
-//         assert_eq!(project_id.as_str(), first["project_id"]);
+    // #[actix_web::test]
+    // async fn get_configs_should_not_return_configs_for_other_projects() -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let second = &arr[1];
-//         assert_eq!("config2", second["name"]);
-//         assert_eq!(false, second["hidden"]);
-//         assert_eq!(project_id.as_str(), second["project_id"]);
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test 2 project with 1 config each
+    //     let project1_id = storage_service.create_project("proj1", None).await?;
+    //     storage_service
+    //         .create_config("config1", &project1_id)
+    //         .await?;
+    //     let project2_id = storage_service.create_project("proj2", None).await?;
+    //     storage_service
+    //         .create_config("config2", &project2_id)
+    //         .await?;
 
-//     #[actix_web::test]
-//     async fn get_configs_should_not_return_configs_for_other_projects() -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+    //             .service(get_configs),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::get()
+    //         .uri(&format!("/v1/configs?project={project1_id}"))
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert!(resp.status().is_success());
 
-//         let storage_service = test_storage_service().await?;
+    //     let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
-//         // Setup test 2 project with 1 config each
-//         let project1_id = storage_service.create_project("proj1", None).await?;
-//         storage_service
-//             .create_config("config1", &project1_id)
-//             .await?;
-//         let project2_id = storage_service.create_project("proj2", None).await?;
-//         storage_service
-//             .create_config("config2", &project2_id)
-//             .await?;
+    //     let arr = value.as_array().unwrap();
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(get_configs),
-//         )
-//         .await;
-//         let req = test::TestRequest::get()
-//             .uri(&format!("/v1/configs?project={project1_id}"))
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert!(resp.status().is_success());
+    //     assert_eq!(1, arr.len());
 
-//         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+    //     let first = &arr[0];
+    //     assert_eq!("config1", first["name"]);
+    //     assert_eq!(false, first["hidden"]);
+    //     assert_eq!(project1_id.as_str(), first["project_id"]);
 
-//         let arr = value.as_array().unwrap();
+    //     Ok(())
+    // }
 
-//         assert_eq!(1, arr.len());
+    // #[actix_web::test]
+    // async fn get_configs_should_not_return_forbidden_if_user_does_not_have_access_to_project(
+    // ) -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let first = &arr[0];
-//         assert_eq!("config1", first["name"]);
-//         assert_eq!(false, first["hidden"]);
-//         assert_eq!(project1_id.as_str(), first["project_id"]);
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test project with config
+    //     let project1_id = storage_service.create_project("proj1", None).await?;
+    //     storage_service
+    //         .create_config("config1", &project1_id)
+    //         .await?;
 
-//     #[actix_web::test]
-//     async fn get_configs_should_not_return_forbidden_if_user_does_not_have_access_to_project(
-//     ) -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     let fake_role_extractor =
+    //         FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
+    //             YakManProjectRole {
+    //                 project_id: "other".to_string(), // fake, just some other project
+    //                 role: YakManRole::Operator,
+    //             },
+    //         )]);
 
-//         let storage_service = test_storage_service().await?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_role_extractor))
+    //             .service(get_configs),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::get()
+    //         .uri(&format!("/v1/configs?project={project1_id}"))
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert_eq!(403, resp.status().as_u16());
 
-//         // Setup test project with config
-//         let project1_id = storage_service.create_project("proj1", None).await?;
-//         storage_service
-//             .create_config("config1", &project1_id)
-//             .await?;
+    //     Ok(())
+    // }
 
-//         let fake_role_extractor =
-//             FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
-//                 YakManProjectRole {
-//                     project_id: "other".to_string(), // fake, just some other project
-//                     role: YakManRole::Operator,
-//                 },
-//             )]);
+    // #[actix_web::test]
+    // async fn get_configs_should_not_show_hidden_configs() -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_role_extractor))
-//                 .service(get_configs),
-//         )
-//         .await;
-//         let req = test::TestRequest::get()
-//             .uri(&format!("/v1/configs?project={project1_id}"))
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert_eq!(403, resp.status().as_u16());
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test project with 2 configs
+    //     let project_id = storage_service.create_project("test", None).await?;
+    //     storage_service
+    //         .create_config("config1", &project_id)
+    //         .await?;
+    //     let config2_id = storage_service
+    //         .create_config("config2", &project_id)
+    //         .await?;
 
-//     #[actix_web::test]
-//     async fn get_configs_should_not_show_hidden_configs() -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     // Hide config2
+    //     storage_service.delete_config(&config2_id).await?;
 
-//         let storage_service = test_storage_service().await?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+    //             .service(get_configs),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::get()
+    //         .uri(&format!("/v1/configs?project={project_id}"))
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert!(resp.status().is_success());
 
-//         // Setup test project with 2 configs
-//         let project_id = storage_service.create_project("test", None).await?;
-//         storage_service
-//             .create_config("config1", &project_id)
-//             .await?;
-//         let config2_id = storage_service
-//             .create_config("config2", &project_id)
-//             .await?;
+    //     let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
 
-//         // Hide config2
-//         storage_service.delete_config(&config2_id).await?;
+    //     let arr = value.as_array().unwrap();
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(get_configs),
-//         )
-//         .await;
-//         let req = test::TestRequest::get()
-//             .uri(&format!("/v1/configs?project={project_id}"))
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert!(resp.status().is_success());
+    //     assert_eq!(1, arr.len());
 
-//         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+    //     let first = &arr[0];
+    //     assert_eq!("config1", first["name"]);
+    //     assert_eq!(false, first["hidden"]);
+    //     assert_eq!(project_id.as_str(), first["project_id"]);
 
-//         let arr = value.as_array().unwrap();
+    //     Ok(())
+    // }
 
-//         assert_eq!(1, arr.len());
+    // #[actix_web::test]
+    // async fn create_configs_should_create_config_propertly() -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let first = &arr[0];
-//         assert_eq!("config1", first["name"]);
-//         assert_eq!(false, first["hidden"]);
-//         assert_eq!(project_id.as_str(), first["project_id"]);
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test project
+    //     let project_id = storage_service.create_project("test", None).await?;
 
-//     #[actix_web::test]
-//     async fn create_configs_should_create_config_propertly() -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service.clone()))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+    //             .service(create_config),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::put()
+    //         .uri(&format!("/v1/configs"))
+    //         .set_json(&CreateConfigPayload {
+    //             config_name: "foo-bar".to_string(),
+    //             project_id: project_id,
+    //         })
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert_eq!(200, resp.status());
 
-//         let storage_service = test_storage_service().await?;
+    //     let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+    //     let config_id = value["config_id"].as_str().unwrap();
 
-//         // Setup test project
-//         let project_id = storage_service.create_project("test", None).await?;
+    //     let config = storage_service.get_config(config_id).await?;
+    //     assert!(config.is_some());
+    //     let config = config.unwrap();
+    //     assert_eq!("foo-bar", config.name);
+    //     assert_eq!(false, config.hidden);
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service.clone()))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(create_config),
-//         )
-//         .await;
-//         let req = test::TestRequest::put()
-//             .uri(&format!("/v1/configs"))
-//             .set_json(&CreateConfigPayload {
-//                 config_name: "foo-bar".to_string(),
-//                 project_id: project_id,
-//             })
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert_eq!(200, resp.status());
+    //     Ok(())
+    // }
 
-//         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
-//         let config_id = value["config_id"].as_str().unwrap();
+    // #[actix_web::test]
+    // async fn create_configs_should_block_invalid_config_names() -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let config = storage_service.get_config(config_id).await?;
-//         assert!(config.is_some());
-//         let config = config.unwrap();
-//         assert_eq!("foo-bar", config.name);
-//         assert_eq!(false, config.hidden);
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test project
+    //     let project_id = storage_service.create_project("test", None).await?;
 
-//     #[actix_web::test]
-//     async fn create_configs_should_block_invalid_config_names() -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service.clone()))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+    //             .service(create_config),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::put()
+    //         .uri(&format!("/v1/configs"))
+    //         .set_json(&CreateConfigPayload {
+    //             config_name: "this is an invalid config name".to_string(),
+    //             project_id: project_id,
+    //         })
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert_eq!(400, resp.status());
 
-//         let storage_service = test_storage_service().await?;
+    //     Ok(())
+    // }
 
-//         // Setup test project
-//         let project_id = storage_service.create_project("test", None).await?;
+    // #[actix_web::test]
+    // async fn create_configs_should_block_blank_config_names() -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service.clone()))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(create_config),
-//         )
-//         .await;
-//         let req = test::TestRequest::put()
-//             .uri(&format!("/v1/configs"))
-//             .set_json(&CreateConfigPayload {
-//                 config_name: "this is an invalid config name".to_string(),
-//                 project_id: project_id,
-//             })
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert_eq!(400, resp.status());
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test project
+    //     let project_id = storage_service.create_project("test", None).await?;
 
-//     #[actix_web::test]
-//     async fn create_configs_should_block_blank_config_names() -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service.clone()))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+    //             .service(create_config),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::put()
+    //         .uri(&format!("/v1/configs"))
+    //         .set_json(&CreateConfigPayload {
+    //             config_name: "".to_string(),
+    //             project_id: project_id,
+    //         })
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert_eq!(400, resp.status());
 
-//         let storage_service = test_storage_service().await?;
+    //     Ok(())
+    // }
 
-//         // Setup test project
-//         let project_id = storage_service.create_project("test", None).await?;
+    // #[actix_web::test]
+    // async fn create_configs_should_block_duplicate_config_names() -> Result<()> {
+    //     prepare_for_actix_test()?;
 
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service.clone()))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(create_config),
-//         )
-//         .await;
-//         let req = test::TestRequest::put()
-//             .uri(&format!("/v1/configs"))
-//             .set_json(&CreateConfigPayload {
-//                 config_name: "".to_string(),
-//                 project_id: project_id,
-//             })
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert_eq!(400, resp.status());
+    //     let storage_service = test_storage_service().await?;
 
-//         Ok(())
-//     }
+    //     // Setup test project
+    //     let project_id = storage_service.create_project("test", None).await?;
+    //     storage_service
+    //         .create_config("foo-bar", &project_id)
+    //         .await?;
 
-//     #[actix_web::test]
-//     async fn create_configs_should_block_duplicate_config_names() -> Result<()> {
-//         prepare_for_actix_test()?;
+    //     let app = test::init_service(
+    //         App::new()
+    //             .app_data(Data::new(storage_service.clone()))
+    //             .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+    //             .service(create_config),
+    //     )
+    //     .await;
+    //     let req = test::TestRequest::put()
+    //         .uri(&format!("/v1/configs"))
+    //         .set_json(&CreateConfigPayload {
+    //             config_name: "foo-bar".to_string(),
+    //             project_id: project_id,
+    //         })
+    //         .to_request();
+    //     let resp = test::call_service(&app, req).await;
+    //     assert_eq!(400, resp.status());
 
-//         let storage_service = test_storage_service().await?;
-
-//         // Setup test project
-//         let project_id = storage_service.create_project("test", None).await?;
-//         storage_service
-//             .create_config("foo-bar", &project_id)
-//             .await?;
-
-//         let app = test::init_service(
-//             App::new()
-//                 .app_data(Data::new(storage_service.clone()))
-//                 .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
-//                 .service(create_config),
-//         )
-//         .await;
-//         let req = test::TestRequest::put()
-//             .uri(&format!("/v1/configs"))
-//             .set_json(&CreateConfigPayload {
-//                 config_name: "foo-bar".to_string(),
-//                 project_id: project_id,
-//             })
-//             .to_request();
-//         let resp = test::call_service(&app, req).await;
-//         assert_eq!(400, resp.status());
-
-//         Ok(())
-//     }
-// }
+    //     Ok(())
+    // }
+}
