@@ -6,7 +6,9 @@ use futures_util::lock::Mutex;
 use serde::de::DeserializeOwned;
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 use log::info;
 
@@ -306,18 +308,24 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     }
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
-        todo!()
+        let storage = self.storage.lock().await;
+        let data = storage.get(&self.get_teams_key()).unwrap();
+        return Ok(serde_json::from_str(data)?);
     }
 
     async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
-        todo!()
+        self.insert(self.get_teams_key(), serde_json::to_string(&teams)?)
+            .await;
+        Ok(())
     }
 
     async fn get_team_details(
         &self,
         team_id: &str,
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
-        todo!()
+        return Ok(self
+            .get_optional_data(&self.get_team_details_key(team_id))
+            .await?);
     }
 
     async fn save_team_details(
@@ -325,11 +333,15 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         team_id: &str,
         details: YakManTeamDetails,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let key = self.get_team_details_key(team_id);
+        self.insert(key, serde_json::to_string(&details)?).await;
+        return Ok(());
     }
 
     async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
-        todo!()
+        let key = self.get_team_details_key(team_id);
+        self.remove(&key).await;
+        return Ok(());
     }
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
@@ -467,6 +479,10 @@ impl InMemoryStorageAdapter {
         format!("USERS")
     }
 
+    fn get_teams_key(&self) -> String {
+        format!("TEAMS")
+    }
+
     fn get_api_keys_key(&self) -> String {
         return format!("API_KEYS");
     }
@@ -493,6 +509,10 @@ impl InMemoryStorageAdapter {
 
     fn get_user_key(&self, user_id: &str) -> String {
         format!("USERS_{user_id}")
+    }
+
+    fn get_team_details_key(&self, team_id: &str) -> String {
+        format!("TEAM_{team_id}")
     }
 
     fn get_password_key(&self, email_hash: &str) -> String {
