@@ -10,8 +10,6 @@ use crate::model::{
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
     YakManTeamDetails, YakManUser, YakManUserDetails,
 };
-use log::info;
-
 use super::{GenericStorageError, KVStorageAdapter};
 
 /// This adapter is meant for development and testing not real world use.

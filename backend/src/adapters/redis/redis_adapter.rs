@@ -4,7 +4,9 @@ use std::env;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 use anyhow::Result;
 use async_trait::async_trait;

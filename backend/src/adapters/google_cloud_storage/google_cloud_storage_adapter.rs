@@ -5,7 +5,9 @@ use super::{
     GenericStorageError, KVStorageAdapter,
 };
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails
+    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 use crate::{adapters::google_cloud_storage::storage_types::RevisionJson, model::YakManApiKey};
 use anyhow::Result;
