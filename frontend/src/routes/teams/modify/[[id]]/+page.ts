@@ -2,7 +2,6 @@
 import { trpc } from "$lib/trpc/client";
 import type { YakManTeamDetails } from "$lib/types/types";
 import type { PageLoad } from "./$types";
-import { TRPCClientError } from '@trpc/client';
 
 export const load: PageLoad = async (event) => {
     const teamId = event.params.id;
@@ -12,8 +11,11 @@ export const load: PageLoad = async (event) => {
         team = await trpc(event).teams.fetchTeamById.query(teamId);
     }
 
+    const projects = await trpc(event).projects.fetchProjects.query();
+
     return {
-        team
+        team,
+        projects
     };
 }
 

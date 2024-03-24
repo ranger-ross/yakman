@@ -132,11 +132,19 @@ export const YakManTeamSchema = z.object({
 
 export type YakManTeam = z.infer<typeof YakManTeamSchema>;
 
+export const YakManRoleSchema = z.enum(['Viewer', 'Operator', 'Approver', 'Admin']);
+
+export type YakManRole = z.infer<typeof YakManRoleSchema>;
+
 export const YakManTeamDetailsSchema = z.object({
     id: z.string(),
     name: z.string(),
-    global_roles: z.array(z.string()),
-    roles: z.array(z.string()),
+    global_roles: z.array(YakManRoleSchema),
+    roles: z.array(z.object({
+        project_id: z.string(),
+        role: YakManRoleSchema,
+    })),
+    member_user_ids: z.array(z.string()),
 });
 
 export type YakManTeamDetails = z.infer<typeof YakManTeamDetailsSchema>;

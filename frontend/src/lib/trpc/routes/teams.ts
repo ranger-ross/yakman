@@ -1,7 +1,7 @@
 import { t } from "../t";
 import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
 import { z } from "zod";
-import type { YakManTeam, YakManTeamDetails } from "$lib/types/types";
+import { YakManRoleSchema, type YakManTeam, type YakManTeamDetails } from "$lib/types/types";
 
 const BASE_URL = getYakManBaseApiUrl();
 
@@ -24,6 +24,11 @@ export const teams = t.router({
     createTeam: t.procedure
         .input(z.object({
             name: z.string(),
+            globalRole: YakManRoleSchema.optional(),
+            roles: z.array(z.object({
+                projectId: z.string(),
+                role: YakManRoleSchema
+            }))
         }))
         .mutation(async ({ input, ctx }) => {
             const response = await fetch(`${BASE_URL}/v1/teams`, {
@@ -34,8 +39,11 @@ export const teams = t.router({
                 },
                 body: JSON.stringify({
                     name: input.name,
-                    global_roles: [], // TODO: add roles
-                    roles: [], // TODO: add roles
+                    global_roles: input.globalRole ? [input.globalRole] : [],
+                    roles: input.roles.map(role => ({
+                        project_id: role.projectId,
+                        role: role.role,
+                    })),
                 })
             });
             if (response.status != 200) {
