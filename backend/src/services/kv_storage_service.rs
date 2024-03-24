@@ -8,10 +8,7 @@ use super::{
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
     error::{
-        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
-        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError,
-        RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
+        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError, DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError
     },
     model::{
         self, request::CreateTeamPayload, ConfigInstance, ConfigInstanceEvent,
@@ -835,9 +832,11 @@ impl StorageService for KVStorageService {
             };
 
             let admin_user_details = YakManUserDetails {
+                user_id: admin_user.id.clone(),
                 global_roles: vec![YakManRole::Admin],
                 roles: vec![],
                 profile_picture: None,
+                team_ids: vec![],
             };
 
             self.adapter
@@ -958,6 +957,7 @@ impl StorageService for KVStorageService {
                     name: team_name,
                     roles: payload.roles,
                     global_roles: payload.global_roles,
+                    member_user_ids: vec![],
                 },
             )
             .await?;
@@ -965,6 +965,38 @@ impl StorageService for KVStorageService {
         self.adapter.save_teams(teams).await?;
 
         return Ok(team_id);
+    }
+
+    async fn delete_team(&self, team_id: &str) -> Result<(), DeleteTeamError> {
+        let mut teams = self.adapter.get_teams().await?;
+        let Some(team_details) = self.adapter.get_team_details(team_id).await? else {
+            return Err(DeleteTeamError::TeamNotFound);
+        };
+
+        teams.retain(|team| team.id != team_id);
+
+        let mut users = vec![];
+        for user_id in &team_details.member_user_ids {
+            if let Some(user_details) = self.adapter.get_user_details(user_id).await? {
+                users.push(user_details);
+            } else {
+                log::error!("Failed to get user with id {user_id}, skipping removing team");
+            }
+        }
+
+        for mut user in users {
+            user.team_ids.retain(|id| id != team_id);
+            let user_id = user.user_id.clone();
+            let res = self.adapter.save_user_details(&user_id, user).await;
+            if res.is_err() {
+                log::error!("Failed to save user with id {user_id}, skipping removing team");
+            }
+        }
+
+        self.adapter.delete_team_details(team_id).await?;
+        self.adapter.save_teams(teams).await?;
+
+        return Ok(());
     }
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError> {

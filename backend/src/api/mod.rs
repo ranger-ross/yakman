@@ -74,6 +74,10 @@ use utoipa::OpenApi;
         users::get_yakman_users,
         users::create_yakman_user,
         users::get_user_info,
+        teams::get_teams,
+        teams::get_team,
+        teams::create_team,
+        teams::delete_team,
         api_keys::get_api_keys,
         api_keys::create_api_key,
         api_keys::delete_api_key,
@@ -135,6 +139,7 @@ where
         .service(teams::get_teams)
         .service(teams::get_team)
         .service(teams::create_team)
+        .service(teams::delete_team)
         // Api Keys
         .service(api_keys::get_api_keys)
         .service(api_keys::create_api_key)

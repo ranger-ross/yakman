@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
@@ -13,9 +14,10 @@
 
     async function createTeam() {
         if (isNewTeam) {
-            trpc($page).teams.createTeam.mutate({
-                name: "example",
+            await trpc($page).teams.createTeam.mutate({
+                name: teamName,
             });
+            goto('/teams');
         } else {
             console.warn("TODO: Add ability to update team");
         }

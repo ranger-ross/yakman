@@ -6,10 +6,11 @@ use std::sync::Arc;
 use super::token::extract_access_token;
 use super::YakManPrinciple;
 use crate::auth::token::{TokenService, YakManTokenService};
-use crate::model::{YakManRole, YakManProjectRole};
+use crate::model::{YakManProjectRole, YakManRole};
 use crate::services::StorageService;
 use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
+use futures_util::future::join_all;
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum YakManRoleBinding {
@@ -155,6 +156,34 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                     .collect();
 
                 role_bindings.extend(project_role_bindings);
+
+                // Load team roles
+                let futures: Vec<_> = details
+                    .team_ids
+                    .iter()
+                    .map(|team_id| storage_service.get_team_details(&team_id))
+                    .collect();
+
+                for result in join_all(futures).await {
+                    let Ok(Some(team_details)) = result else {
+                        log::warn!("Could not load team to get roles");
+                        continue;
+                    };
+                    let global_roles: Vec<YakManRoleBinding> = team_details
+                        .global_roles
+                        .iter()
+                        .map(|p| YakManRoleBinding::GlobalRoleBinding(p.clone()))
+                        .collect();
+                    role_bindings.extend(global_roles);
+
+                    let project_role_bindings: Vec<YakManRoleBinding> = team_details
+                        .roles
+                        .into_iter()
+                        .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                        .collect();
+
+                    role_bindings.extend(project_role_bindings);
+                }
             } else {
                 log::info!("user details not found");
             }

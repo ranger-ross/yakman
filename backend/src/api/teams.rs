@@ -1,12 +1,12 @@
 use crate::{
     adapters::errors::GenericStorageError,
     api::is_alphanumeric_kebab_case,
-    error::{CreateTeamError, YakManApiError},
+    error::{CreateTeamError, DeleteTeamError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{request::CreateTeamPayload, response::ConfigPayload},
 };
 use crate::{model::YakManRole, services::StorageService};
-use actix_web::{get, put, web, Responder};
+use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use std::sync::Arc;
 
@@ -76,6 +76,32 @@ async fn create_team(
         Err(e) => match e {
             CreateTeamError::DuplicateTeam => Err(YakManApiError::bad_request("duplicate team")),
             CreateTeamError::StorageError { message } => {
+                log::error!("Failed to create team, error: {message}");
+                Err(YakManApiError::server_error("Failed to create team"))
+            }
+        },
+    };
+}
+
+/// Delete a team
+#[utoipa::path(request_body = (), responses((status = 200, body = String)))]
+#[delete("/v1/teams/{id}")]
+async fn delete_team(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    let team_id = path.into_inner();
+
+    if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
+        return Err(YakManApiError::forbidden());
+    }
+
+    return match storage_service.delete_team(&team_id).await {
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Err(e) => match e {
+            DeleteTeamError::TeamNotFound => Err(YakManApiError::bad_request("team not found")),
+            DeleteTeamError::StorageError { message } => {
                 log::error!("Failed to create team, error: {message}");
                 Err(YakManApiError::server_error("Failed to create team"))
             }

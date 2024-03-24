@@ -1,13 +1,29 @@
 <script lang="ts">
+    import { invalidateAll } from "$app/navigation";
+    import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManLink from "$lib/components/YakManLink.svelte";
+    import { openGlobaModal } from "$lib/stores/global-modal-state";
+    import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
 
     export let data: PageData;
 
     async function onDelete(teamId: string) {
-        console.log(teamId);
+        openGlobaModal({
+            title: "Are you sure you want to delete this team?",
+            message: "This cannot be undone.",
+            confirmButtonVariant: "danger",
+            confirmButtonText: "Delete",
+            async onConfirm() {
+                await trpc($page).teams.deleteTeam.mutate({
+                    teamId: teamId
+                });
+
+                invalidateAll();
+            },
+        });
     }
 </script>
 

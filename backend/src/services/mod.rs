@@ -6,10 +6,7 @@ pub mod snapshot;
 use crate::{
     adapters::errors::GenericStorageError,
     error::{
-        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
-        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError,
-        RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
+        ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError, CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError, DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError
     },
     model::{
         request::{CreateTeamPayload, ProjectNotificationSettings},
@@ -186,6 +183,8 @@ pub trait StorageService: Sync + Send {
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError>;
 
     async fn create_team(&self, payload: CreateTeamPayload) -> Result<String, CreateTeamError>;
+
+    async fn delete_team(&self, team_id: &str) -> Result<(), DeleteTeamError>;
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 

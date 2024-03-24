@@ -42,5 +42,21 @@ export const teams = t.router({
                 throw new Error(await response.text())
             }
         }),
+    deleteTeam: t.procedure
+        .input(z.object({
+            teamId: z.string(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const response = await fetch(`${BASE_URL}/v1/teams/${input.teamId}`, {
+                method: 'DELETE',
+                headers: {
+                    ...createYakManAuthHeaders(ctx.accessToken),
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.status != 200) {
+                throw new Error(await response.text())
+            }
+        }),
 })
 
