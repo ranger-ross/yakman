@@ -19,12 +19,13 @@ use self::{
     },
     lifecycle::{YakManHealthResponse, YakManSettingsResponse},
     revisions::ReviewResult,
+    teams::UpdateTeamResponse,
     users::GetUserInfoResponse,
 };
 use crate::model::{
     request::{
         CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
-        UpdateProjectPayload,
+        UpdateProjectPayload, UpdateTeamPayload,
     },
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
@@ -77,6 +78,7 @@ use utoipa::OpenApi;
         teams::get_teams,
         teams::get_team,
         teams::create_team,
+        teams::update_team,
         teams::delete_team,
         api_keys::get_api_keys,
         api_keys::create_api_key,
@@ -90,7 +92,7 @@ use utoipa::OpenApi;
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
-            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload
+            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamResponse, UpdateTeamPayload
         )
     ),
     tags(

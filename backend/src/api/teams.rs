@@ -9,6 +9,7 @@ use crate::{model::YakManRole, services::StorageService};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use std::sync::Arc;
 
 /// Get teams
@@ -91,8 +92,8 @@ async fn create_team(
     };
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct UpdateTeamResponse {
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UpdateTeamResponse {
     team_id: String,
 }
 
