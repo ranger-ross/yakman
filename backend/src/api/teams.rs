@@ -155,10 +155,10 @@ async fn delete_team(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::*;
+    use crate::{model::request::CreateYakManUserPayload, test_utils::*};
     use actix_web::{test, web::Data, App};
     use actix_web_grants::GrantsMiddleware;
-    use anyhow::Result;
+    use anyhow::{Context, Result};
     use serde_json::Value;
 
     #[actix_web::test]
@@ -248,6 +248,81 @@ mod tests {
             .iter()
             .find(|t| t.id == team_id && t.name == "updated-team-name")
             .is_some());
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn update_team_should_remove_users() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let user_id = storage_service
+            .create_user(CreateYakManUserPayload {
+                email: "test@null.com".to_string(),
+                role: None,
+            })
+            .await?;
+
+        let team_id = storage_service
+            .create_team(CreateTeamPayload {
+                name: "foo".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![user_id.clone()],
+            })
+            .await?;
+
+        // Before running API test check that the user was added to team properly
+        let user_details = storage_service
+            .get_user_details(&user_id)
+            .await?
+            .context("User was not saved properly")?;
+        assert_eq!(user_details.team_ids.len(), 1);
+        assert_eq!(user_details.team_ids[0], team_id);
+
+        let team_details = storage_service
+            .get_team_details(&team_id)
+            .await?
+            .context("Team details was not saved properly")?;
+        assert_eq!(team_details.member_user_ids.len(), 1);
+        assert_eq!(team_details.member_user_ids[0], user_id);
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(update_team),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!("/v1/teams/{team_id}"))
+            .set_json(&UpdateTeamPayload {
+                name: "foo".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
+
+        // Validate team details was updated
+        let team_details = storage_service
+            .get_team_details(&team_id)
+            .await?
+            .context("Could not find team details")?;
+
+        assert_eq!(team_id, team_details.id);
+        assert_eq!(0, team_details.member_user_ids.len());
+
+        // Validate user details was updated
+        let user_details = storage_service
+            .get_user_details(&user_id)
+            .await?
+            .context("User was not saved properly")?;
+        assert_eq!(user_details.team_ids.len(), 0);
 
         Ok(())
     }
