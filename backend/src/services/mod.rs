@@ -13,7 +13,10 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        request::{CreateTeamPayload, ProjectNotificationSettings, UpdateTeamPayload},
+        request::{
+            CreateTeamPayload, CreateYakManUserPayload, ProjectNotificationSettings,
+            UpdateTeamPayload,
+        },
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
         YakManPassword, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink,
         YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,
@@ -156,7 +159,10 @@ pub trait StorageService: Sync + Send {
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
-    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
+    async fn create_user(
+        &self,
+        payload: CreateYakManUserPayload,
+    ) -> Result<String, GenericStorageError>;
 
     async fn get_user_by_email(
         &self,

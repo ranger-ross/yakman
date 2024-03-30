@@ -16,7 +16,7 @@ use crate::{
     },
     model::{
         self,
-        request::{CreateTeamPayload, UpdateTeamPayload},
+        request::{CreateTeamPayload, CreateYakManUserPayload, UpdateTeamPayload},
         ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
         LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
         YakManPasswordResetLink, YakManProject, YakManProjectDetails,
@@ -925,8 +925,38 @@ impl StorageService for KVStorageService {
         return self.adapter.save_user_details(user_id, details).await;
     }
 
-    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
-        return self.adapter.save_users(users).await;
+    async fn create_user(
+        &self,
+        payload: CreateYakManUserPayload,
+    ) -> Result<String, GenericStorageError> {
+        let mut users = self.get_users().await?;
+
+        // TODO: Prevent duplicate emails
+
+        let user_id = generate_user_id();
+
+        users.push(YakManUser {
+            email: payload.email.clone(),
+            id: user_id.clone(),
+            role: payload.role.clone(),
+        });
+
+        // TODO: Handle roles properly
+        let user_details = YakManUserDetails {
+            user_id: user_id.clone(),
+            profile_picture: None,
+            global_roles: vec![],
+            roles: vec![],
+            team_ids: vec![],
+        };
+
+        self.adapter
+            .save_user_details(&user_id, user_details)
+            .await?;
+
+        self.adapter.save_users(users).await?;
+
+        Ok(user_id)
     }
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
