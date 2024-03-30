@@ -433,18 +433,34 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     }
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
-        todo!()
+        let path = self.get_teams_file_path();
+        let content = self
+            .get_object_as_option(&path)
+            .await?
+            .ok_or(AwsS3StorageAdapter::not_found())?;
+        let data: Vec<_> = serde_json::from_str(&content)?;
+        return Ok(data);
     }
 
     async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
-        todo!()
+        let data = serde_json::to_string(&teams)?;
+        let path = self.get_teams_file_path();
+        self.put_object(&path, data).await?;
+        return Ok(());
     }
 
     async fn get_team_details(
         &self,
         team_id: &str,
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
-        todo!()
+        let dir = self.get_teams_dir();
+        let path = format!("{dir}/{team_id}.json");
+
+        if let Some(content) = self.get_object_as_option(&path).await? {
+            return Ok(Some(serde_json::from_str(&content)?));
+        }
+
+        return Ok(None);
     }
 
     async fn save_team_details(
@@ -452,12 +468,22 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         team_id: &str,
         details: YakManTeamDetails,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let dir = self.get_teams_dir();
+        let path: String = format!("{dir}/{team_id}.json");
+
+        let data: String = serde_json::to_string(&details)?;
+
+        self.put_object(&path, data).await?;
+        return Ok(());
     }
 
     async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
-        todo!()
+        let dir = self.get_teams_dir();
+        let path: String = format!("{dir}/{team_id}.json");
+        self.delete_object(&path).await?;
+        return Ok(());
     }
+
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
         let path = self.get_snapshot_lock_file_path();
         let content = self
@@ -565,6 +591,11 @@ impl AwsS3StorageAdapter {
         return format!("{yakman_dir}/projects.json");
     }
 
+    fn get_teams_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/teams.json");
+    }
+
     fn get_configs_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/configs.json");
@@ -598,6 +629,11 @@ impl AwsS3StorageAdapter {
     fn get_projects_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/projects");
+    }
+
+    fn get_teams_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/teams");
     }
 
     fn get_user_dir(&self) -> String {
