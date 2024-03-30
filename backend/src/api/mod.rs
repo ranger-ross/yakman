@@ -19,7 +19,6 @@ use self::{
     },
     lifecycle::{YakManHealthResponse, YakManSettingsResponse},
     revisions::ReviewResult,
-    teams::UpdateTeamResponse,
     users::GetUserInfoResponse,
 };
 use crate::model::{
@@ -92,7 +91,7 @@ use utoipa::OpenApi;
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
-            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamResponse, UpdateTeamPayload
+            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload
         )
     ),
     tags(

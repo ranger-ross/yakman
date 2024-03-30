@@ -1,15 +1,14 @@
 use crate::{
     adapters::errors::GenericStorageError,
     api::is_alphanumeric_kebab_case,
-    error::{CreateTeamError, DeleteTeamError, YakManApiError},
+    error::{CreateTeamError, DeleteTeamError, UpdateTeamError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::request::CreateTeamPayload,
+    model::request::{CreateTeamPayload, UpdateTeamPayload},
 };
 use crate::{model::YakManRole, services::StorageService};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use std::sync::Arc;
 
 /// Get teams
@@ -92,19 +91,16 @@ async fn create_team(
     };
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTeamResponse {
-    team_id: String,
-}
-
 /// Create a new team
-#[utoipa::path(request_body = CreateTeamPayload, responses((status = 200, body = CreateTeamResponse)))]
+#[utoipa::path(request_body = UpdateTeamPayload, responses((status = 200, body = CreateTeamResponse)))]
 #[post("/v1/teams/{id}")]
 async fn update_team(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: web::Json<CreateTeamPayload>,
+    path: web::Path<String>,
+    payload: web::Json<UpdateTeamPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
+    let team_id = path.into_inner();
     let payload = payload.into_inner();
 
     if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
@@ -115,13 +111,14 @@ async fn update_team(
         return Err(YakManApiError::bad_request("invalid team name"));
     }
 
-    return match storage_service.create_team(payload).await {
-        Ok(team_id) => Ok(web::Json(UpdateTeamResponse { team_id })),
+    return match storage_service.update_team(&team_id, payload).await {
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => match e {
-            CreateTeamError::DuplicateTeam => {
+            UpdateTeamError::TeamNotFound => Err(YakManApiError::bad_request("team not found")),
+            UpdateTeamError::DuplicateTeam => {
                 Err(YakManApiError::bad_request("duplicate team name"))
             }
-            CreateTeamError::StorageError { message } => {
+            UpdateTeamError::StorageError { message } => {
                 log::error!("Failed to update team, error: {message}");
                 Err(YakManApiError::server_error("Failed to update team"))
             }
