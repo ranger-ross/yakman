@@ -4,8 +4,7 @@ use std::sync::Arc;
 use crate::error::YakManApiError;
 use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
-use crate::model::{request::CreateYakManUserPayload, YakManRole, YakManUser};
-use crate::services::id::generate_user_id;
+use crate::model::{request::CreateYakManUserPayload, YakManRole};
 use crate::services::StorageService;
 use actix_web::{
     get, put,
@@ -47,16 +46,10 @@ pub async fn create_yakman_user(
         return Err(YakManApiError::forbidden());
     }
 
-    let mut users = storage_service.get_users().await.unwrap();
-    let user = payload.into_inner();
-
-    users.push(YakManUser {
-        email: user.email,
-        id: generate_user_id(),
-        role: user.role,
-    });
-
-    storage_service.save_users(users).await.unwrap();
+    storage_service
+        .create_user(payload.into_inner())
+        .await
+        .unwrap(); // TODO: Create and handle error
 
     Ok(HttpResponse::Ok().finish())
 }

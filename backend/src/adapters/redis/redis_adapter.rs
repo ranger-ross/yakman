@@ -5,8 +5,8 @@ use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManUser,
-    YakManUserDetails,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -311,6 +311,43 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
+    async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
+        let mut connection = self.get_connection()?;
+        let projects: String = connection.get(self.get_teams_key())?;
+        return Ok(serde_json::from_str(&projects)?);
+    }
+
+    async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+        let mut connection = self.get_connection()?;
+        let _: () = connection.set(self.get_teams_key(), serde_json::to_string(&teams)?)?;
+        return Ok(());
+    }
+
+    async fn get_team_details(
+        &self,
+        team_id: &str,
+    ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
+        return Ok(self.get_optional_data(&self.get_team_key(team_id)).await?);
+    }
+
+    async fn save_team_details(
+        &self,
+        team_id: &str,
+        details: YakManTeamDetails,
+    ) -> Result<(), GenericStorageError> {
+        let key = self.get_team_key(team_id);
+        let mut connection = self.get_connection()?;
+        let _: () = connection.set(key, serde_json::to_string(&details)?)?;
+        return Ok(());
+    }
+
+    async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_team_key(team_id);
+        let mut connection = self.get_connection()?;
+        let _: () = connection.del(&key)?;
+        Ok(())
+    }
+
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
         return self
             .get_optional_data(&self.get_snapshot_lock_key())
@@ -479,6 +516,10 @@ impl RedisStorageAdapter {
         format!("{REDIS_PREFIX}_PROJECTS")
     }
 
+    fn get_teams_key(&self) -> String {
+        format!("{REDIS_PREFIX}_TEAMS")
+    }
+
     fn get_users_key(&self) -> String {
         format!("{REDIS_PREFIX}_USERS")
     }
@@ -505,6 +546,10 @@ impl RedisStorageAdapter {
 
     fn get_project_key(&self, project_id: &str) -> String {
         format!("{REDIS_PREFIX}_PROJECTS_{project_id}")
+    }
+
+    fn get_team_key(&self, team_id: &str) -> String {
+        format!("{REDIS_PREFIX}_TEAMS_{team_id}")
     }
 
     fn get_user_key(&self, user_id: &str) -> String {

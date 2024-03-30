@@ -47,6 +47,7 @@
                 ...(isAdmin
                     ? [
                           { text: "Add Project", value: "AddProject" },
+                          { text: "Manage Teams", value: "ManageTeams" },
                           { text: "Admin", value: "Admin" },
                       ]
                     : []),
@@ -59,6 +60,8 @@
                         return goto(`/add-label`);
                     case selection === "AddProject":
                         return goto(`/project`);
+                    case selection === "ManageTeams":
+                        return goto(`/teams`);
                     case selection === "Admin":
                         return goto(`/admin`);
                     case selection === "Logout":

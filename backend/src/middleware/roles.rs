@@ -6,15 +6,17 @@ use std::sync::Arc;
 use super::token::extract_access_token;
 use super::YakManPrinciple;
 use crate::auth::token::{TokenService, YakManTokenService};
-use crate::model::{YakManRole, YakManUserProjectRole};
+use crate::model::{YakManProjectRole, YakManRole};
 use crate::services::StorageService;
 use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
+use futures_util::future::join_all;
+use futures_util::TryFutureExt;
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum YakManRoleBinding {
     GlobalRoleBinding(YakManRole),
-    ProjectRoleBinding(YakManUserProjectRole),
+    ProjectRoleBinding(YakManProjectRole),
 }
 
 impl YakManRoleBinding {
@@ -116,7 +118,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                 if let Some(api_key) = storage_service.get_api_key_by_id(&key_id).await.unwrap() {
                     let mut api_key_roles = HashSet::new();
                     api_key_roles.insert(YakManRoleBinding::ProjectRoleBinding(
-                        YakManUserProjectRole {
+                        YakManProjectRole {
                             project_id: api_key.project_id,
                             role: api_key.role,
                         },
@@ -155,6 +157,51 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                     .collect();
 
                 role_bindings.extend(project_role_bindings);
+
+                // If the user already has global admin role, we can skip loading team roles
+                if !role_bindings.contains(&YakManRoleBinding::GlobalRoleBinding(YakManRole::Admin))
+                {
+                    // Load team roles
+                    let futures: Vec<_> = details
+                        .team_ids
+                        .iter()
+                        .map(|team_id| {
+                            storage_service
+                                .get_team_details(&team_id)
+                                .map_ok(move |inner| {
+                                    inner.ok_or(format!("Team with ID not found {team_id}"))
+                                })
+                        })
+                        .collect();
+
+                    for result in join_all(futures).await {
+                        let team_details = match result {
+                            Ok(Ok(team_details)) => team_details,
+                            Ok(Err(err)) => {
+                                log::warn!("Could not load team to get roles {err:?}");
+                                continue;
+                            }
+                            Err(err) => {
+                                log::warn!("Could not load team to get roles {err:?}");
+                                continue;
+                            }
+                        };
+                        let global_roles: Vec<YakManRoleBinding> = team_details
+                            .global_roles
+                            .iter()
+                            .map(|p| YakManRoleBinding::GlobalRoleBinding(p.clone()))
+                            .collect();
+                        role_bindings.extend(global_roles);
+
+                        let project_role_bindings: Vec<YakManRoleBinding> = team_details
+                            .roles
+                            .into_iter()
+                            .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                            .collect();
+
+                        role_bindings.extend(project_role_bindings);
+                    }
+                }
             } else {
                 log::info!("user details not found");
             }

@@ -7,6 +7,7 @@ pub mod labels;
 pub mod lifecycle;
 pub mod projects;
 pub mod revisions;
+pub mod teams;
 pub mod users;
 
 use self::{
@@ -23,7 +24,7 @@ use self::{
 use crate::model::{
     request::{
         CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
-        UpdateProjectPayload,
+        UpdateProjectPayload, UpdateTeamPayload,
     },
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
@@ -73,6 +74,11 @@ use utoipa::OpenApi;
         users::get_yakman_users,
         users::create_yakman_user,
         users::get_user_info,
+        teams::get_teams,
+        teams::get_team,
+        teams::create_team,
+        teams::update_team,
+        teams::delete_team,
         api_keys::get_api_keys,
         api_keys::create_api_key,
         api_keys::delete_api_key,
@@ -85,7 +91,7 @@ use utoipa::OpenApi;
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
-            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload
+            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload
         )
     ),
     tags(
@@ -97,6 +103,7 @@ use utoipa::OpenApi;
         (name = "data", description = "Config data fetching endpoints"),
         (name = "revisions", description = "Config Instance Revision management endpoints"),
         (name = "users", description = "YakMan user management endpoints"),
+        (name = "teams", description = "YakMan team management endpoints"),
         (name = "lifecycle", description = "Application lifecycle endpoints"),
         (name = "api_keys", description = "API Key management endpoints"),
     )
@@ -129,6 +136,12 @@ where
         .service(users::get_yakman_users)
         .service(users::create_yakman_user)
         .service(users::get_user_info)
+        // Teams
+        .service(teams::get_teams)
+        .service(teams::get_team)
+        .service(teams::update_team)
+        .service(teams::create_team)
+        .service(teams::delete_team)
         // Api Keys
         .service(api_keys::get_api_keys)
         .service(api_keys::create_api_key)

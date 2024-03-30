@@ -272,7 +272,7 @@ mod tests {
     use core::panic;
 
     use super::*;
-    use crate::model::YakManUserProjectRole;
+    use crate::model::YakManProjectRole;
     use crate::test_utils::fake_roles::FakeRoleExtractor;
     use crate::test_utils::*;
     use actix_web::{test, App};
@@ -323,7 +323,7 @@ mod tests {
         let project_bar_id = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
-            YakManUserProjectRole {
+            YakManProjectRole {
                 project_id: project_bar_id.clone(),
                 role: YakManRole::Admin,
             },
@@ -391,7 +391,7 @@ mod tests {
         let project_bar_id = storage_service.create_project("bar", None).await?;
 
         let fake_extractor = FakeRoleExtractor::new(vec![YakManRoleBinding::ProjectRoleBinding(
-            YakManUserProjectRole {
+            YakManProjectRole {
                 project_id: project_bar_id.clone(),
                 role: YakManRole::Admin,
             },

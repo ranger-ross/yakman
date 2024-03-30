@@ -11,6 +11,7 @@ import { auth } from './routes/auth';
 import { lifecycle } from './routes/lifecycle';
 import { users } from './routes/users';
 import { apiKeys } from './routes/api-keys';
+import { teams } from './routes/teams';
 
 export const router = t.router({
     configs: configs,
@@ -21,6 +22,7 @@ export const router = t.router({
     data: data,
     users: users,
     apiKeys: apiKeys,
+    teams: teams,
     auth: auth,
     lifecycle: lifecycle,
 });

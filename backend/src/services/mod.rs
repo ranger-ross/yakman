@@ -7,14 +7,19 @@ use crate::{
     adapters::errors::GenericStorageError,
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
-        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, DeleteConfigError,
-        DeleteConfigInstanceError, DeleteProjectError, ResetPasswordError, RollbackRevisionError,
-        SaveConfigInstanceError, UpdateProjectError,
+        CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
+        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
+        UpdateTeamError,
     },
     model::{
-        request::ProjectNotificationSettings, ConfigInstance, ConfigInstanceRevision, LabelType,
-        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManProject,
-        YakManProjectDetails, YakManPublicPasswordResetLink, YakManUser, YakManUserDetails,
+        request::{
+            CreateTeamPayload, CreateYakManUserPayload, ProjectNotificationSettings,
+            UpdateTeamPayload,
+        },
+        ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
+        YakManPassword, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink,
+        YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;
@@ -154,6 +159,11 @@ pub trait StorageService: Sync + Send {
 
     async fn get_users(&self) -> Result<Vec<YakManUser>, GenericStorageError>;
 
+    async fn create_user(
+        &self,
+        payload: CreateYakManUserPayload,
+    ) -> Result<String, GenericStorageError>;
+
     async fn get_user_by_email(
         &self,
         email: &str,
@@ -175,7 +185,22 @@ pub trait StorageService: Sync + Send {
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError>;
 
-    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
+    async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError>;
+
+    async fn get_team_details(
+        &self,
+        team_id: &str,
+    ) -> Result<Option<YakManTeamDetails>, GenericStorageError>;
+
+    async fn create_team(&self, payload: CreateTeamPayload) -> Result<String, CreateTeamError>;
+
+    async fn update_team(
+        &self,
+        team_id: &str,
+        payload: UpdateTeamPayload,
+    ) -> Result<(), UpdateTeamError>;
+
+    async fn delete_team(&self, team_id: &str) -> Result<(), DeleteTeamError>;
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 
