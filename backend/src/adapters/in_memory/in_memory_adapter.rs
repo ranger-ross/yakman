@@ -5,12 +5,12 @@ use chrono::{DateTime, Utc};
 use futures_util::lock::Mutex;
 use serde::de::DeserializeOwned;
 
+use super::{GenericStorageError, KVStorageAdapter};
 use crate::model::{
     ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
     YakManTeamDetails, YakManUser, YakManUserDetails,
 };
-use super::{GenericStorageError, KVStorageAdapter};
 
 /// This adapter is meant for development and testing not real world use.
 /// All data is lost when the service is stopped and this instance cannot be scaled horizonally.
