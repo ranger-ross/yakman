@@ -19,7 +19,8 @@ pub mod redis;
 pub trait KVStorageAdapter: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
-    async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError>;
+    async fn save_projects(&self, projects: &Vec<YakManProject>)
+        -> Result<(), GenericStorageError>;
 
     async fn get_project_details(
         &self,
@@ -29,7 +30,7 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn save_project_details(
         &self,
         project_id: &str,
-        project: YakManProjectDetails,
+        project: &YakManProjectDetails,
     ) -> Result<(), GenericStorageError>;
 
     async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError>;
@@ -41,11 +42,11 @@ pub trait KVStorageAdapter: Sync + Send {
         project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
-    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError>;
+    async fn save_configs(&self, configs: &Vec<YakManConfig>) -> Result<(), GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
-    async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError>;
+    async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError>;
 
     async fn get_instance_metadata(
         &self,
@@ -55,7 +56,7 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn save_instance_metadata(
         &self,
         config_id: &str,
-        instances: Vec<ConfigInstance>,
+        instances: &Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError>;
 
     async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError>;
@@ -123,14 +124,14 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn save_user_details(
         &self,
         user_id: &str,
-        details: YakManUserDetails,
+        details: &YakManUserDetails,
     ) -> Result<(), GenericStorageError>;
 
-    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError>;
+    async fn save_users(&self, users: &Vec<YakManUser>) -> Result<(), GenericStorageError>;
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 
-    async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError>;
+    async fn save_api_keys(&self, api_keys: &Vec<YakManApiKey>) -> Result<(), GenericStorageError>;
 
     async fn get_password(
         &self,
@@ -140,7 +141,7 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn save_password(
         &self,
         email_hash: &str,
-        password: YakManPassword,
+        password: &YakManPassword,
     ) -> Result<(), GenericStorageError>;
 
     async fn get_password_reset_link(
@@ -151,14 +152,14 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn save_password_reset_link(
         &self,
         id: &str,
-        link: YakManPasswordResetLink,
+        link: &YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError>;
 
     async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError>;
 
-    async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError>;
+    async fn save_teams(&self, teams: &Vec<YakManTeam>) -> Result<(), GenericStorageError>;
 
     async fn get_team_details(
         &self,
@@ -168,7 +169,7 @@ pub trait KVStorageAdapter: Sync + Send {
     async fn save_team_details(
         &self,
         team_id: &str,
-        details: YakManTeamDetails,
+        details: &YakManTeamDetails,
     ) -> Result<(), GenericStorageError>;
 
     async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError>;

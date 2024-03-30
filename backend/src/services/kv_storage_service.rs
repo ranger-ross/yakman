@@ -96,7 +96,7 @@ impl StorageService for KVStorageService {
         };
 
         self.adapter
-            .save_project_details(&project_id.to_string(), project_details)
+            .save_project_details(&project_id.to_string(), &project_details)
             .await?;
 
         projects.push(YakManProject {
@@ -104,7 +104,7 @@ impl StorageService for KVStorageService {
             id: project_id.to_string(),
         });
 
-        self.adapter.save_projects(projects).await?;
+        self.adapter.save_projects(&projects).await?;
 
         return Ok(project_id.to_string());
     }
@@ -141,9 +141,9 @@ impl StorageService for KVStorageService {
         project_details.notification_settings = notification_settings;
 
         self.adapter
-            .save_project_details(project_id, project_details)
+            .save_project_details(project_id, &project_details)
             .await?;
-        self.adapter.save_projects(projects).await?;
+        self.adapter.save_projects(&projects).await?;
 
         Ok(())
     }
@@ -191,11 +191,11 @@ impl StorageService for KVStorageService {
             .filter(|p| &p.project_id != &project_id)
             .collect();
 
-        let res = self.adapter.save_configs(remaining_configs).await;
+        let res = self.adapter.save_configs(&remaining_configs).await;
         if res.is_err() {
             log::error!("Failed to delete configs");
         }
-        self.adapter.save_projects(projects).await?;
+        self.adapter.save_projects(&projects).await?;
         self.adapter.delete_project_details(project_id).await?;
 
         Ok(())
@@ -237,7 +237,7 @@ impl StorageService for KVStorageService {
 
         labels.push(label);
 
-        self.adapter.save_labels(labels).await?;
+        self.adapter.save_labels(&labels).await?;
 
         return Ok(());
     }
@@ -297,7 +297,7 @@ impl StorageService for KVStorageService {
                 }],
             });
             self.adapter
-                .save_instance_metadata(config_id, instances)
+                .save_instance_metadata(config_id, &instances)
                 .await?;
             log::info!("Update instance metadata for config: {config_id}");
 
@@ -343,7 +343,7 @@ impl StorageService for KVStorageService {
 
                 // Config already exists, just unhide it
                 config.hidden = false;
-                self.adapter.save_configs(configs).await.map_err(|_| {
+                self.adapter.save_configs(&configs).await.map_err(|_| {
                     CreateConfigError::storage_error("Failed to update configs file")
                 })?;
                 return Ok(config_id);
@@ -360,7 +360,7 @@ impl StorageService for KVStorageService {
 
         // Create instance metadata file
         self.adapter
-            .save_instance_metadata(&config_id, vec![])
+            .save_instance_metadata(&config_id, &vec![])
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to save instance metadata"))?;
 
@@ -382,7 +382,7 @@ impl StorageService for KVStorageService {
 
         // Add config to base config file
         self.adapter
-            .save_configs(configs)
+            .save_configs(&configs)
             .await
             .map_err(|_| CreateConfigError::storage_error("Failed to update configs file"))?;
 
@@ -397,7 +397,7 @@ impl StorageService for KVStorageService {
             .find(|config| config.id == config_id && !config.hidden)
         {
             config.hidden = true;
-            self.adapter.save_configs(configs).await?;
+            self.adapter.save_configs(&configs).await?;
             return Ok(());
         }
 
@@ -507,7 +507,7 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_instance_metadata(config_id, instances)
+            .save_instance_metadata(config_id, &instances)
             .await?;
 
         log::info!("Updated instance metadata for config: {config_id}");
@@ -621,7 +621,7 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_instance_metadata(config_id, metadata)
+            .save_instance_metadata(config_id, &metadata)
             .await?;
 
         if settings::is_notifications_enabled() {
@@ -690,7 +690,7 @@ impl StorageService for KVStorageService {
         }
 
         self.adapter
-            .save_instance_metadata(config_id, metadata)
+            .save_instance_metadata(config_id, &metadata)
             .await?;
 
         if settings::is_notifications_enabled() {
@@ -752,7 +752,7 @@ impl StorageService for KVStorageService {
             .await?;
 
         self.adapter
-            .save_instance_metadata(config_id, metadata)
+            .save_instance_metadata(config_id, &metadata)
             .await?;
 
         if settings::is_notifications_enabled() {
@@ -814,7 +814,7 @@ impl StorageService for KVStorageService {
         instance.revisions.push(String::from(&revision.revision));
 
         self.adapter
-            .save_instance_metadata(config_id, instances)
+            .save_instance_metadata(config_id, &instances)
             .await?;
         log::info!("Updated instance metadata for config: {config_id}");
         return Ok(revision_key);
@@ -846,10 +846,10 @@ impl StorageService for KVStorageService {
             };
 
             self.adapter
-                .save_user_details(&admin_user.id, admin_user_details)
+                .save_user_details(&admin_user.id, &admin_user_details)
                 .await?;
 
-            self.adapter.save_users(vec![admin_user]).await?;
+            self.adapter.save_users(&vec![admin_user]).await?;
         }
 
         // Set the default admin password
@@ -877,7 +877,7 @@ impl StorageService for KVStorageService {
                         self.adapter
                             .save_password(
                                 &email_hash,
-                                YakManPassword {
+                                &YakManPassword {
                                     hash: password_hash,
                                     timestamp: now,
                                 },
@@ -922,7 +922,7 @@ impl StorageService for KVStorageService {
         user_id: &str,
         details: YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
-        return self.adapter.save_user_details(user_id, details).await;
+        return self.adapter.save_user_details(user_id, &details).await;
     }
 
     async fn create_user(
@@ -951,10 +951,10 @@ impl StorageService for KVStorageService {
         };
 
         self.adapter
-            .save_user_details(&user_id, user_details)
+            .save_user_details(&user_id, &user_details)
             .await?;
 
-        self.adapter.save_users(users).await?;
+        self.adapter.save_users(&users).await?;
 
         Ok(user_id)
     }
@@ -998,7 +998,7 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_team_details(
                 &team_id.clone(),
-                YakManTeamDetails {
+                &YakManTeamDetails {
                     id: team_id.clone(),
                     name: team_name,
                     roles: payload.roles,
@@ -1008,13 +1008,13 @@ impl StorageService for KVStorageService {
             )
             .await?;
 
-        self.adapter.save_teams(teams).await?;
+        self.adapter.save_teams(&teams).await?;
 
         for mut user in user_details {
             user.team_ids.push(team_id.clone());
             let user_id = user.user_id.clone();
 
-            let res = self.adapter.save_user_details(&user_id, user).await;
+            let res = self.adapter.save_user_details(&user_id, &user).await;
             if res.is_err() {
                 log::error!("Failed to save user id: {user_id}");
             }
@@ -1077,7 +1077,7 @@ impl StorageService for KVStorageService {
             if let Some(team_id_index) = user.team_ids.iter().position(|tid| tid == team_id) {
                 user.team_ids.remove(team_id_index);
                 let user_id = user.user_id.clone();
-                let res = self.adapter.save_user_details(&user_id, user).await;
+                let res = self.adapter.save_user_details(&user_id, &user).await;
                 if res.is_err() {
                     log::error!("Failed to save user id: {user_id} (remove from team)");
                 }
@@ -1085,16 +1085,16 @@ impl StorageService for KVStorageService {
         }
 
         self.adapter
-            .save_team_details(&team_id.clone(), team_details)
+            .save_team_details(&team_id.clone(), &team_details)
             .await?;
 
-        self.adapter.save_teams(teams).await?;
+        self.adapter.save_teams(&teams).await?;
 
         for mut user in user_details {
             if !user.team_ids.iter().any(|tid| tid == team_id) {
                 user.team_ids.push(team_id.to_string());
                 let user_id = user.user_id.clone();
-                let res = self.adapter.save_user_details(&user_id, user).await;
+                let res = self.adapter.save_user_details(&user_id, &user).await;
                 if res.is_err() {
                     log::error!("Failed to save user id: {user_id}");
                 }
@@ -1124,14 +1124,14 @@ impl StorageService for KVStorageService {
         for mut user in users {
             user.team_ids.retain(|id| id != team_id);
             let user_id = user.user_id.clone();
-            let res = self.adapter.save_user_details(&user_id, user).await;
+            let res = self.adapter.save_user_details(&user_id, &user).await;
             if res.is_err() {
                 log::error!("Failed to save user with id {user_id}, skipping removing team");
             }
         }
 
         self.adapter.delete_team_details(team_id).await?;
-        self.adapter.save_teams(teams).await?;
+        self.adapter.save_teams(&teams).await?;
 
         return Ok(());
     }
@@ -1177,7 +1177,7 @@ impl StorageService for KVStorageService {
 
         self.put_api_keys_cache(&api_keys);
 
-        return self.adapter.save_api_keys(api_keys).await;
+        return self.adapter.save_api_keys(&api_keys).await;
     }
 
     async fn delete_api_key(&self, id: &str) -> Result<(), GenericStorageError> {
@@ -1188,7 +1188,7 @@ impl StorageService for KVStorageService {
         }
 
         self.put_api_keys_cache(&api_keys);
-        return self.adapter.save_api_keys(api_keys).await;
+        return self.adapter.save_api_keys(&api_keys).await;
     }
 
     async fn delete_instance(
@@ -1208,13 +1208,13 @@ impl StorageService for KVStorageService {
             .ok_or(DeleteConfigInstanceError::InvalidInstance)?
             .clone();
 
-        let remaining_instances = instances
+        let remaining_instances: Vec<_> = instances
             .into_iter()
             .filter(|i| i.instance != instance)
             .collect();
 
         self.adapter
-            .save_instance_metadata(config_id, remaining_instances)
+            .save_instance_metadata(config_id, &remaining_instances)
             .await?;
 
         for revision in config_instance.revisions {
@@ -1258,7 +1258,7 @@ impl StorageService for KVStorageService {
         };
 
         self.adapter
-            .save_password_reset_link(&id_hash, password_reset_link)
+            .save_password_reset_link(&id_hash, &password_reset_link)
             .await?;
 
         return Ok(YakManPublicPasswordResetLink {
@@ -1306,7 +1306,7 @@ impl StorageService for KVStorageService {
         self.adapter
             .save_password(
                 &email_hash,
-                YakManPassword {
+                &YakManPassword {
                     hash: password_hash,
                     timestamp: now,
                 },
