@@ -83,3 +83,11 @@ pub struct CreateTeamPayload {
     pub roles: Vec<YakManProjectRole>,
     pub team_member_user_ids: Vec<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct UpdateTeamPayload {
+    pub name: String,
+    pub global_roles: Vec<YakManRole>,
+    pub roles: Vec<YakManProjectRole>,
+    pub team_member_user_ids: Vec<String>,
+}

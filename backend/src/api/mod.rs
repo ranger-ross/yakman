@@ -138,6 +138,7 @@ where
         // Teams
         .service(teams::get_teams)
         .service(teams::get_team)
+        .service(teams::update_team)
         .service(teams::create_team)
         .service(teams::delete_team)
         // Api Keys

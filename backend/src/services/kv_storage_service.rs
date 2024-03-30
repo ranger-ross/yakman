@@ -12,13 +12,16 @@ use crate::{
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
         DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
         ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
+        UpdateTeamError,
     },
     model::{
-        self, request::CreateTeamPayload, ConfigInstance, ConfigInstanceEvent,
-        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState,
-        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
-        YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam,
-        YakManTeamDetails, YakManUser, YakManUserDetails,
+        self,
+        request::{CreateTeamPayload, UpdateTeamPayload},
+        ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
+        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
+        YakManPasswordResetLink, YakManProject, YakManProjectDetails,
+        YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
+        YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     services::id::{
@@ -970,7 +973,7 @@ impl StorageService for KVStorageService {
                     name: team_name,
                     roles: payload.roles,
                     global_roles: payload.global_roles,
-                    member_user_ids: vec![],
+                    member_user_ids: payload.team_member_user_ids,
                 },
             )
             .await?;
@@ -988,6 +991,65 @@ impl StorageService for KVStorageService {
         }
 
         return Ok(team_id);
+    }
+
+    async fn update_team(
+        &self,
+        team_id: &str,
+        payload: UpdateTeamPayload,
+    ) -> Result<(), UpdateTeamError> {
+        let team_name = &payload.name;
+
+        let mut teams = self.adapter.get_teams().await?;
+        if teams
+            .iter()
+            .any(|t| t.name == *team_name && t.id != team_id)
+        {
+            return Err(UpdateTeamError::DuplicateTeam);
+        }
+
+        let Some(team) = teams.iter_mut().find(|t| t.id == team_id) else {
+            return Err(UpdateTeamError::TeamNotFound);
+        };
+        team.name = team_name.clone();
+
+        let Some(mut team_details) = self.adapter.get_team_details(team_id).await? else {
+            return Err(UpdateTeamError::TeamNotFound);
+        };
+
+        let mut user_details: Vec<YakManUserDetails> = vec![];
+
+        for user_id in &payload.team_member_user_ids {
+            let Ok(Some(details)) = self.adapter.get_user_details(user_id).await else {
+                log::error!("Failed to get user details for user ID {user_id}");
+                continue;
+            };
+            user_details.push(details);
+        }
+
+        team_details.name = team_name.clone();
+        team_details.global_roles = payload.global_roles;
+        team_details.roles = payload.roles;
+        team_details.member_user_ids = payload.team_member_user_ids;
+
+        self.adapter
+            .save_team_details(&team_id.clone(), team_details)
+            .await?;
+
+        self.adapter.save_teams(teams).await?;
+
+        for mut user in user_details {
+            if !user.team_ids.iter().any(|tid| tid == team_id) {
+                user.team_ids.push(team_id.to_string());
+                let user_id = user.user_id.clone();
+                let res = self.adapter.save_user_details(&user_id, user).await;
+                if res.is_err() {
+                    log::error!("Failed to save user id: {user_id}");
+                }
+            }
+        }
+
+        return Ok(());
     }
 
     async fn delete_team(&self, team_id: &str) -> Result<(), DeleteTeamError> {

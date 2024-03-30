@@ -370,6 +370,22 @@ impl From<GenericStorageError> for CreateTeamError {
 }
 
 #[derive(Error, Debug)]
+pub enum UpdateTeamError {
+    #[error("Team not found")]
+    TeamNotFound,
+    #[error("Duplicate team")]
+    DuplicateTeam,
+    #[error("Storage Error: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for UpdateTeamError {
+    fn from(e: GenericStorageError) -> Self {
+        Self::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
 pub enum DeleteTeamError {
     #[error("Team not found")]
     TeamNotFound,

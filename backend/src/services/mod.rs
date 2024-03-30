@@ -10,9 +10,10 @@ use crate::{
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
         DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
         ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
+        UpdateTeamError,
     },
     model::{
-        request::{CreateTeamPayload, ProjectNotificationSettings},
+        request::{CreateTeamPayload, ProjectNotificationSettings, UpdateTeamPayload},
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
         YakManPassword, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink,
         YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,
@@ -186,6 +187,12 @@ pub trait StorageService: Sync + Send {
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError>;
 
     async fn create_team(&self, payload: CreateTeamPayload) -> Result<String, CreateTeamError>;
+
+    async fn update_team(
+        &self,
+        team_id: &str,
+        payload: UpdateTeamPayload,
+    ) -> Result<(), UpdateTeamError>;
 
     async fn delete_team(&self, team_id: &str) -> Result<(), DeleteTeamError>;
 
