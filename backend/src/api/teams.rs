@@ -382,7 +382,7 @@ mod tests {
             })
             .await?;
 
-            let team_id_2 = storage_service
+        let team_id_2 = storage_service
             .create_team(CreateTeamPayload {
                 name: "bar".to_string(),
                 global_roles: vec![],
@@ -406,10 +406,10 @@ mod tests {
 
         let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
         println!("{value:#?}");
-        let value =  value.as_array().context("response was not array")?;
+        let value = value.as_array().context("response was not array")?;
 
         assert_eq!(2, value.len());
-        
+
         assert_eq!(team_id_1, value[0]["id"]);
         assert_eq!("foo", value[0]["name"]);
         assert_eq!(team_id_2, value[1]["id"]);
@@ -417,5 +417,4 @@ mod tests {
 
         Ok(())
     }
-
 }
