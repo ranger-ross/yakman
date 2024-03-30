@@ -35,9 +35,12 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&projects)?);
     }
 
-    async fn save_projects(&self, projects: Vec<YakManProject>) -> Result<(), GenericStorageError> {
+    async fn save_projects(
+        &self,
+        projects: &Vec<YakManProject>,
+    ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
-        let _: () = connection.set(self.get_projects_key(), serde_json::to_string(&projects)?)?;
+        let _: () = connection.set(self.get_projects_key(), serde_json::to_string(projects)?)?;
         return Ok(());
     }
 
@@ -53,11 +56,11 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn save_project_details(
         &self,
         project_id: &str,
-        project: YakManProjectDetails,
+        project: &YakManProjectDetails,
     ) -> Result<(), GenericStorageError> {
         let key = self.get_project_key(project_id);
         let mut connection = self.get_connection()?;
-        let _: () = connection.set(key, serde_json::to_string(&project)?)?;
+        let _: () = connection.set(key, serde_json::to_string(project)?)?;
         return Ok(());
     }
 
@@ -85,7 +88,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: Vec<YakManConfig>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: &Vec<YakManConfig>) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_configs_key(), serde_json::to_string(&configs)?)?;
         Ok(())
@@ -97,7 +100,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&labels)?);
     }
 
-    async fn save_labels(&self, labels: Vec<LabelType>) -> Result<(), GenericStorageError> {
+    async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_labels_key(), serde_json::to_string(&labels)?)?;
         Ok(())
@@ -135,7 +138,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn save_instance_metadata(
         &self,
         config_id: &str,
-        instances: Vec<ConfigInstance>,
+        instances: &Vec<ConfigInstance>,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let data = serde_json::to_string(&instances)?;
@@ -235,7 +238,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn save_user_details(
         &self,
         user_id: &str,
-        details: YakManUserDetails,
+        details: &YakManUserDetails,
     ) -> Result<(), GenericStorageError> {
         let key = self.get_user_key(user_id);
         let mut connection = self.get_connection()?;
@@ -243,7 +246,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(());
     }
 
-    async fn save_users(&self, users: Vec<YakManUser>) -> Result<(), GenericStorageError> {
+    async fn save_users(&self, users: &Vec<YakManUser>) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_users_key(), serde_json::to_string(&users)?)?;
         Ok(())
@@ -255,7 +258,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&data)?);
     }
 
-    async fn save_api_keys(&self, api_keys: Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+    async fn save_api_keys(&self, api_keys: &Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_api_keys_key(), serde_json::to_string(&api_keys)?)?;
         Ok(())
@@ -264,7 +267,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn save_password(
         &self,
         email_hash: &str,
-        password: YakManPassword,
+        password: &YakManPassword,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(
@@ -295,7 +298,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn save_password_reset_link(
         &self,
         id: &str,
-        link: YakManPasswordResetLink,
+        link: &YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(
@@ -317,7 +320,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&projects)?);
     }
 
-    async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+    async fn save_teams(&self, teams: &Vec<YakManTeam>) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_teams_key(), serde_json::to_string(&teams)?)?;
         return Ok(());
@@ -333,7 +336,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
     async fn save_team_details(
         &self,
         team_id: &str,
-        details: YakManTeamDetails,
+        details: &YakManTeamDetails,
     ) -> Result<(), GenericStorageError> {
         let key = self.get_team_key(team_id);
         let mut connection = self.get_connection()?;
@@ -393,7 +396,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
         let configs_key = self.get_configs_key();
         if !connection.exists(&configs_key)? {
-            self.save_configs(vec![]).await?;
+            self.save_configs(&vec![]).await?;
             info!("Initialized Configs Redis Key");
         }
 
@@ -406,7 +409,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
 
         let labels_key = self.get_labels_key();
         if !connection.exists(&labels_key)? {
-            self.save_labels(vec![]).await?;
+            self.save_labels(&vec![]).await?;
             info!("Initialized Labels Redis Key");
         }
 
