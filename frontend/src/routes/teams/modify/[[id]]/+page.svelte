@@ -62,7 +62,14 @@
             });
             goto("/teams");
         } else {
-            console.warn("TODO: Add ability to update team");
+            await trpc($page).teams.updateTeam.mutate({
+                teamId: data.team!.id,
+                name: teamName,
+                globalRole: globalRole,
+                roles: roles,
+                teamMembers: teamMemberUserIds,
+            });
+            goto("/teams");
         }
     }
 
