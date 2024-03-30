@@ -41,7 +41,21 @@
 
         return output;
     })();
-    let teamMembers: { label: string; value: string }[] = [];
+    let teamMembers: { label: string; value: string }[] = (() => {
+        const output: { label: string; value: string }[] = [];
+
+        for (let userId of data.team?.member_user_ids ?? []) {
+            let email = data.users.find((u) => u.id === userId)?.email;
+            output.push({
+                value: userId,
+                label: email ?? userId,
+            });
+        }
+
+        return output;
+    })();
+
+    console.log(data);
 
     async function createTeam() {
         const roles = Object.keys(projectRoles)
