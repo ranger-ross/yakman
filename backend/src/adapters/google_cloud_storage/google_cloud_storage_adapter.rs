@@ -444,18 +444,32 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     }
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
-        todo!()
+        let path = self.get_teams_file_path();
+        let content = self.get_object(&path).await?;
+        let data: Vec<_> = serde_json::from_str(&content)?;
+        return Ok(data);
     }
 
     async fn save_teams(&self, teams: Vec<YakManTeam>) -> Result<(), GenericStorageError> {
-        todo!()
+        let data = serde_json::to_string(&teams)?;
+        let path = self.get_teams_file_path();
+        self.put_object(&path, data).await?;
+        return Ok(());
     }
 
     async fn get_team_details(
         &self,
         team_id: &str,
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
-        todo!()
+        let dir = self.get_teams_dir();
+        let path = format!("{dir}/{team_id}.json");
+
+        let Ok(content) = self.get_object(&path).await else {
+            return Ok(None);
+        };
+
+        let data = serde_json::from_str(&content)?;
+        return Ok(Some(data));
     }
 
     async fn save_team_details(
@@ -463,11 +477,20 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         team_id: &str,
         details: YakManTeamDetails,
     ) -> Result<(), GenericStorageError> {
-        todo!()
+        let dir = self.get_teams_dir();
+        let path: String = format!("{dir}/{team_id}.json");
+
+        let data: String = serde_json::to_string(&details)?;
+
+        self.put_object(&path, data).await?;
+        return Ok(());
     }
 
     async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
-        todo!()
+        let dir = self.get_teams_dir();
+        let path: String = format!("{dir}/{team_id}.json");
+        self.delete_object(&path).await?;
+        return Ok(());
     }
 
     async fn get_snapshot_lock(&self) -> Result<YakManSnapshotLock, GenericStorageError> {
@@ -556,6 +579,11 @@ impl GoogleCloudStorageAdapter {
         return format!("{yakman_dir}/projects.json");
     }
 
+    fn get_teams_file_path(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/teams.json");
+    }
+
     fn get_configs_file_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/configs.json");
@@ -589,6 +617,11 @@ impl GoogleCloudStorageAdapter {
     fn get_projects_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
         return format!("{yakman_dir}/projects");
+    }
+
+    fn get_teams_dir(&self) -> String {
+        let yakman_dir = self.get_yakman_dir();
+        return format!("{yakman_dir}/teams");
     }
 
     fn get_user_dir(&self) -> String {
