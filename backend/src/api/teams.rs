@@ -201,4 +201,94 @@ mod tests {
 
         Ok(())
     }
+
+    #[actix_web::test]
+    async fn update_team_should_update_team() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let team_id = storage_service
+            .create_team(CreateTeamPayload {
+                name: "foo".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .await
+            .unwrap();
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(update_team),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri(&format!("/v1/teams/{team_id}"))
+            .set_json(&UpdateTeamPayload {
+                name: "updated-team-name".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
+
+        // Validate team details was updated
+        let team_details = storage_service.get_team_details(&team_id).await?.unwrap();
+        assert_eq!(team_id, team_details.id);
+        assert_eq!("updated-team-name", team_details.name);
+
+        // Validate team was added to global list
+        let teams = storage_service.get_teams().await?;
+        assert!(teams
+            .iter()
+            .find(|t| t.id == team_id && t.name == "updated-team-name")
+            .is_some());
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn get_team_should_return_teams() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let team_id = storage_service
+            .create_team(CreateTeamPayload {
+                name: "foo".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .await
+            .unwrap();
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_team),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/teams/{team_id}"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
+
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+
+        assert_eq!(team_id, value["id"].as_str().unwrap());
+        assert_eq!("foo", value["name"].as_str().unwrap());
+        assert_eq!(0, value["global_roles"].as_array().unwrap().len());
+        assert_eq!(0, value["roles"].as_array().unwrap().len());
+        assert_eq!(0, value["member_user_ids"].as_array().unwrap().len());
+
+        Ok(())
+    }
 }
