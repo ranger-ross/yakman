@@ -11,7 +11,7 @@ use crate::services::StorageService;
 use actix_web::HttpMessage;
 use actix_web::{dev::ServiceRequest, web, Error};
 use futures_util::future::join_all;
-use futures_util::FutureExt;
+use futures_util::TryFutureExt;
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum YakManRoleBinding {
@@ -166,10 +166,11 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                         .team_ids
                         .iter()
                         .map(|team_id| {
-                            let not_found_error = format!("Team with ID not found {team_id}");
                             storage_service
                                 .get_team_details(&team_id)
-                                .map(|r| r.map(move |inner| inner.ok_or(not_found_error)))
+                                .map_ok(move |inner| {
+                                    inner.ok_or(format!("Team with ID not found {team_id}"))
+                                })
                         })
                         .collect();
 
