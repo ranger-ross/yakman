@@ -1057,10 +1057,32 @@ impl StorageService for KVStorageService {
             user_details.push(details);
         }
 
+        let mut user_details_to_delete: Vec<YakManUserDetails> = vec![];
+        let mut user_ids_to_delete = team_details.member_user_ids.clone();
+        user_ids_to_delete.retain(|uid| !payload.team_member_user_ids.contains(uid));
+        for user_id in &user_ids_to_delete {
+            let Ok(Some(details)) = self.adapter.get_user_details(user_id).await else {
+                log::error!("Failed to get user details for user ID {user_id}");
+                continue;
+            };
+            user_details_to_delete.push(details);
+        }
+
         team_details.name = team_name.clone();
         team_details.global_roles = payload.global_roles;
         team_details.roles = payload.roles;
         team_details.member_user_ids = payload.team_member_user_ids;
+
+        for mut user in user_details_to_delete {
+            if let Some(team_id_index) = user.team_ids.iter().position(|tid| tid == team_id) {
+                user.team_ids.remove(team_id_index);
+                let user_id = user.user_id.clone();
+                let res = self.adapter.save_user_details(&user_id, user).await;
+                if res.is_err() {
+                    log::error!("Failed to save user id: {user_id} (remove from team)");
+                }
+            }
+        }
 
         self.adapter
             .save_team_details(&team_id.clone(), team_details)
