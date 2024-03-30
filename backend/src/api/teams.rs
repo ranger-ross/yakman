@@ -328,7 +328,7 @@ mod tests {
     }
 
     #[actix_web::test]
-    async fn get_team_should_return_teams() -> Result<()> {
+    async fn get_team_should_return_team() -> Result<()> {
         prepare_for_actix_test()?;
 
         let storage_service = test_storage_service().await?;
@@ -366,4 +366,56 @@ mod tests {
 
         Ok(())
     }
+
+    #[actix_web::test]
+    async fn get_teams_should_return_teams() -> Result<()> {
+        prepare_for_actix_test()?;
+
+        let storage_service = test_storage_service().await?;
+
+        let team_id_1 = storage_service
+            .create_team(CreateTeamPayload {
+                name: "foo".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .await?;
+
+            let team_id_2 = storage_service
+            .create_team(CreateTeamPayload {
+                name: "bar".to_string(),
+                global_roles: vec![],
+                roles: vec![],
+                team_member_user_ids: vec![],
+            })
+            .await?;
+
+        let app = test::init_service(
+            App::new()
+                .app_data(Data::new(storage_service.clone()))
+                .wrap(GrantsMiddleware::with_extractor(fake_roles::admin_role))
+                .service(get_teams),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .uri(&format!("/v1/teams"))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(200, resp.status().as_u16());
+
+        let value: Value = body_to_json_value(resp.map_into_boxed_body()).await?;
+        println!("{value:#?}");
+        let value =  value.as_array().context("response was not array")?;
+
+        assert_eq!(2, value.len());
+        
+        assert_eq!(team_id_1, value[0]["id"]);
+        assert_eq!("foo", value[0]["name"]);
+        assert_eq!(team_id_2, value[1]["id"]);
+        assert_eq!("bar", value[1]["name"]);
+
+        Ok(())
+    }
+
 }
