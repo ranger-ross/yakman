@@ -24,10 +24,10 @@ export const load: PageLoad = async (event) => {
     const formattedConfigs = [];
 
     for (const config of configs) {
-        const metadata = await trpc(event).instances.fetchConfigMetadata.query(config.id);
+        const instances = await trpc(event).instances.fetchInstancesByConfigId.query(config.id);
         formattedConfigs.push({
             config: config,
-            metadata: metadata
+            instances: instances
         });
     }
 

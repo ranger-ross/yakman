@@ -169,8 +169,8 @@
 							<KebabMenuIcon />
 						</YakManPopoverMenu>
 					</div>
-					{#if config.metadata.length > 0}
-						{#each config.metadata as instance}
+					{#if config.instances.length > 0}
+						{#each config.instances as instance}
 							<div class="shadow-sm w-full h-1 mb-3" />
 							<div class="flex justify-between">
 								<div class="flex items-center gap-2">

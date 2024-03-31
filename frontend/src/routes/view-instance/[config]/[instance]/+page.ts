@@ -4,30 +4,30 @@ import { getEventType } from "$lib/utils/changelog-utils";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async (event) => {
-    const { config, instance } = event.params
+    const { config, instance: instanceId } = event.params
 
     const revisions = await trpc(event).revisions.fetchInstanceRevisions.query({
         configId: config,
-        instance: instance,
+        instance: instanceId,
     })
 
-    const metadata = await trpc(event).instances.fetchConfigMetadata.query(config);
+    const instances = await trpc(event).instances.fetchInstancesByConfigId.query(config);
 
-    let instanceMetadata: YakManConfigInstance | null = null;
+    let instance: YakManConfigInstance | null = null;
     let data: { data: string; contentType: string; } | null = null;
     let users: Map<string, string> = new Map()
 
-    for (const inst of metadata) {
-        if (inst.instance == instance) {
-            instanceMetadata = inst;
+    for (const inst of instances) {
+        if (inst.instance == instanceId) {
+            instance = inst;
         }
     }
 
-    if (instanceMetadata) {
+    if (instance) {
         data = await trpc(event).data.fetchRevisionData.query({
             configId: config,
-            instance: instance,
-            revision: instanceMetadata.current_revision
+            instance: instanceId,
+            revision: instance.current_revision
         });
 
         // Fetch the usernames of the users that made changes 
@@ -36,7 +36,7 @@ export const load: PageLoad = async (event) => {
         try {
             const allUsers = await trpc(event).users.fetchUsers.query()
 
-            const userIds = new Set(instanceMetadata.changelog
+            const userIds = new Set(instance.changelog
                 .map(change => {
                     const type = getEventType(change);
                     switch (type) {
@@ -70,7 +70,7 @@ export const load: PageLoad = async (event) => {
 
     return {
         data: data,
-        instance: instanceMetadata,
+        instance: instance,
         revisions: revisions,
         tab: getTab(event.url.searchParams),
         users: users

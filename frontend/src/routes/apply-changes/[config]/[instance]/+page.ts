@@ -3,43 +3,43 @@ import type { YakManConfigInstance } from "$lib/types/types";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async (event) => {
-    const { config, instance } = event.params
+    const { config, instance: instanceId } = event.params
 
     const revisions = await trpc(event).revisions.fetchInstanceRevisions.query({
         configId: config,
-        instance: instance,
+        instance: instanceId,
     })
 
-    const metadata = await trpc(event).instances.fetchConfigMetadata.query(config);
+    const instances = await trpc(event).instances.fetchInstancesByConfigId.query(config);
 
-    let instanceMetadata: YakManConfigInstance | null = null;
+    let instance: YakManConfigInstance | null = null;
     let currentData: { data: string; contentType: string; } | null = null;
     let pendingData: { data: string; contentType: string; } | null = null;
 
-    for (const inst of metadata) {
-        if (inst.instance == instance) {
-            instanceMetadata = inst;
+    for (const inst of instances) {
+        if (inst.instance == instanceId) {
+            instance = inst;
         }
     }
 
-    const pendingRevision = revisions.find(rev => rev.revision === instanceMetadata?.pending_revision)
+    const pendingRevision = revisions.find(rev => rev.revision === instance?.pending_revision)
 
     if (!pendingRevision) {
-        console.error(`Failed to find revision ${instanceMetadata?.pending_revision}, this will likely prevent approve/reject/applying.`)
+        console.error(`Failed to find revision ${instance?.pending_revision}, this will likely prevent approve/reject/applying.`)
     }
 
-    if (instanceMetadata) {
+    if (instance) {
         currentData = await trpc(event).data.fetchRevisionData.query({
             configId: config,
-            instance: instance,
-            revision: instanceMetadata.current_revision
+            instance: instanceId,
+            revision: instance.current_revision
         });
 
-        if (instanceMetadata.pending_revision) {
+        if (instance.pending_revision) {
             pendingData = await trpc(event).data.fetchRevisionData.query({
                 configId: config,
-                instance: instance,
-                revision: instanceMetadata.pending_revision
+                instance: instanceId,
+                revision: instance.pending_revision
             });
         }
     }
