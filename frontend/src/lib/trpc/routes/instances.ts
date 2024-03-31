@@ -10,7 +10,7 @@ type InstanceResponse = {
 }
 
 export const instances = t.router({
-    fetchConfigMetadata: t.procedure
+    fetchInstancesByConfigId: t.procedure
         .input(z.string())
         .query(async ({ input, ctx }): Promise<YakManConfigInstance[]> => {
             const response = await fetch(`${BASE_URL}/v1/configs/${input}/instances`, {

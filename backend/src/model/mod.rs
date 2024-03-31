@@ -68,6 +68,13 @@ pub struct YakManLabel {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct ConfigDetails {
+    pub config_id: String,
+    pub config_name: String,
+    pub instances: Vec<ConfigInstance>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ConfigInstance {
     pub config_id: String,
     pub instance: String,         // Unique key

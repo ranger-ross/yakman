@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use super::{GenericStorageError, KVStorageAdapter};
-use crate::model::YakManApiKey;
+use crate::model::{ConfigDetails, YakManApiKey};
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
-    YakManTeamDetails, YakManUser, YakManUserDetails,
+    ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManPasswordResetLink,
+    YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails,
+    YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
@@ -121,35 +121,35 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(());
     }
 
-    async fn get_instance_metadata(
+    async fn get_config_details(
         &self,
         config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
-        let metadata_dir = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_dir}/{config_id}.json");
+    ) -> Result<Option<ConfigDetails>, GenericStorageError> {
+        let dir = self.get_config_details_dir();
+        let instance_file = format!("{dir}/{config_id}.json");
         if let Some(content) = self.get_object_as_option(&instance_file).await? {
             return Ok(Some(serde_json::from_str(&content)?));
         }
         return Ok(None);
     }
 
-    async fn save_instance_metadata(
+    async fn save_config_details(
         &self,
         config_id: &str,
-        instances: &Vec<ConfigInstance>,
+        details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
-        let metadata_path = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_path}/{config_id}.json");
-        let data = serde_json::to_string(instances)?;
+        let dir = self.get_config_details_dir();
+        let instance_file = format!("{dir}/{config_id}.json");
+        let data = serde_json::to_string(details)?;
 
         self.put_object(&instance_file, data).await?;
 
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
-        let metadata_path = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_path}/{config_id}.json");
+    async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
+        let dir = self.get_config_details_dir();
+        let instance_file = format!("{dir}/{config_id}.json");
         self.delete_object(&instance_file).await?;
         return Ok(());
     }
@@ -159,7 +159,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
-        let dir = self.get_instance_revisions_path();
+        let dir = self.get_revisions_path();
         let path = format!("{dir}/{config_id}/{revision}");
 
         if let Some(content) = self.get_object_as_option(&path).await? {
@@ -174,7 +174,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
-        let revisions_path = self.get_instance_revisions_path();
+        let revisions_path = self.get_revisions_path();
         let revision_key = &revision.revision;
         let revision_data = serde_json::to_string(revision)?;
         let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}");
@@ -187,7 +187,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        let revisions_path = self.get_instance_revisions_path();
+        let revisions_path = self.get_revisions_path();
         let revision_file_path = format!("{revisions_path}/{config_id}/{revision}");
         self.delete_object(&revision_file_path).await?;
         return Ok(());
@@ -198,8 +198,8 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
-        let instance_dir = self.get_config_instance_dir();
-        let instance_path = format!("{instance_dir}/{config_id}/{data_key}");
+        let dir = self.get_data_dir();
+        let instance_path = format!("{dir}/{config_id}/{data_key}");
         return Ok(self
             .get_object_as_option(&instance_path)
             .await?
@@ -212,9 +212,9 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
-        let instance_dir = self.get_config_instance_dir();
+        let dir = self.get_data_dir();
         // Create new file with data
-        let data_file_path = format!("{instance_dir}/{config_id}/{data_key}");
+        let data_file_path = format!("{dir}/{config_id}/{data_key}");
         self.put_object(&data_file_path, data.to_string()).await?;
         return Ok(());
     }
@@ -596,9 +596,9 @@ impl AwsS3StorageAdapter {
         return format!("{yakman_dir}/users.json");
     }
 
-    fn get_instance_revisions_path(&self) -> String {
+    fn get_revisions_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/instance-revisions");
+        return format!("{yakman_dir}/revisions");
     }
 
     fn get_api_key_file_path(&self) -> String {
@@ -611,9 +611,9 @@ impl AwsS3StorageAdapter {
         return format!("{yakman_dir}/snapshot-lock.json");
     }
 
-    fn get_config_instance_dir(&self) -> String {
+    fn get_data_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/instances");
+        return format!("{yakman_dir}/data");
     }
 
     fn get_projects_dir(&self) -> String {
@@ -631,9 +631,9 @@ impl AwsS3StorageAdapter {
         return format!("{yakman_dir}/users");
     }
 
-    fn get_config_instance_metadata_dir(&self) -> String {
+    fn get_config_details_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/instance-metadata");
+        return format!("{yakman_dir}/configs");
     }
 
     fn get_password_dir(&self) -> String {

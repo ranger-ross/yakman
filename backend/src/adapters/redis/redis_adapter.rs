@@ -4,7 +4,7 @@ use std::env;
 use super::KVStorageAdapter;
 use crate::adapters::errors::GenericStorageError;
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
     YakManTeamDetails, YakManUser, YakManUserDetails,
 };
@@ -106,15 +106,6 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
-    async fn get_instance_metadata(
-        &self,
-        config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
-        return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_id))
-            .await?);
-    }
-
     async fn get_instance_data(
         &self,
         config_id: &str,
@@ -135,19 +126,28 @@ impl KVStorageAdapter for RedisStorageAdapter {
         Ok(())
     }
 
-    async fn save_instance_metadata(
+    async fn get_config_details(
         &self,
         config_id: &str,
-        instances: &Vec<ConfigInstance>,
+    ) -> Result<Option<ConfigDetails>, GenericStorageError> {
+        return Ok(self
+            .get_optional_data(&self.get_config_details_key(config_id))
+            .await?);
+    }
+
+    async fn save_config_details(
+        &self,
+        config_id: &str,
+        details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
-        let data = serde_json::to_string(&instances)?;
-        let _: () = connection.set(self.get_config_metadata_key(config_id), data)?;
+        let data = serde_json::to_string(&details)?;
+        let _: () = connection.set(self.get_config_details_key(config_id), data)?;
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
-        let key = self.get_config_metadata_key(config_id);
+    async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
+        let key = self.get_config_details_key(config_id);
         let mut connection = self.get_connection()?;
         let _: () = connection.del(&key)?;
         Ok(())
@@ -535,8 +535,8 @@ impl RedisStorageAdapter {
         return format!("{REDIS_PREFIX}_SNAPSHOT_LOCK");
     }
 
-    fn get_config_metadata_key(&self, config_id: &str) -> String {
-        format!("{REDIS_PREFIX}_CONFIG_METADATA_{config_id}")
+    fn get_config_details_key(&self, config_id: &str) -> String {
+        format!("{REDIS_PREFIX}_CONFIG_DETAILS_{config_id}")
     }
 
     fn get_revision_key(&self, config_id: &str, revision: &str) -> String {

@@ -17,9 +17,9 @@ use crate::{
     model::{
         self,
         request::{CreateTeamPayload, CreateYakManUserPayload, UpdateTeamPayload},
-        ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-        LabelType, RevisionReviewState, YakManApiKey, YakManConfig, YakManLabel, YakManPassword,
-        YakManPasswordResetLink, YakManProject, YakManProjectDetails,
+        ConfigDetails, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData,
+        ConfigInstanceRevision, LabelType, RevisionReviewState, YakManApiKey, YakManConfig,
+        YakManLabel, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
         YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
         YakManUserDetails,
     },
@@ -169,8 +169,8 @@ impl StorageService for KVStorageService {
             .collect();
 
         for config in &project_configs {
-            if let Ok(Some(metadata)) = self.get_config_instance_metadata(&config.id).await {
-                for instance in metadata {
+            if let Ok(Some(config_details)) = self.adapter.get_config_details(&config.id).await {
+                for instance in config_details.instances {
                     let res = self.delete_instance(&config.id, &instance.instance).await;
                     if res.is_err() {
                         log::error!("Failed to delete config {}", config.id);
@@ -180,9 +180,9 @@ impl StorageService for KVStorageService {
                 log::error!("Failed to delete config {}", config.id);
             }
 
-            let res = self.adapter.delete_instance_metadata(&config.id).await;
+            let res = self.adapter.delete_config_details(&config.id).await;
             if res.is_err() {
-                log::error!("Failed to delete config metadata {}", config.id);
+                log::error!("Failed to delete config details {}", config.id);
             }
         }
 
@@ -250,7 +250,8 @@ impl StorageService for KVStorageService {
         content_type: Option<String>,
         creator_user_id: &str,
     ) -> Result<String, CreateConfigInstanceError> {
-        if let Some(mut instances) = self.adapter.get_instance_metadata(config_id).await? {
+        if let Some(mut config_details) = self.adapter.get_config_details(config_id).await? {
+            let instances = &mut config_details.instances;
             let instance = generate_instance_id();
             let revision_key: String = generate_revision_id();
             let data_key = Uuid::new_v4().to_string();
@@ -280,7 +281,7 @@ impl StorageService for KVStorageService {
             };
             self.adapter.save_revision(config_id, &revision).await?;
 
-            // Add new instance to instances and update the instance metadata
+            // Add new instance to instances and update the config details
             instances.push(ConfigInstance {
                 config_id: config_id.to_string(),
                 instance: instance.to_string(),
@@ -297,9 +298,9 @@ impl StorageService for KVStorageService {
                 }],
             });
             self.adapter
-                .save_instance_metadata(config_id, &instances)
+                .save_config_details(config_id, &config_details)
                 .await?;
-            log::info!("Update instance metadata for config: {config_id}");
+            log::info!("Update config details for config: {config_id}");
 
             if settings::is_notifications_enabled() {
                 if let Err(err) = self
@@ -358,11 +359,18 @@ impl StorageService for KVStorageService {
             hidden: false,
         });
 
-        // Create instance metadata file
+        // Create config details file
         self.adapter
-            .save_instance_metadata(&config_id, &vec![])
+            .save_config_details(
+                &config_id,
+                &ConfigDetails {
+                    config_id: config_id.clone(),
+                    config_name: config_name.to_string(),
+                    instances: vec![],
+                },
+            )
             .await
-            .map_err(|_| CreateConfigError::storage_error("Failed to save instance metadata"))?;
+            .map_err(|_| CreateConfigError::storage_error("Failed to save config details"))?;
 
         // Create config instances directory
         self.adapter
@@ -404,23 +412,29 @@ impl StorageService for KVStorageService {
         return Err(DeleteConfigError::ConfigDoesNotExistError);
     }
 
-    async fn get_config_instance_metadata(
-        &self,
-        config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
-        return Ok(self.adapter.get_instance_metadata(config_id).await?);
-    }
-
     async fn get_config_instance(
         &self,
         config_id: &str,
         instance: &str,
     ) -> Result<Option<ConfigInstance>, GenericStorageError> {
-        let instances = self.get_config_instance_metadata(config_id).await?;
-        return match instances {
-            Some(instances) => Ok(instances.into_iter().find(|inst| inst.instance == instance)),
+        let config_details = self.adapter.get_config_details(config_id).await?;
+        return match config_details {
+            Some(config_details) => Ok(config_details
+                .instances
+                .into_iter()
+                .find(|inst| inst.instance == instance)),
             None => Ok(None),
         };
+    }
+
+    async fn get_instances_by_config_id(
+        &self,
+        config_id: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
+        let Some(config_details) = self.adapter.get_config_details(config_id).await? else {
+            return Ok(None);
+        };
+        return Ok(Some(config_details.instances));
     }
 
     async fn get_config_data(
@@ -428,10 +442,11 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
     ) -> Result<Option<(String, String)>, GenericStorageError> {
-        if let Some(instances) = self.adapter.get_instance_metadata(config_id).await? {
-            info!("Found {} instances", instances.len());
+        if let Some(config_details) = self.adapter.get_config_details(config_id).await? {
+            let instances = config_details.instances;
+            log::info!("Found {} instances", instances.len());
 
-            info!("Search for instance ID {}", instance);
+            log::info!("Search for instance ID {}", instance);
             let selected_instance = instances.iter().find(|i| i.instance == instance);
 
             if let Some(instance) = selected_instance {
@@ -439,7 +454,7 @@ impl StorageService for KVStorageService {
                     .get_data_by_revision(config_id, &instance.current_revision)
                     .await;
             }
-            info!("No selected instance found");
+            log::info!("No selected instance found");
             return Ok(None);
         }
         return Ok(None);
@@ -454,11 +469,14 @@ impl StorageService for KVStorageService {
         content_type: Option<String>,
         submitted_by_user_id: &str,
     ) -> Result<String, SaveConfigInstanceError> {
-        let mut instances = self
+        let mut config_details = self
             .adapter
-            .get_instance_metadata(config_id)
+            .get_config_details(config_id)
             .await?
             .ok_or(SaveConfigInstanceError::InvalidConfig)?;
+
+        let instances = &mut config_details.instances;
+
         let instance_id = instance;
 
         let instance = instances
@@ -507,10 +525,10 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_instance_metadata(config_id, &instances)
+            .save_config_details(config_id, &config_details)
             .await?;
 
-        log::info!("Updated instance metadata for config: {config_id}");
+        log::info!("Updated config details for config: {config_id}");
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
@@ -529,17 +547,17 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
     ) -> Result<Option<Vec<ConfigInstanceRevision>>, GenericStorageError> {
-        let instances = match self.get_config_instance_metadata(&config_id).await? {
-            Some(value) => value,
-            None => return Ok(None),
+        let Some(config_details) = self.adapter.get_config_details(config_id).await? else {
+            return Ok(None);
         };
+        let instances = config_details.instances;
 
         let instance = match instances.iter().find(|inst| inst.instance == instance) {
             Some(value) => value,
             None => return Ok(None),
         };
 
-        info!("found {} revisions", instance.revisions.len());
+        log::info!("found {} revisions", instance.revisions.len());
 
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
@@ -576,13 +594,13 @@ impl StorageService for KVStorageService {
         revision: &str,
         approved_user_id: &str,
     ) -> Result<(), ApproveRevisionError> {
-        let mut metadata = match self.get_config_instance_metadata(config_id).await? {
-            Some(metadata) => metadata,
-            None => return Err(ApproveRevisionError::InvalidConfig),
+        let Some(mut config_details) = self.adapter.get_config_details(config_id).await? else {
+            return Err(ApproveRevisionError::InvalidConfig);
         };
+        let instances = &mut config_details.instances;
 
         let instance_id = instance;
-        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+        let instance = match instances.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApproveRevisionError::InvalidInstance),
         };
@@ -621,7 +639,7 @@ impl StorageService for KVStorageService {
         });
 
         self.adapter
-            .save_instance_metadata(config_id, &metadata)
+            .save_config_details(config_id, &config_details)
             .await?;
 
         if settings::is_notifications_enabled() {
@@ -643,13 +661,13 @@ impl StorageService for KVStorageService {
         revision: &str,
         applied_by_user_id: &str,
     ) -> Result<(), ApplyRevisionError> {
-        let mut metadata = match self.get_config_instance_metadata(config_id).await? {
-            Some(metadata) => metadata,
-            None => return Err(ApplyRevisionError::InvalidConfig),
+        let Some(mut config_details) = self.adapter.get_config_details(config_id).await? else {
+            return Err(ApplyRevisionError::InvalidConfig);
         };
+        let instances = &mut config_details.instances;
 
         let instance_id = instance;
-        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+        let instance = match instances.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApplyRevisionError::InvalidInstance),
         };
@@ -690,7 +708,7 @@ impl StorageService for KVStorageService {
         }
 
         self.adapter
-            .save_instance_metadata(config_id, &metadata)
+            .save_config_details(config_id, &config_details)
             .await?;
 
         if settings::is_notifications_enabled() {
@@ -712,13 +730,13 @@ impl StorageService for KVStorageService {
         revision: &str,
         rejected_by_user_id: &str,
     ) -> Result<(), ApplyRevisionError> {
-        let mut metadata = match self.get_config_instance_metadata(config_id).await? {
-            Some(metadata) => metadata,
-            None => return Err(ApplyRevisionError::InvalidConfig),
+        let Some(mut config_details) = self.adapter.get_config_details(config_id).await? else {
+            return Err(ApplyRevisionError::InvalidConfig);
         };
+        let instances = &mut config_details.instances;
 
         let instance_id = instance;
-        let instance = match metadata.iter_mut().find(|i| i.instance == instance) {
+        let instance = match instances.iter_mut().find(|i| i.instance == instance) {
             Some(instance) => instance,
             None => return Err(ApplyRevisionError::InvalidInstance),
         };
@@ -752,7 +770,7 @@ impl StorageService for KVStorageService {
             .await?;
 
         self.adapter
-            .save_instance_metadata(config_id, &metadata)
+            .save_config_details(config_id, &config_details)
             .await?;
 
         if settings::is_notifications_enabled() {
@@ -774,11 +792,13 @@ impl StorageService for KVStorageService {
         revision: &str,
         rollback_by_user_id: &str,
     ) -> Result<String, RollbackRevisionError> {
-        let mut instances = self
+        let mut config_details = self
             .adapter
-            .get_instance_metadata(config_id)
+            .get_config_details(config_id)
             .await?
             .ok_or(RollbackRevisionError::InvalidConfig)?;
+
+        let instances = &mut config_details.instances;
 
         let instance = instances
             .iter_mut()
@@ -814,9 +834,9 @@ impl StorageService for KVStorageService {
         instance.revisions.push(String::from(&revision.revision));
 
         self.adapter
-            .save_instance_metadata(config_id, &instances)
+            .save_config_details(config_id, &config_details)
             .await?;
-        log::info!("Updated instance metadata for config: {config_id}");
+        log::info!("Updated config details for config: {config_id}");
         return Ok(revision_key);
     }
 
@@ -1196,25 +1216,29 @@ impl StorageService for KVStorageService {
         config_id: &str,
         instance: &str,
     ) -> Result<(), DeleteConfigInstanceError> {
-        let instances = self
+        let mut config_details = self
             .adapter
-            .get_instance_metadata(config_id)
+            .get_config_details(config_id)
             .await?
             .ok_or(DeleteConfigInstanceError::InvalidConfig)?;
 
-        let config_instance = instances
+        let config_instance = config_details
+            .instances
             .iter()
             .find(|i| i.instance == instance)
             .ok_or(DeleteConfigInstanceError::InvalidInstance)?
             .clone();
 
-        let remaining_instances: Vec<_> = instances
+        let remaining_instances: Vec<_> = config_details
+            .instances
             .into_iter()
             .filter(|i| i.instance != instance)
             .collect();
 
+        config_details.instances = remaining_instances;
+
         self.adapter
-            .save_instance_metadata(config_id, &remaining_instances)
+            .save_config_details(config_id, &config_details)
             .await?;
 
         for revision in config_instance.revisions {

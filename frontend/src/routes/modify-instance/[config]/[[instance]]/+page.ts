@@ -14,9 +14,9 @@ export const load: PageLoad = async (event) => {
     let selectedLabels: { [labelName: string]: string } = {}; // <LabelName, Value>
 
     if (editMode) {
-        const meta = await trpc(event).instances.fetchConfigMetadata.query(event.params.config);
-        const instanceMetadata = meta.find(i => i.instance == event.params.instance!);
-        let selectedLabelsList = instanceMetadata?.labels;
+        const instances = await trpc(event).instances.fetchInstancesByConfigId.query(event.params.config);
+        const instance = instances.find(i => i.instance == event.params.instance!);
+        let selectedLabelsList = instance?.labels;
 
         for (const label of labels) {
             if (selectedLabelsList) {
