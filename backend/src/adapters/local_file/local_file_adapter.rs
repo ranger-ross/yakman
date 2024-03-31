@@ -194,8 +194,8 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
-        let instance_dir = self.get_data_dir();
-        let instance_path = format!("{instance_dir}/{config_id}/{data_key}");
+        let dir = self.get_data_dir();
+        let instance_path = format!("{dir}/{config_id}/{data_key}");
         return Ok(fs::read_to_string(instance_path)?);
     }
 
@@ -205,9 +205,9 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
-        let instance_dir = self.get_data_dir();
+        let dir = self.get_data_dir();
         // Create new file with data
-        let data_file_path = format!("{instance_dir}/{config_id}/{data_key}");
+        let data_file_path = format!("{dir}/{config_id}/{data_key}");
         let mut data_file = File::create(&data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
 
@@ -343,8 +343,8 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_id: &str,
     ) -> Result<(), GenericStorageError> {
-        let config_instance_dir = self.get_data_dir();
-        let config_instance_path = format!("{config_instance_dir}/{config_id}");
+        let dir = self.get_data_dir();
+        let config_instance_path = format!("{dir}/{config_id}");
         if !Path::new(&config_instance_path).exists() {
             fs::create_dir(&config_instance_path)?;
         }
