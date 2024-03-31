@@ -182,7 +182,7 @@ impl StorageService for KVStorageService {
 
             let res = self.adapter.delete_config_details(&config.id).await;
             if res.is_err() {
-                log::error!("Failed to delete config metadata {}", config.id);
+                log::error!("Failed to delete config details {}", config.id);
             }
         }
 
@@ -281,7 +281,7 @@ impl StorageService for KVStorageService {
             };
             self.adapter.save_revision(config_id, &revision).await?;
 
-            // Add new instance to instances and update the instance metadata
+            // Add new instance to instances and update the config details
             instances.push(ConfigInstance {
                 config_id: config_id.to_string(),
                 instance: instance.to_string(),
@@ -300,7 +300,7 @@ impl StorageService for KVStorageService {
             self.adapter
                 .save_config_details(config_id, &config_details)
                 .await?;
-            log::info!("Update instance metadata for config: {config_id}");
+            log::info!("Update config details for config: {config_id}");
 
             if settings::is_notifications_enabled() {
                 if let Err(err) = self
@@ -359,7 +359,7 @@ impl StorageService for KVStorageService {
             hidden: false,
         });
 
-        // Create instance metadata file
+        // Create config details file
         self.adapter
             .save_config_details(
                 &config_id,
@@ -370,7 +370,7 @@ impl StorageService for KVStorageService {
                 },
             )
             .await
-            .map_err(|_| CreateConfigError::storage_error("Failed to save instance metadata"))?;
+            .map_err(|_| CreateConfigError::storage_error("Failed to save config details"))?;
 
         // Create config instances directory
         self.adapter
@@ -528,7 +528,7 @@ impl StorageService for KVStorageService {
             .save_config_details(config_id, &config_details)
             .await?;
 
-        log::info!("Updated instance metadata for config: {config_id}");
+        log::info!("Updated config details for config: {config_id}");
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
