@@ -3,9 +3,9 @@ use std::sync::Arc;
 use super::{GenericStorageError, KVStorageAdapter};
 use crate::model::{ConfigDetails, YakManApiKey};
 use crate::model::{
-    ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
-    YakManTeamDetails, YakManUser, YakManUserDetails,
+    ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManPasswordResetLink,
+    YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails,
+    YakManUser, YakManUserDetails,
 };
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;

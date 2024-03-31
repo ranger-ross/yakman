@@ -8,9 +8,9 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
 use crate::model::{
-    ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig,
-    YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
-    YakManSnapshotLock, YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,
+    ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
+    YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 
 use super::{GenericStorageError, KVStorageAdapter};
