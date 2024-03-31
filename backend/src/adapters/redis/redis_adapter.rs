@@ -131,7 +131,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         config_id: &str,
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_id))
+            .get_optional_data(&self.get_config_details_key(config_id))
             .await?);
     }
 
@@ -142,12 +142,12 @@ impl KVStorageAdapter for RedisStorageAdapter {
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let data = serde_json::to_string(&details)?;
-        let _: () = connection.set(self.get_config_metadata_key(config_id), data)?;
+        let _: () = connection.set(self.get_config_details_key(config_id), data)?;
         Ok(())
     }
 
     async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
-        let key = self.get_config_metadata_key(config_id);
+        let key = self.get_config_details_key(config_id);
         let mut connection = self.get_connection()?;
         let _: () = connection.del(&key)?;
         Ok(())
@@ -535,8 +535,8 @@ impl RedisStorageAdapter {
         return format!("{REDIS_PREFIX}_SNAPSHOT_LOCK");
     }
 
-    fn get_config_metadata_key(&self, config_id: &str) -> String {
-        format!("{REDIS_PREFIX}_CONFIG_METADATA_{config_id}")
+    fn get_config_details_key(&self, config_id: &str) -> String {
+        format!("{REDIS_PREFIX}_CONFIG_DETAILS_{config_id}")
     }
 
     fn get_revision_key(&self, config_id: &str, revision: &str) -> String {

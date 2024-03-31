@@ -126,7 +126,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         config_id: &str,
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_id))
+            .get_optional_data(&self.get_config_details_key(config_id))
             .await?);
     }
 
@@ -136,13 +136,13 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&details)?;
-        self.insert(self.get_config_metadata_key(config_id), data.to_string())
+        self.insert(self.get_config_details_key(config_id), data.to_string())
             .await;
         Ok(())
     }
 
     async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_config_metadata_key(config_id)).await;
+        self.remove(&self.get_config_details_key(config_id)).await;
         return Ok(());
     }
 
@@ -495,8 +495,8 @@ impl InMemoryStorageAdapter {
         return format!("API_KEYS");
     }
 
-    fn get_config_metadata_key(&self, config_id: &str) -> String {
-        format!("CONFIG_METADATA_{config_id}")
+    fn get_config_details_key(&self, config_id: &str) -> String {
+        format!("CONFIG_DETAIL_{config_id}")
     }
 
     fn get_revision_key(&self, config_id: &str, revision: &str) -> String {
