@@ -44,7 +44,7 @@ async fn get_instances_by_config_id(
     }
 
     let data = storage_service
-        .get_config_instance_metadata(&config_id)
+        .get_instances_by_config_id(&config_id)
         .await?;
 
     return match data {

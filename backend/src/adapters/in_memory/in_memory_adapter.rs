@@ -7,7 +7,7 @@ use serde::de::DeserializeOwned;
 
 use super::{GenericStorageError, KVStorageAdapter};
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
     YakManTeamDetails, YakManUser, YakManUserDetails,
 };
@@ -96,15 +96,6 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         Ok(())
     }
 
-    async fn get_instance_metadata(
-        &self,
-        config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
-        return Ok(self
-            .get_optional_data(&self.get_config_metadata_key(config_id))
-            .await?);
-    }
-
     async fn get_instance_data(
         &self,
         config_id: &str,
@@ -130,18 +121,27 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         Ok(())
     }
 
-    async fn save_instance_metadata(
+    async fn get_config_details(
         &self,
         config_id: &str,
-        instances: &Vec<ConfigInstance>,
+    ) -> Result<Option<ConfigDetails>, GenericStorageError> {
+        return Ok(self
+            .get_optional_data(&self.get_config_metadata_key(config_id))
+            .await?);
+    }
+
+    async fn save_config_details(
+        &self,
+        config_id: &str,
+        details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
-        let data = serde_json::to_string(&instances)?;
+        let data = serde_json::to_string(&details)?;
         self.insert(self.get_config_metadata_key(config_id), data.to_string())
             .await;
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
+    async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
         self.remove(&self.get_config_metadata_key(config_id)).await;
         return Ok(());
     }

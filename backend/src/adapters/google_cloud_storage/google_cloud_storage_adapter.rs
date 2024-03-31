@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 
 use super::{GenericStorageError, KVStorageAdapter};
-use crate::model::YakManApiKey;
+use crate::model::{ConfigDetails, YakManApiKey};
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
-    YakManTeamDetails, YakManUser, YakManUserDetails,
+    ConfigInstanceRevision, LabelType, YakManConfig, YakManPassword, YakManPasswordResetLink,
+    YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam, YakManTeamDetails,
+    YakManUser, YakManUserDetails,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -122,10 +122,10 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(());
     }
 
-    async fn get_instance_metadata(
+    async fn get_config_details(
         &self,
         config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
+    ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_dir}/{config_id}.json");
         if let Some(content) = self.get_object(&instance_file).await.ok() {
@@ -134,21 +134,21 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(None);
     }
 
-    async fn save_instance_metadata(
+    async fn save_config_details(
         &self,
         config_id: &str,
-        instances: &Vec<ConfigInstance>,
+        details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_path}/{config_id}.json");
-        let data = serde_json::to_string(instances)?;
+        let data = serde_json::to_string(details)?;
 
         self.put_object(&instance_file, data).await?;
 
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
+    async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_path}/{config_id}.json");
         self.delete_object(&instance_file).await?;

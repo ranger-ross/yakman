@@ -1,5 +1,5 @@
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
+    ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
     YakManTeamDetails, YakManUser, YakManUserDetails,
 };
@@ -48,18 +48,18 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError>;
 
-    async fn get_instance_metadata(
+    async fn get_config_details(
         &self,
         config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
+    ) -> Result<Option<ConfigDetails>, GenericStorageError>;
 
-    async fn save_instance_metadata(
+    async fn save_config_details(
         &self,
         config_id: &str,
-        instances: &Vec<ConfigInstance>,
+        config_details: &ConfigDetails,
     ) -> Result<(), GenericStorageError>;
 
-    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError>;
+    async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError>;
 
     async fn get_instance_data(
         &self,

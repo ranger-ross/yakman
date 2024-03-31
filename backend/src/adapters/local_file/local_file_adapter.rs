@@ -8,9 +8,9 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
 use crate::model::{
-    ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
-    YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
-    YakManTeamDetails, YakManUser, YakManUserDetails,
+    ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig,
+    YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
+    YakManSnapshotLock, YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,
 };
 
 use super::{GenericStorageError, KVStorageAdapter};
@@ -115,10 +115,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(());
     }
 
-    async fn get_instance_metadata(
+    async fn get_config_details(
         &self,
         config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError> {
+    ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         let metadata_dir = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_dir}/{config_id}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
@@ -127,14 +127,14 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(None);
     }
 
-    async fn save_instance_metadata(
+    async fn save_config_details(
         &self,
         config_id: &str,
-        instances: &Vec<ConfigInstance>,
+        details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
         let instance_file = format!("{metadata_path}/{config_id}.json");
-        let data = serde_json::to_string(instances)?;
+        let data = serde_json::to_string(details)?;
 
         let mut file = File::create(&instance_file)?;
         Write::write_all(&mut file, data.as_bytes())?;
@@ -142,7 +142,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         Ok(())
     }
 
-    async fn delete_instance_metadata(&self, config_id: &str) -> Result<(), GenericStorageError> {
+    async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
         let metadata_path = self.get_config_instance_metadata_dir();
         remove_file(&format!("{metadata_path}/{config_id}.json"))?;
         return Ok(());
@@ -154,7 +154,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
         let dir = self.get_instance_revisions_path();
-        let path = format!("{dir}/{config_id}/{revision}");
+        let path = format!("{dir}/{config_id}/{revision}.json");
 
         if let Ok(content) = fs::read_to_string(&path) {
             return Ok(Some(serde_json::from_str(&content)?));
@@ -173,7 +173,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let revisions_path = self.get_instance_revisions_path();
         let revision_key = &revision.revision;
         let revision_data = serde_json::to_string(revision)?;
-        let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}");
+        let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}.json");
         let mut revision_file = File::create(&revision_file_path)?;
         Write::write_all(&mut revision_file, revision_data.as_bytes())?;
         return Ok(());
@@ -185,7 +185,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         revision: &str,
     ) -> Result<(), GenericStorageError> {
         let revisions_path = self.get_instance_revisions_path();
-        remove_file(format!("{revisions_path}/{config_id}/{revision}"))?;
+        remove_file(format!("{revisions_path}/{config_id}/{revision}.json"))?;
         return Ok(());
     }
 

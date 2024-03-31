@@ -79,16 +79,16 @@ pub trait StorageService: Sync + Send {
         creator_user_id: &str,
     ) -> Result<String, CreateConfigInstanceError>;
 
-    async fn get_config_instance_metadata(
-        &self,
-        config_id: &str,
-    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
-
     async fn get_config_instance(
         &self,
         config_id: &str,
         instance: &str,
     ) -> Result<Option<ConfigInstance>, GenericStorageError>;
+
+    async fn get_instances_by_config_id(
+        &self,
+        config_id: &str,
+    ) -> Result<Option<Vec<ConfigInstance>>, GenericStorageError>;
 
     async fn delete_instance(
         &self,
