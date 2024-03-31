@@ -119,8 +119,8 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_id: &str,
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
-        let metadata_dir = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_dir}/{config_id}.json");
+        let dir = self.get_config_details_dir();
+        let instance_file = format!("{dir}/{config_id}.json");
         if let Some(content) = fs::read_to_string(instance_file).ok() {
             return Ok(Some(serde_json::from_str(&content)?));
         }
@@ -132,8 +132,8 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_id: &str,
         details: &ConfigDetails,
     ) -> Result<(), GenericStorageError> {
-        let metadata_path = self.get_config_instance_metadata_dir();
-        let instance_file = format!("{metadata_path}/{config_id}.json");
+        let dir = self.get_config_details_dir();
+        let instance_file = format!("{dir}/{config_id}.json");
         let data = serde_json::to_string(details)?;
 
         let mut file = File::create(&instance_file)?;
@@ -143,8 +143,8 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     }
 
     async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
-        let metadata_path = self.get_config_instance_metadata_dir();
-        remove_file(&format!("{metadata_path}/{config_id}.json"))?;
+        let dir = self.get_config_details_dir();
+        remove_file(&format!("{dir}/{config_id}.json"))?;
         return Ok(());
     }
 
@@ -153,7 +153,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_id: &str,
         revision: &str,
     ) -> Result<Option<ConfigInstanceRevision>, GenericStorageError> {
-        let dir = self.get_instance_revisions_path();
+        let dir = self.get_revisions_path();
         let path = format!("{dir}/{config_id}/{revision}.json");
 
         if let Ok(content) = fs::read_to_string(&path) {
@@ -170,7 +170,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_id: &str,
         revision: &ConfigInstanceRevision,
     ) -> Result<(), GenericStorageError> {
-        let revisions_path = self.get_instance_revisions_path();
+        let revisions_path = self.get_revisions_path();
         let revision_key = &revision.revision;
         let revision_data = serde_json::to_string(revision)?;
         let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}.json");
@@ -184,7 +184,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_id: &str,
         revision: &str,
     ) -> Result<(), GenericStorageError> {
-        let revisions_path = self.get_instance_revisions_path();
+        let revisions_path = self.get_revisions_path();
         remove_file(format!("{revisions_path}/{config_id}/{revision}.json"))?;
         return Ok(());
     }
@@ -194,7 +194,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         config_id: &str,
         data_key: &str,
     ) -> Result<String, GenericStorageError> {
-        let instance_dir = self.get_config_instance_dir();
+        let instance_dir = self.get_data_dir();
         let instance_path = format!("{instance_dir}/{config_id}/{data_key}");
         return Ok(fs::read_to_string(instance_path)?);
     }
@@ -205,7 +205,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         data_key: &str,
         data: &str,
     ) -> Result<(), GenericStorageError> {
-        let instance_dir = self.get_config_instance_dir();
+        let instance_dir = self.get_data_dir();
         // Create new file with data
         let data_file_path = format!("{instance_dir}/{config_id}/{data_key}");
         let mut data_file = File::create(&data_file_path)?;
@@ -229,21 +229,21 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
                 .expect(&format!("Failed to create project dir: {}", project_dir));
         }
 
-        let instance_dir = self.get_config_instance_dir();
+        let instance_dir = self.get_data_dir();
         if !Path::new(&instance_dir).is_dir() {
             log::info!("Creating {}", instance_dir);
             fs::create_dir(&instance_dir)
                 .expect(&format!("Failed to create instance dir: {}", instance_dir));
         }
 
-        let revision_dir = self.get_instance_revisions_path();
+        let revision_dir = self.get_revisions_path();
         if !Path::new(&revision_dir).is_dir() {
             log::info!("Creating {}", revision_dir);
             fs::create_dir(&revision_dir)
                 .expect(&format!("Failed to create revision dir: {}", instance_dir));
         }
 
-        let instance_dir = self.get_config_instance_metadata_dir();
+        let instance_dir = self.get_config_details_dir();
         if !Path::new(&instance_dir).is_dir() {
             log::info!("Creating {}", instance_dir);
             fs::create_dir(&instance_dir)
@@ -343,7 +343,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_id: &str,
     ) -> Result<(), GenericStorageError> {
-        let config_instance_dir = self.get_config_instance_dir();
+        let config_instance_dir = self.get_data_dir();
         let config_instance_path = format!("{config_instance_dir}/{config_id}");
         if !Path::new(&config_instance_path).exists() {
             fs::create_dir(&config_instance_path)?;
@@ -355,7 +355,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         &self,
         config_id: &str,
     ) -> Result<(), GenericStorageError> {
-        let revision_instance_dir = self.get_instance_revisions_path();
+        let revision_instance_dir = self.get_revisions_path();
         let revision_instance_path = format!("{revision_instance_dir}/{config_id}");
         if !Path::new(&revision_instance_path).exists() {
             fs::create_dir(&revision_instance_path)?;
@@ -657,9 +657,9 @@ impl LocalFileStorageAdapter {
         return format!("{yakman_dir}/snapshot-lock.json");
     }
 
-    fn get_instance_revisions_path(&self) -> String {
+    fn get_revisions_path(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/instance-revisions");
+        return format!("{yakman_dir}/revisions");
     }
 
     fn get_projects_dir(&self) -> String {
@@ -672,9 +672,9 @@ impl LocalFileStorageAdapter {
         return format!("{yakman_dir}/teams");
     }
 
-    fn get_config_instance_dir(&self) -> String {
+    fn get_data_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/instances");
+        return format!("{yakman_dir}/data");
     }
 
     fn get_user_dir(&self) -> String {
@@ -692,9 +692,9 @@ impl LocalFileStorageAdapter {
         return format!("{yakman_dir}/password-reset-links");
     }
 
-    fn get_config_instance_metadata_dir(&self) -> String {
+    fn get_config_details_dir(&self) -> String {
         let yakman_dir = self.get_yakman_dir();
-        return format!("{yakman_dir}/instance-metadata");
+        return format!("{yakman_dir}/configs");
     }
 
     pub async fn from_env() -> LocalFileStorageAdapter {
