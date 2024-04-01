@@ -21,7 +21,7 @@ dependencies:
     specifier: 2.6.0
     version: 2.6.0
   svelte-multiselect:
-    specifier: ^10.2.0
+    specifier: 10.2.0
     version: 10.2.0
   trpc-sveltekit:
     specifier: 3.6.1
