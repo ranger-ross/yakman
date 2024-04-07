@@ -57,7 +57,5 @@ ptr_arg = "allow"
 # TODO: Renable this one in the future
 await_holding_refcell_ref = "allow"
 # TODO: Renable this one in the future
-match_like_matches_macro = "allow"
-# TODO: Renable this one in the future
 single_match = "allow"
 

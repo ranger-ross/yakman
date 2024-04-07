@@ -34,10 +34,7 @@ pub async fn get_projects(
     let user_has_global_role = auth_details
         .authorities
         .iter()
-        .map(|p| match p {
-            YakManRoleBinding::GlobalRoleBinding(_) => true,
-            _ => false,
-        })
+        .map(|p| matches!(p, YakManRoleBinding::GlobalRoleBinding(_)))
         .any(|v| v);
 
     let allowed_projects: HashSet<String> = auth_details

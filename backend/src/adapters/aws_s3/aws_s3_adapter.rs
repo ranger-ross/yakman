@@ -682,10 +682,10 @@ impl AwsS3StorageAdapter {
         return match x {
             Ok(_) => true,
             Err(e) => match e {
-                s3::error::SdkError::ServiceError(e) => match e.err() {
-                    s3::operation::get_object::GetObjectError::NoSuchKey(_) => false,
-                    _ => true,
-                },
+                s3::error::SdkError::ServiceError(e) => matches!(
+                    e.err(),
+                    s3::operation::get_object::GetObjectError::NoSuchKey(_)
+                ),
                 _ => true,
             },
         };
