@@ -56,6 +56,6 @@ expect_fun_call = "allow"
 ptr_arg = "allow"
 # TODO: Renable this one in the future
 await_holding_refcell_ref = "allow"
-# TODO: Renable this one in the future
-single_match = "allow"
+# # TODO: Renable this one in the future
+# single_match = "allow"
 

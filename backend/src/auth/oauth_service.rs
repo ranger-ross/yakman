@@ -60,10 +60,7 @@ impl YakManOAuthService {
         )
         .set_redirect_uri(get_redirect_url()?);
 
-        let scopes = get_oauth_scopes()
-            .into_iter()
-            .map(Scope::new)
-            .collect();
+        let scopes = get_oauth_scopes().into_iter().map(Scope::new).collect();
 
         return Ok(YakManOAuthService {
             storage: storage,

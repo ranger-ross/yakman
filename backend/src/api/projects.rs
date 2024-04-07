@@ -110,7 +110,8 @@ async fn create_project(
             YakManRoleBinding::ProjectRoleBinding(_) => None,
         })
         .filter(|role| [YakManRole::Admin, YakManRole::Approver].contains(role))
-        .collect::<Vec<_>>().is_empty();
+        .collect::<Vec<_>>()
+        .is_empty();
 
     if !is_user_global_admin_or_approver {
         return Err(YakManApiError::forbidden());

@@ -46,7 +46,7 @@ async fn get_team(
         }) => {
             log::error!("Failed to get team, error: {message}, raw: {raw_message}");
             Err(YakManApiError::server_error("Failed to get teams"))
-        },
+        }
     };
 }
 

@@ -98,7 +98,9 @@ pub async fn create_password_reset_link(
         return Err(YakManApiError::unauthorized());
     };
 
-    if &user_id != target_user_id && !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
+    if &user_id != target_user_id
+        && !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities)
+    {
         return Err(YakManApiError::forbidden());
     }
 

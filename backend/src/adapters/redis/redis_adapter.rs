@@ -452,12 +452,8 @@ impl RedisStorageAdapter {
         let username = env::var("YAKMAN_REDIS_USERNAME").ok();
         let password = env::var("YAKMAN_REDIS_PASSWORD").ok();
 
-        let connection_url: String = Self::create_connection_url(
-            &host,
-            port,
-            username.as_deref(),
-            password.as_deref(),
-        );
+        let connection_url: String =
+            Self::create_connection_url(&host, port, username.as_deref(), password.as_deref());
 
         let client = redis::Client::open(connection_url)?;
 
