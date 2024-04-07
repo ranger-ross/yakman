@@ -49,6 +49,8 @@ mockall = "0.12"
 
 [lints.clippy]
 needless_return = "allow"
+redundant_field_names = "allow"
+
 default_constructed_unit_structs = "allow"
 needless_borrows_for_generic_args = "allow"
 op_ref = "allow"
@@ -68,6 +70,3 @@ redundant_closure = "allow"
 await_holding_refcell_ref = "allow"
 enum_variant_names = "allow"
 unnecessary_lazy_evaluations = "allow"
-redundant_field_names = "allow"
-useless_conversion = "allow"
-collapsible_if = "allow"

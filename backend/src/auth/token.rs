@@ -71,7 +71,7 @@ impl YakManTokenService {
             .unwrap_or(60 * 60);
 
         Ok(YakManTokenService {
-            access_token_signing_key: String::from(access_token_signing_key),
+            access_token_signing_key: access_token_signing_key,
             refresh_token_shortcrypt: ShortCrypt::new(refresh_token_encryption_key),
             access_token_time_to_live_seconds: access_token_time_to_live_seconds,
         })
