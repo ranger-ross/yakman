@@ -33,10 +33,7 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
         return Ok(data);
     }
 
-    async fn save_projects(
-        &self,
-        projects: &[YakManProject],
-    ) -> Result<(), GenericStorageError> {
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(projects)?;
         let path = self.get_projects_file_path();
         self.put_object(&path, data).await?;

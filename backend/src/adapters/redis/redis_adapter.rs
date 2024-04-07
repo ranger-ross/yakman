@@ -35,10 +35,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         return Ok(serde_json::from_str(&projects)?);
     }
 
-    async fn save_projects(
-        &self,
-        projects: &[YakManProject],
-    ) -> Result<(), GenericStorageError> {
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
         let _: () = connection.set(self.get_projects_key(), serde_json::to_string(projects)?)?;
         return Ok(());

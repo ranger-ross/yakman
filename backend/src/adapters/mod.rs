@@ -19,8 +19,7 @@ pub mod redis;
 pub trait KVStorageAdapter: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
-    async fn save_projects(&self, projects: &[YakManProject])
-        -> Result<(), GenericStorageError>;
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError>;
 
     async fn get_project_details(
         &self,

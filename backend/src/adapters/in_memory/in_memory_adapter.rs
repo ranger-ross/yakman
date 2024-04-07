@@ -27,10 +27,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(serde_json::from_str(projects)?);
     }
 
-    async fn save_projects(
-        &self,
-        projects: &[YakManProject],
-    ) -> Result<(), GenericStorageError> {
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError> {
         self.insert(self.get_projects_key(), serde_json::to_string(projects)?)
             .await;
         return Ok(());
