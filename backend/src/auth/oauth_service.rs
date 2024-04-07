@@ -126,7 +126,7 @@ impl OAuthService for YakManOAuthService {
 
         let username = id_token_claims
             .email()
-            .ok_or_else(|| LoginError::FailedToParseUsername)?
+            .ok_or(LoginError::FailedToParseUsername)?
             .as_str()
             .to_string();
 
