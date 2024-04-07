@@ -62,7 +62,7 @@ impl YakManOAuthService {
 
         let scopes = get_oauth_scopes()
             .into_iter()
-            .map(|s| Scope::new(s))
+            .map(Scope::new)
             .collect();
 
         return Ok(YakManOAuthService {

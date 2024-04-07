@@ -153,7 +153,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                 let project_role_bindings: Vec<YakManRoleBinding> = details
                     .roles
                     .into_iter()
-                    .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                    .map(YakManRoleBinding::ProjectRoleBinding)
                     .collect();
 
                 role_bindings.extend(project_role_bindings);
@@ -196,7 +196,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                         let project_role_bindings: Vec<YakManRoleBinding> = team_details
                             .roles
                             .into_iter()
-                            .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                            .map(YakManRoleBinding::ProjectRoleBinding)
                             .collect();
 
                         role_bindings.extend(project_role_bindings);
