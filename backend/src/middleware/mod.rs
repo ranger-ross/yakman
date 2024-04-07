@@ -95,10 +95,8 @@ where
                     {
                         user_id = Some(api_key.id.to_string());
                     }
-                } else {
-                    if let Ok(claims) = token_service.validate_access_token(&token) {
-                        user_id = Some(claims.user_id);
-                    }
+                } else if let Ok(claims) = token_service.validate_access_token(&token) {
+                    user_id = Some(claims.user_id);
                 }
             }
 

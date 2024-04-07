@@ -878,33 +878,30 @@ impl StorageService for KVStorageService {
                 let email_hash = sha256::digest(&email);
 
                 // Don't set the password if it already exists
-                match self.adapter.get_password(&email_hash).await {
-                    Ok(None) => {
-                        log::info!("Saving default admin password");
-                        // Example from: https://docs.rs/argon2/latest/argon2
-                        let salt = SaltString::generate(&mut OsRng);
-                        let argon2 = Argon2::default();
-                        let password_hash = argon2
-                            .hash_password(default_password.as_bytes(), &salt)
-                            .map_err(|e| {
-                                GenericStorageError::new(
-                                    "Failed to hash default password".to_string(),
-                                    e.to_string(),
-                                )
-                            })?
-                            .to_string();
-
-                        self.adapter
-                            .save_password(
-                                &email_hash,
-                                &YakManPassword {
-                                    hash: password_hash,
-                                    timestamp: now,
-                                },
+                if let Ok(None) = self.adapter.get_password(&email_hash).await {
+                    log::info!("Saving default admin password");
+                    // Example from: https://docs.rs/argon2/latest/argon2
+                    let salt = SaltString::generate(&mut OsRng);
+                    let argon2 = Argon2::default();
+                    let password_hash = argon2
+                        .hash_password(default_password.as_bytes(), &salt)
+                        .map_err(|e| {
+                            GenericStorageError::new(
+                                "Failed to hash default password".to_string(),
+                                e.to_string(),
                             )
-                            .await?;
-                    }
-                    _ => {}
+                        })?
+                        .to_string();
+
+                    self.adapter
+                        .save_password(
+                            &email_hash,
+                            &YakManPassword {
+                                hash: password_hash,
+                                timestamp: now,
+                            },
+                        )
+                        .await?;
                 }
             }
         }
