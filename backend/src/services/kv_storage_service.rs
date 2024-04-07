@@ -869,7 +869,7 @@ impl StorageService for KVStorageService {
                 .save_user_details(&admin_user.id, &admin_user_details)
                 .await?;
 
-            self.adapter.save_users(&vec![admin_user]).await?;
+            self.adapter.save_users(&[admin_user]).await?;
         }
 
         // Set the default admin password

@@ -53,6 +53,4 @@ redundant_field_names = "allow"
 enum_variant_names = "allow"
 expect_fun_call = "allow"
 # TODO: Renable this one in the future
-ptr_arg = "allow"
-# TODO: Renable this one in the future
 await_holding_refcell_ref = "allow"

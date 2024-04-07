@@ -29,7 +29,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
     async fn save_projects(
         &self,
-        projects: &Vec<YakManProject>,
+        projects: &[YakManProject],
     ) -> Result<(), GenericStorageError> {
         self.insert(self.get_projects_key(), serde_json::to_string(projects)?)
             .await;
@@ -78,7 +78,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: &Vec<YakManConfig>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: &[YakManConfig]) -> Result<(), GenericStorageError> {
         self.insert(self.get_configs_key(), serde_json::to_string(&configs)?)
             .await;
         Ok(())
@@ -90,7 +90,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(serde_json::from_str(labels)?);
     }
 
-    async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError> {
+    async fn save_labels(&self, labels: &[LabelType]) -> Result<(), GenericStorageError> {
         self.insert(self.get_labels_key(), serde_json::to_string(&labels)?)
             .await;
         Ok(())
@@ -241,7 +241,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(());
     }
 
-    async fn save_users(&self, users: &Vec<YakManUser>) -> Result<(), GenericStorageError> {
+    async fn save_users(&self, users: &[YakManUser]) -> Result<(), GenericStorageError> {
         self.insert(self.get_users_key(), serde_json::to_string(&users)?)
             .await;
         Ok(())
@@ -253,7 +253,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(serde_json::from_str(data)?);
     }
 
-    async fn save_api_keys(&self, api_keys: &Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+    async fn save_api_keys(&self, api_keys: &[YakManApiKey]) -> Result<(), GenericStorageError> {
         self.insert(self.get_api_keys_key(), serde_json::to_string(&api_keys)?)
             .await;
         Ok(())
@@ -314,7 +314,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         return Ok(serde_json::from_str(data)?);
     }
 
-    async fn save_teams(&self, teams: &Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+    async fn save_teams(&self, teams: &[YakManTeam]) -> Result<(), GenericStorageError> {
         self.insert(self.get_teams_key(), serde_json::to_string(&teams)?)
             .await;
         Ok(())
@@ -387,7 +387,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let configs_key = self.get_configs_key();
         if !self.contains_key(&configs_key).await {
-            self.save_configs(&vec![]).await?;
+            self.save_configs(&[]).await?;
             log::info!("Initialized Configs Key");
         }
 
@@ -401,7 +401,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
 
         let labels_key = self.get_labels_key();
         if !self.contains_key(&labels_key).await {
-            self.save_labels(&vec![]).await?;
+            self.save_labels(&[]).await?;
             log::info!("Initialized Labels Key");
         }
 
