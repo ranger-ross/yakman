@@ -121,7 +121,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         let dir = self.get_config_details_dir();
         let instance_file = format!("{dir}/{config_id}.json");
-        if let Some(content) = fs::read_to_string(instance_file).ok() {
+        if let Ok(content) = fs::read_to_string(instance_file) {
             return Ok(Some(serde_json::from_str(&content)?));
         }
         return Ok(None);

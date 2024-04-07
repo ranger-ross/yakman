@@ -128,7 +128,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         let dir = self.get_config_details_dir();
         let instance_file = format!("{dir}/{config_id}.json");
-        if let Some(content) = self.get_object(&instance_file).await.ok() {
+        if let Ok(content) = self.get_object(&instance_file).await {
             return Ok(Some(serde_json::from_str(&content)?));
         }
         return Ok(None);

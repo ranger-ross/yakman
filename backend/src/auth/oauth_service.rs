@@ -122,8 +122,7 @@ impl OAuthService for YakManOAuthService {
 
         let picture: Option<String> = id_token_claims
             .picture()
-            .map(|p| p.get(None).map(|p| p.as_str().to_string()))
-            .flatten();
+            .and_then(|p| p.get(None).map(|p| p.as_str().to_string()));
 
         let username = id_token_claims
             .email()
