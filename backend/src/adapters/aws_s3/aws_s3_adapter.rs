@@ -200,10 +200,10 @@ impl KVStorageAdapter for AwsS3StorageAdapter {
     ) -> Result<String, GenericStorageError> {
         let dir = self.get_data_dir();
         let instance_path = format!("{dir}/{config_id}/{data_key}");
-        return Ok(self
+        return self
             .get_object_as_option(&instance_path)
             .await?
-            .ok_or(AwsS3StorageAdapter::not_found())?);
+            .ok_or(AwsS3StorageAdapter::not_found());
     }
 
     async fn save_instance_data(

@@ -203,7 +203,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     ) -> Result<String, GenericStorageError> {
         let dir = self.get_data_dir();
         let instance_path = format!("{dir}/{config_id}/{data_key}");
-        return Ok(self.get_object(&instance_path).await?);
+        return self.get_object(&instance_path).await;
     }
 
     async fn save_instance_data(

@@ -51,7 +51,7 @@ pub struct KVStorageService {
 #[async_trait]
 impl StorageService for KVStorageService {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
-        return Ok(self.adapter.get_projects().await?);
+        return self.adapter.get_projects().await;
     }
 
     async fn get_project_details(
@@ -78,7 +78,7 @@ impl StorageService for KVStorageService {
 
         // Prevent duplicates
         for prj in &projects {
-            if &prj.name == &project_name {
+            if prj.name == project_name {
                 return Err(CreateProjectError::DuplicateNameError {
                     name: String::from(project_name),
                 });
@@ -120,7 +120,7 @@ impl StorageService for KVStorageService {
         // Prevent duplicates
         for prj in &projects {
             // Be sure to check that the UUIDs do not match since we should always get at least one match when updating.
-            if &prj.name == &project_name && &prj.id != &project_id {
+            if prj.name == project_name && prj.id != project_id {
                 return Err(UpdateProjectError::DuplicateNameError {
                     name: String::from(project_name),
                 });
@@ -165,7 +165,7 @@ impl StorageService for KVStorageService {
 
         let project_configs: Vec<_> = configs
             .iter()
-            .filter(|p| &p.project_id == &project_id)
+            .filter(|p| p.project_id == project_id)
             .collect();
 
         for config in &project_configs {
@@ -188,7 +188,7 @@ impl StorageService for KVStorageService {
 
         let remaining_configs: Vec<_> = configs
             .into_iter()
-            .filter(|p| &p.project_id != &project_id)
+            .filter(|p| p.project_id != project_id)
             .collect();
 
         let res = self.adapter.save_configs(&remaining_configs).await;
@@ -210,7 +210,7 @@ impl StorageService for KVStorageService {
     }
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
-        return Ok(self.adapter.get_labels().await?);
+        return self.adapter.get_labels().await;
     }
 
     async fn create_label(&self, mut label: LabelType) -> Result<(), CreateLabelError> {
@@ -230,7 +230,7 @@ impl StorageService for KVStorageService {
 
         // Prevent duplicates
         for lbl in &labels {
-            if &lbl.name == &label.name {
+            if lbl.name == label.name {
                 return Err(CreateLabelError::duplicate_label(&label.name));
             }
         }

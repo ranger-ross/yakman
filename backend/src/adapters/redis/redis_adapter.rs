@@ -48,9 +48,9 @@ impl KVStorageAdapter for RedisStorageAdapter {
         &self,
         project_id: &str,
     ) -> Result<Option<YakManProjectDetails>, GenericStorageError> {
-        return Ok(self
+        return self
             .get_optional_data(&self.get_project_key(project_id))
-            .await?);
+            .await;
     }
 
     async fn save_project_details(
@@ -130,9 +130,9 @@ impl KVStorageAdapter for RedisStorageAdapter {
         &self,
         config_id: &str,
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
-        return Ok(self
+        return self
             .get_optional_data(&self.get_config_details_key(config_id))
-            .await?);
+            .await;
     }
 
     async fn save_config_details(
@@ -232,7 +232,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         &self,
         user_id: &str,
     ) -> Result<Option<YakManUserDetails>, GenericStorageError> {
-        return Ok(self.get_optional_data(&self.get_user_key(user_id)).await?);
+        return self.get_optional_data(&self.get_user_key(user_id)).await;
     }
 
     async fn save_user_details(
@@ -281,18 +281,18 @@ impl KVStorageAdapter for RedisStorageAdapter {
         &self,
         email_hash: &str,
     ) -> Result<Option<YakManPassword>, GenericStorageError> {
-        return Ok(self
+        return self
             .get_optional_data(&self.get_password_key(email_hash))
-            .await?);
+            .await;
     }
 
     async fn get_password_reset_link(
         &self,
         id: &str,
     ) -> Result<Option<YakManPasswordResetLink>, GenericStorageError> {
-        return Ok(self
+        return self
             .get_optional_data(&self.get_password_reset_link_key(id))
-            .await?);
+            .await;
     }
 
     async fn save_password_reset_link(
@@ -330,7 +330,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         &self,
         team_id: &str,
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
-        return Ok(self.get_optional_data(&self.get_team_key(team_id)).await?);
+        return self.get_optional_data(&self.get_team_key(team_id)).await;
     }
 
     async fn save_team_details(
