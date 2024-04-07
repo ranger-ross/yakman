@@ -366,7 +366,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         let keys: Vec<_> = storage
             .keys()
             .filter(|k| !k.starts_with("SNAPSHOT"))
-            .map(|k| k.clone())
+            .cloned()
             .collect();
         let keys = keys.clone();
 
