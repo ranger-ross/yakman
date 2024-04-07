@@ -268,6 +268,6 @@ fn get_content_type(req: &HttpRequest) -> Option<String> {
     req.headers()
         .get("content-type")?
         .to_str()
-        .map(|s| String::from(s))
+        .map(String::from)
         .ok()
 }

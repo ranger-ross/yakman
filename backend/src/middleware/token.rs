@@ -3,7 +3,7 @@ use actix_web::dev::ServiceRequest;
 pub fn extract_access_token(req: &ServiceRequest) -> Option<String> {
     if let Some(token_header) = req.headers().get("Authorization") {
         if let Ok(token) = token_header.to_str() {
-            let parts: Vec<&str> = token.split(" ").collect();
+            let parts: Vec<&str> = token.split(' ').collect();
 
             if parts.len() != 2 {
                 return None;

@@ -34,10 +34,7 @@ pub async fn get_projects(
     let user_has_global_role = auth_details
         .authorities
         .iter()
-        .map(|p| match p {
-            YakManRoleBinding::GlobalRoleBinding(_) => true,
-            _ => false,
-        })
+        .map(|p| matches!(p, YakManRoleBinding::GlobalRoleBinding(_)))
         .any(|v| v);
 
     let allowed_projects: HashSet<String> = auth_details
@@ -105,17 +102,16 @@ async fn create_project(
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
-    let is_user_global_admin_or_approver = auth_details
+    let is_user_global_admin_or_approver = !auth_details
         .authorities
         .iter()
         .filter_map(|p| match p {
             YakManRoleBinding::GlobalRoleBinding(role) => Some(role.clone()),
             YakManRoleBinding::ProjectRoleBinding(_) => None,
         })
-        .filter(|role| vec![YakManRole::Admin, YakManRole::Approver].contains(role))
+        .filter(|role| [YakManRole::Admin, YakManRole::Approver].contains(role))
         .collect::<Vec<_>>()
-        .len()
-        > 0;
+        .is_empty();
 
     if !is_user_global_admin_or_approver {
         return Err(YakManApiError::forbidden());
@@ -230,7 +226,7 @@ fn validate_project(
         ));
     }
 
-    if !is_alphanumeric_kebab_case(&project_name) {
+    if !is_alphanumeric_kebab_case(project_name) {
         return Err(YakManApiError::bad_request(
             "Invalid project name. Must be alphanumeric kebab case",
         ));
@@ -239,8 +235,8 @@ fn validate_project(
     // Validate notification webhooks to protect against SSRF
     if let Some(notification) = &notification_settings {
         match &notification.notification_type {
-            ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(&webhook_url)?,
-            ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(&webhook_url)?,
+            ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(webhook_url)?,
+            ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(webhook_url)?,
         }
     }
 
@@ -248,7 +244,7 @@ fn validate_project(
 }
 
 fn validate_webhook_url(webhook_url: &str) -> Result<(), YakManApiError> {
-    let Ok(url) = Url::parse(&webhook_url) else {
+    let Ok(url) = Url::parse(webhook_url) else {
         return Err(YakManApiError::bad_request("Invalid webhook url"));
     };
 

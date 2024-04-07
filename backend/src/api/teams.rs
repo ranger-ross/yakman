@@ -19,15 +19,13 @@ async fn get_teams(
 ) -> Result<impl Responder, YakManApiError> {
     return match storage_service.get_teams().await {
         Ok(teams) => Ok(web::Json(teams)),
-        Err(e) => match e {
-            GenericStorageError {
-                message,
-                raw_message,
-            } => {
-                log::error!("Failed to get team, error: {message}, raw: {raw_message}");
-                Err(YakManApiError::server_error("Failed to get teams"))
-            }
-        },
+        Err(GenericStorageError {
+            message,
+            raw_message,
+        }) => {
+            log::error!("Failed to get team, error: {message}, raw: {raw_message}");
+            Err(YakManApiError::server_error("Failed to get teams"))
+        }
     };
 }
 
@@ -42,15 +40,13 @@ async fn get_team(
     return match storage_service.get_team_details(&team_id).await {
         Ok(Some(teams)) => Ok(web::Json(teams)),
         Ok(None) => Err(YakManApiError::not_found("team not found")),
-        Err(e) => match e {
-            GenericStorageError {
-                message,
-                raw_message,
-            } => {
-                log::error!("Failed to get team, error: {message}, raw: {raw_message}");
-                Err(YakManApiError::server_error("Failed to get teams"))
-            }
-        },
+        Err(GenericStorageError {
+            message,
+            raw_message,
+        }) => {
+            log::error!("Failed to get team, error: {message}, raw: {raw_message}");
+            Err(YakManApiError::server_error("Failed to get teams"))
+        }
     };
 }
 

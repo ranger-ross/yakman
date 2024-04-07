@@ -98,10 +98,10 @@ pub async fn create_password_reset_link(
         return Err(YakManApiError::unauthorized());
     };
 
-    if &user_id != target_user_id {
-        if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
-            return Err(YakManApiError::forbidden());
-        }
+    if &user_id != target_user_id
+        && !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities)
+    {
+        return Err(YakManApiError::forbidden());
     }
 
     match storage_service.create_password_reset_link(&user_id).await {
@@ -287,7 +287,7 @@ pub async fn oauth_exchange(
 
     let (username, user, refresh_token, _picture) = match oauth_service
         .exchange_oauth_code(
-            String::from(payload.code.to_string()),
+            payload.code.to_string(),
             String::from(payload.verifier.secret()),
             payload.nonce.clone(),
         )

@@ -72,7 +72,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
-            .wrap(Etag::default())
+            .wrap(Etag)
             .wrap(Compress::default())
             .wrap(Logger::new("%s %r"))
             .wrap(GrantsMiddleware::with_extractor(extract_roles))
