@@ -51,7 +51,7 @@ pub struct KVStorageService {
 #[async_trait]
 impl StorageService for KVStorageService {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError> {
-        return Ok(self.adapter.get_projects().await?);
+        return self.adapter.get_projects().await;
     }
 
     async fn get_project_details(
@@ -78,7 +78,7 @@ impl StorageService for KVStorageService {
 
         // Prevent duplicates
         for prj in &projects {
-            if &prj.name == &project_name {
+            if prj.name == project_name {
                 return Err(CreateProjectError::DuplicateNameError {
                     name: String::from(project_name),
                 });
@@ -120,7 +120,7 @@ impl StorageService for KVStorageService {
         // Prevent duplicates
         for prj in &projects {
             // Be sure to check that the UUIDs do not match since we should always get at least one match when updating.
-            if &prj.name == &project_name && &prj.id != &project_id {
+            if prj.name == project_name && prj.id != project_id {
                 return Err(UpdateProjectError::DuplicateNameError {
                     name: String::from(project_name),
                 });
@@ -165,7 +165,7 @@ impl StorageService for KVStorageService {
 
         let project_configs: Vec<_> = configs
             .iter()
-            .filter(|p| &p.project_id == &project_id)
+            .filter(|p| p.project_id == project_id)
             .collect();
 
         for config in &project_configs {
@@ -188,7 +188,7 @@ impl StorageService for KVStorageService {
 
         let remaining_configs: Vec<_> = configs
             .into_iter()
-            .filter(|p| &p.project_id != &project_id)
+            .filter(|p| p.project_id != project_id)
             .collect();
 
         let res = self.adapter.save_configs(&remaining_configs).await;
@@ -210,7 +210,7 @@ impl StorageService for KVStorageService {
     }
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
-        return Ok(self.adapter.get_labels().await?);
+        return self.adapter.get_labels().await;
     }
 
     async fn create_label(&self, mut label: LabelType) -> Result<(), CreateLabelError> {
@@ -220,7 +220,7 @@ impl StorageService for KVStorageService {
             .filter_map(|opt| if !opt.is_empty() { Some(opt) } else { None })
             .collect::<Vec<String>>();
 
-        if santized_options.len() == 0 {
+        if santized_options.is_empty() {
             return Err(CreateLabelError::EmptyOptionsError);
         }
 
@@ -230,7 +230,7 @@ impl StorageService for KVStorageService {
 
         // Prevent duplicates
         for lbl in &labels {
-            if &lbl.name == &label.name {
+            if lbl.name == label.name {
                 return Err(CreateLabelError::duplicate_label(&label.name));
             }
         }
@@ -562,7 +562,7 @@ impl StorageService for KVStorageService {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.adapter.get_revision(config_id, &rev).await? {
+            if let Some(revision) = self.adapter.get_revision(config_id, rev).await? {
                 revisions.push(revision);
             }
         }
@@ -775,7 +775,7 @@ impl StorageService for KVStorageService {
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
-                .send_reject_notification(config_id, instance_id, &revision)
+                .send_reject_notification(config_id, instance_id, revision)
                 .await
             {
                 log::error!("Failed to send notification, {err:?}");
@@ -807,7 +807,7 @@ impl StorageService for KVStorageService {
 
         let previous_revision = self
             .adapter
-            .get_revision(&config_id, &revision)
+            .get_revision(config_id, revision)
             .await?
             .ok_or(RollbackRevisionError::InvalidRevision)?;
 
@@ -869,7 +869,7 @@ impl StorageService for KVStorageService {
                 .save_user_details(&admin_user.id, &admin_user_details)
                 .await?;
 
-            self.adapter.save_users(&vec![admin_user]).await?;
+            self.adapter.save_users(&[admin_user]).await?;
         }
 
         // Set the default admin password
@@ -878,33 +878,30 @@ impl StorageService for KVStorageService {
                 let email_hash = sha256::digest(&email);
 
                 // Don't set the password if it already exists
-                match self.adapter.get_password(&email_hash).await {
-                    Ok(None) => {
-                        log::info!("Saving default admin password");
-                        // Example from: https://docs.rs/argon2/latest/argon2
-                        let salt = SaltString::generate(&mut OsRng);
-                        let argon2 = Argon2::default();
-                        let password_hash = argon2
-                            .hash_password(default_password.as_bytes(), &salt)
-                            .map_err(|e| {
-                                GenericStorageError::new(
-                                    "Failed to hash default password".to_string(),
-                                    e.to_string(),
-                                )
-                            })?
-                            .to_string();
-
-                        self.adapter
-                            .save_password(
-                                &email_hash,
-                                &YakManPassword {
-                                    hash: password_hash,
-                                    timestamp: now,
-                                },
+                if let Ok(None) = self.adapter.get_password(&email_hash).await {
+                    log::info!("Saving default admin password");
+                    // Example from: https://docs.rs/argon2/latest/argon2
+                    let salt = SaltString::generate(&mut OsRng);
+                    let argon2 = Argon2::default();
+                    let password_hash = argon2
+                        .hash_password(default_password.as_bytes(), &salt)
+                        .map_err(|e| {
+                            GenericStorageError::new(
+                                "Failed to hash default password".to_string(),
+                                e.to_string(),
                             )
-                            .await?;
-                    }
-                    _ => {}
+                        })?
+                        .to_string();
+
+                    self.adapter
+                        .save_password(
+                            &email_hash,
+                            &YakManPassword {
+                                hash: password_hash,
+                                timestamp: now,
+                            },
+                        )
+                        .await?;
                 }
             }
         }
@@ -980,14 +977,14 @@ impl StorageService for KVStorageService {
     }
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
-        return Ok(self.adapter.get_teams().await?);
+        return self.adapter.get_teams().await;
     }
 
     async fn get_team_details(
         &self,
         team_id: &str,
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
-        return Ok(self.adapter.get_team_details(team_id).await?);
+        return self.adapter.get_team_details(team_id).await;
     }
 
     async fn create_team(&self, payload: CreateTeamPayload) -> Result<String, CreateTeamError> {
@@ -1105,7 +1102,7 @@ impl StorageService for KVStorageService {
         }
 
         self.adapter
-            .save_team_details(&team_id.clone(), &team_details)
+            .save_team_details(team_id, &team_details)
             .await?;
 
         self.adapter.save_teams(&teams).await?;
@@ -1312,7 +1309,7 @@ impl StorageService for KVStorageService {
             None => return Err(ResetPasswordError::InvalidUser),
         };
         let email_hash = sha256::digest(&user.email);
-        if &email_hash != &password_reset_link.email_hash {
+        if email_hash != password_reset_link.email_hash {
             return Err(ResetPasswordError::InvalidEmail);
         }
 
@@ -1365,8 +1362,8 @@ impl StorageService for KVStorageService {
             return Ok(false);
         };
 
-        let email_hash = sha256::digest(&user.email);
-        return Ok(&email_hash == &password_reset_link.email_hash);
+        let email_hash = sha256::digest(user.email);
+        return Ok(email_hash == password_reset_link.email_hash);
     }
 }
 

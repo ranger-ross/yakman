@@ -60,10 +60,7 @@ impl YakManOAuthService {
         )
         .set_redirect_uri(get_redirect_url()?);
 
-        let scopes = get_oauth_scopes()
-            .into_iter()
-            .map(|s| Scope::new(s))
-            .collect();
+        let scopes = get_oauth_scopes().into_iter().map(Scope::new).collect();
 
         return Ok(YakManOAuthService {
             storage: storage,
@@ -122,12 +119,11 @@ impl OAuthService for YakManOAuthService {
 
         let picture: Option<String> = id_token_claims
             .picture()
-            .map(|p| p.get(None).map(|p| p.as_str().to_string()))
-            .flatten();
+            .and_then(|p| p.get(None).map(|p| p.as_str().to_string()));
 
         let username = id_token_claims
             .email()
-            .ok_or_else(|| LoginError::FailedToParseUsername)?
+            .ok_or(LoginError::FailedToParseUsername)?
             .as_str()
             .to_string();
 
@@ -150,7 +146,7 @@ impl OAuthService for YakManOAuthService {
             return Ok((
                 username,
                 yakman_user,
-                data.refresh_token().clone().map(|v| v.clone()),
+                data.refresh_token().cloned(),
                 picture,
             ));
         }
@@ -234,29 +230,29 @@ fn no_op_nonce_verifier(_: Option<&Nonce>) -> Result<(), String> {
 }
 
 fn get_issuer_url() -> Result<IssuerUrl> {
-    Ok(IssuerUrl::new(
+    IssuerUrl::new(
         env::var("YAKMAN_OAUTH_ISSUER_URL")
             .with_context(|| "$YAKMAN_OAUTH_ISSUER_URL is not set")?,
     )
-    .with_context(|| "YAKMAN_OAUTH_ISSUER_URL is not a valid URL")?)
+    .with_context(|| "YAKMAN_OAUTH_ISSUER_URL is not a valid URL")
 }
 
 // TODO: Currently this is unused because `CoreProviderMetadata` auto-fetches it from the idp metadata.
 // However, we should allow a way to override this in the future incase the idp does not support metadata endpoint for some reason
 #[allow(dead_code)]
 fn get_token_url() -> Result<TokenUrl> {
-    Ok(TokenUrl::new(
+    TokenUrl::new(
         env::var("YAKMAN_OAUTH_TOKEN_URL").with_context(|| "$YAKMAN_OAUTH_TOKEN_URL is not set")?,
     )
-    .with_context(|| "YAKMAN_OAUTH_TOKEN_URL is not a valid URL")?)
+    .with_context(|| "YAKMAN_OAUTH_TOKEN_URL is not a valid URL")
 }
 
 fn get_redirect_url() -> Result<RedirectUrl> {
-    Ok(RedirectUrl::new(
+    RedirectUrl::new(
         env::var("YAKMAN_OAUTH_REDIRECT_URL")
             .with_context(|| "$YAKMAN_OAUTH_REDIRECT_URL is not set")?,
     )
-    .with_context(|| "YAKMAN_OAUTH_REDIRECT_URL is not a valid URL")?)
+    .with_context(|| "YAKMAN_OAUTH_REDIRECT_URL is not a valid URL")
 }
 
 fn get_client_id() -> Result<ClientId> {
@@ -274,5 +270,5 @@ fn get_client_secret() -> Result<ClientSecret> {
 
 fn get_oauth_scopes() -> Vec<String> {
     let scopes = env::var("YAKMAN_OAUTH_SCOPES").expect("$YAKMAN_OAUTH_SCOPES is not set");
-    return scopes.split(",").map(|s| s.to_string()).collect();
+    return scopes.split(',').map(|s| s.to_string()).collect();
 }

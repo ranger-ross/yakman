@@ -31,13 +31,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(data);
     }
 
-    async fn save_projects(
-        &self,
-        projects: &Vec<YakManProject>,
-    ) -> Result<(), GenericStorageError> {
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(projects)?;
         let path = self.get_projects_file_path();
-        let mut file = File::create(&path)?;
+        let mut file = File::create(path)?;
         Write::write_all(&mut file, data.as_bytes())?;
         return Ok(());
     }
@@ -49,7 +46,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_projects_dir();
         let path = format!("{dir}/{project_id}.json");
 
-        let Ok(content) = fs::read_to_string(&path) else {
+        let Ok(content) = fs::read_to_string(path) else {
             return Ok(None);
         };
 
@@ -65,14 +62,14 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let path = self.get_projects_dir();
         let data = serde_json::to_string(project)?;
         let revision_file_path = format!("{path}/{project_id}.json");
-        let mut file = File::create(&revision_file_path)?;
+        let mut file = File::create(revision_file_path)?;
         Write::write_all(&mut file, data.as_bytes())?;
         return Ok(());
     }
 
     async fn delete_project_details(&self, project_id: &str) -> Result<(), GenericStorageError> {
         let path = self.get_projects_dir();
-        remove_file(&format!("{path}/{project_id}.json"))?;
+        remove_file(format!("{path}/{project_id}.json"))?;
         return Ok(());
     }
 
@@ -93,10 +90,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: &Vec<YakManConfig>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: &[YakManConfig]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(configs)?;
         let path: String = self.get_configs_file_path();
-        let mut file = File::create(&path)?;
+        let mut file = File::create(path)?;
         Write::write_all(&mut file, data.as_bytes())?;
         Ok(())
     }
@@ -107,10 +104,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(serde_json::from_str(&content)?);
     }
 
-    async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError> {
+    async fn save_labels(&self, labels: &[LabelType]) -> Result<(), GenericStorageError> {
         let label_file = self.get_labels_file_path();
         let data = serde_json::to_string(labels)?;
-        let mut file = File::create(&label_file)?;
+        let mut file = File::create(label_file)?;
         Write::write_all(&mut file, data.as_bytes())?;
         return Ok(());
     }
@@ -121,7 +118,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         let dir = self.get_config_details_dir();
         let instance_file = format!("{dir}/{config_id}.json");
-        if let Some(content) = fs::read_to_string(instance_file).ok() {
+        if let Ok(content) = fs::read_to_string(instance_file) {
             return Ok(Some(serde_json::from_str(&content)?));
         }
         return Ok(None);
@@ -136,7 +133,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let instance_file = format!("{dir}/{config_id}.json");
         let data = serde_json::to_string(details)?;
 
-        let mut file = File::create(&instance_file)?;
+        let mut file = File::create(instance_file)?;
         Write::write_all(&mut file, data.as_bytes())?;
 
         Ok(())
@@ -144,7 +141,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
     async fn delete_config_details(&self, config_id: &str) -> Result<(), GenericStorageError> {
         let dir = self.get_config_details_dir();
-        remove_file(&format!("{dir}/{config_id}.json"))?;
+        remove_file(format!("{dir}/{config_id}.json"))?;
         return Ok(());
     }
 
@@ -156,7 +153,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_revisions_path();
         let path = format!("{dir}/{config_id}/{revision}.json");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = fs::read_to_string(path) {
             return Ok(Some(serde_json::from_str(&content)?));
         } else {
             log::error!("Failed to load revision file: {revision}");
@@ -174,7 +171,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let revision_key = &revision.revision;
         let revision_data = serde_json::to_string(revision)?;
         let revision_file_path = format!("{revisions_path}/{config_id}/{revision_key}.json");
-        let mut revision_file = File::create(&revision_file_path)?;
+        let mut revision_file = File::create(revision_file_path)?;
         Write::write_all(&mut revision_file, revision_data.as_bytes())?;
         return Ok(());
     }
@@ -208,7 +205,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_data_dir();
         // Create new file with data
         let data_file_path = format!("{dir}/{config_id}/{data_key}");
-        let mut data_file = File::create(&data_file_path)?;
+        let mut data_file = File::create(data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
 
         return Ok(());
@@ -287,42 +284,42 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
         let project_file = self.get_projects_file_path();
         if !Path::new(&project_file).is_file() {
-            self.save_projects(&vec![])
+            self.save_projects(&[])
                 .await
                 .expect("Failed to create project file");
         }
 
         let config_file = self.get_configs_file_path();
         if !Path::new(&config_file).is_file() {
-            self.save_configs(&vec![])
+            self.save_configs(&[])
                 .await
                 .expect("Failed to create config file");
         }
 
         let label_file = self.get_labels_file_path();
         if !Path::new(&label_file).is_file() {
-            self.save_labels(&vec![])
+            self.save_labels(&[])
                 .await
                 .expect("Failed to create labels file");
         }
 
         let user_file = self.get_user_file_path();
         if !Path::new(&user_file).is_file() {
-            self.save_users(&vec![])
+            self.save_users(&[])
                 .await
                 .expect("Failed to create users file");
         }
 
         let team_file = self.get_team_file_path();
         if !Path::new(&team_file).is_file() {
-            self.save_teams(&vec![])
+            self.save_teams(&[])
                 .await
                 .expect("Failed to create teams file");
         }
 
         let api_key_file = self.get_api_key_file_path();
         if !Path::new(&api_key_file).is_file() {
-            self.save_api_keys(&vec![])
+            self.save_api_keys(&[])
                 .await
                 .expect("Failed to create api-key file");
         }
@@ -403,7 +400,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_user_dir();
         let path = format!("{dir}/{user_id}.json");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = fs::read_to_string(path) {
             let data: YakManUserDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
         } else {
@@ -423,16 +420,16 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
 
         let data: String = serde_json::to_string(&details)?;
 
-        let mut data_file = File::create(&path)?;
+        let mut data_file = File::create(path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
 
         return Ok(());
     }
 
-    async fn save_users(&self, users: &Vec<YakManUser>) -> Result<(), GenericStorageError> {
+    async fn save_users(&self, users: &[YakManUser]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(users)?;
         let data_file_path = self.get_user_file_path();
-        let mut data_file = File::create(&data_file_path)?;
+        let mut data_file = File::create(data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
         Ok(())
     }
@@ -443,10 +440,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(serde_json::from_str(&data)?);
     }
 
-    async fn save_api_keys(&self, api_keys: &Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+    async fn save_api_keys(&self, api_keys: &[YakManApiKey]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(api_keys)?;
         let data_file_path = self.get_api_key_file_path();
-        let mut data_file = File::create(&data_file_path)?;
+        let mut data_file = File::create(data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
         Ok(())
     }
@@ -458,7 +455,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_password_dir();
         let path = format!("{dir}/{email_hash}.json");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = fs::read_to_string(path) {
             let data: YakManPassword = serde_json::from_str(&content)?;
             return Ok(Some(data));
         }
@@ -474,7 +471,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_password_dir();
         let path = format!("{dir}/{email_hash}.json");
         let data: String = serde_json::to_string(&password)?;
-        let mut data_file = File::create(&path)?;
+        let mut data_file = File::create(path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
         return Ok(());
     }
@@ -486,7 +483,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_password_reset_link_dir();
         let path = format!("{dir}/{id}.json");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = fs::read_to_string(path) {
             let data: YakManPasswordResetLink = serde_json::from_str(&content)?;
             return Ok(Some(data));
         }
@@ -502,7 +499,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_password_reset_link_dir();
         let path = format!("{dir}/{id}.json");
         let data: String = serde_json::to_string(&link)?;
-        let mut data_file = File::create(&path)?;
+        let mut data_file = File::create(path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
         return Ok(());
     }
@@ -521,10 +518,10 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         return Ok(data);
     }
 
-    async fn save_teams(&self, teams: &Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+    async fn save_teams(&self, teams: &[YakManTeam]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&teams)?;
         let path = self.get_team_file_path();
-        let mut file = File::create(&path)?;
+        let mut file = File::create(path)?;
         Write::write_all(&mut file, data.as_bytes())?;
         return Ok(());
     }
@@ -536,7 +533,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_teams_dir();
         let path = format!("{dir}/{team_id}.json");
 
-        if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(content) = fs::read_to_string(path) {
             let data: YakManTeamDetails = serde_json::from_str(&content)?;
             return Ok(Some(data));
         }
@@ -551,14 +548,14 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
         let dir = self.get_teams_dir();
         let path = format!("{dir}/{team_id}.json");
         let data: String = serde_json::to_string(&details)?;
-        let mut data_file = File::create(&path)?;
+        let mut data_file = File::create(path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
         return Ok(());
     }
 
     async fn delete_team_details(&self, team_id: &str) -> Result<(), GenericStorageError> {
         let path = self.get_teams_dir();
-        remove_file(&format!("{path}/{team_id}.json"))?;
+        remove_file(format!("{path}/{team_id}.json"))?;
         return Ok(());
     }
 
@@ -575,7 +572,7 @@ impl KVStorageAdapter for LocalFileStorageAdapter {
     ) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&lock)?;
         let data_file_path = self.get_snapshot_lock_file_path();
-        let mut data_file = File::create(&data_file_path)?;
+        let mut data_file = File::create(data_file_path)?;
         Write::write_all(&mut data_file, data.as_bytes())?;
         Ok(())
     }

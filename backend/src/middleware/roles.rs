@@ -32,7 +32,7 @@ impl YakManRoleBinding {
                         return true;
                     }
 
-                    if roles_to_match.contains(&r) {
+                    if roles_to_match.contains(r) {
                         return true;
                     }
                 }
@@ -71,17 +71,14 @@ impl YakManRoleBinding {
         roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
-            match role {
-                YakManRoleBinding::GlobalRoleBinding(r) => {
-                    if r == &YakManRole::Admin {
-                        return true;
-                    }
-
-                    if roles_to_match.contains(&r) {
-                        return true;
-                    }
+            if let YakManRoleBinding::GlobalRoleBinding(r) = role {
+                if r == &YakManRole::Admin {
+                    return true;
                 }
-                _ => {}
+
+                if roles_to_match.contains(r) {
+                    return true;
+                }
             }
         }
 
@@ -115,7 +112,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                     .app_data::<web::Data<Arc<dyn StorageService>>>()
                     .unwrap();
 
-                if let Some(api_key) = storage_service.get_api_key_by_id(&key_id).await.unwrap() {
+                if let Some(api_key) = storage_service.get_api_key_by_id(key_id).await.unwrap() {
                     let mut api_key_roles = HashSet::new();
                     api_key_roles.insert(YakManRoleBinding::ProjectRoleBinding(
                         YakManProjectRole {
@@ -153,7 +150,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                 let project_role_bindings: Vec<YakManRoleBinding> = details
                     .roles
                     .into_iter()
-                    .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                    .map(YakManRoleBinding::ProjectRoleBinding)
                     .collect();
 
                 role_bindings.extend(project_role_bindings);
@@ -167,7 +164,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                         .iter()
                         .map(|team_id| {
                             storage_service
-                                .get_team_details(&team_id)
+                                .get_team_details(team_id)
                                 .map_ok(move |inner| {
                                     inner.ok_or(format!("Team with ID not found {team_id}"))
                                 })
@@ -196,7 +193,7 @@ pub async fn extract_roles(req: &ServiceRequest) -> Result<HashSet<YakManRoleBin
                         let project_role_bindings: Vec<YakManRoleBinding> = team_details
                             .roles
                             .into_iter()
-                            .map(|p| YakManRoleBinding::ProjectRoleBinding(p))
+                            .map(YakManRoleBinding::ProjectRoleBinding)
                             .collect();
 
                         role_bindings.extend(project_role_bindings);

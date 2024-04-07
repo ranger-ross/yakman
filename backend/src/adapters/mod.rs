@@ -19,8 +19,7 @@ pub mod redis;
 pub trait KVStorageAdapter: Sync + Send {
     async fn get_projects(&self) -> Result<Vec<YakManProject>, GenericStorageError>;
 
-    async fn save_projects(&self, projects: &Vec<YakManProject>)
-        -> Result<(), GenericStorageError>;
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError>;
 
     async fn get_project_details(
         &self,
@@ -42,11 +41,11 @@ pub trait KVStorageAdapter: Sync + Send {
         project_id: &str,
     ) -> Result<Vec<YakManConfig>, GenericStorageError>;
 
-    async fn save_configs(&self, configs: &Vec<YakManConfig>) -> Result<(), GenericStorageError>;
+    async fn save_configs(&self, configs: &[YakManConfig]) -> Result<(), GenericStorageError>;
 
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
-    async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError>;
+    async fn save_labels(&self, labels: &[LabelType]) -> Result<(), GenericStorageError>;
 
     async fn get_config_details(
         &self,
@@ -127,11 +126,11 @@ pub trait KVStorageAdapter: Sync + Send {
         details: &YakManUserDetails,
     ) -> Result<(), GenericStorageError>;
 
-    async fn save_users(&self, users: &Vec<YakManUser>) -> Result<(), GenericStorageError>;
+    async fn save_users(&self, users: &[YakManUser]) -> Result<(), GenericStorageError>;
 
     async fn get_api_keys(&self) -> Result<Vec<YakManApiKey>, GenericStorageError>;
 
-    async fn save_api_keys(&self, api_keys: &Vec<YakManApiKey>) -> Result<(), GenericStorageError>;
+    async fn save_api_keys(&self, api_keys: &[YakManApiKey]) -> Result<(), GenericStorageError>;
 
     async fn get_password(
         &self,
@@ -159,7 +158,7 @@ pub trait KVStorageAdapter: Sync + Send {
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError>;
 
-    async fn save_teams(&self, teams: &Vec<YakManTeam>) -> Result<(), GenericStorageError>;
+    async fn save_teams(&self, teams: &[YakManTeam]) -> Result<(), GenericStorageError>;
 
     async fn get_team_details(
         &self,

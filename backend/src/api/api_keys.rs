@@ -80,10 +80,10 @@ pub async fn create_api_key(
     };
 
     let now = Utc::now().timestamp_millis();
-    let new_api_key = format!("{API_KEY_PREFIX}{}", Uuid::new_v4().to_string());
+    let new_api_key = format!("{API_KEY_PREFIX}{}", Uuid::new_v4());
 
     let ak = YakManApiKey {
-        id: format!("apikey-{}", Uuid::new_v4().to_string()),
+        id: format!("apikey-{}", Uuid::new_v4()),
         hash: sha256::digest(&new_api_key),
         project_id: request.project_id.to_string(),
         role: request.role.clone(),

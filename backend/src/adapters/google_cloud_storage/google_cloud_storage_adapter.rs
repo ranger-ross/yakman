@@ -38,10 +38,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(data);
     }
 
-    async fn save_projects(
-        &self,
-        projects: &Vec<YakManProject>,
-    ) -> Result<(), GenericStorageError> {
+    async fn save_projects(&self, projects: &[YakManProject]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(projects)?;
         let path = self.get_projects_file_path();
         self.put_object(&path, data).await?;
@@ -101,7 +98,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
             .collect())
     }
 
-    async fn save_configs(&self, configs: &Vec<YakManConfig>) -> Result<(), GenericStorageError> {
+    async fn save_configs(&self, configs: &[YakManConfig]) -> Result<(), GenericStorageError> {
         // Add config to base config file
         let data = serde_json::to_string(configs)?;
         let path: String = self.get_configs_file_path();
@@ -115,7 +112,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(serde_json::from_str(&content)?);
     }
 
-    async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError> {
+    async fn save_labels(&self, labels: &[LabelType]) -> Result<(), GenericStorageError> {
         let label_file = self.get_labels_file_path();
         let data = serde_json::to_string(labels)?;
         self.put_object(&label_file, data).await?;
@@ -128,7 +125,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     ) -> Result<Option<ConfigDetails>, GenericStorageError> {
         let dir = self.get_config_details_dir();
         let instance_file = format!("{dir}/{config_id}.json");
-        if let Some(content) = self.get_object(&instance_file).await.ok() {
+        if let Ok(content) = self.get_object(&instance_file).await {
             return Ok(Some(serde_json::from_str(&content)?));
         }
         return Ok(None);
@@ -203,7 +200,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     ) -> Result<String, GenericStorageError> {
         let dir = self.get_data_dir();
         let instance_path = format!("{dir}/{config_id}/{data_key}");
-        return Ok(self.get_object(&instance_path).await?);
+        return self.get_object(&instance_path).await;
     }
 
     async fn save_instance_data(
@@ -227,35 +224,35 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
     async fn initialize_yakman_storage(&self) -> Result<(), GenericStorageError> {
         let project_file = self.get_projects_file_path();
         if !self.object_exists(&project_file).await {
-            self.save_projects(&vec![])
+            self.save_projects(&[])
                 .await
                 .expect("Failed to create project file");
         }
 
         let config_file = self.get_configs_file_path();
         if !self.object_exists(&config_file).await {
-            self.save_configs(&vec![])
+            self.save_configs(&[])
                 .await
                 .expect("Failed to create config file");
         }
 
         let label_file = self.get_labels_file_path();
         if !self.object_exists(&label_file).await {
-            self.save_labels(&vec![])
+            self.save_labels(&[])
                 .await
                 .expect("Failed to create labels file");
         }
 
         let user_file = self.get_user_file_path();
         if !self.object_exists(&user_file).await {
-            self.save_users(&vec![])
+            self.save_users(&[])
                 .await
                 .expect("Failed to create users file");
         }
 
         let api_key_file = self.get_api_key_file_path();
         if !self.object_exists(&api_key_file).await {
-            self.save_api_keys(&vec![])
+            self.save_api_keys(&[])
                 .await
                 .expect("Failed to create api-key file");
         }
@@ -346,7 +343,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(());
     }
 
-    async fn save_users(&self, users: &Vec<YakManUser>) -> Result<(), GenericStorageError> {
+    async fn save_users(&self, users: &[YakManUser]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(users)?;
         let data_file_path = self.get_user_file_path();
         self.put_object(&data_file_path, data).await?;
@@ -359,7 +356,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(serde_json::from_str(&data)?);
     }
 
-    async fn save_api_keys(&self, api_keys: &Vec<YakManApiKey>) -> Result<(), GenericStorageError> {
+    async fn save_api_keys(&self, api_keys: &[YakManApiKey]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(api_keys)?;
         let data_file_path = self.get_api_key_file_path();
         self.put_object(&data_file_path, data).await?;
@@ -439,7 +436,7 @@ impl KVStorageAdapter for GoogleCloudStorageAdapter {
         return Ok(data);
     }
 
-    async fn save_teams(&self, teams: &Vec<YakManTeam>) -> Result<(), GenericStorageError> {
+    async fn save_teams(&self, teams: &[YakManTeam]) -> Result<(), GenericStorageError> {
         let data = serde_json::to_string(&teams)?;
         let path = self.get_teams_file_path();
         self.put_object(&path, data).await?;
