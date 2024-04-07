@@ -807,7 +807,7 @@ impl StorageService for KVStorageService {
 
         let previous_revision = self
             .adapter
-            .get_revision(&config_id, &revision)
+            .get_revision(config_id, revision)
             .await?
             .ok_or(RollbackRevisionError::InvalidRevision)?;
 
@@ -980,14 +980,14 @@ impl StorageService for KVStorageService {
     }
 
     async fn get_teams(&self) -> Result<Vec<YakManTeam>, GenericStorageError> {
-        return Ok(self.adapter.get_teams().await?);
+        return self.adapter.get_teams().await;
     }
 
     async fn get_team_details(
         &self,
         team_id: &str,
     ) -> Result<Option<YakManTeamDetails>, GenericStorageError> {
-        return Ok(self.adapter.get_team_details(team_id).await?);
+        return self.adapter.get_team_details(team_id).await;
     }
 
     async fn create_team(&self, payload: CreateTeamPayload) -> Result<String, CreateTeamError> {
@@ -1105,7 +1105,7 @@ impl StorageService for KVStorageService {
         }
 
         self.adapter
-            .save_team_details(&team_id.clone(), &team_details)
+            .save_team_details(team_id, &team_details)
             .await?;
 
         self.adapter.save_teams(&teams).await?;
@@ -1312,7 +1312,7 @@ impl StorageService for KVStorageService {
             None => return Err(ResetPasswordError::InvalidUser),
         };
         let email_hash = sha256::digest(&user.email);
-        if &email_hash != &password_reset_link.email_hash {
+        if email_hash != password_reset_link.email_hash {
             return Err(ResetPasswordError::InvalidEmail);
         }
 
@@ -1366,7 +1366,7 @@ impl StorageService for KVStorageService {
         };
 
         let email_hash = sha256::digest(&user.email);
-        return Ok(&email_hash == &password_reset_link.email_hash);
+        return Ok(email_hash == password_reset_link.email_hash);
     }
 }
 

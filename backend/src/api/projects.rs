@@ -112,7 +112,7 @@ async fn create_project(
             YakManRoleBinding::GlobalRoleBinding(role) => Some(role.clone()),
             YakManRoleBinding::ProjectRoleBinding(_) => None,
         })
-        .filter(|role| vec![YakManRole::Admin, YakManRole::Approver].contains(role))
+        .filter(|role| [YakManRole::Admin, YakManRole::Approver].contains(role))
         .collect::<Vec<_>>()
         .len()
         > 0;
