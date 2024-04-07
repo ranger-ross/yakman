@@ -468,31 +468,31 @@ impl InMemoryStorageAdapter {
     }
 
     fn get_configs_key(&self) -> String {
-        format!("CONFIGS")
+        "CONFIGS".to_string()
     }
 
     fn get_labels_key(&self) -> String {
-        format!("LABELS")
+        "LABELS".to_string()
     }
 
     fn get_projects_key(&self) -> String {
-        format!("PROJECTS")
+        "PROJECTS".to_string()
     }
 
     fn get_snapshot_lock_key(&self) -> String {
-        format!("SNAPSHOT_LOCK")
+        "SNAPSHOT_LOCK".to_string()
     }
 
     fn get_users_key(&self) -> String {
-        format!("USERS")
+        "USERS".to_string()
     }
 
     fn get_teams_key(&self) -> String {
-        format!("TEAMS")
+        "TEAMS".to_string()
     }
 
     fn get_api_keys_key(&self) -> String {
-        return format!("API_KEYS");
+        return "API_KEYS".to_string();
     }
 
     fn get_config_details_key(&self, config_id: &str) -> String {
