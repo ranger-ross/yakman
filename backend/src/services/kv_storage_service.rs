@@ -1365,7 +1365,7 @@ impl StorageService for KVStorageService {
             return Ok(false);
         };
 
-        let email_hash = sha256::digest(&user.email);
+        let email_hash = sha256::digest(user.email);
         return Ok(email_hash == password_reset_link.email_hash);
     }
 }

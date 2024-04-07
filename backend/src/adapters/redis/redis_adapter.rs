@@ -378,7 +378,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         let snapshot_prefix = format!("{SNAPSHOT_PREFIX}_{formatted_date}");
 
         for key in keys {
-            let new_key = key.to_string().replacen(&REDIS_PREFIX, &snapshot_prefix, 1);
+            let new_key = key.to_string().replacen(REDIS_PREFIX, &snapshot_prefix, 1);
             if let Err(err) = redis::cmd("COPY")
                 .arg(&key)
                 .arg(new_key)

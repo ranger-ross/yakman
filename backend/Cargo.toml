@@ -63,4 +63,3 @@ single_match = "allow"
 
 
 default_constructed_unit_structs = "allow"
-needless_borrows_for_generic_args = "allow"
