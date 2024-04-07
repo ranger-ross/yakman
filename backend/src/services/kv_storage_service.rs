@@ -220,7 +220,7 @@ impl StorageService for KVStorageService {
             .filter_map(|opt| if !opt.is_empty() { Some(opt) } else { None })
             .collect::<Vec<String>>();
 
-        if santized_options.len() == 0 {
+        if santized_options.is_empty() {
             return Err(CreateLabelError::EmptyOptionsError);
         }
 

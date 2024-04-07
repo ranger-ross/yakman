@@ -105,7 +105,7 @@ async fn create_project(
     let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
-    let is_user_global_admin_or_approver = auth_details
+    let is_user_global_admin_or_approver = !auth_details
         .authorities
         .iter()
         .filter_map(|p| match p {
@@ -113,9 +113,7 @@ async fn create_project(
             YakManRoleBinding::ProjectRoleBinding(_) => None,
         })
         .filter(|role| [YakManRole::Admin, YakManRole::Approver].contains(role))
-        .collect::<Vec<_>>()
-        .len()
-        > 0;
+        .collect::<Vec<_>>().is_empty();
 
     if !is_user_global_admin_or_approver {
         return Err(YakManApiError::forbidden());
