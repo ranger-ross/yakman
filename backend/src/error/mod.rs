@@ -66,7 +66,7 @@ impl YakManApiError {
 
 impl error::ResponseError for YakManApiError {
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status)
+        HttpResponse::build(self.status_code())
             .insert_header(ContentType::json())
             .body(serde_json::to_string(self).unwrap_or(generic_yakman_server_error_response()))
     }
