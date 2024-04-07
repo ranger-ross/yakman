@@ -64,7 +64,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn get_configs(&self) -> Result<Vec<YakManConfig>, GenericStorageError> {
         let storage = self.storage.lock().await;
         let configs = storage.get(&self.get_configs_key()).unwrap();
-        return Ok(serde_json::from_str(&configs)?);
+        return Ok(serde_json::from_str(configs)?);
     }
 
     async fn get_configs_by_project_id(
@@ -87,7 +87,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError> {
         let storage = self.storage.lock().await;
         let labels = storage.get(&self.get_labels_key()).unwrap();
-        return Ok(serde_json::from_str(&labels)?);
+        return Ok(serde_json::from_str(labels)?);
     }
 
     async fn save_labels(&self, labels: &Vec<LabelType>) -> Result<(), GenericStorageError> {
@@ -265,7 +265,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         password: &YakManPassword,
     ) -> Result<(), GenericStorageError> {
         self.insert(
-            self.get_password_key(&email_hash),
+            self.get_password_key(email_hash),
             serde_json::to_string(&password)?,
         )
         .await;
@@ -296,7 +296,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
         link: &YakManPasswordResetLink,
     ) -> Result<(), GenericStorageError> {
         self.insert(
-            self.get_password_reset_link_key(&id),
+            self.get_password_reset_link_key(id),
             serde_json::to_string(&link)?,
         )
         .await;
@@ -304,7 +304,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     }
 
     async fn delete_password_reset_link(&self, id: &str) -> Result<(), GenericStorageError> {
-        self.remove(&self.get_password_reset_link_key(&id)).await;
+        self.remove(&self.get_password_reset_link_key(id)).await;
         Ok(())
     }
 
@@ -363,7 +363,7 @@ impl KVStorageAdapter for InMemoryStorageAdapter {
     async fn take_snapshot(&self, timestamp: &DateTime<Utc>) -> Result<(), GenericStorageError> {
         let mut storage = self.storage.lock().await;
 
-        let keys: Vec<_> = (&storage)
+        let keys: Vec<_> = storage
             .keys()
             .filter(|k| !k.starts_with("SNAPSHOT"))
             .map(|k| k.clone())

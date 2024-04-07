@@ -562,7 +562,7 @@ impl StorageService for KVStorageService {
         let mut revisions: Vec<ConfigInstanceRevision> = vec![];
 
         for rev in instance.revisions.iter() {
-            if let Some(revision) = self.adapter.get_revision(config_id, &rev).await? {
+            if let Some(revision) = self.adapter.get_revision(config_id, rev).await? {
                 revisions.push(revision);
             }
         }
@@ -775,7 +775,7 @@ impl StorageService for KVStorageService {
 
         if settings::is_notifications_enabled() {
             if let Err(err) = self
-                .send_reject_notification(config_id, instance_id, &revision)
+                .send_reject_notification(config_id, instance_id, revision)
                 .await
             {
                 log::error!("Failed to send notification, {err:?}");

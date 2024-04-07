@@ -230,7 +230,7 @@ fn validate_project(
         ));
     }
 
-    if !is_alphanumeric_kebab_case(&project_name) {
+    if !is_alphanumeric_kebab_case(project_name) {
         return Err(YakManApiError::bad_request(
             "Invalid project name. Must be alphanumeric kebab case",
         ));
@@ -239,8 +239,8 @@ fn validate_project(
     // Validate notification webhooks to protect against SSRF
     if let Some(notification) = &notification_settings {
         match &notification.notification_type {
-            ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(&webhook_url)?,
-            ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(&webhook_url)?,
+            ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(webhook_url)?,
+            ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(webhook_url)?,
         }
     }
 
@@ -248,7 +248,7 @@ fn validate_project(
 }
 
 fn validate_webhook_url(webhook_url: &str) -> Result<(), YakManApiError> {
-    let Ok(url) = Url::parse(&webhook_url) else {
+    let Ok(url) = Url::parse(webhook_url) else {
         return Err(YakManApiError::bad_request("Invalid webhook url"));
     };
 
