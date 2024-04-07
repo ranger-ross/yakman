@@ -150,7 +150,7 @@ impl OAuthService for YakManOAuthService {
             return Ok((
                 username,
                 yakman_user,
-                data.refresh_token().clone().map(|v| v.clone()),
+                data.refresh_token().map(|v| v.clone()),
                 picture,
             ));
         }
