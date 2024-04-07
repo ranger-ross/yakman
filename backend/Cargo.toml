@@ -53,6 +53,8 @@ redundant_field_names = "allow"
 enum_variant_names = "allow"
 # TODO: Renable this one in the future
 ptr_arg = "allow"
+# TODO: Renable this one in the future
+await_holding_refcell_ref = "allow"
 
 default_constructed_unit_structs = "allow"
 needless_borrows_for_generic_args = "allow"
@@ -66,5 +68,3 @@ from_over_into = "allow"
 expect_fun_call = "allow"
 useless_format = "allow"
 match_like_matches_macro = "allow"
-single_char_pattern = "allow"
-await_holding_refcell_ref = "allow"
