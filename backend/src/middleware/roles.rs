@@ -71,17 +71,14 @@ impl YakManRoleBinding {
         roles: &HashSet<YakManRoleBinding>,
     ) -> bool {
         for role in roles {
-            match role {
-                YakManRoleBinding::GlobalRoleBinding(r) => {
-                    if r == &YakManRole::Admin {
-                        return true;
-                    }
-
-                    if roles_to_match.contains(r) {
-                        return true;
-                    }
+            if let YakManRoleBinding::GlobalRoleBinding(r) = role {
+                if r == &YakManRole::Admin {
+                    return true;
                 }
-                _ => {}
+
+                if roles_to_match.contains(r) {
+                    return true;
+                }
             }
         }
 
