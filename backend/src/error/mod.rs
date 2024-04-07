@@ -66,7 +66,13 @@ impl YakManApiError {
 
 impl error::ResponseError for YakManApiError {
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status)
+        let status =
+            actix_web::http::StatusCode::from_u16(self.status.as_u16()).unwrap_or_else(|invalid| {
+                log::error!("Invalid status code returned: {invalid}");
+                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+            });
+
+        HttpResponse::build(status)
             .insert_header(ContentType::json())
             .body(serde_json::to_string(self).unwrap_or(generic_yakman_server_error_response()))
     }
