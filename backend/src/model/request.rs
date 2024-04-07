@@ -48,17 +48,17 @@ pub struct ProjectNotificationSettings {
     pub is_revision_reject_enabled: bool,
 }
 
-impl Into<crate::model::ProjectNotificationSettings> for ProjectNotificationSettings {
-    fn into(self) -> crate::model::ProjectNotificationSettings {
+impl From<ProjectNotificationSettings> for crate::model::ProjectNotificationSettings {
+    fn from(val: ProjectNotificationSettings) -> Self {
         let events = NotificationSettingEvents {
-            is_instance_updated_enabled: self.is_instance_updated_enabled,
-            is_instance_created_enabled: self.is_instance_created_enabled,
-            is_revision_submitted_enabled: self.is_revision_submitted_enabled,
-            is_revision_approved_enabled: self.is_revision_approved_enabled,
-            is_revision_reject_enabled: self.is_revision_reject_enabled,
+            is_instance_updated_enabled: val.is_instance_updated_enabled,
+            is_instance_created_enabled: val.is_instance_created_enabled,
+            is_revision_submitted_enabled: val.is_revision_submitted_enabled,
+            is_revision_approved_enabled: val.is_revision_approved_enabled,
+            is_revision_reject_enabled: val.is_revision_reject_enabled,
         };
 
-        let settings = match self.notification_type {
+        let settings = match val.notification_type {
             ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
                 webhook_url: webhook_url,
             },
