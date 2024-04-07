@@ -61,5 +61,3 @@ match_like_matches_macro = "allow"
 # TODO: Renable this one in the future
 single_match = "allow"
 
-
-default_constructed_unit_structs = "allow"
