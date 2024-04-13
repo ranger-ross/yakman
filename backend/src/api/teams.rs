@@ -9,8 +9,8 @@ use crate::{model::YakManRole, services::StorageService};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 /// Get teams
 #[utoipa::path(request_body = Vec<YakManTeam>, responses((status = 200, body = String)))]

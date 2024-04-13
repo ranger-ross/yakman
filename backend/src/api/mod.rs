@@ -11,16 +11,27 @@ pub mod teams;
 pub mod users;
 
 use self::{
-    api_keys::{CreateApiKeyRequest, CreateApiKeyResponse}, auth::{
+    api_keys::{CreateApiKeyRequest, CreateApiKeyResponse},
+    auth::{
         CreatePasswordResetLink, LoginRequest, OAuthExchangePayload, OAuthInitPayload,
         OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
         ValidatePasswordResetLink,
-    }, lifecycle::{YakManHealthResponse, YakManSettingsResponse}, revisions::ReviewResult, teams::CreateTeamResponse, users::GetUserInfoResponse
+    },
+    lifecycle::{YakManHealthResponse, YakManSettingsResponse},
+    revisions::ReviewResult,
+    teams::CreateTeamResponse,
+    users::GetUserInfoResponse,
 };
 use crate::model::{
     request::{
-        CreateConfigPayload, CreateProjectPayload, CreateTeamPayload, DeleteConfigPayload, ProjectNotificationType, UpdateProjectPayload, UpdateTeamPayload
-    }, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser
+        CreateConfigPayload, CreateProjectPayload, CreateTeamPayload, DeleteConfigPayload,
+        ProjectNotificationType, UpdateProjectPayload, UpdateTeamPayload,
+    },
+    response::{InstancePayload, RevisionPayload},
+    ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
+    LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,
+    RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails,
+    YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
 };
 use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
