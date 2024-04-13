@@ -11,26 +11,16 @@ pub mod teams;
 pub mod users;
 
 use self::{
-    api_keys::{CreateApiKeyRequest, CreateApiKeyResponse},
-    auth::{
+    api_keys::{CreateApiKeyRequest, CreateApiKeyResponse}, auth::{
         CreatePasswordResetLink, LoginRequest, OAuthExchangePayload, OAuthInitPayload,
         OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
         ValidatePasswordResetLink,
-    },
-    lifecycle::{YakManHealthResponse, YakManSettingsResponse},
-    revisions::ReviewResult,
-    users::GetUserInfoResponse,
+    }, lifecycle::{YakManHealthResponse, YakManSettingsResponse}, revisions::ReviewResult, teams::CreateTeamResponse, users::GetUserInfoResponse
 };
 use crate::model::{
     request::{
-        CreateConfigPayload, CreateProjectPayload, DeleteConfigPayload, ProjectNotificationType,
-        UpdateProjectPayload, UpdateTeamPayload,
-    },
-    response::{InstancePayload, RevisionPayload},
-    ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-    LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,
-    RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails,
-    YakManPublicPasswordResetLink, YakManRole, YakManUser,
+        CreateConfigPayload, CreateProjectPayload, CreateTeamPayload, DeleteConfigPayload, ProjectNotificationType, UpdateProjectPayload, UpdateTeamPayload
+    }, response::{InstancePayload, RevisionPayload}, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision, LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings, RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser
 };
 use actix_web::{
     dev::{ServiceFactory, ServiceRequest},
@@ -91,7 +81,8 @@ use utoipa::OpenApi;
             CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
-            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload
+            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload,
+            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails
         )
     ),
     tags(
@@ -175,6 +166,10 @@ fn is_alphanumeric_kebab_case(s: &str) -> bool {
 
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeMap;
+
+    use utoipa::openapi::{RefOr, Schema};
+
     use super::*;
 
     #[test]
@@ -202,5 +197,59 @@ mod test {
         assert!(!is_alphanumeric_kebab_case("hello world"));
         assert!(!is_alphanumeric_kebab_case("hello%20world"));
         assert!(!is_alphanumeric_kebab_case("%20"));
+    }
+
+    #[test]
+    fn require_all_schemas_to_be_added_to_openapi_spec() {
+        let openapi = YakManApiDoc::openapi();
+
+        let binding = openapi.components.unwrap_or_default();
+        let schemas = binding.schemas;
+        let paths = openapi.paths.paths;
+
+        for (path, path_item) in paths {
+            for (_path_type, operation) in path_item.operations {
+                if let Some(request_body) = operation.request_body {
+                    for (_content_type, content) in request_body.content {
+                        if let RefOr::Ref(r) = content.schema {
+                            verify_ref_location(&r.ref_location, &path, &schemas);
+                        }
+                    }
+                }
+
+                for (_status, response) in operation.responses.responses {
+                    if let RefOr::T(res) = response {
+                        for (_content_type, content) in res.content {
+                            if let RefOr::Ref(r) = content.schema {
+                                verify_ref_location(&r.ref_location, &path, &schemas);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn fail_missing_schema(schema_name: &str, path: &str) {
+        panic!("Could not find `{schema_name}` in #/components/schemas for `{path}`. Did you forget to add it to #[openapi(...)] macro?");
+    }
+
+    fn verify_ref_location(
+        ref_location: &str,
+        path: &str,
+        schemas: &BTreeMap<String, RefOr<Schema>>,
+    ) {
+        let prefix = "#/components/schemas/";
+
+        if ref_location.starts_with(prefix) {
+            let schema_name = &ref_location[prefix.len()..];
+            if !schemas.contains_key(schema_name) {
+                fail_missing_schema(schema_name, &path);
+            }
+        } else {
+            eprintln!(
+                "[WARN] Unexpected location {ref_location} (not part of #/components/schemas)"
+            );
+        }
     }
 }
