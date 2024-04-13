@@ -234,13 +234,13 @@ pub struct YakManPublicPasswordResetLink {
     pub user_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct YakManTeam {
     pub id: String,
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct YakManTeamDetails {
     pub id: String,
     pub name: String,
