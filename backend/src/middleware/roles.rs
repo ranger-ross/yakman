@@ -1,5 +1,3 @@
-extern crate dotenv;
-
 use std::collections::HashSet;
 use std::sync::Arc;
 
