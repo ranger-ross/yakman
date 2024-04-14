@@ -23,7 +23,7 @@ actix-middleware-etag = "0.3.0"
 log = "0.4"
 env_logger = "0.11"
 oauth2 = "4.4.2"
-dotenv = "0.15.0"
+dotenvy = "0.15"
 reqwest = { version = "0.12", features = ["json"] }
 actix-web-grants = "4"
 jwt = "0.16.0"

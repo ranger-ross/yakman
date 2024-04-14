@@ -8,8 +8,6 @@ mod notifications;
 mod services;
 mod settings;
 
-extern crate dotenv;
-
 use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
@@ -29,7 +27,7 @@ use adapters::{
 use anyhow::Context;
 use auth::oauth_service::{OAuthDisabledService, OAuthService};
 use auth::token::YakManTokenService;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use services::{kv_storage_service::KVStorageService, StorageService};
 use std::{env, sync::Arc};
 use utoipa::OpenApi;
