@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "yakman.fullname" . }}
+  name: {{ include "yakman.backendFullname" . }}
   labels:
     {{- include "yakman.labels" . | nindent 4 }}
 spec:

@@ -24,6 +24,20 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Name for YakMan Backend resources
+*/}}
+{{- define "yakman.backendFullname" -}}
+{{- (include "yakman.fullname" .) -}}-backend
+{{- end }}
+
+{{/*
+Name for YakMan Frontend resources
+*/}}
+{{- define "yakman.frontendFullname" -}}
+{{- (include "yakman.fullname" .) -}}-frontend
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "yakman.chart" -}}
