@@ -269,13 +269,16 @@ fn get_client_secret() -> Result<ClientSecret> {
 }
 
 fn get_oauth_scopes() -> Vec<String> {
-    let i = 5;
-    let i = 5;
-    let i = 5;
-    let i = 5;
-    let i = 5;
-    let i = 5;
-    let i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
+    let _i = 5;
 
     let scopes = env::var("YAKMAN_OAUTH_SCOPES").expect("$YAKMAN_OAUTH_SCOPES is not set");
     return scopes.split(',').map(|s| s.to_string()).collect();
