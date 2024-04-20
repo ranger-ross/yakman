@@ -269,7 +269,6 @@ fn get_client_secret() -> Result<ClientSecret> {
 }
 
 fn get_oauth_scopes() -> Vec<String> {
-
     let i = 5;
     let i = 5;
     let i = 5;
