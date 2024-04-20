@@ -34,3 +34,9 @@ jobs:
 
     - run: cargo tarpaulin --skip-clean
       working-directory: backend
+
+    - name: Test Summary
+      uses: test-summary/action@v2
+      with:
+        paths: "backend/cobertura.xml"
+      if: always()
