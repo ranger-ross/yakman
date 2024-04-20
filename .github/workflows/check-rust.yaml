@@ -32,7 +32,7 @@ jobs:
     - run: cargo clippy -- -D warnings
       working-directory: backend
 
-    - run: cargo tarpaulin --skip-clean
+    - run: cargo tarpaulin --skip-clean --out xml
       working-directory: backend
 
     - name: Test Summary
