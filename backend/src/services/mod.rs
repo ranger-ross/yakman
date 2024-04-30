@@ -5,7 +5,10 @@ pub mod snapshot;
 
 use crate::{
     adapters::errors::GenericStorageError,
-    api::teams::{CreateTeamPayload, UpdateTeamPayload},
+    api::{
+        projects::ProjectNotificationSettings,
+        teams::{CreateTeamPayload, UpdateTeamPayload},
+    },
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
@@ -14,10 +17,10 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        request::{CreateYakManUserPayload, ProjectNotificationSettings},
-        ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
-        YakManPassword, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink,
-        YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,
+        request::CreateYakManUserPayload, ConfigInstance, ConfigInstanceRevision, LabelType,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManProject,
+        YakManProjectDetails, YakManPublicPasswordResetLink, YakManTeam, YakManTeamDetails,
+        YakManUser, YakManUserDetails,
     },
 };
 use async_trait::async_trait;

@@ -7,7 +7,10 @@ use super::{
 };
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
-    api::teams::{CreateTeamPayload, UpdateTeamPayload},
+    api::{
+        projects::ProjectNotificationSettings,
+        teams::{CreateTeamPayload, UpdateTeamPayload},
+    },
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
@@ -16,7 +19,7 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        self, request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
+        request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
         ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState,
         YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
         YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam,
@@ -71,7 +74,7 @@ impl StorageService for KVStorageService {
     async fn create_project(
         &self,
         project_name: &str,
-        notification_settings: Option<model::request::ProjectNotificationSettings>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
@@ -112,7 +115,7 @@ impl StorageService for KVStorageService {
         &self,
         project_id: &str,
         project_name: &str,
-        notification_settings: Option<model::request::ProjectNotificationSettings>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<(), UpdateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
