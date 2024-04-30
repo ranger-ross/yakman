@@ -33,10 +33,7 @@ use crate::model::{
     RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails,
     YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
 };
-use actix_web::{
-    dev::{ServiceFactory, ServiceRequest},
-    App,
-};
+use actix_web::web;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -112,11 +109,8 @@ use utoipa::OpenApi;
 )]
 pub struct YakManApiDoc;
 
-pub fn register_routes<T>(app: App<T>) -> App<T>
-where
-    T: ServiceFactory<ServiceRequest, Config = (), Error = actix_web::Error, InitError = ()>,
-{
-    app
+pub fn register_routes(config: &mut web::ServiceConfig) {
+    config
         // Lifecycle
         .service(lifecycle::health)
         .service(lifecycle::yakman_settings)
@@ -168,7 +162,7 @@ where
         .service(revisions::get_instance_revisions)
         .service(revisions::review_pending_instance_revision)
         .service(revisions::apply_instance_revision)
-        .service(revisions::rollback_instance_revision)
+        .service(revisions::rollback_instance_revision);
 }
 
 fn is_alphanumeric_kebab_case(s: &str) -> bool {

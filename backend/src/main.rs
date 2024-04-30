@@ -66,7 +66,7 @@ async fn main() -> std::io::Result<()> {
     log::info!("Launching YakMan Backend on {host}:{port}");
 
     HttpServer::new(move || {
-        let app = App::new()
+        App::new()
             .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
@@ -77,9 +77,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(YakManPrincipleTransformer)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
-            );
-
-        return api::register_routes(app);
+            )
+            .configure(api::register_routes)
     })
     .bind((host, port))?
     .run()
