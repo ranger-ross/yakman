@@ -22,11 +22,11 @@ use self::{
     lifecycle::{YakManHealthResponse, YakManSettingsResponse},
     projects::{CreateProjectPayload, UpdateProjectPayload},
     revisions::ReviewResult,
-    teams::CreateTeamResponse,
+    teams::{CreateTeamPayload, CreateTeamResponse, UpdateTeamPayload},
     users::GetUserInfoResponse,
 };
 use crate::model::{
-    request::{CreateTeamPayload, ProjectNotificationType, UpdateTeamPayload},
+    request::ProjectNotificationType,
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
     LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,

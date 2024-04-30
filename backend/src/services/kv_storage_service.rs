@@ -7,6 +7,7 @@ use super::{
 };
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
+    api::teams::{CreateTeamPayload, UpdateTeamPayload},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
@@ -15,13 +16,11 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        self,
-        request::{CreateTeamPayload, CreateYakManUserPayload, UpdateTeamPayload},
-        ConfigDetails, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData,
-        ConfigInstanceRevision, LabelType, RevisionReviewState, YakManApiKey, YakManConfig,
-        YakManLabel, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
-        YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
-        YakManUserDetails,
+        self, request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
+        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
+        YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam,
+        YakManTeamDetails, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     services::id::{

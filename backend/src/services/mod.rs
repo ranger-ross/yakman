@@ -5,6 +5,7 @@ pub mod snapshot;
 
 use crate::{
     adapters::errors::GenericStorageError,
+    api::teams::{CreateTeamPayload, UpdateTeamPayload},
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
@@ -13,10 +14,7 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        request::{
-            CreateTeamPayload, CreateYakManUserPayload, ProjectNotificationSettings,
-            UpdateTeamPayload,
-        },
+        request::{CreateYakManUserPayload, ProjectNotificationSettings},
         ConfigInstance, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManLabel,
         YakManPassword, YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink,
         YakManTeam, YakManTeamDetails, YakManUser, YakManUserDetails,

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::{NotificationSetting, NotificationSettingEvents, YakManProjectRole, YakManRole};
+use super::{NotificationSetting, NotificationSettingEvents, YakManRole};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub enum ProjectNotificationType {
@@ -50,20 +50,4 @@ impl From<ProjectNotificationSettings> for crate::model::ProjectNotificationSett
 pub struct CreateYakManUserPayload {
     pub email: String,
     pub role: Option<YakManRole>,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct CreateTeamPayload {
-    pub name: String,
-    pub global_roles: Vec<YakManRole>,
-    pub roles: Vec<YakManProjectRole>,
-    pub team_member_user_ids: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct UpdateTeamPayload {
-    pub name: String,
-    pub global_roles: Vec<YakManRole>,
-    pub roles: Vec<YakManProjectRole>,
-    pub team_member_user_ids: Vec<String>,
 }
