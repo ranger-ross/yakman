@@ -109,7 +109,7 @@ pub struct UpdateTeamPayload {
 async fn update_team(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
-    payload: web::Json<UpdateTeamPayload>,
+    payload: actix_web_validator::Json<UpdateTeamPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let team_id = path.into_inner();

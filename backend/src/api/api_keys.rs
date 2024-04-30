@@ -14,6 +14,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 /// Get Api Keys
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
@@ -42,8 +43,9 @@ pub async fn get_api_keys(
     return Ok(web::Json(api_keys));
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
 pub struct CreateApiKeyRequest {
+    #[validate(length(min = 1))]
     pub project_id: String,
     pub role: YakManRole,
 }
@@ -60,7 +62,7 @@ pub async fn create_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
-    request: web::Json<CreateApiKeyRequest>,
+    request: actix_web_validator::Json<CreateApiKeyRequest>,
 ) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 
