@@ -20,15 +20,13 @@ use self::{
     },
     configs::{CreateConfigPayload, DeleteConfigPayload},
     lifecycle::{YakManHealthResponse, YakManSettingsResponse},
+    projects::{CreateProjectPayload, UpdateProjectPayload},
     revisions::ReviewResult,
     teams::CreateTeamResponse,
     users::GetUserInfoResponse,
 };
 use crate::model::{
-    request::{
-        CreateProjectPayload, CreateTeamPayload, ProjectNotificationType, UpdateProjectPayload,
-        UpdateTeamPayload,
-    },
+    request::{CreateTeamPayload, ProjectNotificationType, UpdateTeamPayload},
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
     LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,

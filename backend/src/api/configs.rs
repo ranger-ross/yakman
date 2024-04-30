@@ -4,15 +4,12 @@ use crate::{
     middleware::roles::YakManRoleBinding,
     model::response::ConfigPayload,
 };
-use crate::{
-    model::YakManRole,
-    services::StorageService,
-};
+use crate::{model::YakManRole, services::StorageService};
 use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use std::{collections::HashSet, sync::Arc};
+use utoipa::ToSchema;
 use validator::Validate;
 
 #[derive(Deserialize)]
@@ -150,7 +147,7 @@ pub struct DeleteConfigPayload {
 #[delete("/v1/configs")]
 async fn delete_config(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: web::Json<DeleteConfigPayload>,
+    payload: actix_web_validator::Json<DeleteConfigPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();

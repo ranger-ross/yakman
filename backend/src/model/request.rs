@@ -10,18 +10,6 @@ pub enum ProjectNotificationType {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct CreateProjectPayload {
-    pub project_name: String,
-    pub notification_settings: Option<ProjectNotificationSettings>,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct UpdateProjectPayload {
-    pub project_name: String,
-    pub notification_settings: Option<ProjectNotificationSettings>,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct ProjectNotificationSettings {
     pub notification_type: ProjectNotificationType,
     #[serde(default)]
