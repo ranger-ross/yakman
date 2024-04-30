@@ -9,7 +9,6 @@ on:
 
 env: 
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-Cdebuginfo=2 -Cstrip=none --cfg=tarpaulin -Clink-dead-code"
 
 jobs:
   check:
@@ -27,19 +26,25 @@ jobs:
     - run: cargo install cargo-tarpaulin
       working-directory: backend
 
+    - name: cargo install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+
     - run: cargo fmt --check
       working-directory: backend
 
     - run: cargo clippy -- -D warnings
       working-directory: backend
 
-    - run: cargo tarpaulin --skip-clean --out xml
+    - name: cargo llvm-cov
+      run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
       working-directory: backend
 
-    - name: Produce the coverage report
-      uses: insightsengineering/coverage-action@v2
+    - name: Record Rust version
+      run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
+
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v4
       with:
-        path: backend/cobertura.xml
-        publish: true
-        diff: true
-        diff-branch: main
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        env_vars: OS,RUST
