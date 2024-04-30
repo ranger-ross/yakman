@@ -43,6 +43,8 @@ moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.12.1"
 url = "2.5.0"
+actix-web-validator = "5.0.1"
+validator = { version = "0.16", features = ["derive"] }
 
 [dev-dependencies]
 mockall = "0.12"

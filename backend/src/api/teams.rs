@@ -1,6 +1,6 @@
 use crate::{
     adapters::errors::GenericStorageError,
-    api::is_alphanumeric_kebab_case,
+    api::validation::is_alphanumeric_kebab_case,
     error::{CreateTeamError, DeleteTeamError, UpdateTeamError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::request::{CreateTeamPayload, UpdateTeamPayload},

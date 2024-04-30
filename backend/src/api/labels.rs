@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::model::{LabelType, YakManRole};
 use crate::services::StorageService;
 use crate::{
-    api::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
+    api::validation::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding,
 };
 use actix_web::{get, put, web, HttpResponse, Responder};

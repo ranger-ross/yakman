@@ -1,20 +1,19 @@
 use crate::{
-    api::is_alphanumeric_kebab_case,
+    api::validation::validate_kebab_case,
     error::{CreateConfigError, DeleteConfigError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::response::ConfigPayload,
 };
 use crate::{
-    model::{
-        request::{CreateConfigPayload, DeleteConfigPayload},
-        YakManRole,
-    },
+    model::YakManRole,
     services::StorageService,
 };
 use actix_web::{delete, get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use std::{collections::HashSet, sync::Arc};
+use validator::Validate;
 
 #[derive(Deserialize)]
 pub struct GetConfigsQuery {
@@ -80,12 +79,20 @@ pub async fn get_configs(
     return Ok(web::Json(filtered_data));
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
+pub struct CreateConfigPayload {
+    #[validate(length(min = 1), custom(function = "validate_kebab_case"))]
+    pub config_name: String,
+    #[validate(length(min = 1))]
+    pub project_id: String,
+}
+
 /// Create a new config
 #[utoipa::path(request_body = CreateConfigPayload, responses((status = 200, body = String)))]
 #[put("/v1/configs")]
 async fn create_config(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: web::Json<CreateConfigPayload>,
+    payload: actix_web_validator::Json<CreateConfigPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let payload = payload.into_inner();
@@ -98,18 +105,6 @@ async fn create_config(
         &auth_details.authorities,
     ) {
         return Err(YakManApiError::forbidden());
-    }
-
-    if config_name.is_empty() {
-        return Err(YakManApiError::bad_request(
-            "Invalid config name. Must not be empty",
-        ));
-    }
-
-    if !is_alphanumeric_kebab_case(&config_name) {
-        return Err(YakManApiError::bad_request(
-            "Invalid config name. Must be alphanumeric kebab case",
-        ));
     }
 
     let project = match storage_service.get_project_details(&project_id).await {
@@ -140,6 +135,14 @@ async fn create_config(
             }
         },
     };
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
+pub struct DeleteConfigPayload {
+    #[validate(length(min = 1))]
+    pub config_id: String,
+    #[validate(length(min = 1))]
+    pub project_id: String,
 }
 
 /// Hide a config instance from the UI and API (data not deleted)

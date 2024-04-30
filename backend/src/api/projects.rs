@@ -1,7 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
 use crate::{
-    api::is_alphanumeric_kebab_case,
+    api::validation::is_alphanumeric_kebab_case,
     error::{CreateProjectError, DeleteProjectError, UpdateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
     model::{

@@ -4,18 +4,6 @@ use utoipa::ToSchema;
 use super::{NotificationSetting, NotificationSettingEvents, YakManProjectRole, YakManRole};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct CreateConfigPayload {
-    pub config_name: String,
-    pub project_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
-pub struct DeleteConfigPayload {
-    pub config_id: String,
-    pub project_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub enum ProjectNotificationType {
     Slack { webhook_url: String },
     Discord { webhook_url: String },

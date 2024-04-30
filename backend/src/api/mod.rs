@@ -9,6 +9,7 @@ pub mod projects;
 pub mod revisions;
 pub mod teams;
 pub mod users;
+pub mod validation;
 
 use self::{
     api_keys::{CreateApiKeyRequest, CreateApiKeyResponse},
@@ -17,6 +18,7 @@ use self::{
         OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
         ValidatePasswordResetLink,
     },
+    configs::{CreateConfigPayload, DeleteConfigPayload},
     lifecycle::{YakManHealthResponse, YakManSettingsResponse},
     revisions::ReviewResult,
     teams::CreateTeamResponse,
@@ -24,8 +26,8 @@ use self::{
 };
 use crate::model::{
     request::{
-        CreateConfigPayload, CreateProjectPayload, CreateTeamPayload, DeleteConfigPayload,
-        ProjectNotificationType, UpdateProjectPayload, UpdateTeamPayload,
+        CreateProjectPayload, CreateTeamPayload, ProjectNotificationType, UpdateProjectPayload,
+        UpdateTeamPayload,
     },
     response::{InstancePayload, RevisionPayload},
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
@@ -165,44 +167,11 @@ pub fn register_routes(config: &mut web::ServiceConfig) {
         .service(revisions::rollback_instance_revision);
 }
 
-fn is_alphanumeric_kebab_case(s: &str) -> bool {
-    s.chars().all(|c| c == '-' || c.is_alphanumeric())
-}
-
 #[cfg(test)]
 mod test {
-    use std::collections::BTreeMap;
-
-    use utoipa::openapi::{RefOr, Schema};
-
     use super::*;
-
-    #[test]
-    fn should_return_true_for_alphanumeric_kebab_case_strings() {
-        assert!(is_alphanumeric_kebab_case("hello"));
-        assert!(is_alphanumeric_kebab_case("hello-something"));
-        assert!(is_alphanumeric_kebab_case("some"));
-        assert!(is_alphanumeric_kebab_case("another-with-multiple-hyphens"));
-        assert!(is_alphanumeric_kebab_case("a"));
-        assert!(is_alphanumeric_kebab_case("a-number5"));
-        assert!(is_alphanumeric_kebab_case("a-4"));
-        assert!(is_alphanumeric_kebab_case("a43"));
-        assert!(is_alphanumeric_kebab_case("100"));
-    }
-
-    #[test]
-    fn should_return_false_for_non_alphanumeric_kebab_case_strings() {
-        assert!(!is_alphanumeric_kebab_case(" hello"));
-        assert!(!is_alphanumeric_kebab_case("hello "));
-        assert!(!is_alphanumeric_kebab_case(" "));
-        assert!(!is_alphanumeric_kebab_case(" "));
-        assert!(!is_alphanumeric_kebab_case("!"));
-        assert!(!is_alphanumeric_kebab_case("!"));
-        assert!(!is_alphanumeric_kebab_case("%"));
-        assert!(!is_alphanumeric_kebab_case("hello world"));
-        assert!(!is_alphanumeric_kebab_case("hello%20world"));
-        assert!(!is_alphanumeric_kebab_case("%20"));
-    }
+    use std::collections::BTreeMap;
+    use utoipa::openapi::{RefOr, Schema};
 
     #[test]
     fn require_all_schemas_to_be_added_to_openapi_spec() {
