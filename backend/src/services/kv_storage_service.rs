@@ -7,6 +7,10 @@ use super::{
 };
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
+    api::{
+        projects::ProjectNotificationSettings,
+        teams::{CreateTeamPayload, UpdateTeamPayload},
+    },
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
@@ -15,13 +19,11 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        self,
-        request::{CreateTeamPayload, CreateYakManUserPayload, UpdateTeamPayload},
-        ConfigDetails, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData,
-        ConfigInstanceRevision, LabelType, RevisionReviewState, YakManApiKey, YakManConfig,
-        YakManLabel, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
-        YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
-        YakManUserDetails,
+        request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
+        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
+        YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam,
+        YakManTeamDetails, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     services::id::{
@@ -72,7 +74,7 @@ impl StorageService for KVStorageService {
     async fn create_project(
         &self,
         project_name: &str,
-        notification_settings: Option<model::request::ProjectNotificationSettings>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
@@ -113,7 +115,7 @@ impl StorageService for KVStorageService {
         &self,
         project_id: &str,
         project_name: &str,
-        notification_settings: Option<model::request::ProjectNotificationSettings>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<(), UpdateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
