@@ -32,8 +32,8 @@ dependencies:
 
 devDependencies:
   '@fontsource/fira-mono':
-    specifier: 5.0.12
-    version: 5.0.12
+    specifier: 5.0.13
+    version: 5.0.13
   '@sveltejs/adapter-auto':
     specifier: 3.2.0
     version: 3.2.0(@sveltejs/kit@2.5.7)
@@ -275,8 +275,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@fontsource/fira-mono@5.0.12:
-    resolution: {integrity: sha512-1uFRjqCcxVv4F31PjyLm8o4oNlT5ywwh6OwcDGkZbafOeFZHXekvholS9IlfZkRsZvVhSbFRHT/5iDib4KTtpg==}
+  /@fontsource/fira-mono@5.0.13:
+    resolution: {integrity: sha512-fZDjR2BdAqmauEbTjcIT62zYzbOgDa5+IQH34D2k8Pxmy1T815mAqQkZciWZVQ9dc/BgdTtTUV9HJ2ulBNwchg==}
     dev: true
 
   /@isaacs/cliui@8.0.2:
