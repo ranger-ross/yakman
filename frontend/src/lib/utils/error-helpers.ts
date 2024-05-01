@@ -1,3 +1,4 @@
+import { wsLink } from "@trpc/client";
 import { TRPCError } from "@trpc/server";
 import type { TRPC_ERROR_CODE_KEY } from "@trpc/server/rpc";
 
@@ -10,7 +11,7 @@ const HTTP_TO_TPRC_CODE: { [key: number]: TRPC_ERROR_CODE_KEY } = {
 };
 
 export function convertYakManErrorToTRPCError(response: string | object, status: number) {
-    if (response instanceof String) {
+    if (typeof response === 'string') {
         response = JSON.parse(response as string)
     }
 

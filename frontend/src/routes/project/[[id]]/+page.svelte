@@ -11,6 +11,7 @@
     import YakManCheckbox from "$lib/components/YakManCheckbox.svelte";
     import { openGlobaModal } from "$lib/stores/global-modal-state";
     import { roles } from "$lib/stores/roles";
+    import { TRPCClientError } from "@trpc/client";
 
     export let data: PageData;
 
@@ -21,6 +22,7 @@
     let name = data.project?.name ?? "";
     let webhookUrl = "";
     let webhookType: WebhookType = "slack";
+    let error: string | null = null;
 
     let isWebhookEnabled = false;
     let isInstanceCreateEventEnabled = false;
@@ -135,6 +137,10 @@
                 goto(`/?project=${projectId}`);
             }
         } catch (e) {
+            if (e instanceof TRPCClientError) {
+                const errorData = JSON.parse(e.message);
+                error = errorData.message;
+            }
             console.error("Error creating project", e);
         }
     }
@@ -236,6 +242,12 @@
         </YakManCard>
 
         <YakManCard extraClasses="mt-2">
+            {#if error}
+                <div class="text-red-600 font-bold mb-1">
+                    Error: {error}
+                </div>
+            {/if}
+
             <YakManButton on:click={onSave} type="submit" disabled={isInvalid}>
                 {#if isNewProject}
                     Create
