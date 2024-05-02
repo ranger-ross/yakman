@@ -1,6 +1,6 @@
 <script lang="ts">
   import type monaco from "monaco-editor";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, afterUpdate } from "svelte";
   import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
   import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
   import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
@@ -68,19 +68,24 @@
       lineNumbersMinChars: 2,
       minimap: { enabled: false },
       overviewRulerLanes: 0,
-      renderLineHighlight: 'gutter',
+      renderLineHighlight: "gutter",
       theme: "yakmanMonacoTheme",
     });
 
     editor.onDidChangeModelContent(() => (content = editor.getValue()));
   });
 
+  // When props get updated, we need to manually update the Monaco Editor
+  afterUpdate(() => {
+    editor?.setValue(content);
+  });
+
   $: {
     // If the editor is disabled (readonly mode) and the content changes update the editor value.
-    // NOTE: If the editor value changes, it will reset the cursor position 
+    // NOTE: If the editor value changes, it will reset the cursor position
     //       so it will be annoying if this is enabled if the editor is enabled.
     if (editor && disabled) {
-      editor.setValue(content)
+      editor.setValue(content);
     }
   }
 
