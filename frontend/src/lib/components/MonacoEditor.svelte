@@ -7,6 +7,7 @@
   import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
   import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
   import type { MonacoLanguage } from "$lib/utils/content-type-utils";
+  import ContentTypePill from "./ContentTypePill.svelte";
 
   let divEl: HTMLDivElement | null = null;
   let editor: monaco.editor.IStandaloneCodeEditor;
@@ -77,7 +78,9 @@
 
   // When props get updated, we need to manually update the Monaco Editor
   afterUpdate(() => {
-    editor?.setValue(content);
+    if (content != editor?.getValue()) {
+      editor?.setValue(content);
+    }
   });
 
   $: {
