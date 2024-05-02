@@ -7,7 +7,6 @@
   import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
   import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
   import type { MonacoLanguage } from "$lib/utils/content-type-utils";
-  import ContentTypePill from "./ContentTypePill.svelte";
 
   let divEl: HTMLDivElement | null = null;
   let editor: monaco.editor.IStandaloneCodeEditor;
