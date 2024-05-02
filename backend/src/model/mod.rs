@@ -71,6 +71,7 @@ pub struct YakManLabel {
 pub struct ConfigDetails {
     pub config_id: String,
     pub config_name: String,
+    pub project_id: String,
     pub instances: Vec<ConfigInstance>,
 }
 
@@ -263,10 +264,7 @@ pub struct YakManSnapshotLockInner {
 impl YakManSnapshotLock {
     pub fn new(id: String, timestamp_ms: i64) -> Self {
         Self {
-            lock: Some(YakManSnapshotLockInner {
-                id: id,
-                timestamp_ms: timestamp_ms,
-            }),
+            lock: Some(YakManSnapshotLockInner { id, timestamp_ms }),
         }
     }
     /// Creates an unlocked lock file

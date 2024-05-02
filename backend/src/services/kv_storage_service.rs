@@ -367,6 +367,7 @@ impl StorageService for KVStorageService {
                 &config_id,
                 &ConfigDetails {
                     config_id: config_id.clone(),
+                    project_id: String::from(project_id),
                     config_name: config_name.to_string(),
                     instances: vec![],
                 },
