@@ -1061,7 +1061,7 @@ impl StorageService for KVStorageService {
         let Some(team) = teams.iter_mut().find(|t| t.id == team_id) else {
             return Err(UpdateTeamError::TeamNotFound);
         };
-        team.name = team_name.clone();
+        team.name = team_name.to_string();
 
         let Some(mut team_details) = self.adapter.get_team_details(team_id).await? else {
             return Err(UpdateTeamError::TeamNotFound);
@@ -1088,7 +1088,7 @@ impl StorageService for KVStorageService {
             user_details_to_delete.push(details);
         }
 
-        team_details.name = team_name.clone();
+        team_details.name = team_name.to_string();
         team_details.global_roles = payload.global_roles;
         team_details.roles = payload.roles;
         team_details.member_user_ids = payload.team_member_user_ids;
