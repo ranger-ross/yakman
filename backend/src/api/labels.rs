@@ -88,7 +88,7 @@ struct UpdateLabelPayload {
     pub options: Vec<String>,
 }
 
-/// Create a new label
+/// Update and existing label
 #[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
 #[post("/v1/labels/{id}")]
 pub async fn update_label(
