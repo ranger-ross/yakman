@@ -56,7 +56,7 @@
                             {label.options}
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-sm">
-                            <YakManLink href={`/labels/edit/${label.name}`}>
+                            <YakManLink href={`/labels/edit/${label.id}`}>
                                 Edit
                             </YakManLink>
                         </td>

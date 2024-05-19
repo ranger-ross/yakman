@@ -114,6 +114,9 @@ pub async fn update_label(
         ));
     }
 
+    println!("{:#?}", storage_service.get_labels().await?);
+
+    println!("{label_id}");
     if let None = storage_service
         .get_labels()
         .await?

@@ -6,25 +6,37 @@
     import { trpc } from "$lib/trpc/client";
     import { goto } from "$app/navigation";
     import type { PageData } from "./$types";
-    import type { CreateLabel } from "$lib/trpc/routes/labels";
+    import type { CreateLabel, UpdateLabel } from "$lib/trpc/routes/labels";
 
     export let data: PageData;
     const isEditMode = !!data.label;
 
     const label = isEditMode
-        ? data.labels.find((l) => l.name === data.label)
+        ? data.labels.find((l) => l.id === data.label)
         : null;
 
     // TODO: Maybe add an error/warning if the labelId is not found
 
     let name = label?.name ?? "";
     let description = label?.description ?? "";
-    let options = label?.options ?? "";
+    let options = label?.options.join(",") ?? "";
 
     async function onSave() {
         try {
             if (isEditMode) {
-                // TODO: Handle Update
+                const label: UpdateLabel = {
+                    name: name,
+                    description: description,
+                    options: options
+                        .split(",")
+                        .filter((o) => !!o || o.length == 0),
+                };
+
+                await trpc($page).labels.updateLabel.mutate({
+                    id: data.label!,
+                    payload: label,
+                });
+                goto("/");
             } else {
                 const label: CreateLabel = {
                     name: name,
