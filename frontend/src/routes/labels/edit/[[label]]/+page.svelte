@@ -6,21 +6,37 @@
     import { trpc } from "$lib/trpc/client";
     import type { YakManLabelType } from "$lib/types/types";
     import { goto } from "$app/navigation";
+    import type { PageData } from "./$types";
 
-    let name = "";
-    let description = "";
-    let options = "";
+    export let data: PageData;
+    const isEditMode = !!data.label;
 
-    async function onCreateLabel() {
+    const label = isEditMode
+        ? data.labels.find((l) => l.name === data.label)
+        : null;
+
+    // TODO: Maybe add an error/warning if the labelId is not found
+
+    let name = label?.name ?? "";
+    let description = label?.description ?? "";
+    let options = label?.options ?? "";
+
+    async function onSave() {
         try {
-            const label: YakManLabelType = {
-                name: name,
-                description: description,
-                options: options.split(",").filter((o) => !!o || o.length == 0),
-            };
+            if (isEditMode) {
+                // TODO: Handle Update
+            } else {
+                const label: YakManLabelType = {
+                    name: name,
+                    description: description,
+                    options: options
+                        .split(",")
+                        .filter((o) => !!o || o.length == 0),
+                };
 
-            await trpc($page).labels.createLabel.mutate(label);
-            goto("/");
+                await trpc($page).labels.createLabel.mutate(label);
+                goto("/");
+            }
         } catch (e) {
             console.error("Error creating config:", e);
         }
@@ -29,13 +45,20 @@
 
 <div class="container mx-auto">
     <YakManCard>
-        <h1 class="text-lg font-bold mb-4">{"Add Label"}</h1>
+        <h1 class="text-lg font-bold mb-4">
+            {#if isEditMode}
+                Edit Label
+            {:else}
+                Add Label
+            {/if}
+        </h1>
         <div class="mb-3">
             <YakManInput
                 label="Name"
                 bind:value={name}
                 placeholder="my-label-name"
                 mask="kebab-case"
+                disabled={isEditMode}
             />
         </div>
         <div class="mb-3">
@@ -53,10 +76,14 @@
             />
         </div>
         <YakManButton
-            on:click={onCreateLabel}
+            on:click={onSave}
             disabled={name.length === 0 || options.length == 0}
         >
-            Create
+            {#if isEditMode}
+                Update
+            {:else}
+                Create
+            {/if}
         </YakManButton>
     </YakManCard>
 </div>
