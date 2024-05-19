@@ -1,9 +1,17 @@
 import { t } from "../t";
 import type { YakManLabelType } from "$lib/types/types";
-import { YakManLabelTypeSchema } from "$lib/types/types";
 import { createYakManAuthHeaders, getYakManBaseApiUrl } from "../helper";
+import { z } from "zod";
 
 const BASE_URL = getYakManBaseApiUrl();
+
+export const CreateLabelSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    options: z.array(z.string()),
+});
+
+export type CreateLabel = z.infer<typeof CreateLabelSchema>;
 
 export const labels = t.router({
     fetchLabels: t.procedure
@@ -16,7 +24,7 @@ export const labels = t.router({
         }),
 
     createLabel: t.procedure
-        .input(YakManLabelTypeSchema)
+        .input(CreateLabelSchema)
         .mutation(async ({ input, ctx }) => {
             const response = await fetch(`${BASE_URL}/v1/labels`, {
                 method: 'PUT',

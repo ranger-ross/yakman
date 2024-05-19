@@ -1579,7 +1579,7 @@ impl KVStorageService {
     ) -> Result<bool, GenericStorageError> {
         let all_labels = self.get_labels().await?;
         for label in labels {
-            if let Some(label_type) = all_labels.iter().find(|l| l.name == label.label_type) {
+            if let Some(label_type) = all_labels.iter().find(|l| l.id == label.label_id) {
                 if !label_type.options.iter().any(|opt| opt == &label.value) {
                     return Ok(false);
                 }

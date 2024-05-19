@@ -6,8 +6,6 @@
 
     export let data: PageData;
 
-    console.log(data);
-
     async function handleDeleteLabel() {
         console.log("TODO: Delete");
     }

@@ -64,7 +64,7 @@ pub struct LabelType {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManLabel {
-    pub label_type: String,
+    pub label_id: String,
     pub value: String,
 }
 

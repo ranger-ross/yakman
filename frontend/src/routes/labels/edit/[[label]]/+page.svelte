@@ -4,9 +4,9 @@
     import YakManInput from "$lib/components/YakManInput.svelte";
     import { page } from "$app/stores";
     import { trpc } from "$lib/trpc/client";
-    import type { YakManLabelType } from "$lib/types/types";
     import { goto } from "$app/navigation";
     import type { PageData } from "./$types";
+    import type { CreateLabel } from "$lib/trpc/routes/labels";
 
     export let data: PageData;
     const isEditMode = !!data.label;
@@ -26,7 +26,7 @@
             if (isEditMode) {
                 // TODO: Handle Update
             } else {
-                const label: YakManLabelType = {
+                const label: CreateLabel = {
                     name: name,
                     description: description,
                     options: options

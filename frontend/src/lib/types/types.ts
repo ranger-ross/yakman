@@ -41,6 +41,7 @@ export const YakManConfigSchema = z.object({
 export type YakManConfig = z.infer<typeof YakManConfigSchema>;
 
 export const YakManLabelTypeSchema = z.object({
+    id: z.string(),
     name: z.string(),
     description: z.string(),
     options: z.array(z.string()),
@@ -49,7 +50,7 @@ export const YakManLabelTypeSchema = z.object({
 export type YakManLabelType = z.infer<typeof YakManLabelTypeSchema>;
 
 export const YakManLabelSchema = z.object({
-    label_type: z.string(),
+    label_id: z.string(),
     value: z.string(),
 });
 
