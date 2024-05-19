@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::model::{LabelType, YakManRole};
+use crate::services::id::generate_label_id;
 use crate::services::StorageService;
 use crate::{
     api::validation::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
@@ -8,6 +9,7 @@ use crate::{
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
+use serde::Deserialize;
 
 /// Get all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
@@ -19,12 +21,30 @@ pub async fn get_labels(
     return Ok(web::Json(data));
 }
 
+#[derive(Debug, Deserialize)]
+struct CreateLabelPayload {
+    pub name: String,
+    pub description: String,
+    pub options: Vec<String>,
+}
+
+impl From<CreateLabelPayload> for LabelType {
+    fn from(value: CreateLabelPayload) -> Self {
+        LabelType {
+            id: generate_label_id(),
+            name: value.name,
+            description: value.description,
+            options: value.options,
+        }
+    }
+}
+
 /// Create a new label
 #[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
 #[put("/v1/labels")]
 pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
-    label_type: web::Json<LabelType>,
+    label_type: web::Json<CreateLabelPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let mut label_type = label_type.into_inner();
@@ -43,7 +63,7 @@ pub async fn create_label(
         ));
     }
 
-    return match storage_service.create_label(label_type).await {
+    return match storage_service.create_label(label_type.into()).await {
         Ok(()) => Ok(HttpResponse::Ok().finish()),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {

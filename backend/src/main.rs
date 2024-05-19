@@ -54,8 +54,6 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = YakManApiDoc::openapi();
 
-    let x = 4;
-
     let (host, port) = yakman_host_port_from_env();
     log::info!("Launching YakMan Backend on {host}:{port}");
 

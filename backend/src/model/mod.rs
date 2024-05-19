@@ -56,7 +56,8 @@ pub struct YakManConfig {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct LabelType {
-    pub name: String, // Unique key
+    pub id: String, // Unique key
+    pub name: String,
     pub description: String,
     pub options: Vec<String>,
 }
