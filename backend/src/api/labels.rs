@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::error::UpdateLabelError;
+use crate::error::{DeleteLabelError, UpdateLabelError};
 use crate::model::{LabelType, YakManRole};
 use crate::services::id::generate_label_id;
 use crate::services::StorageService;
@@ -8,7 +8,7 @@ use crate::{
     api::validation::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding,
 };
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
 
@@ -41,7 +41,7 @@ impl From<CreateLabelPayload> for LabelType {
 }
 
 /// Create a new label
-#[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = CreateLabelPayload, responses((status = 200, body = (), content_type = [])))]
 #[put("/v1/labels")]
 pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -89,7 +89,7 @@ struct UpdateLabelPayload {
 }
 
 /// Update and existing label
-#[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = UpdateLabelPayload, responses((status = 200, body = (), content_type = [])))]
 #[post("/v1/labels/{id}")]
 pub async fn update_label(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -114,9 +114,6 @@ pub async fn update_label(
         ));
     }
 
-    println!("{:#?}", storage_service.get_labels().await?);
-
-    println!("{label_id}");
     if let None = storage_service
         .get_labels()
         .await?
@@ -146,6 +143,29 @@ pub async fn update_label(
                 Err(YakManApiError::server_error("Failed to create label"))
             }
         },
+    };
+}
+
+/// Update and existing label
+#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[delete("/v1/labels/{id}")]
+pub async fn delete_label(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    let label_id = path.into_inner();
+
+    if !YakManRoleBinding::has_any_global_role(vec![YakManRole::Admin], &auth_details.authorities) {
+        return Err(YakManApiError::forbidden());
+    }
+    return match storage_service.delete_label(&label_id).await {
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Err(DeleteLabelError::LabelNotFound) => Err(YakManApiError::not_found("label not found")),
+        Err(DeleteLabelError::StorageError { message }) => {
+            log::error!("Failed to delete project {message}");
+            Err(YakManApiError::server_error("failed to delete project"))
+        }
     };
 }
 

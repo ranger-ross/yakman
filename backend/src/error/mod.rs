@@ -225,6 +225,20 @@ impl From<GenericStorageError> for UpdateLabelError {
 }
 
 #[derive(Error, Debug)]
+pub enum DeleteLabelError {
+    #[error("Label not found")]
+    LabelNotFound,
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for DeleteLabelError {
+    fn from(e: GenericStorageError) -> Self {
+        DeleteLabelError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
 pub enum CreateConfigInstanceError {
     #[error("No config found")]
     NoConfigFound,

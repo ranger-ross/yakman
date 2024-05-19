@@ -14,9 +14,9 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
-        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateLabelError,
-        UpdateProjectError, UpdateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteLabelError, DeleteProjectError,
+        DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
+        UpdateLabelError, UpdateProjectError, UpdateTeamError,
     },
     model::{
         request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
@@ -277,6 +277,10 @@ impl StorageService for KVStorageService {
         self.adapter.save_labels(&labels).await?;
 
         return Ok(());
+    }
+
+    async fn delete_label(&self, label_id: &str) -> Result<(), DeleteLabelError> {
+        todo!();
     }
 
     async fn create_config_instance(
