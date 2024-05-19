@@ -9,7 +9,7 @@ use crate::{
 };
 use actix_web::{get, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Get all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
@@ -21,7 +21,7 @@ pub async fn get_labels(
     return Ok(web::Json(data));
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct CreateLabelPayload {
     pub name: String,
     pub description: String,
@@ -90,16 +90,16 @@ mod tests {
     use anyhow::Result;
     use serde_json::Value;
 
-    fn foo_label() -> LabelType {
-        LabelType {
+    fn foo_label() -> CreateLabelPayload {
+        CreateLabelPayload {
             name: "foo".to_string(),
             description: "my foo label".to_string(),
             options: vec!["foo-1".to_string(), "foo-2".to_string()],
         }
     }
 
-    fn bar_label() -> LabelType {
-        LabelType {
+    fn bar_label() -> CreateLabelPayload {
+        CreateLabelPayload {
             name: "bar".to_string(),
             description: "my bar label".to_string(),
             options: vec!["bar-1".to_string(), "bar-2".to_string()],
@@ -112,8 +112,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        storage_service.create_label(foo_label()).await?;
-        storage_service.create_label(bar_label()).await?;
+        storage_service.create_label(foo_label().into()).await?;
+        storage_service.create_label(bar_label().into()).await?;
 
         let app = test::init_service(
             App::new()
