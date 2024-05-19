@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::error::UpdateLabelError;
 use crate::model::{LabelType, YakManRole};
 use crate::services::id::generate_label_id;
 use crate::services::StorageService;
@@ -7,7 +8,7 @@ use crate::{
     api::validation::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding,
 };
-use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
 
@@ -73,6 +74,71 @@ pub async fn create_label(
                 "Label must have at least 1 option",
             )),
             CreateLabelError::StorageError { message } => {
+                log::error!("Failed to create label, error: {message}");
+                Err(YakManApiError::server_error("Failed to create label"))
+            }
+        },
+    };
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct UpdateLabelPayload {
+    pub name: String,
+    pub description: String,
+    pub options: Vec<String>,
+}
+
+/// Create a new label
+#[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
+#[post("/v1/labels/{id}")]
+pub async fn update_label(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    label_type: web::Json<UpdateLabelPayload>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    let label_id = path.into_inner();
+    let mut label_type = label_type.into_inner();
+    label_type.name = label_type.name.to_lowercase();
+
+    if !YakManRoleBinding::has_any_global_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        &auth_details.authorities,
+    ) {
+        return Err(YakManApiError::forbidden());
+    }
+
+    if !is_alphanumeric_kebab_case(&label_type.name) {
+        return Err(YakManApiError::bad_request(
+            "Invalid label name. Must be alphanumeric kebab case",
+        ));
+    }
+
+    if let None = storage_service
+        .get_labels()
+        .await?
+        .iter()
+        .position(|l| l.id == label_id)
+    {
+        return Err(YakManApiError::bad_request("Label not found"));
+    }
+
+    let label = LabelType {
+        id: label_id,
+        name: label_type.name,
+        description: label_type.description,
+        options: label_type.options,
+    };
+    return match storage_service.update_label(&label.id.clone(), label).await {
+        Ok(()) => Ok(HttpResponse::Ok().finish()),
+        Err(e) => match e {
+            UpdateLabelError::DuplicateLabelError { name: _ } => {
+                Err(YakManApiError::bad_request("Duplicate label"))
+            }
+            UpdateLabelError::EmptyOptionsError => Err(YakManApiError::bad_request(
+                "Label must have at least 1 option",
+            )),
+            UpdateLabelError::StorageError { message } => {
                 log::error!("Failed to create label, error: {message}");
                 Err(YakManApiError::server_error("Failed to create label"))
             }

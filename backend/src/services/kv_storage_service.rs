@@ -15,8 +15,8 @@ use crate::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
         DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
-        UpdateTeamError,
+        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateLabelError,
+        UpdateProjectError, UpdateTeamError,
     },
     model::{
         request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
@@ -238,6 +238,41 @@ impl StorageService for KVStorageService {
         }
 
         labels.push(label);
+
+        self.adapter.save_labels(&labels).await?;
+
+        return Ok(());
+    }
+
+    async fn update_label(
+        &self,
+        label_id: &str,
+        mut label: LabelType,
+    ) -> Result<(), UpdateLabelError> {
+        let santized_options = label
+            .options
+            .into_iter()
+            .filter_map(|opt| if !opt.is_empty() { Some(opt) } else { None })
+            .collect::<Vec<String>>();
+
+        if santized_options.is_empty() {
+            return Err(UpdateLabelError::EmptyOptionsError);
+        }
+
+        label.options = santized_options;
+
+        let mut labels = self.adapter.get_labels().await?;
+
+        // Prevent duplicates
+        for lbl in &labels {
+            if lbl.id != label_id && lbl.name == label.name {
+                return Err(UpdateLabelError::duplicate_label(&label.name));
+            }
+        }
+
+        if let Some(pos) = labels.iter().position(|l| l.id == label_id) {
+            labels[pos] = label;
+        }
 
         self.adapter.save_labels(&labels).await?;
 
