@@ -12,6 +12,7 @@ export const load: PageLoad = async (event) => {
     })
 
     const instances = await trpc(event).instances.fetchInstancesByConfigId.query(config);
+    const labels = await trpc(event).labels.fetchLabels.query();
 
     let instance: YakManConfigInstance | null = null;
     let data: { data: string; contentType: string; } | null = null;
@@ -70,6 +71,7 @@ export const load: PageLoad = async (event) => {
 
     return {
         data: data,
+        labels: labels,
         instance: instance,
         revisions: revisions,
         tab: getTab(event.url.searchParams),

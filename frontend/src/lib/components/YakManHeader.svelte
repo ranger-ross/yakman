@@ -30,11 +30,7 @@
 >
     <a href="/">
         <div class="flex gap-2 items-center">
-            <img
-                class="dark:invert h-4"
-                src="/yakman-logo.svg"
-                alt=""
-            />
+            <img class="dark:invert h-4" src="/yakman-logo.svg" alt="" />
 
             <h1 class="text-2xl font-bold">YakMan</h1>
         </div>
@@ -43,7 +39,7 @@
     {#if isLoggedIn}
         <YakManPopoverMenu
             options={[
-                { text: "Add Label", value: "AddLabel" },
+                { text: "Manage Labels", value: "ManageLabel" },
                 ...(isAdmin
                     ? [
                           { text: "Add Project", value: "AddProject" },
@@ -56,8 +52,8 @@
             on:select={(value) => {
                 const selection = value.detail;
                 switch (true) {
-                    case selection === "AddLabel":
-                        return goto(`/add-label`);
+                    case selection === "ManageLabel":
+                        return goto(`/labels`);
                     case selection === "AddProject":
                         return goto(`/project`);
                     case selection === "ManageTeams":

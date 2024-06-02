@@ -14,9 +14,9 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
-        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
-        UpdateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteLabelError, DeleteProjectError,
+        DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
+        UpdateLabelError, UpdateProjectError, UpdateTeamError,
     },
     model::{
         request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
@@ -242,6 +242,45 @@ impl StorageService for KVStorageService {
         self.adapter.save_labels(&labels).await?;
 
         return Ok(());
+    }
+
+    async fn update_label(
+        &self,
+        label_id: &str,
+        mut label: LabelType,
+    ) -> Result<(), UpdateLabelError> {
+        let santized_options = label
+            .options
+            .into_iter()
+            .filter_map(|opt| if !opt.is_empty() { Some(opt) } else { None })
+            .collect::<Vec<String>>();
+
+        if santized_options.is_empty() {
+            return Err(UpdateLabelError::EmptyOptionsError);
+        }
+
+        label.options = santized_options;
+
+        let mut labels = self.adapter.get_labels().await?;
+
+        // Prevent duplicates
+        for lbl in &labels {
+            if lbl.id != label_id && lbl.name == label.name {
+                return Err(UpdateLabelError::duplicate_label(&label.name));
+            }
+        }
+
+        if let Some(pos) = labels.iter().position(|l| l.id == label_id) {
+            labels[pos] = label;
+        }
+
+        self.adapter.save_labels(&labels).await?;
+
+        return Ok(());
+    }
+
+    async fn delete_label(&self, label_id: &str) -> Result<(), DeleteLabelError> {
+        todo!();
     }
 
     async fn create_config_instance(
@@ -1579,7 +1618,7 @@ impl KVStorageService {
     ) -> Result<bool, GenericStorageError> {
         let all_labels = self.get_labels().await?;
         for label in labels {
-            if let Some(label_type) = all_labels.iter().find(|l| l.name == label.label_type) {
+            if let Some(label_type) = all_labels.iter().find(|l| l.id == label.label_id) {
                 if !label_type.options.iter().any(|opt| opt == &label.value) {
                     return Ok(false);
                 }
