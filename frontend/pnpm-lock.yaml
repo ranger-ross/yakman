@@ -27,8 +27,8 @@ dependencies:
     specifier: 3.6.1
     version: 3.6.1(@sveltejs/adapter-node@5.0.1)(@trpc/client@10.45.2)(@trpc/server@10.45.2)(ws@8.16.0)
   zod:
-    specifier: 3.22.4
-    version: 3.22.4
+    specifier: 3.23.8
+    version: 3.23.8
 
 devDependencies:
   '@fontsource/fira-mono':
@@ -1968,6 +1968,6 @@ packages:
     engines: {node: '>= 14'}
     hasBin: true
 
-  /zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
+  /zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
     dev: false
