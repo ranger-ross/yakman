@@ -6,8 +6,13 @@ use crate::{
     model::YakManProjectRole,
 };
 use crate::{model::YakManRole, services::StorageService};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{
+    delete, get, post, put,
+    web::{self, Json},
+    HttpResponse, Responder,
+};
 use actix_web_grants::authorities::AuthDetails;
+use actix_web_validation::validator::Validated;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
@@ -71,11 +76,9 @@ pub struct CreateTeamResponse {
 #[put("/v1/teams")]
 async fn create_team(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: actix_web_validator::Json<CreateTeamPayload>,
+    Validated(Json(payload)): Validated<Json<CreateTeamPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
-
     if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
         return Err(YakManApiError::forbidden());
     }
@@ -109,11 +112,10 @@ pub struct UpdateTeamPayload {
 async fn update_team(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
-    payload: actix_web_validator::Json<UpdateTeamPayload>,
+    Validated(Json(payload)): Validated<Json<UpdateTeamPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let team_id = path.into_inner();
-    let payload = payload.into_inner();
 
     if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
         return Err(YakManApiError::forbidden());
