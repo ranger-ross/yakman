@@ -9,8 +9,13 @@ use crate::{
     settings,
 };
 
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{
+    delete, get, post, put,
+    web::{self, Json},
+    HttpResponse, Responder,
+};
 use actix_web_grants::authorities::AuthDetails;
+use actix_web_validation::Validated;
 use log::error;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -144,10 +149,9 @@ impl From<ProjectNotificationSettings> for crate::model::ProjectNotificationSett
 #[put("/v1/projects")]
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: actix_web_validator::Json<CreateProjectPayload>,
+    Validated(Json(payload)): Validated<Json<CreateProjectPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
     let is_user_global_admin_or_approver = !auth_details
@@ -195,11 +199,10 @@ pub struct UpdateProjectPayload {
 #[post("/v1/projects/{id}")]
 async fn update_project(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: actix_web_validator::Json<UpdateProjectPayload>,
+    Validated(Json(payload)): Validated<Json<UpdateProjectPayload>>,
     path: web::Path<String>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
     let project_id: String = path.into_inner();
