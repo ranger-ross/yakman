@@ -7,6 +7,7 @@ use argon2::{
 
 use crate::model::YakManPassword;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct PasswordHashError {
     pub inner: Box<Error>,
