@@ -16,6 +16,7 @@ use r2d2::PooledConnection;
 use redis::{Commands, RedisError};
 use serde::de::DeserializeOwned;
 
+#[allow(dead_code)]
 pub struct RedisStorageAdapter {
     pub host: String,
     pub port: i32,
