@@ -43,8 +43,7 @@ moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.12.1"
 url = "2.5.0"
-actix-web-validation = { version = "0.1.1", features = ["validator"] }
-# garde = { version = "0.20", features = ["derive"] }
+actix-web-validation = { version = "0.3.0", features = ["validator"] }
 validator = { version = "0.18", features = ["derive"] }
 
 

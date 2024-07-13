@@ -12,7 +12,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use actix_web_grants::authorities::AuthDetails;
-use actix_web_validation::validator::Validated;
+use actix_web_validation::Validated;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
