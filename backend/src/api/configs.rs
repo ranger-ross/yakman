@@ -5,8 +5,13 @@ use crate::{
     model::response::ConfigPayload,
 };
 use crate::{model::YakManRole, services::StorageService};
-use actix_web::{delete, get, put, web, HttpResponse, Responder};
+use actix_web::{
+    delete, get, put,
+    web::{self, Json},
+    HttpResponse, Responder,
+};
 use actix_web_grants::authorities::AuthDetails;
+use actix_web_validation::Validated;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, sync::Arc};
 use utoipa::ToSchema;
@@ -89,10 +94,9 @@ pub struct CreateConfigPayload {
 #[put("/v1/configs")]
 async fn create_config(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: actix_web_validator::Json<CreateConfigPayload>,
+    Validated(Json(payload)): Validated<Json<CreateConfigPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
     let config_name = payload.config_name.to_lowercase();
     let project_id = payload.project_id;
 
@@ -147,10 +151,9 @@ pub struct DeleteConfigPayload {
 #[delete("/v1/configs")]
 async fn delete_config(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: actix_web_validator::Json<DeleteConfigPayload>,
+    Validated(Json(payload)): Validated<Json<DeleteConfigPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
     let config_id = payload.config_id.to_lowercase();
     let project_id = payload.project_id;
 
