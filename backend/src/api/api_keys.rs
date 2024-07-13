@@ -11,7 +11,7 @@ use actix_web::web::Json;
 use actix_web::{delete, HttpResponse, Responder};
 use actix_web::{get, put, web};
 use actix_web_grants::authorities::AuthDetails;
-use actix_web_validation::validator::Validated;
+use actix_web_validation::Validated;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
