@@ -24,8 +24,8 @@ dependencies:
     specifier: 10.3.0
     version: 10.3.0
   trpc-sveltekit:
-    specifier: 3.6.1
-    version: 3.6.1(@sveltejs/adapter-node@5.0.1)(@trpc/client@10.45.2)(@trpc/server@10.45.2)(ws@8.16.0)
+    specifier: 3.6.2
+    version: 3.6.2(@sveltejs/adapter-node@5.0.1)(@trpc/client@10.45.2)(@trpc/server@10.45.2)(ws@8.16.0)
   zod:
     specifier: 3.23.8
     version: 3.23.8
@@ -1833,8 +1833,8 @@ packages:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
 
-  /trpc-sveltekit@3.6.1(@sveltejs/adapter-node@5.0.1)(@trpc/client@10.45.2)(@trpc/server@10.45.2)(ws@8.16.0):
-    resolution: {integrity: sha512-5Sfw/xwvyuAdpoMHPgzC5B3m3pjbjcT6d3Vo9ukS1/NP8d2LPj30wWyHP3ploeUQNJRvCffRRkc69mp7csqf/g==}
+  /trpc-sveltekit@3.6.2(@sveltejs/adapter-node@5.0.1)(@trpc/client@10.45.2)(@trpc/server@10.45.2)(ws@8.16.0):
+    resolution: {integrity: sha512-wfcUGpasdSQjNaMnbaaHs4gnh5580oNoOYBsnWujE8+tXyyYAxYA2z6vrQmuG4/rOLdbiEns5ISfsejZz9l+2Q==}
     peerDependencies:
       '@sveltejs/adapter-node': '>=1.2'
       '@trpc/client': ^10.0.0
