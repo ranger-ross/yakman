@@ -15,8 +15,8 @@ dependencies:
     specifier: 0.47.0
     version: 0.47.0
   monaco-yaml:
-    specifier: 5.1.1
-    version: 5.1.1(monaco-editor@0.47.0)
+    specifier: 5.2.2
+    version: 5.2.2(monaco-editor@0.47.0)
   set-cookie-parser:
     specifier: 2.6.0
     version: 2.6.0
@@ -595,10 +595,6 @@ packages:
 
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
-
-  /@types/json-schema@7.0.15:
-    resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-    dev: false
 
   /@types/node@20.11.28:
     resolution: {integrity: sha512-M/GPWVS2wLkSkNHVeLkrF2fD5Lx5UC4PxA0uZcKc6QqbIQUJyW1jVjueJYi1z8n0I5PxYrtpnPnWglE+y9A0KA==}
@@ -1214,8 +1210,8 @@ packages:
     resolution: {integrity: sha512-VabVvHvQ9QmMwXu4du008ZDuyLnHs9j7ThVFsiJoXSOQk18+LF89N4ADzPbFenm0W4V2bGHnFBztIRQTgBfxzw==}
     dev: false
 
-  /monaco-languageserver-types@0.3.3:
-    resolution: {integrity: sha512-4uJ6XaVwVamOQ1SXfBGusAqL4fTn7ZJzaybEinr2U5ZX7AKSjsbXWlu0X3Ah+hyefn+85+Ca7GZwbI87g55C8Q==}
+  /monaco-languageserver-types@0.4.0:
+    resolution: {integrity: sha512-QQ3BZiU5LYkJElGncSNb5AKoJ/LCs6YBMCJMAz9EA7v+JaOdn3kx2cXpPTcZfKA5AEsR0vc97sAw+5mdNhVBmw==}
     dependencies:
       monaco-types: 0.1.0
       vscode-languageserver-protocol: 3.17.5
@@ -1242,15 +1238,14 @@ packages:
       monaco-editor: 0.47.0
     dev: false
 
-  /monaco-yaml@5.1.1(monaco-editor@0.47.0):
-    resolution: {integrity: sha512-BuZ0/ZCGjrPNRzYMZ/MoxH8F/SdM+mATENXnpOhDYABi1Eh+QvxSszEct+ACSCarZiwLvy7m6yEF/pvW8XJkyQ==}
+  /monaco-yaml@5.2.2(monaco-editor@0.47.0):
+    resolution: {integrity: sha512-NWO/UhtJATlIsqwWPzK7YfbcIvPo3riFGsUkaGxNJoGiNPOvHD8vZ83ecqMQGkHPOpgHtSbe94uokE1AJvpbyQ==}
     peerDependencies:
       monaco-editor: '>=0.36'
     dependencies:
-      '@types/json-schema': 7.0.15
       jsonc-parser: 3.2.1
       monaco-editor: 0.47.0
-      monaco-languageserver-types: 0.3.3
+      monaco-languageserver-types: 0.4.0
       monaco-marker-data-provider: 1.1.1(monaco-editor@0.47.0)
       monaco-types: 0.1.0
       monaco-worker-manager: 2.0.1(monaco-editor@0.47.0)
