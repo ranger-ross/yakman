@@ -19,7 +19,7 @@ anyhow = "1.0"
 derive_more = "0.99.17"
 utoipa = { version = "4", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
-actix-middleware-etag = "0.3.0"
+actix-middleware-etag = "0.4.0"
 log = "0.4"
 env_logger = "0.11"
 oauth2 = "4.4.2"
@@ -38,7 +38,7 @@ futures-util = "0.3"
 short-crypt = "1.0.28"
 openidconnect = "3.5.0"
 base64 = "0.22"
-google-cloud-storage = "0.18"
+google-cloud-storage = "0.20"
 moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.12.1"
