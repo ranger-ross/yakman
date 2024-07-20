@@ -70,13 +70,13 @@ dependencies = [
 
 [[package]]
 name = "actix-middleware-etag"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02a8110b54d16d1ebb90216f2bd6f1800fbcedbda190ee6759e255b022b2341a"
+checksum = "3cea19776d4cb9c0d388a63dcf5b8985dcd58e49260ffe1708bbb7fa6454c355"
 dependencies = [
  "actix-service",
  "actix-web",
- "base64 0.21.7",
+ "base64 0.22.1",
  "futures",
  "str-buf",
  "xxhash-rust",
