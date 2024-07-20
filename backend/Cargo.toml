@@ -38,7 +38,7 @@ futures-util = "0.3"
 short-crypt = "1.0.28"
 openidconnect = "3.5.0"
 base64 = "0.22"
-google-cloud-storage = "0.18"
+google-cloud-storage = "0.20"
 moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.12.1"
