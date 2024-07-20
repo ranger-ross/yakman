@@ -11,15 +11,15 @@ serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 redis = { version = "0.25", features = ["r2d2"] }
 r2d2 = "0.8.10"
-async-trait = {version = "0.1.77"}
+async-trait = {version = "0.1.80"}
 uuid = {version = "1.8", features = ["v4"]}
-chrono = "0.4.37"
+chrono = "0.4.38"
 thiserror = "1.0"
 anyhow = "1.0"
 derive_more = "0.99.17"
 utoipa = { version = "4", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
-actix-middleware-etag = "0.3.0"
+utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
+actix-middleware-etag = "0.4.0"
 log = "0.4"
 env_logger = "0.11"
 oauth2 = "4.4.2"
@@ -38,11 +38,14 @@ futures-util = "0.3"
 short-crypt = "1.0.28"
 openidconnect = "3.5.0"
 base64 = "0.22"
-google-cloud-storage = "0.16"
+google-cloud-storage = "0.20"
 moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.12.1"
 url = "2.5.0"
+actix-web-validation = { version = "0.3.0", features = ["validator"] }
+validator = { version = "0.18", features = ["derive"] }
+
 
 [dev-dependencies]
 mockall = "0.12"

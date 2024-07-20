@@ -1,10 +1,14 @@
 name: Rust Check
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+env: 
+  CARGO_TERM_COLOR: always
 
 jobs:
   check:
@@ -19,14 +23,29 @@ jobs:
       with:
         workspaces: backend
 
+    - run: cargo install cargo-tarpaulin
+      working-directory: backend
+
+    - name: cargo install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+
     - run: cargo fmt --check
       working-directory: backend
 
-    - run: cargo check
+    - run: cargo clippy -- -D warnings
       working-directory: backend
 
-    - run: cargo build
+    - name: cargo llvm-cov
+      run: cargo llvm-cov --locked --lcov --output-path lcov.info
       working-directory: backend
 
-    - run: cargo test
-      working-directory: backend
+    - name: Record Rust version
+      run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
+
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v4
+      with:
+        working-directory: backend
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        env_vars: OS,RUST

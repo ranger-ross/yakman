@@ -1,24 +1,26 @@
 use std::{collections::HashSet, sync::Arc};
 
 use crate::{
-    api::is_alphanumeric_kebab_case,
+    api::validation::validate_kebab_case,
     error::{CreateProjectError, DeleteProjectError, UpdateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::{
-        request::{
-            CreateProjectPayload, ProjectNotificationSettings, ProjectNotificationType,
-            UpdateProjectPayload,
-        },
-        YakManProject, YakManRole,
-    },
+    model::{NotificationSetting, NotificationSettingEvents, YakManProject, YakManRole},
     services::StorageService,
     settings,
 };
 
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{
+    delete, get, post, put,
+    web::{self, Json},
+    HttpResponse, Responder,
+};
 use actix_web_grants::authorities::AuthDetails;
+use actix_web_validation::Validated;
 use log::error;
+use serde::{Deserialize, Serialize};
 use url::Url;
+use utoipa::ToSchema;
+use validator::{Validate, ValidationError};
 
 /// Get all of the projects (user has access to)
 #[utoipa::path(responses((status = 200, body = Vec<YakManProject>)))]
@@ -91,15 +93,65 @@ pub async fn get_project(
     return Ok(web::Json(details));
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
+pub struct CreateProjectPayload {
+    #[validate(length(min = 1), custom(function = "validate_kebab_case"))]
+    pub project_name: String,
+    #[validate(custom(function = "validate_project_notification_settings"))]
+    pub notification_settings: Option<ProjectNotificationSettings>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub enum ProjectNotificationType {
+    Slack { webhook_url: String },
+    Discord { webhook_url: String },
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+pub struct ProjectNotificationSettings {
+    pub notification_type: ProjectNotificationType,
+    #[serde(default)]
+    pub is_instance_updated_enabled: bool,
+    #[serde(default)]
+    pub is_instance_created_enabled: bool,
+    #[serde(default)]
+    pub is_revision_submitted_enabled: bool,
+    #[serde(default)]
+    pub is_revision_approved_enabled: bool,
+    #[serde(default)]
+    pub is_revision_reject_enabled: bool,
+}
+
+impl From<ProjectNotificationSettings> for crate::model::ProjectNotificationSettings {
+    fn from(val: ProjectNotificationSettings) -> Self {
+        let events = NotificationSettingEvents {
+            is_instance_updated_enabled: val.is_instance_updated_enabled,
+            is_instance_created_enabled: val.is_instance_created_enabled,
+            is_revision_submitted_enabled: val.is_revision_submitted_enabled,
+            is_revision_approved_enabled: val.is_revision_approved_enabled,
+            is_revision_reject_enabled: val.is_revision_reject_enabled,
+        };
+
+        let settings = match val.notification_type {
+            ProjectNotificationType::Slack { webhook_url } => NotificationSetting::Slack {
+                webhook_url: webhook_url,
+            },
+            ProjectNotificationType::Discord { webhook_url } => NotificationSetting::Discord {
+                webhook_url: webhook_url,
+            },
+        };
+        crate::model::ProjectNotificationSettings { settings, events }
+    }
+}
+
 /// Create a new project
 #[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = (), content_type = [])))]
 #[put("/v1/projects")]
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: web::Json<CreateProjectPayload>,
+    Validated(Json(payload)): Validated<Json<CreateProjectPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
     let is_user_global_admin_or_approver = !auth_details
@@ -116,8 +168,6 @@ async fn create_project(
     if !is_user_global_admin_or_approver {
         return Err(YakManApiError::forbidden());
     }
-
-    validate_project(&project_name, payload.notification_settings.as_ref())?;
 
     return match storage_service
         .create_project(&project_name, payload.notification_settings)
@@ -136,16 +186,23 @@ async fn create_project(
     };
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
+pub struct UpdateProjectPayload {
+    #[validate(length(min = 1), custom(function = "validate_kebab_case"))]
+    pub project_name: String,
+    #[validate(custom(function = "validate_project_notification_settings"))]
+    pub notification_settings: Option<ProjectNotificationSettings>,
+}
+
 /// Update a project
 #[utoipa::path(request_body = UpdateProjectPayload, responses((status = 200, body = (), content_type = [])))]
 #[post("/v1/projects/{id}")]
 async fn update_project(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: web::Json<UpdateProjectPayload>,
+    Validated(Json(payload)): Validated<Json<UpdateProjectPayload>>,
     path: web::Path<String>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
     let project_name = payload.project_name.to_lowercase();
 
     let project_id: String = path.into_inner();
@@ -158,8 +215,6 @@ async fn update_project(
     if !has_role {
         return Err(YakManApiError::forbidden());
     }
-
-    validate_project(&project_name, payload.notification_settings.as_ref())?;
 
     return match storage_service
         .update_project(&project_id, &project_name, payload.notification_settings)
@@ -216,40 +271,24 @@ pub async fn delete_project(
     };
 }
 
-fn validate_project(
-    project_name: &str,
-    notification_settings: Option<&ProjectNotificationSettings>,
-) -> Result<(), YakManApiError> {
-    if project_name.is_empty() {
-        return Err(YakManApiError::bad_request(
-            "Invalid project name. Must not be empty",
-        ));
-    }
-
-    if !is_alphanumeric_kebab_case(project_name) {
-        return Err(YakManApiError::bad_request(
-            "Invalid project name. Must be alphanumeric kebab case",
-        ));
-    }
-
-    // Validate notification webhooks to protect against SSRF
-    if let Some(notification) = &notification_settings {
-        match &notification.notification_type {
-            ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(webhook_url)?,
-            ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(webhook_url)?,
-        }
+fn validate_project_notification_settings(
+    notification_settings: &ProjectNotificationSettings,
+) -> Result<(), ValidationError> {
+    match &notification_settings.notification_type {
+        ProjectNotificationType::Slack { webhook_url } => validate_webhook_url(webhook_url)?,
+        ProjectNotificationType::Discord { webhook_url } => validate_webhook_url(webhook_url)?,
     }
 
     return Ok(());
 }
 
-fn validate_webhook_url(webhook_url: &str) -> Result<(), YakManApiError> {
+fn validate_webhook_url(webhook_url: &str) -> Result<(), ValidationError> {
     let Ok(url) = Url::parse(webhook_url) else {
-        return Err(YakManApiError::bad_request("Invalid webhook url"));
+        return Err(ValidationError::new("Invalid webhook url"));
     };
 
     let Some(webhook_host) = url.host() else {
-        return Err(YakManApiError::bad_request("Invalid webhook url"));
+        return Err(ValidationError::new("Invalid webhook url"));
     };
     let webhook_host = webhook_host.to_string();
 
@@ -258,7 +297,7 @@ fn validate_webhook_url(webhook_url: &str) -> Result<(), YakManApiError> {
         .any(|host| host == webhook_host);
 
     if !is_whitelisted_host {
-        return Err(YakManApiError::bad_request("Webhook host is not permitted"));
+        return Err(ValidationError::new("Webhook host is not permitted"));
     }
     return Ok(());
 }

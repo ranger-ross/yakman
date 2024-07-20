@@ -8,6 +8,7 @@ mod notifications;
 mod services;
 mod settings;
 
+use crate::adapters::init_adapter_from_env;
 use crate::api::YakManApiDoc;
 use crate::auth::oauth_service::YakManOAuthService;
 use crate::middleware::roles::extract_roles;
@@ -16,20 +17,11 @@ use actix_middleware_etag::Etag;
 use actix_web::middleware::Compress;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
-use adapters::in_memory::InMemoryStorageAdapter;
-use adapters::local_file::LocalFileStorageAdapter;
-use adapters::redis::redis_adapter::RedisStorageAdapter;
-use adapters::KVStorageAdapter;
-use adapters::{
-    aws_s3::AwsS3StorageAdapter,
-    google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter,
-};
-use anyhow::Context;
 use auth::oauth_service::{OAuthDisabledService, OAuthService};
 use auth::token::YakManTokenService;
 use dotenvy::dotenv;
 use services::{kv_storage_service::KVStorageService, StorageService};
-use std::{env, sync::Arc};
+use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -39,7 +31,7 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    let adapter = create_adapter().await;
+    let adapter = init_adapter_from_env().await;
     let storage_service: Arc<dyn StorageService> = Arc::new(KVStorageService::new(adapter.clone()));
 
     if settings::is_snapshot_backups_enabled() {
@@ -66,7 +58,7 @@ async fn main() -> std::io::Result<()> {
     log::info!("Launching YakMan Backend on {host}:{port}");
 
     HttpServer::new(move || {
-        let app = App::new()
+        App::new()
             .app_data(web::Data::new(storage_service.clone()))
             .app_data(web::Data::new(jwt_service.clone()))
             .app_data(web::Data::new(oauth_service.clone()))
@@ -77,9 +69,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(YakManPrincipleTransformer)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
-            );
-
-        return api::register_routes(app);
+            )
+            .configure(api::register_routes)
     })
     .bind((host, port))?
     .run()
@@ -93,29 +84,6 @@ fn yakman_host_port_from_env() -> (String, u16) {
         .and_then(|v| v.parse::<u16>().ok())
         .unwrap_or(8000);
     (host, port)
-}
-
-async fn create_adapter() -> Arc<dyn KVStorageAdapter> {
-    let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
-
-    return match adapter_name.as_str() {
-        "REDIS" => Arc::new(
-            RedisStorageAdapter::from_env()
-                .await
-                .context("Failed to initialize Redis adapter")
-                .unwrap(),
-        ),
-        "LOCAL_FILE_SYSTEM" => Arc::new(LocalFileStorageAdapter::from_env().await),
-        "S3" => Arc::new(AwsS3StorageAdapter::from_env().await),
-        "GOOGLE_CLOUD_STORAGE" => Arc::new(
-            GoogleCloudStorageAdapter::from_env()
-                .await
-                .context("Failed to initialize Google Cloud Storage adapter")
-                .unwrap(),
-        ),
-        "IN_MEMORY" => Arc::new(InMemoryStorageAdapter::new()),
-        _ => panic!("Unsupported adapter {adapter_name}"),
-    };
 }
 
 async fn create_oauth_service(storage: Arc<dyn StorageService>) -> Arc<dyn OAuthService> {

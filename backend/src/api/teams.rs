@@ -1,16 +1,22 @@
 use crate::{
     adapters::errors::GenericStorageError,
-    api::is_alphanumeric_kebab_case,
+    api::validation::validate_kebab_case,
     error::{CreateTeamError, DeleteTeamError, UpdateTeamError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::request::{CreateTeamPayload, UpdateTeamPayload},
+    model::YakManProjectRole,
 };
 use crate::{model::YakManRole, services::StorageService};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{
+    delete, get, post, put,
+    web::{self, Json},
+    HttpResponse, Responder,
+};
 use actix_web_grants::authorities::AuthDetails;
+use actix_web_validation::Validated;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
+use validator::Validate;
 
 /// Get teams
 #[utoipa::path(request_body = Vec<YakManTeam>, responses((status = 200, body = String)))]
@@ -51,6 +57,15 @@ async fn get_team(
     };
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
+pub struct CreateTeamPayload {
+    #[validate(length(min = 1), custom(function = "validate_kebab_case"))]
+    pub name: String,
+    pub global_roles: Vec<YakManRole>,
+    pub roles: Vec<YakManProjectRole>,
+    pub team_member_user_ids: Vec<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateTeamResponse {
     team_id: String,
@@ -61,17 +76,11 @@ pub struct CreateTeamResponse {
 #[put("/v1/teams")]
 async fn create_team(
     auth_details: AuthDetails<YakManRoleBinding>,
-    payload: web::Json<CreateTeamPayload>,
+    Validated(Json(payload)): Validated<Json<CreateTeamPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    let payload = payload.into_inner();
-
     if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
         return Err(YakManApiError::forbidden());
-    }
-
-    if !is_alphanumeric_kebab_case(&payload.name) {
-        return Err(YakManApiError::bad_request("invalid team name"));
     }
 
     return match storage_service.create_team(payload).await {
@@ -88,24 +97,28 @@ async fn create_team(
     };
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
+pub struct UpdateTeamPayload {
+    #[validate(length(min = 1), custom(function = "validate_kebab_case"))]
+    pub name: String,
+    pub global_roles: Vec<YakManRole>,
+    pub roles: Vec<YakManProjectRole>,
+    pub team_member_user_ids: Vec<String>,
+}
+
 /// Create a new team
 #[utoipa::path(request_body = UpdateTeamPayload, responses((status = 200, body = CreateTeamResponse)))]
 #[post("/v1/teams/{id}")]
 async fn update_team(
     auth_details: AuthDetails<YakManRoleBinding>,
     path: web::Path<String>,
-    payload: web::Json<UpdateTeamPayload>,
+    Validated(Json(payload)): Validated<Json<UpdateTeamPayload>>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let team_id = path.into_inner();
-    let payload = payload.into_inner();
 
     if !YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities) {
         return Err(YakManApiError::forbidden());
-    }
-
-    if !is_alphanumeric_kebab_case(&payload.name) {
-        return Err(YakManApiError::bad_request("invalid team name"));
     }
 
     return match storage_service.update_team(&team_id, payload).await {

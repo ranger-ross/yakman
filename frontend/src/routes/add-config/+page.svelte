@@ -7,6 +7,7 @@
     import { page } from "$app/stores";
     import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
+    import { TRPCClientError } from "@trpc/client";
 
     export let data: PageData;
 
@@ -16,7 +17,7 @@
         data.projects.find((p) => p.id === defaultProjectId) ??
         data.projects[0];
     let selectedProjectId = defaultProject.id;
-
+    let error: string | null = null;
     async function onCreateConfig() {
         try {
             await trpc($page).configs.createConfig.mutate({
@@ -25,7 +26,10 @@
             });
             goto(`/?project=${selectedProjectId}`);
         } catch (e) {
-            console.error("Error creating config:", e);
+            if (e instanceof TRPCClientError) {
+                let errorData = JSON.parse(e.message);
+                error = errorData?.message ?? "An error occured";
+            }
         }
     }
 </script>
@@ -47,6 +51,11 @@
                     <option value={project.id}>{project.name}</option>
                 {/each}
             </YakManSelect>
+        </div>
+        <div class="text-red-500 font-bold mb-1">
+            {#if error}
+                Error: {error}
+            {/if}
         </div>
         <YakManButton
             on:click={onCreateConfig}

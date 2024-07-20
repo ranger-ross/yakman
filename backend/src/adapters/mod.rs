@@ -1,12 +1,20 @@
+use std::{env, sync::Arc};
+
 use crate::model::{
     ConfigDetails, ConfigInstanceRevision, LabelType, YakManApiKey, YakManConfig, YakManPassword,
     YakManPasswordResetLink, YakManProject, YakManProjectDetails, YakManSnapshotLock, YakManTeam,
     YakManTeamDetails, YakManUser, YakManUserDetails,
 };
+use anyhow::Context;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
-use self::errors::GenericStorageError;
+use self::{
+    aws_s3::AwsS3StorageAdapter, errors::GenericStorageError,
+    google_cloud_storage::google_cloud_storage_adapter::GoogleCloudStorageAdapter,
+    in_memory::InMemoryStorageAdapter, local_file::LocalFileStorageAdapter,
+    redis::redis_adapter::RedisStorageAdapter,
+};
 
 pub mod aws_s3;
 pub mod errors;
@@ -14,6 +22,29 @@ pub mod google_cloud_storage;
 pub mod in_memory;
 pub mod local_file;
 pub mod redis;
+
+pub async fn init_adapter_from_env() -> Arc<dyn KVStorageAdapter> {
+    let adapter_name = env::var("YAKMAN_ADAPTER").expect("$YAKMAN_ADAPTER is not set");
+
+    return match adapter_name.as_str() {
+        "REDIS" => Arc::new(
+            RedisStorageAdapter::from_env()
+                .await
+                .context("Failed to initialize Redis adapter")
+                .unwrap(),
+        ),
+        "LOCAL_FILE_SYSTEM" => Arc::new(LocalFileStorageAdapter::from_env().await),
+        "S3" => Arc::new(AwsS3StorageAdapter::from_env().await),
+        "GOOGLE_CLOUD_STORAGE" => Arc::new(
+            GoogleCloudStorageAdapter::from_env()
+                .await
+                .context("Failed to initialize Google Cloud Storage adapter")
+                .unwrap(),
+        ),
+        "IN_MEMORY" => Arc::new(InMemoryStorageAdapter::new()),
+        _ => panic!("Unsupported adapter {adapter_name}"),
+    };
+}
 
 #[async_trait]
 pub trait KVStorageAdapter: Sync + Send {

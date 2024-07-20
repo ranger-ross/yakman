@@ -7,6 +7,10 @@ use super::{
 };
 use crate::{
     adapters::{errors::GenericStorageError, KVStorageAdapter},
+    api::{
+        projects::ProjectNotificationSettings,
+        teams::{CreateTeamPayload, UpdateTeamPayload},
+    },
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
@@ -15,13 +19,11 @@ use crate::{
         UpdateTeamError,
     },
     model::{
-        self,
-        request::{CreateTeamPayload, CreateYakManUserPayload, UpdateTeamPayload},
-        ConfigDetails, ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData,
-        ConfigInstanceRevision, LabelType, RevisionReviewState, YakManApiKey, YakManConfig,
-        YakManLabel, YakManPassword, YakManPasswordResetLink, YakManProject, YakManProjectDetails,
-        YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
-        YakManUserDetails,
+        request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
+        ConfigInstanceEventData, ConfigInstanceRevision, LabelType, RevisionReviewState,
+        YakManApiKey, YakManConfig, YakManLabel, YakManPassword, YakManPasswordResetLink,
+        YakManProject, YakManProjectDetails, YakManPublicPasswordResetLink, YakManRole, YakManTeam,
+        YakManTeamDetails, YakManUser, YakManUserDetails,
     },
     notifications::{YakManNotificationAdapter, YakManNotificationType},
     services::id::{
@@ -72,7 +74,7 @@ impl StorageService for KVStorageService {
     async fn create_project(
         &self,
         project_name: &str,
-        notification_settings: Option<model::request::ProjectNotificationSettings>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<String, CreateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
@@ -113,7 +115,7 @@ impl StorageService for KVStorageService {
         &self,
         project_id: &str,
         project_name: &str,
-        notification_settings: Option<model::request::ProjectNotificationSettings>,
+        notification_settings: Option<ProjectNotificationSettings>,
     ) -> Result<(), UpdateProjectError> {
         let mut projects = self.adapter.get_projects().await?;
 
@@ -365,6 +367,7 @@ impl StorageService for KVStorageService {
                 &config_id,
                 &ConfigDetails {
                     config_id: config_id.clone(),
+                    project_id: String::from(project_id),
                     config_name: config_name.to_string(),
                     instances: vec![],
                 },
@@ -1058,7 +1061,7 @@ impl StorageService for KVStorageService {
         let Some(team) = teams.iter_mut().find(|t| t.id == team_id) else {
             return Err(UpdateTeamError::TeamNotFound);
         };
-        team.name = team_name.clone();
+        team.name = team_name.to_string();
 
         let Some(mut team_details) = self.adapter.get_team_details(team_id).await? else {
             return Err(UpdateTeamError::TeamNotFound);
@@ -1085,7 +1088,7 @@ impl StorageService for KVStorageService {
             user_details_to_delete.push(details);
         }
 
-        team_details.name = team_name.clone();
+        team_details.name = team_name.to_string();
         team_details.global_roles = payload.global_roles;
         team_details.roles = payload.roles;
         team_details.member_user_ids = payload.team_member_user_ids;

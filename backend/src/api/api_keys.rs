@@ -7,13 +7,16 @@ use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::YakManRole;
 use crate::services::StorageService;
+use actix_web::web::Json;
 use actix_web::{delete, HttpResponse, Responder};
 use actix_web::{get, put, web};
 use actix_web_grants::authorities::AuthDetails;
+use actix_web_validation::Validated;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 /// Get Api Keys
 #[utoipa::path(responses((status = 200, body = Vec<YakManUser>)))]
@@ -42,8 +45,9 @@ pub async fn get_api_keys(
     return Ok(web::Json(api_keys));
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema, Validate)]
 pub struct CreateApiKeyRequest {
+    #[validate(length(min = 1))]
     pub project_id: String,
     pub role: YakManRole,
 }
@@ -54,13 +58,13 @@ pub struct CreateApiKeyResponse {
 }
 
 /// Create an api key
-#[utoipa::path(responses((status = 200, body = CreateApiKeyResponse)))]
+#[utoipa::path(request_body = CreateApiKeyRequest, responses((status = 200, body = CreateApiKeyResponse)))]
 #[put("/v1/api-keys")]
 pub async fn create_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
     principle: YakManPrinciple,
-    request: web::Json<CreateApiKeyRequest>,
+    Validated(Json(request)): Validated<Json<CreateApiKeyRequest>>,
 ) -> Result<impl Responder, YakManApiError> {
     let is_admin = YakManRoleBinding::has_global_role(YakManRole::Admin, &auth_details.authorities);
 

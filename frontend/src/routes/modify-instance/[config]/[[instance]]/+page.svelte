@@ -18,7 +18,6 @@
     let { labels } = data;
     let selectedLabels: { [labelName: string]: string } = data.selectedLabels; // <LabelName, Value>
     let originalSelectedLabels = structuredClone(data.selectedLabels);
-
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
     $: editorLanguage = contentTypeToMonacoLanguage(contentType);
@@ -112,6 +111,35 @@
             return false;
         })();
     }
+
+    function formatJSON(value: string): string {
+        return JSON.stringify(JSON.parse(value), null, 2);
+    }
+
+    let canFormat = false;
+    $: {
+        canFormat = (() => {
+            if (contentType?.toLowerCase().includes("json")) {
+                try {
+                    const j = JSON.parse(input);
+
+                    if (formatJSON(input) === input) {
+                        return false;
+                    }
+                    return !!j;
+                } catch {
+                    return false;
+                }
+            }
+
+            return false;
+        })();
+    }
+    function format() {
+        if (contentType?.toLowerCase().includes("json")) {
+            input = formatJSON(input);
+        }
+    }
 </script>
 
 <div class="container mx-auto">
@@ -140,7 +168,7 @@
             <MonacoEditor bind:content={input} language={editorLanguage} />
         </div>
 
-        <div class="my-8">
+        <div class="my-8 flex justify-between">
             <YakManAutoComplete
                 label="Content Type"
                 placeholder="application/json"
@@ -152,6 +180,12 @@
                     "text/html",
                 ]}
             />
+
+            <div>
+                <YakManButton on:click={format} disabled={!canFormat}>
+                    Format
+                </YakManButton>
+            </div>
         </div>
         <LabelSelection {labels} bind:selectedLabels />
         <YakManButton on:click={onSubmit} disabled={!hasChanges}>
