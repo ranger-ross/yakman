@@ -48,7 +48,7 @@ validator = { version = "0.18", features = ["derive"] }
 
 
 [dev-dependencies]
-mockall = "0.12"
+mockall = "0.13"
 
 [lints.clippy]
 needless_return = "allow"
