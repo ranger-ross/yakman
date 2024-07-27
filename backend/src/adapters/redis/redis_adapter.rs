@@ -179,7 +179,7 @@ impl KVStorageAdapter for RedisStorageAdapter {
         revision: &str,
     ) -> Result<(), GenericStorageError> {
         let mut connection = self.get_connection()?;
-        let _: () = connection.del(&self.get_revision_key(config_id, revision))?;
+        let _: () = connection.del(self.get_revision_key(config_id, revision))?;
         Ok(())
     }
 
