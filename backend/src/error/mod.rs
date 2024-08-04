@@ -201,6 +201,44 @@ impl From<GenericStorageError> for CreateLabelError {
 }
 
 #[derive(Error, Debug)]
+pub enum UpdateLabelError {
+    #[error("Duplicate label: `{name}`")]
+    DuplicateLabelError { name: String },
+    #[error("Labels must have at least one option")]
+    EmptyOptionsError,
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl UpdateLabelError {
+    pub fn duplicate_label(name: &str) -> UpdateLabelError {
+        UpdateLabelError::DuplicateLabelError {
+            name: String::from(name),
+        }
+    }
+}
+
+impl From<GenericStorageError> for UpdateLabelError {
+    fn from(e: GenericStorageError) -> Self {
+        UpdateLabelError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum DeleteLabelError {
+    #[error("Label not found")]
+    LabelNotFound,
+    #[error("Error storing label: {message}")]
+    StorageError { message: String },
+}
+
+impl From<GenericStorageError> for DeleteLabelError {
+    fn from(e: GenericStorageError) -> Self {
+        DeleteLabelError::StorageError { message: e.message }
+    }
+}
+
+#[derive(Error, Debug)]
 pub enum CreateConfigInstanceError {
     #[error("No config found")]
     NoConfigFound,

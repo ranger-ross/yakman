@@ -11,7 +11,7 @@ export const load: PageLoad = async (event) => {
 
     const labels = await trpc(event).labels.fetchLabels.query();
 
-    let selectedLabels: { [labelName: string]: string } = {}; // <LabelName, Value>
+    let selectedLabels: { [labelId: string]: string } = {}; // <LabelName, Value>
 
     if (editMode) {
         const instances = await trpc(event).instances.fetchInstancesByConfigId.query(event.params.config);
@@ -20,9 +20,9 @@ export const load: PageLoad = async (event) => {
 
         for (const label of labels) {
             if (selectedLabelsList) {
-                const lbl = selectedLabelsList.find((x) => x.label_type == label.name);
+                const lbl = selectedLabelsList.find((x) => x.label_id == label.id);
                 if (lbl) {
-                    selectedLabels[label.name] = lbl.value;
+                    selectedLabels[label.id] = lbl.value;
                 }
             }
         }
