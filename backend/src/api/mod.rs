@@ -30,7 +30,8 @@ use crate::model::{
     ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
     LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,
     RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails,
-    YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
+    YakManProjectRole, YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails,
+    YakManUser,
 };
 use actix_web::web;
 use utoipa::OpenApi;
@@ -89,7 +90,7 @@ use utoipa::OpenApi;
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
             YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload,
-            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails
+            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails, YakManProjectRole
         )
     ),
     tags(
