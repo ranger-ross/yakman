@@ -16,7 +16,7 @@
 
     export let data: PageData;
     let { labels } = data;
-    let selectedLabels: { [labelName: string]: string } = data.selectedLabels; // <LabelName, Value>
+    let selectedLabels: { [labelId: string]: string } = data.selectedLabels; // <LabelId, Value>
     let originalSelectedLabels = structuredClone(data.selectedLabels);
     let input = data.data?.data ?? "";
     let contentType = data.data?.contentType ?? "text/plain";
@@ -42,6 +42,8 @@
         const filtedSelectedLabels = Object.fromEntries(
             Object.entries(selectedLabels).filter(([_, v]) => v != null),
         ) as { [labelName: string]: string };
+
+        console.log(filtedSelectedLabels);
 
         try {
             if (editMode) {

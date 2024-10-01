@@ -12,9 +12,9 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
-        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
-        UpdateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteLabelError, DeleteProjectError,
+        DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
+        UpdateLabelError, UpdateProjectError, UpdateTeamError,
     },
     model::{
         request::CreateYakManUserPayload, ConfigInstance, ConfigInstanceRevision, LabelType,
@@ -62,6 +62,10 @@ pub trait StorageService: Sync + Send {
     async fn get_labels(&self) -> Result<Vec<LabelType>, GenericStorageError>;
 
     async fn create_label(&self, label: LabelType) -> Result<(), CreateLabelError>;
+
+    async fn update_label(&self, label_id: &str, label: LabelType) -> Result<(), UpdateLabelError>;
+
+    async fn delete_label(&self, label_id: &str) -> Result<(), DeleteLabelError>;
 
     async fn create_config(
         &self,
