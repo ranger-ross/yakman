@@ -259,6 +259,7 @@ fn extract_labels(query: web::Query<HashMap<String, String>>) -> Vec<YakManLabel
         .iter()
         .map(|param| YakManLabel {
             label_id: param.0.to_string(),
+            name: None,
             value: param.1.to_string(),
         })
         .collect();

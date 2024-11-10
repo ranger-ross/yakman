@@ -51,6 +51,7 @@ export type YakManLabelType = z.infer<typeof YakManLabelTypeSchema>;
 
 export const YakManLabelSchema = z.object({
     label_id: z.string(),
+    name: z.string(),
     value: z.string(),
 });
 

@@ -65,5 +65,21 @@ export const labels = t.router({
             if (response.status != 200) {
                 throw new Error(await response.text())
             }
+        }),
+    deleteLabel: t.procedure
+        .input(z.object({
+            id: z.string(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const response = await fetch(`${BASE_URL}/v1/labels/${input.id}`, {
+                method: 'DELETE',
+                headers: {
+                    ...createYakManAuthHeaders(ctx.accessToken),
+                },
+            });
+            if (response.status != 200) {
+                throw new Error(await response.text())
+            }
         })
+
 });

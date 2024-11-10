@@ -189,7 +189,7 @@
                                     <div class="flex flex-wrap gap-2">
                                         {#each instance.labels as label}
                                             <LabelPill
-                                                text={`${data.labels.find((l) => l.id === label.label_id).name}=${label.value}`}
+                                                text={`${data.labels.find((l) => l.id === label.label_id)?.name ?? label.name}=${label.value}`}
                                             />
                                         {/each}
                                     </div>

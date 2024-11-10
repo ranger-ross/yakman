@@ -1,13 +1,19 @@
 <script lang="ts">
+    import { page } from "$app/stores";
     import YakManButton from "$lib/components/YakManButton.svelte";
     import YakManCard from "$lib/components/YakManCard.svelte";
     import YakManLink from "$lib/components/YakManLink.svelte";
+    import { trpc } from "$lib/trpc/client";
     import type { PageData } from "./$types";
 
     export let data: PageData;
 
-    async function handleDeleteLabel() {
-        console.log("TODO: Delete");
+    async function handleDeleteLabel(labelId: string) {
+        await trpc($page).labels.deleteLabel.mutate({ id: labelId });
+
+        let index = data.labels?.findIndex((l) => l.id == labelId);
+        data.labels?.splice(index, 1);
+        data = data; // Force Svelte to update state
     }
 </script>
 
@@ -63,7 +69,7 @@
                         <td class="px-6 py-2 whitespace-nowrap text-sm">
                             <YakManButton
                                 variant="danger"
-                                on:click={handleDeleteLabel}
+                                on:click={() => handleDeleteLabel(label.id)}
                             >
                                 Delete
                             </YakManButton>

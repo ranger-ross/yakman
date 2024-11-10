@@ -280,13 +280,25 @@ impl StorageService for KVStorageService {
     }
 
     async fn delete_label(&self, label_id: &str) -> Result<(), DeleteLabelError> {
-        todo!();
+        let mut labels = self.adapter.get_labels().await?;
+
+        let Some(index) = labels.iter().position(|l| l.id == label_id) else {
+            return Err(DeleteLabelError::LabelNotFound);
+        };
+
+        labels.remove(index);
+
+        // TODO: Also remove the label type from storage
+
+        self.adapter.save_labels(&labels).await?;
+
+        Ok(())
     }
 
     async fn create_config_instance(
         &self,
         config_id: &str,
-        labels: Vec<YakManLabel>,
+        mut labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         creator_user_id: &str,
@@ -298,7 +310,7 @@ impl StorageService for KVStorageService {
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
-            if !self.validate_labels(&labels).await? {
+            if !self.validate_and_populate_labels(&mut labels).await? {
                 return Err(CreateConfigInstanceError::InvalidLabel);
             }
 
@@ -506,7 +518,7 @@ impl StorageService for KVStorageService {
         &self,
         config_id: &str,
         instance: &str,
-        labels: Vec<YakManLabel>,
+        mut labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         submitted_by_user_id: &str,
@@ -526,7 +538,7 @@ impl StorageService for KVStorageService {
             .find(|inst| inst.instance == instance)
             .ok_or(SaveConfigInstanceError::InvalidInstance)?;
 
-        if !self.validate_labels(&labels).await? {
+        if !self.validate_and_populate_labels(&mut labels).await? {
             return Err(SaveConfigInstanceError::InvalidLabel);
         }
 
@@ -1612,9 +1624,11 @@ impl KVStorageService {
     }
 
     /// Returns true if all labels exist and have valid values
-    async fn validate_labels(
+    ///
+    /// This method also takes a mutable references to labels to update the `name_snapshot`
+    async fn validate_and_populate_labels(
         &self,
-        labels: &Vec<YakManLabel>,
+        labels: &mut Vec<YakManLabel>,
     ) -> Result<bool, GenericStorageError> {
         let all_labels = self.get_labels().await?;
         for label in labels {
@@ -1622,6 +1636,7 @@ impl KVStorageService {
                 if !label_type.options.iter().any(|opt| opt == &label.value) {
                     return Ok(false);
                 }
+                label.name = Some(label_type.name.clone());
             } else {
                 return Ok(false);
             }

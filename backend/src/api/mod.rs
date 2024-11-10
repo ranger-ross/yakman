@@ -58,6 +58,7 @@ use utoipa::OpenApi;
         labels::get_labels,
         labels::create_label,
         labels::update_label,
+        labels::delete_label,
         instances::get_instances_by_config_id,
         instances::get_instance,
         instances::create_new_instance,
@@ -150,6 +151,7 @@ pub fn register_routes(config: &mut web::ServiceConfig) {
         .service(labels::get_labels)
         .service(labels::create_label)
         .service(labels::update_label)
+        .service(labels::delete_label)
         // Instances
         .service(instances::get_instances_by_config_id)
         .service(instances::get_instance)
