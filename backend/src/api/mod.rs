@@ -33,6 +33,7 @@ use crate::model::{
     YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
 };
 use actix_web::web;
+use labels::{CreateLabelPayload, UpdateLabelPayload};
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -91,7 +92,7 @@ use utoipa::OpenApi;
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
             YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload,
-            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails
+            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails, CreateLabelPayload, UpdateLabelPayload
         )
     ),
     tags(

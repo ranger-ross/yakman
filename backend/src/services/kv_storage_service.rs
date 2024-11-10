@@ -396,9 +396,10 @@ impl StorageService for KVStorageService {
 
             // Config already exists, just unhide it
             config.hidden = false;
-            self.adapter.save_configs(&configs).await.map_err(|_| {
-                CreateConfigError::storage_error("Failed to update configs file")
-            })?;
+            self.adapter
+                .save_configs(&configs)
+                .await
+                .map_err(|_| CreateConfigError::storage_error("Failed to update configs file"))?;
             return Ok(config_id);
         }
 

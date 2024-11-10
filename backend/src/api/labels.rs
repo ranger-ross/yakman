@@ -11,6 +11,7 @@ use crate::{
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// Get all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
@@ -22,8 +23,8 @@ pub async fn get_labels(
     return Ok(web::Json(data));
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct CreateLabelPayload {
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct CreateLabelPayload {
     pub name: String,
     pub description: String,
     pub options: Vec<String>,
@@ -81,8 +82,8 @@ pub async fn create_label(
     };
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct UpdateLabelPayload {
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UpdateLabelPayload {
     pub name: String,
     pub description: String,
     pub options: Vec<String>,
