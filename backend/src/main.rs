@@ -162,7 +162,7 @@ mod test_utils {
         impl FakeRoleExtractor {
             pub fn new(role_bindings: Vec<YakManRoleBinding>) -> FakeRoleExtractor {
                 FakeRoleExtractor {
-                    role_bindings: HashSet::from_iter(role_bindings.into_iter()),
+                    role_bindings: HashSet::from_iter(role_bindings),
                 }
             }
         }

@@ -33,6 +33,7 @@ use crate::model::{
     YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
 };
 use actix_web::web;
+use labels::{CreateLabelPayload, UpdateLabelPayload};
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -57,6 +58,8 @@ use utoipa::OpenApi;
         configs::delete_config,
         labels::get_labels,
         labels::create_label,
+        labels::update_label,
+        labels::delete_label,
         instances::get_instances_by_config_id,
         instances::get_instance,
         instances::create_new_instance,
@@ -89,7 +92,7 @@ use utoipa::OpenApi;
             DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
             CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
             YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload,
-            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails
+            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails, CreateLabelPayload, UpdateLabelPayload
         )
     ),
     tags(
@@ -148,6 +151,8 @@ pub fn register_routes(config: &mut web::ServiceConfig) {
         // Labels
         .service(labels::get_labels)
         .service(labels::create_label)
+        .service(labels::update_label)
+        .service(labels::delete_label)
         // Instances
         .service(instances::get_instances_by_config_id)
         .service(instances::get_instance)
@@ -215,7 +220,7 @@ mod test {
         if ref_location.starts_with(prefix) {
             let schema_name = &ref_location[prefix.len()..];
             if !schemas.contains_key(schema_name) {
-                fail_missing_schema(schema_name, &path);
+                fail_missing_schema(schema_name, path);
             }
         } else {
             eprintln!(

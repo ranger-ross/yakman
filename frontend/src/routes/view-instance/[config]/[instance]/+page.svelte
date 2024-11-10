@@ -29,6 +29,8 @@
         data.instance?.changelog.sort(
             (a, b) => b.timestamp_ms - a.timestamp_ms,
         ) ?? [];
+
+    console.log(data);
 </script>
 
 <div class="container mx-auto">
@@ -54,9 +56,9 @@
         <YakManCard>
             <div class="flex gap-2">
                 <h1 class="text-lg font-bold mb-1">Content</h1>
-                <ContentTypePill contentType={data.data?.contentType} />               
+                <ContentTypePill contentType={data.data?.contentType} />
             </div>
-            
+
             <div class="h-56 mt-2 mb-6">
                 <MonacoEditor
                     content={data?.data?.data ?? ""}
@@ -73,7 +75,7 @@
                 {#if data.instance}
                     {#each data.instance.labels as label}
                         <LabelPill
-                            text={`${label.label_type}=${label.value}`}
+                            text={`${data?.labels?.find((l) => l.id === label.label_id)?.name ?? label.name}=${label.value}`}
                         />
                     {/each}
                 {/if}
@@ -96,6 +98,7 @@
                 {config}
                 {instance}
                 {sortedRevisions}
+                labels={data.labels}
                 currentRevision={data.instance?.current_revision}
                 pendingRevision={data.instance?.pending_revision}
             />

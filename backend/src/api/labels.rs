@@ -1,13 +1,17 @@
 use std::sync::Arc;
 
+use crate::error::{DeleteLabelError, UpdateLabelError};
 use crate::model::{LabelType, YakManRole};
+use crate::services::id::generate_label_id;
 use crate::services::StorageService;
 use crate::{
     api::validation::is_alphanumeric_kebab_case, error::CreateLabelError, error::YakManApiError,
     middleware::roles::YakManRoleBinding,
 };
-use actix_web::{get, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// Get all labels
 #[utoipa::path(responses((status = 200, body = Vec<LabelType>)))]
@@ -19,12 +23,30 @@ pub async fn get_labels(
     return Ok(web::Json(data));
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct CreateLabelPayload {
+    pub name: String,
+    pub description: String,
+    pub options: Vec<String>,
+}
+
+impl From<CreateLabelPayload> for LabelType {
+    fn from(value: CreateLabelPayload) -> Self {
+        LabelType {
+            id: generate_label_id(),
+            name: value.name,
+            description: value.description,
+            options: value.options,
+        }
+    }
+}
+
 /// Create a new label
-#[utoipa::path(request_body = LabelType, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = CreateLabelPayload, responses((status = 200, body = (), content_type = [])))]
 #[put("/v1/labels")]
 pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
-    label_type: web::Json<LabelType>,
+    label_type: web::Json<CreateLabelPayload>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
     let mut label_type = label_type.into_inner();
@@ -43,7 +65,7 @@ pub async fn create_label(
         ));
     }
 
-    return match storage_service.create_label(label_type).await {
+    return match storage_service.create_label(label_type.into()).await {
         Ok(()) => Ok(HttpResponse::Ok().finish()),
         Err(e) => match e {
             CreateLabelError::DuplicateLabelError { name: _ } => {
@@ -60,6 +82,94 @@ pub async fn create_label(
     };
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UpdateLabelPayload {
+    pub name: String,
+    pub description: String,
+    pub options: Vec<String>,
+}
+
+/// Update and existing label
+#[utoipa::path(request_body = UpdateLabelPayload, responses((status = 200, body = (), content_type = [])))]
+#[post("/v1/labels/{id}")]
+pub async fn update_label(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    label_type: web::Json<UpdateLabelPayload>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    let label_id = path.into_inner();
+    let mut label_type = label_type.into_inner();
+    label_type.name = label_type.name.to_lowercase();
+
+    if !YakManRoleBinding::has_any_global_role(
+        vec![YakManRole::Admin, YakManRole::Approver],
+        &auth_details.authorities,
+    ) {
+        return Err(YakManApiError::forbidden());
+    }
+
+    if !is_alphanumeric_kebab_case(&label_type.name) {
+        return Err(YakManApiError::bad_request(
+            "Invalid label name. Must be alphanumeric kebab case",
+        ));
+    }
+
+    if !storage_service
+        .get_labels()
+        .await?
+        .iter()
+        .any(|l| l.id == label_id)
+    {
+        return Err(YakManApiError::bad_request("Label not found"));
+    }
+
+    let label = LabelType {
+        id: label_id,
+        name: label_type.name,
+        description: label_type.description,
+        options: label_type.options,
+    };
+    return match storage_service.update_label(&label.id.clone(), label).await {
+        Ok(()) => Ok(HttpResponse::Ok().finish()),
+        Err(e) => match e {
+            UpdateLabelError::DuplicateLabelError { name: _ } => {
+                Err(YakManApiError::bad_request("Duplicate label"))
+            }
+            UpdateLabelError::EmptyOptionsError => Err(YakManApiError::bad_request(
+                "Label must have at least 1 option",
+            )),
+            UpdateLabelError::StorageError { message } => {
+                log::error!("Failed to create label, error: {message}");
+                Err(YakManApiError::server_error("Failed to create label"))
+            }
+        },
+    };
+}
+
+/// Update and existing label
+#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[delete("/v1/labels/{id}")]
+pub async fn delete_label(
+    auth_details: AuthDetails<YakManRoleBinding>,
+    path: web::Path<String>,
+    storage_service: web::Data<Arc<dyn StorageService>>,
+) -> Result<impl Responder, YakManApiError> {
+    let label_id = path.into_inner();
+
+    if !YakManRoleBinding::has_any_global_role(vec![YakManRole::Admin], &auth_details.authorities) {
+        return Err(YakManApiError::forbidden());
+    }
+    return match storage_service.delete_label(&label_id).await {
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Err(DeleteLabelError::LabelNotFound) => Err(YakManApiError::not_found("label not found")),
+        Err(DeleteLabelError::StorageError { message }) => {
+            log::error!("Failed to delete project {message}");
+            Err(YakManApiError::server_error("failed to delete project"))
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -70,16 +180,16 @@ mod tests {
     use anyhow::Result;
     use serde_json::Value;
 
-    fn foo_label() -> LabelType {
-        LabelType {
+    fn foo_label() -> CreateLabelPayload {
+        CreateLabelPayload {
             name: "foo".to_string(),
             description: "my foo label".to_string(),
             options: vec!["foo-1".to_string(), "foo-2".to_string()],
         }
     }
 
-    fn bar_label() -> LabelType {
-        LabelType {
+    fn bar_label() -> CreateLabelPayload {
+        CreateLabelPayload {
             name: "bar".to_string(),
             description: "my bar label".to_string(),
             options: vec!["bar-1".to_string(), "bar-2".to_string()],
@@ -92,8 +202,8 @@ mod tests {
 
         let storage_service = test_storage_service().await?;
 
-        storage_service.create_label(foo_label()).await?;
-        storage_service.create_label(bar_label()).await?;
+        storage_service.create_label(foo_label().into()).await?;
+        storage_service.create_label(bar_label().into()).await?;
 
         let app = test::init_service(
             App::new()

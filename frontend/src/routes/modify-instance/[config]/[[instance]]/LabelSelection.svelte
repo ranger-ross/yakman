@@ -10,10 +10,10 @@
         const newValue = value === "" ? null : value;
 
         if (selectedLabels) {
-            if  (newValue) {
-                selectedLabels[label.name] = newValue;
+            if (newValue) {
+                selectedLabels[label.id] = newValue;
             } else {
-                delete selectedLabels[label.name];
+                delete selectedLabels[label.id];
                 selectedLabels = selectedLabels; // force Svelte to re-render
             }
             console.log("updated", selectedLabels);
@@ -28,7 +28,7 @@
             <YakManSelect
                 label={label.name}
                 on:change={(e) => onSelectChange(label, e)}
-                value={selectedLabels?.[label.name] ?? undefined}
+                value={selectedLabels?.[label.id] ?? undefined}
             >
                 <option value={undefined}> None </option>
                 {#each label.options as option}

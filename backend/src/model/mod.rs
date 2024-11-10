@@ -56,14 +56,18 @@ pub struct YakManConfig {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct LabelType {
-    pub name: String, // Unique key
+    pub id: String, // Unique key
+    pub name: String,
     pub description: String,
     pub options: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 pub struct YakManLabel {
-    pub label_type: String,
+    pub label_id: String,
+    /// This name is a snapshot of the name at the time of saving.
+    /// It should only be used as a fallback if the label is deleted.
+    pub name: Option<String>, // TODO: This should not be optional
     pub value: String,
 }
 

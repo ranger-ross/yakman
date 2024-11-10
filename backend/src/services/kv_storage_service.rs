@@ -14,9 +14,9 @@ use crate::{
     error::{
         ApplyRevisionError, ApproveRevisionError, CreateConfigError, CreateConfigInstanceError,
         CreateLabelError, CreatePasswordResetLinkError, CreateProjectError, CreateTeamError,
-        DeleteConfigError, DeleteConfigInstanceError, DeleteProjectError, DeleteTeamError,
-        ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError, UpdateProjectError,
-        UpdateTeamError,
+        DeleteConfigError, DeleteConfigInstanceError, DeleteLabelError, DeleteProjectError,
+        DeleteTeamError, ResetPasswordError, RollbackRevisionError, SaveConfigInstanceError,
+        UpdateLabelError, UpdateProjectError, UpdateTeamError,
     },
     model::{
         request::CreateYakManUserPayload, ConfigDetails, ConfigInstance, ConfigInstanceEvent,
@@ -244,10 +244,61 @@ impl StorageService for KVStorageService {
         return Ok(());
     }
 
+    async fn update_label(
+        &self,
+        label_id: &str,
+        mut label: LabelType,
+    ) -> Result<(), UpdateLabelError> {
+        let santized_options = label
+            .options
+            .into_iter()
+            .filter_map(|opt| if !opt.is_empty() { Some(opt) } else { None })
+            .collect::<Vec<String>>();
+
+        if santized_options.is_empty() {
+            return Err(UpdateLabelError::EmptyOptionsError);
+        }
+
+        label.options = santized_options;
+
+        let mut labels = self.adapter.get_labels().await?;
+
+        // Prevent duplicates
+        for lbl in &labels {
+            if lbl.id != label_id && lbl.name == label.name {
+                return Err(UpdateLabelError::duplicate_label(&label.name));
+            }
+        }
+
+        if let Some(pos) = labels.iter().position(|l| l.id == label_id) {
+            labels[pos] = label;
+        }
+
+        self.adapter.save_labels(&labels).await?;
+
+        return Ok(());
+    }
+
+    async fn delete_label(&self, label_id: &str) -> Result<(), DeleteLabelError> {
+        let mut labels = self.adapter.get_labels().await?;
+
+        let Some(index) = labels.iter().position(|l| l.id == label_id) else {
+            return Err(DeleteLabelError::LabelNotFound);
+        };
+
+        labels.remove(index);
+
+        // TODO: Also remove the label type from storage
+
+        self.adapter.save_labels(&labels).await?;
+
+        Ok(())
+    }
+
     async fn create_config_instance(
         &self,
         config_id: &str,
-        labels: Vec<YakManLabel>,
+        mut labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         creator_user_id: &str,
@@ -259,7 +310,7 @@ impl StorageService for KVStorageService {
             let data_key = Uuid::new_v4().to_string();
             let now = Utc::now().timestamp_millis();
 
-            if !self.validate_labels(&labels).await? {
+            if !self.validate_and_populate_labels(&mut labels).await? {
                 return Err(CreateConfigInstanceError::InvalidLabel);
             }
 
@@ -334,24 +385,22 @@ impl StorageService for KVStorageService {
         let config_id = generate_config_id();
 
         // TODO: Review if this logic makes sense
-        match &mut config {
-            Some(&mut ref mut config) => {
-                if !config.hidden {
-                    return Err(CreateConfigError::duplicate_config(config_name));
-                }
-
-                log::info!("Config '{config_name}' already exists, unhiding it");
-
-                let config_id = config.id.clone();
-
-                // Config already exists, just unhide it
-                config.hidden = false;
-                self.adapter.save_configs(&configs).await.map_err(|_| {
-                    CreateConfigError::storage_error("Failed to update configs file")
-                })?;
-                return Ok(config_id);
+        if let Some(&mut ref mut config) = &mut config {
+            if !config.hidden {
+                return Err(CreateConfigError::duplicate_config(config_name));
             }
-            None => (),
+
+            log::info!("Config '{config_name}' already exists, unhiding it");
+
+            let config_id = config.id.clone();
+
+            // Config already exists, just unhide it
+            config.hidden = false;
+            self.adapter
+                .save_configs(&configs)
+                .await
+                .map_err(|_| CreateConfigError::storage_error("Failed to update configs file"))?;
+            return Ok(config_id);
         }
 
         configs.push(YakManConfig {
@@ -467,7 +516,7 @@ impl StorageService for KVStorageService {
         &self,
         config_id: &str,
         instance: &str,
-        labels: Vec<YakManLabel>,
+        mut labels: Vec<YakManLabel>,
         data: &str,
         content_type: Option<String>,
         submitted_by_user_id: &str,
@@ -487,7 +536,7 @@ impl StorageService for KVStorageService {
             .find(|inst| inst.instance == instance)
             .ok_or(SaveConfigInstanceError::InvalidInstance)?;
 
-        if !self.validate_labels(&labels).await? {
+        if !self.validate_and_populate_labels(&mut labels).await? {
             return Err(SaveConfigInstanceError::InvalidLabel);
         }
 
@@ -1573,16 +1622,19 @@ impl KVStorageService {
     }
 
     /// Returns true if all labels exist and have valid values
-    async fn validate_labels(
+    ///
+    /// This method also takes a mutable references to labels to update the `name_snapshot`
+    async fn validate_and_populate_labels(
         &self,
-        labels: &Vec<YakManLabel>,
+        labels: &mut Vec<YakManLabel>,
     ) -> Result<bool, GenericStorageError> {
         let all_labels = self.get_labels().await?;
         for label in labels {
-            if let Some(label_type) = all_labels.iter().find(|l| l.name == label.label_type) {
+            if let Some(label_type) = all_labels.iter().find(|l| l.id == label.label_id) {
                 if !label_type.options.iter().any(|opt| opt == &label.value) {
                     return Ok(false);
                 }
+                label.name = Some(label_type.name.clone());
             } else {
                 return Ok(false);
             }

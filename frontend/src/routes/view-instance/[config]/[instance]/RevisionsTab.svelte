@@ -2,10 +2,11 @@
     import { page } from "$app/stores";
     import LabelPill from "$lib/components/LabelPill.svelte";
     import YakManButton from "$lib/components/YakManButton.svelte";
-    import YakManInput from "$lib/components/YakManInput.svelte";
-    import YakManTextArea from "$lib/components/YakManTextArea.svelte";
     import { trpc } from "$lib/trpc/client";
-    import type { YakManInstanceRevision } from "$lib/types/types";
+    import type {
+        YakManInstanceRevision,
+        YakManLabelType,
+    } from "$lib/types/types";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { openGlobaModal } from "$lib/stores/global-modal-state";
@@ -15,6 +16,7 @@
 
     export let config: string | null = null;
     export let instance: string | null = null;
+    export let labels: YakManLabelType[] = [];
     export let currentRevision: string | null = null;
     export let pendingRevision: string | null = null;
     export let sortedRevisions: YakManInstanceRevision[] = [];
@@ -26,7 +28,9 @@
         labels: [] as string[],
     };
 
-    $: editorLanguage = contentTypeToMonacoLanguage(selectedRevisionData.contentType);
+    $: editorLanguage = contentTypeToMonacoLanguage(
+        selectedRevisionData.contentType,
+    );
 
     onMount(async () => {
         // TODO: maybe auto-select current revision?
@@ -59,7 +63,8 @@
             selectedRevisionData.contentType = contentType;
             selectedRevisionData.data = data;
             selectedRevisionData.labels = revision.labels.map(
-                (l) => `${l.label_type}=${l.value}`,
+                (label) =>
+                    `${labels.find((l) => l.id === label.label_id)?.name ?? label.name}=${label.value}`,
             );
         } catch (e) {
             console.error(e);
@@ -168,7 +173,7 @@
         </div>
 
         <div class="my-3">
-            <ContentTypePill contentType={selectedRevisionData.contentType}/>
+            <ContentTypePill contentType={selectedRevisionData.contentType} />
         </div>
 
         <div>

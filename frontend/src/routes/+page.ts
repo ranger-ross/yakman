@@ -20,6 +20,7 @@ export const load: PageLoad = async (event) => {
     const selectedProject = !!projectIdQueryParam ? projects.find(p => p.id === projectIdQueryParam) : projects[0];
 
     const configs = (await trpc(event).configs.fetchConfigs.query(selectedProject?.id)) ?? [];
+    const labels = await trpc(event).labels.fetchLabels.query();
 
     const formattedConfigs = [];
 
@@ -33,6 +34,7 @@ export const load: PageLoad = async (event) => {
 
     return {
         projects: projects,
+        labels: labels,
         configs: formattedConfigs
     };
 
