@@ -185,7 +185,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::put()
-            .uri(&format!("/v1/teams"))
+            .uri(&"/v1/teams".to_string())
             .set_json(&CreateTeamPayload {
                 name: "foo".to_string(),
                 global_roles: vec![],
@@ -207,7 +207,7 @@ mod tests {
 
         // Validate team was added to global list
         let teams = storage_service.get_teams().await?;
-        assert!(teams.iter().find(|t| t.id == team_id).is_some());
+        assert!(teams.iter().any(|t| t.id == team_id));
 
         Ok(())
     }
@@ -256,8 +256,7 @@ mod tests {
         let teams = storage_service.get_teams().await?;
         assert!(teams
             .iter()
-            .find(|t| t.id == team_id && t.name == "updated-team-name")
-            .is_some());
+            .any(|t| t.id == team_id && t.name == "updated-team-name"));
 
         Ok(())
     }
@@ -409,7 +408,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::get()
-            .uri(&format!("/v1/teams"))
+            .uri(&"/v1/teams".to_string())
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(200, resp.status().as_u16());

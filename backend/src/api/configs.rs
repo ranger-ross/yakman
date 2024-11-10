@@ -383,7 +383,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::put()
-            .uri(&format!("/v1/configs"))
+            .uri(&"/v1/configs".to_string())
             .set_json(&CreateConfigPayload {
                 config_name: "foo-bar".to_string(),
                 project_id: project_id,
@@ -399,7 +399,7 @@ mod tests {
         assert!(config.is_some());
         let config = config.unwrap();
         assert_eq!("foo-bar", config.name);
-        assert_eq!(false, config.hidden);
+        assert!(!config.hidden);
 
         Ok(())
     }
@@ -421,7 +421,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::put()
-            .uri(&format!("/v1/configs"))
+            .uri(&"/v1/configs".to_string())
             .set_json(&CreateConfigPayload {
                 config_name: "this is an invalid config name".to_string(),
                 project_id: project_id,
@@ -450,7 +450,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::put()
-            .uri(&format!("/v1/configs"))
+            .uri(&"/v1/configs".to_string())
             .set_json(&CreateConfigPayload {
                 config_name: "".to_string(),
                 project_id: project_id,
@@ -482,7 +482,7 @@ mod tests {
         )
         .await;
         let req = test::TestRequest::put()
-            .uri(&format!("/v1/configs"))
+            .uri(&"/v1/configs".to_string())
             .set_json(&CreateConfigPayload {
                 config_name: "foo-bar".to_string(),
                 project_id: project_id,

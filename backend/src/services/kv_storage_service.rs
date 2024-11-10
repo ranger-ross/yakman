@@ -385,24 +385,21 @@ impl StorageService for KVStorageService {
         let config_id = generate_config_id();
 
         // TODO: Review if this logic makes sense
-        match &mut config {
-            Some(&mut ref mut config) => {
-                if !config.hidden {
-                    return Err(CreateConfigError::duplicate_config(config_name));
-                }
-
-                log::info!("Config '{config_name}' already exists, unhiding it");
-
-                let config_id = config.id.clone();
-
-                // Config already exists, just unhide it
-                config.hidden = false;
-                self.adapter.save_configs(&configs).await.map_err(|_| {
-                    CreateConfigError::storage_error("Failed to update configs file")
-                })?;
-                return Ok(config_id);
+        if let Some(&mut ref mut config) = &mut config {
+            if !config.hidden {
+                return Err(CreateConfigError::duplicate_config(config_name));
             }
-            None => (),
+
+            log::info!("Config '{config_name}' already exists, unhiding it");
+
+            let config_id = config.id.clone();
+
+            // Config already exists, just unhide it
+            config.hidden = false;
+            self.adapter.save_configs(&configs).await.map_err(|_| {
+                CreateConfigError::storage_error("Failed to update configs file")
+            })?;
+            return Ok(config_id);
         }
 
         configs.push(YakManConfig {

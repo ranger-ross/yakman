@@ -219,7 +219,7 @@ mod test {
         if ref_location.starts_with(prefix) {
             let schema_name = &ref_location[prefix.len()..];
             if !schemas.contains_key(schema_name) {
-                fail_missing_schema(schema_name, &path);
+                fail_missing_schema(schema_name, path);
             }
         } else {
             eprintln!(

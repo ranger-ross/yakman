@@ -114,11 +114,11 @@ pub async fn update_label(
         ));
     }
 
-    if let None = storage_service
+    if !storage_service
         .get_labels()
         .await?
         .iter()
-        .position(|l| l.id == label_id)
+        .any(|l| l.id == label_id)
     {
         return Err(YakManApiError::bad_request("Label not found"));
     }
