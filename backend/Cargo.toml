@@ -14,7 +14,7 @@ r2d2 = "0.8.10"
 async-trait = {version = "0.1.80"}
 uuid = {version = "1.8", features = ["v4"]}
 chrono = "0.4.38"
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 derive_more = "0.99.17"
 utoipa = { version = "5", features = ["actix_extras"] }
@@ -42,7 +42,7 @@ google-cloud-storage = "0.22"
 moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.13"
-url = "2.5.0"
+url = "2.5"
 actix-web-validation = { version = "0.6.0", features = ["validator"] }
 validator = { version = "0.19", features = ["derive"] }
 
