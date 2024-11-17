@@ -43,7 +43,7 @@ jobs:
       run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
 
     - name: Upload to codecov.io
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         working-directory: backend
         fail_ci_if_error: true
