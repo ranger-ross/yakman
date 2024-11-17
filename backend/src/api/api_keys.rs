@@ -6,6 +6,7 @@ use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::YakManApiKey;
 use crate::model::YakManRole;
+use crate::model::YakManUser;
 use crate::services::StorageService;
 use actix_web::web::Json;
 use actix_web::{delete, HttpResponse, Responder};
@@ -103,7 +104,7 @@ pub async fn create_api_key(
 }
 
 /// Revoke an API key
-#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[delete("/v1/api-keys/{id}")]
 pub async fn delete_api_key(
     auth_details: AuthDetails<YakManRoleBinding>,

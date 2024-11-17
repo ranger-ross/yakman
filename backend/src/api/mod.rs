@@ -11,29 +11,7 @@ pub mod teams;
 pub mod users;
 pub mod validation;
 
-use self::{
-    api_keys::{CreateApiKeyRequest, CreateApiKeyResponse},
-    auth::{
-        CreatePasswordResetLink, LoginRequest, OAuthExchangePayload, OAuthInitPayload,
-        OAuthInitResponse, OAuthRefreshTokenPayload, PasswordResetPayload,
-        ValidatePasswordResetLink,
-    },
-    configs::{CreateConfigPayload, DeleteConfigPayload},
-    lifecycle::{YakManHealthResponse, YakManSettingsResponse},
-    projects::{CreateProjectPayload, ProjectNotificationType, UpdateProjectPayload},
-    revisions::ReviewResult,
-    teams::{CreateTeamPayload, CreateTeamResponse, UpdateTeamPayload},
-    users::GetUserInfoResponse,
-};
-use crate::model::{
-    response::{InstancePayload, RevisionPayload},
-    ConfigInstance, ConfigInstanceEvent, ConfigInstanceEventData, ConfigInstanceRevision,
-    LabelType, NotificationSetting, NotificationSettingEvents, ProjectNotificationSettings,
-    RevisionReviewState, YakManConfig, YakManLabel, YakManProject, YakManProjectDetails,
-    YakManPublicPasswordResetLink, YakManRole, YakManTeam, YakManTeamDetails, YakManUser,
-};
 use actix_web::web;
-use labels::{CreateLabelPayload, UpdateLabelPayload};
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -82,18 +60,6 @@ use utoipa::OpenApi;
         api_keys::get_api_keys,
         api_keys::create_api_key,
         api_keys::delete_api_key,
-    ),
-    components(
-        schemas(
-            YakManConfig, LabelType, YakManLabel, ConfigInstance, ConfigInstanceRevision, ConfigInstanceEvent,
-            YakManProject, YakManRole, YakManUser, CreateConfigPayload, CreateProjectPayload, GetUserInfoResponse,
-            OAuthInitPayload, OAuthExchangePayload, OAuthInitResponse, RevisionPayload, OAuthRefreshTokenPayload,
-            CreatePasswordResetLink, LoginRequest, PasswordResetPayload, YakManPublicPasswordResetLink, ValidatePasswordResetLink,
-            DeleteConfigPayload, RevisionReviewState, ReviewResult, InstancePayload, YakManSettingsResponse, CreateApiKeyRequest,
-            CreateApiKeyResponse, YakManHealthResponse, ConfigInstanceEventData, ProjectNotificationType, ProjectNotificationSettings,
-            YakManProjectDetails, NotificationSettingEvents, NotificationSetting, UpdateProjectPayload, UpdateTeamPayload,
-            CreateTeamPayload, YakManTeam, CreateTeamResponse, YakManTeamDetails, CreateLabelPayload, UpdateLabelPayload
-        )
     ),
     tags(
         (name = "auth", description = "Authentication endpoints"),

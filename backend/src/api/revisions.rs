@@ -4,7 +4,7 @@ use crate::error::{RollbackRevisionError, YakManApiError};
 use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
 use crate::model::response::RevisionPayload;
-use crate::model::YakManRole;
+use crate::model::{ConfigInstanceRevision, YakManRole};
 use crate::services::StorageService;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use actix_web_grants::authorities::AuthDetails;
@@ -57,7 +57,7 @@ pub enum ReviewResult {
 }
 
 /// Updates a revsion based on a review result.
-#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[post("/v1/configs/{config_id}/instances/{instance}/revisions/{revision}/review/{result}")]
 async fn review_pending_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -127,7 +127,7 @@ async fn review_pending_instance_revision(
 }
 
 /// Applies an approved revision
-#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[post("/v1/configs/{config_id}/instances/{instance}/revisions/{revision}/apply")]
 async fn apply_instance_revision(
     auth_details: AuthDetails<YakManRoleBinding>,

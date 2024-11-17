@@ -42,7 +42,7 @@ impl From<CreateLabelPayload> for LabelType {
 }
 
 /// Create a new label
-#[utoipa::path(request_body = CreateLabelPayload, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = CreateLabelPayload, responses((status = 200, body = ())))]
 #[put("/v1/labels")]
 pub async fn create_label(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -90,7 +90,7 @@ pub struct UpdateLabelPayload {
 }
 
 /// Update and existing label
-#[utoipa::path(request_body = UpdateLabelPayload, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = UpdateLabelPayload, responses((status = 200, body = ())))]
 #[post("/v1/labels/{id}")]
 pub async fn update_label(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -148,7 +148,7 @@ pub async fn update_label(
 }
 
 /// Update and existing label
-#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[delete("/v1/labels/{id}")]
 pub async fn delete_label(
     auth_details: AuthDetails<YakManRoleBinding>,

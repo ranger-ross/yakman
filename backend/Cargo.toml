@@ -17,8 +17,8 @@ chrono = "0.4.38"
 thiserror = "1.0"
 anyhow = "1.0"
 derive_more = "0.99.17"
-utoipa = { version = "4", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
+utoipa = { version = "5", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "8", features = ["actix-web"] }
 actix-middleware-etag = "0.4.0"
 log = "0.4"
 env_logger = "0.11"
@@ -43,8 +43,8 @@ moka = { version = "0.12", features = ["sync"] }
 argon2 = "0.5.3"
 cron = "0.12.1"
 url = "2.5.0"
-actix-web-validation = { version = "0.5.0", features = ["validator"] }
-validator = { version = "0.18", features = ["derive"] }
+actix-web-validation = { version = "0.6.0", features = ["validator"] }
+validator = { version = "0.19", features = ["derive"] }
 
 
 [dev-dependencies]

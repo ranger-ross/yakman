@@ -3,7 +3,7 @@ use crate::{
     api::validation::validate_kebab_case,
     error::{CreateTeamError, DeleteTeamError, UpdateTeamError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::YakManProjectRole,
+    model::{YakManProjectRole, YakManTeam, YakManTeamDetails},
 };
 use crate::{model::YakManRole, services::StorageService};
 use actix_web::{

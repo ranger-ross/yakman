@@ -20,7 +20,8 @@ use oauth2::PkceCodeVerifier;
 pub use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
-use utoipa::openapi::{Object, ObjectBuilder, SchemaType};
+use utoipa::openapi::schema::SchemaType;
+use utoipa::openapi::{Object, ObjectBuilder, Type};
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -200,18 +201,24 @@ impl From<ResetPasswordError> for YakManApiError {
 }
 
 fn string_schema() -> Object {
-    ObjectBuilder::new().schema_type(SchemaType::String).build()
+    ObjectBuilder::new()
+        .schema_type(SchemaType::Type(Type::String))
+        .build()
 }
 
 fn pkce_code_challenge_schema() -> Object {
     ObjectBuilder::new()
         .property(
             "code_challenge",
-            ObjectBuilder::new().schema_type(SchemaType::String).build(),
+            ObjectBuilder::new()
+                .schema_type(SchemaType::Type(Type::String))
+                .build(),
         )
         .property(
             "code_challenge_method",
-            ObjectBuilder::new().schema_type(SchemaType::String).build(),
+            ObjectBuilder::new()
+                .schema_type(SchemaType::Type(Type::String))
+                .build(),
         )
         .build()
 }

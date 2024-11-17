@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::error::YakManApiError;
 use crate::middleware::roles::YakManRoleBinding;
 use crate::middleware::YakManPrinciple;
+use crate::model::YakManUser;
 use crate::model::{request::CreateYakManUserPayload, YakManRole};
 use crate::services::StorageService;
 use actix_web::{
@@ -33,7 +34,7 @@ pub async fn get_yakman_users(
 }
 
 /// Create YakMan user
-#[utoipa::path(request_body = YakManUser, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = YakManUser, responses((status = 200, body = ())))]
 #[put("/v1/users")]
 pub async fn create_yakman_user(
     auth_details: AuthDetails<YakManRoleBinding>,
