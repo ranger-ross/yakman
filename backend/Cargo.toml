@@ -30,7 +30,7 @@ jwt = "0.16.0"
 hmac = { version = "0.12", features = ["reset"] }
 sha2 = "0.10"
 aws-config = "1.1"
-aws-sdk-s3 = "1.21"
+aws-sdk-s3 = "1.61"
 bytes = "1.8"
 tokio = "1.41"
 sha256 = "1.5"
