@@ -4,7 +4,10 @@ use crate::{
     api::validation::validate_kebab_case,
     error::{CreateProjectError, DeleteProjectError, UpdateProjectError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::{NotificationSetting, NotificationSettingEvents, YakManProject, YakManRole},
+    model::{
+        NotificationSetting, NotificationSettingEvents, YakManProject, YakManProjectDetails,
+        YakManRole,
+    },
     services::StorageService,
     settings,
 };
@@ -145,7 +148,7 @@ impl From<ProjectNotificationSettings> for crate::model::ProjectNotificationSett
 }
 
 /// Create a new project
-#[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = CreateProjectPayload, responses((status = 200, body = ())))]
 #[put("/v1/projects")]
 async fn create_project(
     auth_details: AuthDetails<YakManRoleBinding>,
@@ -195,7 +198,7 @@ pub struct UpdateProjectPayload {
 }
 
 /// Update a project
-#[utoipa::path(request_body = UpdateProjectPayload, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = UpdateProjectPayload, responses((status = 200, body = ())))]
 #[post("/v1/projects/{id}")]
 async fn update_project(
     auth_details: AuthDetails<YakManRoleBinding>,

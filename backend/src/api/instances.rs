@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::error::{DeleteConfigInstanceError, SaveConfigInstanceError, YakManApiError};
 use crate::middleware::YakManPrinciple;
 use crate::model::response::{InstancePayload, RevisionPayload};
-use crate::model::{YakManLabel, YakManRole};
+use crate::model::{ConfigInstance, YakManLabel, YakManRole};
 use crate::services::StorageService;
 use crate::{error::CreateConfigInstanceError, middleware::roles::YakManRoleBinding};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
@@ -209,7 +209,7 @@ async fn update_new_instance(
 }
 
 /// Delete a config instance
-#[utoipa::path(responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(responses((status = 200, body = ())))]
 #[delete("/v1/configs/{config_id}/instances/{instance}")]
 async fn delete_instance(
     auth_details: AuthDetails<YakManRoleBinding>,

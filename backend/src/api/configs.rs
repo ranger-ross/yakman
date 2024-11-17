@@ -2,7 +2,7 @@ use crate::{
     api::validation::validate_kebab_case,
     error::{CreateConfigError, DeleteConfigError, YakManApiError},
     middleware::roles::YakManRoleBinding,
-    model::response::ConfigPayload,
+    model::{response::ConfigPayload, YakManConfig},
 };
 use crate::{model::YakManRole, services::StorageService};
 use actix_web::{
@@ -147,7 +147,7 @@ pub struct DeleteConfigPayload {
 }
 
 /// Hide a config instance from the UI and API (data not deleted)
-#[utoipa::path(request_body = DeleteConfigPayload, responses((status = 200, body = (), content_type = [])))]
+#[utoipa::path(request_body = DeleteConfigPayload, responses((status = 200, body = ())))]
 #[delete("/v1/configs")]
 async fn delete_config(
     auth_details: AuthDetails<YakManRoleBinding>,
