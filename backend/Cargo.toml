@@ -16,7 +16,7 @@ uuid = {version = "1.8", features = ["v4"]}
 chrono = "0.4.38"
 thiserror = "2.0"
 anyhow = "1.0"
-derive_more = "0.99.17"
+derive_more = { version = "1", features = ["display", "error"] }
 utoipa = { version = "5", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "8", features = ["actix-web"] }
 actix-middleware-etag = "0.4.0"

@@ -12,7 +12,7 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Debug, Display, derive_more::Error, Serialize)]
-#[display(fmt = "{} {}", timestamp, message)]
+#[display("{timestamp} {message}")]
 pub struct YakManApiError {
     #[serde(skip_serializing)]
     status: StatusCode,
