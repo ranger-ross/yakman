@@ -211,9 +211,9 @@ dependencies = [
 
 [[package]]
 name = "actix-web-validation"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6415d9ba12d4d68cf0c925e420f70b1a2c8ed9886429da7e23aa4ee17c6c2fa7"
+checksum = "e3aa275f69e21ebf713f1e0330c82bfb8377f5c8f80ee7feb201bc6d6d1d8df7"
 dependencies = [
  "actix-web",
  "thiserror 2.0.3",
@@ -4425,7 +4425,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
