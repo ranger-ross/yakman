@@ -4,6 +4,9 @@ Basic, storage agnostic config manager.
 
 For info on how to use YakMan check out the [docs](./docs/index.md)
 
+> [!WARNING]
+> This project is in an imcomplete state and their is no active developement on going.
+
 ## Features
 
 - OAuth support
