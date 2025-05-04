@@ -70,9 +70,9 @@ dependencies = [
 
 [[package]]
 name = "actix-middleware-etag"
-version = "0.4.2"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ad69834fa860c77e9ec9b88eaf6eda6863a7dc8d473291876d40520beb93c14"
+checksum = "bf947271526f363aba604e2a735fb2792f63768c6ebdd06a30bf6df74a5ba06c"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -4667,9 +4667,9 @@ checksum = "66fee0b777b0f5ac1c69bb06d361268faafa61cd4682ae064a171c16c433e9e4"
 
 [[package]]
 name = "xxhash-rust"
-version = "0.8.12"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a5cbf750400958819fb6178eaa83bee5cd9c29a26a40cc241df8c70fdd46984"
+checksum = "fdd20c5420375476fbd4394763288da7eb0cc0b8c11deed431a91562af7335d3"
 
 [[package]]
 name = "yak-man-backend"
