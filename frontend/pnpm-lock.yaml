@@ -15,11 +15,11 @@ importers:
         specifier: 10.45.2
         version: 10.45.2
       monaco-editor:
-        specifier: 0.52.0
-        version: 0.52.0
+        specifier: 0.52.2
+        version: 0.52.2
       monaco-yaml:
         specifier: 5.2.3
-        version: 5.2.3(monaco-editor@0.52.0)
+        version: 5.2.3(monaco-editor@0.52.2)
       set-cookie-parser:
         specifier: 2.7.1
         version: 2.7.1
@@ -809,8 +809,8 @@ packages:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
     hasBin: true
 
-  monaco-editor@0.52.0:
-    resolution: {integrity: sha512-OeWhNpABLCeTqubfqLMXGsqf6OmPU6pHM85kF3dhy6kq5hnhuVS1p3VrEW/XhWHc71P2tHyS5JFySD8mgs1crw==}
+  monaco-editor@0.52.2:
+    resolution: {integrity: sha512-GEQWEZmfkOGLdd3XK8ryrfWz3AIP8YymVXiPHEdewrUq7mh0qrKrfHLNCXcbB6sTnMLnOZ3ztSiKcciFUkIJwQ==}
 
   monaco-languageserver-types@0.4.0:
     resolution: {integrity: sha512-QQ3BZiU5LYkJElGncSNb5AKoJ/LCs6YBMCJMAz9EA7v+JaOdn3kx2cXpPTcZfKA5AEsR0vc97sAw+5mdNhVBmw==}
@@ -1875,7 +1875,7 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
-  monaco-editor@0.52.0: {}
+  monaco-editor@0.52.2: {}
 
   monaco-languageserver-types@0.4.0:
     dependencies:
@@ -1889,18 +1889,18 @@ snapshots:
 
   monaco-types@0.1.0: {}
 
-  monaco-worker-manager@2.0.1(monaco-editor@0.52.0):
+  monaco-worker-manager@2.0.1(monaco-editor@0.52.2):
     dependencies:
-      monaco-editor: 0.52.0
+      monaco-editor: 0.52.2
 
-  monaco-yaml@5.2.3(monaco-editor@0.52.0):
+  monaco-yaml@5.2.3(monaco-editor@0.52.2):
     dependencies:
       jsonc-parser: 3.3.1
-      monaco-editor: 0.52.0
+      monaco-editor: 0.52.2
       monaco-languageserver-types: 0.4.0
       monaco-marker-data-provider: 1.2.4
       monaco-types: 0.1.0
-      monaco-worker-manager: 2.0.1(monaco-editor@0.52.0)
+      monaco-worker-manager: 2.0.1(monaco-editor@0.52.2)
       path-browserify: 1.0.1
       prettier: 2.8.8
       vscode-languageserver-textdocument: 1.0.12
