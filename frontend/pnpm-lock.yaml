@@ -10,10 +10,10 @@ importers:
     dependencies:
       '@trpc/client':
         specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        version: 10.45.2(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       monaco-editor:
         specifier: 0.52.2
         version: 0.52.2
@@ -28,7 +28,7 @@ importers:
         version: 10.3.0
       trpc-sveltekit:
         specifier: 3.6.2
-        version: 3.6.2(@sveltejs/adapter-node@5.2.12(@sveltejs/kit@2.20.8(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0))))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(ws@8.18.0)
+        version: 3.6.2(@sveltejs/adapter-node@5.2.12(@sveltejs/kit@2.20.8(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0))))(@trpc/client@10.45.2(@trpc/server@10.45.3))(@trpc/server@10.45.3)(ws@8.18.0)
       zod:
         specifier: 3.23.8
         version: 3.23.8
@@ -436,8 +436,8 @@ packages:
     peerDependencies:
       '@trpc/server': 10.45.2
 
-  '@trpc/server@10.45.2':
-    resolution: {integrity: sha512-wOrSThNNE4HUnuhJG6PfDRp4L2009KDVxsd+2VYH8ro6o/7/jwYZ8Uu5j+VaW+mOmc8EHerHzGcdbGNQSAUPgg==}
+  '@trpc/server@10.45.3':
+    resolution: {integrity: sha512-CVZM42FdGwqYQxV7vSRwb//AF8REfV60S/fUnwx7xqCnnSDus0FW/UuAOW4eQJ30RQlOPy4MYU8B3dbTAx85Ew==}
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -1523,11 +1523,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@trpc/client@10.45.2(@trpc/server@10.45.2)':
+  '@trpc/client@10.45.2(@trpc/server@10.45.3)':
     dependencies:
-      '@trpc/server': 10.45.2
+      '@trpc/server': 10.45.3
 
-  '@trpc/server@10.45.2': {}
+  '@trpc/server@10.45.3': {}
 
   '@types/cookie@0.6.0': {}
 
@@ -2244,11 +2244,11 @@ snapshots:
 
   totalist@3.0.1: {}
 
-  trpc-sveltekit@3.6.2(@sveltejs/adapter-node@5.2.12(@sveltejs/kit@2.20.8(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0))))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(ws@8.18.0):
+  trpc-sveltekit@3.6.2(@sveltejs/adapter-node@5.2.12(@sveltejs/kit@2.20.8(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0))))(@trpc/client@10.45.2(@trpc/server@10.45.3))(@trpc/server@10.45.3)(ws@8.18.0):
     dependencies:
       '@sveltejs/adapter-node': 5.2.12(@sveltejs/kit@2.20.8(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))
-      '@trpc/client': 10.45.2(@trpc/server@10.45.2)
-      '@trpc/server': 10.45.2
+      '@trpc/client': 10.45.2(@trpc/server@10.45.3)
+      '@trpc/server': 10.45.3
       ws: 8.18.0
 
   ts-interface-checker@0.1.13: {}
