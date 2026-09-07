@@ -34,8 +34,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@fontsource/fira-mono':
-        specifier: 5.1.0
-        version: 5.1.0
+        specifier: 5.3.0
+        version: 5.3.0
       '@sveltejs/adapter-auto':
         specifier: 3.3.1
         version: 3.3.1(@sveltejs/kit@2.20.8(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))(svelte@4.2.19)(vite@5.4.17(@types/node@22.9.0)))
@@ -227,8 +227,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fontsource/fira-mono@5.1.0':
-    resolution: {integrity: sha512-6+nftSKApXyN0I9FC5GJuG5TUCh+in5OehtrXRIsHJvq38Pm//oA1kZZYNdXv99JYzLzJ3lzsTAavmS+xGLGDw==}
+  '@fontsource/fira-mono@5.3.0':
+    resolution: {integrity: sha512-FZzRwKhpoXQU1uhEGKUg5AHUUdfiaTXxGCdBBeGHUmcZaqEDEmndSVvpXHkSViH25f/UiWfhcWTib+6A8o4qeQ==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -1335,7 +1335,7 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@fontsource/fira-mono@5.1.0': {}
+  '@fontsource/fira-mono@5.3.0': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:
