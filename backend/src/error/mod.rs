@@ -8,7 +8,6 @@ use crate::{
     adapters::errors::GenericStorageError,
     services::password::{PasswordHashError, PasswordStrengthError},
 };
-use std::fmt;
 use thiserror::Error;
 
 #[derive(Debug, Display, derive_more::Error, Serialize)]
@@ -341,23 +340,6 @@ pub enum DeleteConfigInstanceError {
 impl From<GenericStorageError> for DeleteConfigInstanceError {
     fn from(e: GenericStorageError) -> Self {
         DeleteConfigInstanceError::StorageError { message: e.message }
-    }
-}
-
-#[derive(Debug)]
-pub struct LabelAlreadyExistsError {
-    pub description: String,
-}
-
-impl fmt::Display for LabelAlreadyExistsError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description)
-    }
-}
-
-impl std::error::Error for LabelAlreadyExistsError {
-    fn description(&self) -> &str {
-        &self.description
     }
 }
 

@@ -32,15 +32,14 @@ pub async fn get_projects(
     auth_details: AuthDetails<YakManRoleBinding>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    if auth_details.authorities.len() == 0 {
+    if auth_details.authorities.is_empty() {
         return Err(YakManApiError::forbidden());
     }
 
     let user_has_global_role = auth_details
         .authorities
         .iter()
-        .map(|p| matches!(p, YakManRoleBinding::GlobalRoleBinding(_)))
-        .any(|v| v);
+        .any(|p| matches!(p, YakManRoleBinding::GlobalRoleBinding(_)));
 
     let allowed_projects: HashSet<String> = auth_details
         .authorities
@@ -69,7 +68,7 @@ pub async fn get_project(
     path: web::Path<String>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    if auth_details.authorities.len() == 0 {
+    if auth_details.authorities.is_empty() {
         return Err(YakManApiError::forbidden());
     }
 
@@ -247,7 +246,7 @@ pub async fn delete_project(
     path: web::Path<String>,
     storage_service: web::Data<Arc<dyn StorageService>>,
 ) -> Result<impl Responder, YakManApiError> {
-    if auth_details.authorities.len() == 0 {
+    if auth_details.authorities.is_empty() {
         return Err(YakManApiError::forbidden());
     }
 

@@ -1,4 +1,4 @@
-FROM rust:latest as builder
+FROM rust:1.98.0-bookworm as builder
 
 # Create a new empty shell project
 RUN USER=root cargo new --bin backend

@@ -44,7 +44,17 @@ The local setup is a bit lack luster due to the immaturity of this project.
 Hopefully this will get better with time.
 
 
-First you will need Cargo, Node 20, and PNPM installed:
+First install Rust through rustup, Node 20, and PNPM.
+The backend uses Rust 1.98.0, pinned in `rust-toolchain.toml` for local development and CI.
+The Docker builder uses the same Rust version on Debian Bookworm to match the runtime image.
+
+Run the backend checks from `backend/`:
+
+```sh
+cargo fmt --check
+cargo clippy --locked -- -D warnings
+cargo test --locked
+```
 
 1. Create a `testing-directory/local-files` dir the the project root (git ignored)
 1. Create a `.env` file with the following values in the root of the project
